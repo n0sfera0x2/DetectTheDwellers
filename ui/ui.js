@@ -24,7 +24,7 @@ const BOOTH_CTA = { text: 'Talk to the night shift at the Binary Defense booth.'
 
 // A booth visitor usually plays alone: one analyst by default, "Playing with friends?" opens up to four.
 const UI = { screen: 'intro', mode: 'intro', diff: 'Analyst', pick: ['HUN'], friends: false, team: '', sel: null, aim: null, board: [], savedAt: null, seen: new Set(), dice: new Set(),
-  reveal: false, ko: [], confirmEnd: false, quitAsk: false, kitOpen: new Set(), order: [], dmg: {} };
+  reveal: false, ko: [], confirmEnd: false, quitAsk: false, kitOpen: new Set(), order: [], dmg: {}, logOpen: false };
 let G = null, DB = null; const LS = 'dwellers-board-v18', TIPS_LS = 'dwellers-tips-v1', KEYS_LS = 'dwellers-keys-v1';
 // The shortcut legend hides for good once a player has used any shortcut.
 let keysUsed = (() => { try { return localStorage.getItem(KEYS_LS) === '1'; } catch (e) { return false; } })();
@@ -49,6 +49,18 @@ const TIPS = {
   loot: (D.intro && D.intro.tips.loot) || 'Kit drop. Every kit card is an agent: keep it running, or burn it once for a big one-shot effect.',
   boss: (D.intro && D.intro.tips.boss) || 'The boss. Burn what you’ve got.'
 };
+// Plain words for first-timers: the intro shows these instead of the card perks, which lean on rules terms.
+const PERK_PLAIN = {
+  HUN: '+5 against mobs that come back after you beat them.',
+  RES: '+5 against whichever mob in play hits hardest.',
+  ENG: 'Rolls of 16–20 count as doubles (two hits), not just 18–20.',
+  SOA: 'Carries one extra kit card for the crew.',
+  PAT: 'Sit a round out and the whole crew heals 3 HP, not just you for 1.'
+};
+// Thumbnail crops on the start screen (viewBox into the 200×112 scene): the analyst and their screen, not the room.
+const THUMB = { HUN: '40 14 120 80', RES: '60 6 135 90', ENG: '34 10 120 80', SOA: '45 4 135 90', PAT: '48 14 135 90' };
+const crop = (svg, vb) => vb ? slice(svg).replace(/viewBox="[^"]*"/, `viewBox="${vb}"`) : slice(svg);
+const pl = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 const FIRST_FIGHT = { pre: 'Hit Roll. Every analyst rolls at once.', live: 'Tap a ready die, then hit a mob it beats. The die plus your bonus has to reach its Defense.', spent: 'Out of dice. End the round: whatever is still standing hits back.' };
 
 let said = '';
@@ -94,6 +106,7 @@ function act(a, v) {
   if (a === 'quitn') { UI.quitAsk = false; return render(); }
   if (a === 'quity') { UI.quitAsk = false; UI.screen = 'intro'; G = null; toTop(); render(); say('Shift abandoned. Back at the start screen.'); return; }
   if (a === 'tipx') { dismissTip(v); return render(); }
+  if (a === 'log') { UI.logOpen = !UI.logOpen; render(); const t = document.getElementById(UI.logOpen ? 'logx' : 'logb'); if (t) t.focus(); return; }
   if (a === 'kitx') { UI.kitOpen.has(v) ? UI.kitOpen.delete(v) : UI.kitOpen.add(v); return render(); }
   if (a === 'fight') { UI.reveal = false; render(); const h = document.getElementById('fight-h'); if (h && h.scrollIntoView) h.scrollIntoView({ block: 'start' }); say(`Fight ${G.boss.name}. Roll when you’re ready.`); return; }
   const before = snap(), wasConfirm = UI.confirmEnd; let extra = '';
@@ -104,7 +117,7 @@ function act(a, v) {
   else if (a === 'rest') E.setRest(G, +v);
   else if (a === 'decoy') E.decoy(G);
   else if (a === 'roll') { if (E.rollAll(G)) { UI.sel = firstLive(); extra = rollSummary(); } }
-  else if (a === 'die') { const i = +v; if (G.dice[i] && !G.dice[i].used) UI.sel = UI.sel === i ? null : i; if (UI.sel !== null) extra = `Die ${G.dice[UI.sel].r} picked. ${G.play.filter(m => E.beats(G, G.dice[UI.sel], m)).length} mob(s) it beats.`; }
+  else if (a === 'die') { const i = +v; if (G.dice[i] && !G.dice[i].used) UI.sel = UI.sel === i ? null : i; if (UI.sel !== null) extra = `Die ${G.dice[UI.sel].r} picked. It beats ${pl(G.play.filter(m => E.beats(G, G.dice[UI.sel], m)).length, 'mob')}.`; }
   else if (a === 'hit') { if (UI.sel !== null && E.assign(G, UI.sel, +v)) UI.sel = G.phase === 'combat' ? firstLive() : null; }
   else if (a === 'undo') { if (E.unassign(G)) { UI.sel = firstLive(); extra = 'Last hit taken back.'; } }
   else if (a === 'end') {
@@ -198,12 +211,21 @@ app.addEventListener('input', e => { if (e.target.id === 'team') UI.team = e.tar
 // Shortcuts for repeat players: R roll, E end round, F flip, U undo, 1–9 pick a die.
 document.addEventListener('keydown', e => {
   if (UI.screen !== 'game' || e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-  if (UI.reveal) { if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); act('fight'); } return; }
+  if (UI.reveal) { if (e.key === 'Tab') trapTab(e); return; }
+  if (e.key === 'Escape' && UI.logOpen) { e.preventDefault(); act('log'); return; }
   const k = e.key.toLowerCase(), fire = sel => { const b = app.querySelector(sel); if (b && !b.disabled) { e.preventDefault(); markKeys(); act(b.dataset.a, b.dataset.v); } };
   if (k === 'r') fire('[data-a=roll]'); else if (k === 'e') fire('[data-a=end]'); else if (k === 'f') fire('[data-a=flip]'); else if (k === 'u') fire('[data-a=undo]');
   else if (k === 'escape' && UI.quitAsk) act('quitn');
   else if (/^[1-9]$/.test(k) && UI.order[+k - 1] != null) { const i = UI.order[+k - 1]; if (G.dice[i] && !G.dice[i].used) { e.preventDefault(); markKeys(); act('die', String(i)); } }
 });
+
+// The boss reveal is modal: Tab and Shift+Tab cycle through its buttons and never reach the board behind it.
+function trapTab(e) {
+  const f = [...app.querySelectorAll('.reveal button:not(:disabled)')]; if (!f.length) return;
+  const i = f.indexOf(document.activeElement), n = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : (i < 0 || i === f.length - 1 ? 0 : i + 1);
+  e.preventDefault(); f[n].focus();
+}
+app.addEventListener('focusin', e => { if (UI.screen === 'game' && UI.reveal && !e.target.closest('.reveal')) { const f = app.querySelector('.reveal [data-a=fight]'); if (f) f.focus(); } });
 
 function render() {
   const ae = document.activeElement, had = ae && ae !== app && app.contains(ae), k = had && ae.dataset ? ae.dataset.k : null;
@@ -225,7 +247,7 @@ function lb(compact) {
 function vIntro() {
   const solo = !UI.friends, n = UI.pick.length;
   const picks = D.classes.map(c => { const on = UI.pick.includes(c.id);
-    return `<button type="button" class="pick" data-a="pick" data-v="${c.id}" data-k="p${c.id}" aria-pressed="${on}" ${!solo && !on && n >= 4 ? 'disabled' : ''}><span class="art">${slice(ART[c.id])}</span><span><span class="nm">${esc(c.name)}</span><br><span class="perk">${esc(c.perk)}</span></span><span class="st">${on ? ICON.check + (solo ? 'You' : 'In') : solo ? 'Pick' : 'Add'}</span></button>`; }).join('');
+    return `<button type="button" class="pick" data-a="pick" data-v="${c.id}" data-k="p${c.id}" aria-pressed="${on}" ${!solo && !on && n >= 4 ? 'disabled' : ''}><span class="art">${crop(ART[c.id], THUMB[c.id])}</span><span><span class="nm">${esc(c.name)}</span><br><span class="perk">${esc(PERK_PLAIN[c.id] || c.perk)}</span></span><span class="st">${on ? ICON.check + (solo ? 'You' : 'In') : solo ? 'Pick' : 'Add'}</span></button>`; }).join('');
   const order = ['intro', 'quick', 'full'].filter(k => D.modes[k]);
   const modes = order.map(k => { const m = D.modes[k]; return `<button type="button" class="opt" data-a="mode" data-v="${k}" data-k="m${k}" aria-pressed="${UI.mode === k}"><b>${esc(m.label)}</b><span class="meta">${esc(m.minutes)} min</span></button>`; }).join('');
   const diffs = UI.mode === 'full' ? `<h2 class="sech">Difficulty</h2><div class="seg" role="group" aria-label="Difficulty">${['Recruit', 'Analyst', 'Veteran'].map(k => `<button type="button" class="opt" data-a="diff" data-v="${k}" data-k="d${k}" aria-pressed="${UI.diff === k}"><b>${k}</b><span class="meta">${D.hp.full[nP()][k]} HP each</span></button>`).join('')}</div>` : '';
@@ -234,31 +256,41 @@ function vIntro() {
     : `<p class="meta">One analyst per player, up to 4. <button class="lnk" type="button" data-a="solo" data-k="solo">Just me</button></p>`;
   return `<div class="wrap"><div class="intro-grid">
     <section class="hero"><span class="art">${slice(pickArt('hero', 'event', 'Network'))}</span><p class="meta c">An original game by Binary Defense</p><h1 class="logo">Detect the Dwellers</h1>
-      <p class="lede">A co-op d20 game for the SOC night shift. One situation at a time: pick who’s on point, flip it, and deal with whatever’s there. What you beat doesn’t stay beaten. Keep everyone breathing to the end of the feed, then face the boss.</p>
+      <p class="lede">A co-op dice game on the SOC night shift. Threats show up one at a time, and you roll to put them down. What you beat can come back. Keep everyone standing to the end of the shift, then take on the boss.</p>
       ${board ? `<div class="lbmini"><h2 class="sech">Leaderboard · ${esc(D.modes[UI.mode].label)}</h2>${board}</div>` : ''}</section>
     <section class="setup panel" aria-labelledby="setup-h"><h2 class="sr" id="setup-h">Set up your shift</h2>
       <h2 class="sech">Mode</h2><div class="seg" role="group" aria-label="Mode">${modes}</div><p class="body-s">${esc(cap1(D.modes[UI.mode].sub))}${UI.mode === 'intro' ? '. Tips walk you through it.' : '.'}</p>${diffs}
       <h2 class="sech" id="crew-h">${solo ? 'Your analyst' : `Crew · ${n} of 4`}</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>${more}
       <div class="field"><label class="sech" for="team">Crew name</label><input id="team" maxlength="24" autocomplete="off" value="${esc(UI.team)}" placeholder="Night Shift Six"></div>
       <div class="startbar"><p class="meta">${n ? `${n === 1 ? `Solo · ${hpFor()} HP` : `${n} players · ${hpFor()} HP each`} · 0 HP ends the shift` : 'Pick an analyst for each player'}</p>
-        <button class="btn p w big" type="button" data-a="start" data-k="start" data-primary ${n ? '' : 'disabled'}>Jack in</button></div></section>
+        <button class="btn p w big" type="button" data-a="start" data-k="start" data-primary ${n ? '' : 'disabled'}>Clock in</button></div></section>
   </div></div>`;
+}
+
+// Damage as the engine will deal it, with the printed number and the reason when they differ: "9 · 7 +2 until 2 hits".
+function dmgStat(m) {
+  const v = E.dmgOf(G, m), d = v - m.dmg; if (!d) return `${v}`;
+  const why = m.kind === 'boss' && m.id === 'wyrm' ? `${m.dmg} +${d} until 2 hits` : `${m.dmg} +${d} ${m.abilityName}`;
+  return `${v}<span class="why"><span class="sr"> (</span>${esc(why)}<span class="sr">)</span></span>`;
 }
 
 function mobHTML(m, ko) {
   const key = 'm' + m.uid + '.' + m.back, fresh = ko || UI.seen.has(key) ? '' : 'fresh'; if (!ko) UI.seen.add(key);
-  const pips = Array.from({ length: m.hits }, (_, i) => `<i class="${i < m.left ? '' : 'gone'}"></i>`).join('');
+  const boss = m.kind === 'boss';
+  const pips = Array.from({ length: m.hits }, (_, i) => `<i class="${!ko && i < m.left ? '' : 'gone'}"></i>`).join('');
   const d = !ko && UI.sel !== null ? G.dice[UI.sel] : null, ok = d && E.beats(G, d, m);
-  const btn = ok ? `<button class="btn p w" type="button" data-a="hit" data-v="${m.uid}" data-k="h${m.uid}">Hit it · ${hitWhy(d, m)}</button>`
+  // Wide screens hit from the card; narrow screens hit from the dock's target buttons, so this one hides there.
+  const btn = ok ? `<button class="btn p w hitb" type="button" data-a="hit" data-v="${m.uid}" data-k="h${m.uid}">Hit it · ${hitWhy(d, m)}</button>`
     : d ? `<p class="nohit">Die ${d.r} can’t hit this one${d.kind === 'crew' && d.r !== 1 && !(m.ability === 'hardened' && d.r < 12) ? ` (${E.total(G, d, m)} vs ${m.def})` : ''}.</p>` : '';
-  const per = m.kind === 'boss' ? '' : `<span class="tag">${m.back > 1 ? `Came back ×${m.back} · ` : ''}${m.routine ? 'Routine · ' : ''}Back on ${m.persist[0]}–${m.persist[1]}</span>`;
+  const right = boss ? `<span class="phud f">${esc(m.domain)}</span>` : `<span class="rng">${m.routine ? 'Routine · ' : ''}Back on ${m.persist[0]}–${m.persist[1]}</span>`;
   const kw = m.kw && D.keywords[m.kw] ? `<svg class="kwi" viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${D.keywords[m.kw].icon}</svg>` : '';
-  const back = !ko && m.kind !== 'boss' && m.back > 0;
-  return `<article class="mob ${m.kind === 'boss' ? 'boss' : ''} ${fresh} ${back ? 'back' : ''} ${ok ? 'can' : ''} ${ko ? 'ko' : ''}" data-mob="${m.uid}" aria-labelledby="mn${m.uid}"><span class="art">${slice(mobArt(m))}${back ? '<span class="bstamp" aria-hidden="true">Back</span>' : ''}</span><div class="bd">
-    <div class="mh"><span class="meta ${m.kind === 'boss' ? 'f' : ''}">${m.kind === 'boss' ? 'Boss · ' : ''}${esc(m.domain)}${m.scouted && E.active(G, 'recon').length ? ' · scouted +5' : ''}</span>${per}</div>
+  const back = !ko && !boss && m.back > 0;
+  return `<article class="mob paper ${boss ? 'boss' : ''} ${fresh} ${back ? 'back' : ''} ${ok ? 'can' : ''} ${ko ? 'ko' : ''}" data-mob="${m.uid}" aria-labelledby="mn${m.uid}"><i class="tab" aria-hidden="true"></i><div class="mob-in">
+    <span class="scr">${slice(mobArt(m))}${back ? `<span class="bstamp" aria-hidden="true">${m.back > 1 ? `Back ×${m.back}` : 'Back'}</span>` : ''}</span><div class="bd">
+    <div class="mh"><span class="ptag">${boss ? 'Boss' : esc(m.domain)}</span>${m.scouted && E.active(G, 'recon').length ? '<span class="phud c">Scouted +5</span>' : ''}${right}</div>
     <h3 class="nm" id="mn${m.uid}">${esc(m.name)}${ko ? '<span class="sr"> is down</span>' : back ? '<span class="sr">, back from the row</span>' : ''}</h3>
-    <dl class="stat"><div class="def"><dt>Defense</dt><dd>${m.def}</dd></div><div><dt>Hits</dt><dd>${ko ? 0 : m.left}/${m.hits}</dd></div><div><dt>Damage</dt><dd>${E.dmgOf(G, m)}</dd></div></dl><div class="pips" aria-hidden="true">${ko ? pips.replace(/<i class="">/g, '<i class="gone">') : pips}</div>
-    <p class="ability">${kw}<b>${esc(m.abilityName)}.</b> ${esc(m.abilityText)}</p>${m.flavor ? `<p class="fl">${esc(m.flavor)}</p>` : ''}${btn}</div></article>`;
+    <dl class="stat"><div class="def"><dt>Defense</dt><dd>${m.def}</dd></div><div><dt>Hits</dt><dd>${ko ? 0 : m.left}/${m.hits}</dd></div><div><dt>Damage</dt><dd>${dmgStat(m)}</dd></div></dl><div class="pips" aria-hidden="true">${pips}</div>
+    <p class="ability">${kw}<b>${esc(m.abilityName)}.</b> ${esc(m.abilityText)}</p>${m.flavor ? `<p class="fl">${esc(m.flavor)}</p>` : ''}${btn}</div></div></article>`;
 }
 
 const hitWhy = (d, m) => isDouble(d) ? `${d.r}: double, two hits` : `${E.total(G, d, m)} vs ${m.def}`;
@@ -266,69 +298,96 @@ function canBurn(c) { const f = G.phase === 'combat', r = f && G.rolled;
   return { triage: r, hunt: f && G.play.some(m => m.kind !== 'boss' && m.left <= 2), contain: f, enrich: r, patch: G.row.length > 0, recover: G.hps.some(h => h < G.max), decoy: r, recon: G.deck.length >= 2 }[c.type] && !G.over; }
 function aimTargets() { if (!UI.aim) return ''; const t = UI.aim.type;
   const opts = t === 'hunt' ? G.play.filter(m => m.kind !== 'boss' && m.left <= 2).map(m => [m.uid, `Finish ${m.name}`]) : t === 'patch' ? G.row.map(m => [m.uid, `Patch out ${m.name}`]) : G.deck.slice(-3).map((c, i) => [i, `Bury ${c.name}`]).reverse();
-  return `<div class="row" style="margin-top:6px">${opts.map(([v, l]) => `<button class="btn s cy" type="button" data-a="aim" data-v="${v}" data-k="aim${v}">${esc(l)}</button>`).join('')}</div>`; }
+  return `<div class="row">${opts.map(([v, l]) => `<button class="btn s cy" type="button" data-a="aim" data-v="${v}" data-k="aim${v}">${esc(l)}</button>`).join('')}</div>`; }
+
+// HP a Recovery burn would really add: the engine heals the lowest analyst 1 at a time and never past max.
+function healGain(n) { const h = G.hps.slice(); let got = 0; for (let i = 0; i < n; i++) { const k = h.indexOf(Math.min(...h)); if (h[k] >= G.max) break; h[k]++; got++; } return got; }
+const lc1 = s => String(s).charAt(0).toLowerCase() + String(s).slice(1);
+// The one kit move that helps most against the boss, read from the kit in hand and the crew's HP. Nothing invented:
+// the card name and burn text come from the kit data, the HP from the engine's own healing rule.
+function bossMove() {
+  const held = G.held[0] || [], at = t => held.findIndex(c => c.type === t);
+  const say1 = (i, eff) => { const c = held[i], now = canBurn(c); return { i, now, text: now ? `Burn your ${c.name} now: ${eff}` : `After you roll, burn your ${c.name}: ${eff}` }; };
+  let i = at('recover'); const gain = i >= 0 ? healGain(6) : 0;
+  if (i >= 0 && gain) return say1(i, `+${gain} HP${G.team.length > 1 ? ' across the crew' : ''}.`);
+  i = at('contain'); if (i >= 0) { const b = G.play.find(m => m.kind === 'boss'); return say1(i, `every mob in play takes 1 hit${b ? `, ${b.name} included` : ''}.`); }
+  for (const t of ['triage', 'enrich', 'decoy']) { i = at(t); if (i >= 0) return say1(i, lc1(held[i].burn)); }
+  i = at('recover'); if (i >= 0) return { i, now: false, text: `Keep your ${held[i].name} for when you’re hurt. Burning it heals up to 6 HP.` };
+  return null;
+}
+
+function kitCard(c, id) {
+  return `<article class="paper cy kcard" ${id ? `id="${id}"` : ''} aria-label="${esc(c.name)}"><i class="tab" aria-hidden="true"></i><span class="scr">${slice(kitArt(c.type))}</span>
+    <div class="mh"><span class="ptag cy">Kit</span><span class="phud c">AI agent</span></div><h3 class="nm">${esc(c.name)}</h3>
+    <p class="part"><span class="phud c">Run it</span>${esc(c.text)}</p><p class="part"><span class="phud a">Or burn it</span>${esc(c.burn)}</p></article>`;
+}
+// The kit is a strip of chips. Burnable chips light up (and pulse in a boss fight); a chip opens its full card.
 function kitTray() {
-  const cap = E.slots(G, 0), groups = [];
+  const cap = E.slots(G, 0), groups = [], boss = G.bossIn && G.phase === 'combat';
   G.held[0].forEach((c, i) => { const g = groups.find(x => x.c.type === c.type); if (g) g.n++; else groups.push({ c, i, n: 1 }); });
-  const cards = groups.map(({ c, i, n }) => {
-    const can = canBurn(c), aiming = UI.aim && UI.aim.i === i, open = can || aiming || UI.kitOpen.has(c.type);
-    return `<div class="kitc ${can ? 'live' : ''}"><span class="art">${slice(kitArt(c.type))}</span><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h4>${esc(c.name)}${n > 1 ? `<span class="x" aria-label="${n} copies">×${n}</span>` : ''}</h4>
-      <p class="kt"><b class="kl c">Agent.</b> ${esc(c.text)}</p>${open ? `<p class="kb"><b class="kl f">Burn it.</b> ${esc(c.burn)}</p>` : ''}
-      <div class="row">${can || aiming ? `<button class="btn s ${aiming ? '' : 'cy'}" type="button" data-a="burn" data-v="${i}" data-k="b${c.type}">${aiming ? 'Cancel' : 'Burn it'}</button>` : `<button class="lnk" type="button" data-a="kitx" data-v="${c.type}" data-k="kx${c.type}" aria-expanded="${open}">${open ? 'Less' : 'Burn effect'}</button>`}</div>${aiming ? aimTargets() : ''}</div></div>`; }).join('');
-  return `<section class="sec" style="display:flex;flex-direction:column;gap:8px" aria-labelledby="kit-h"><h2 class="sech" id="kit-h">Crew kit · ${G.held[0].length}/${cap}</h2>${cards || '<p class="empty">No kit yet. Win a fight to draw one.</p>'}${aiOnUI() ? '<p class="meta f">The Rogue AI has shut your agents down. You can still burn them.</p>' : ''}</section>`;
+  const chips = groups.map(({ c, i, n }) => {
+    const can = canBurn(c), aiming = UI.aim && UI.aim.i === i, open = UI.kitOpen.has(c.type);
+    return `<li class="kchip ${can ? 'live' : ''} ${can && boss ? 'urge' : ''}"><button type="button" class="kname" data-a="kitx" data-v="${c.type}" data-k="kx${c.type}" aria-expanded="${open}" ${open ? `aria-controls="kd-${c.type}"` : ''}><span class="art kart">${slice(kitArt(c.type))}</span><b>${esc(c.name)}</b>${n > 1 ? `<span class="x"><span class="sr">, </span>×${n}<span class="sr"> copies</span></span>` : ''}${ICON.chev}</button>${can || aiming ? `<button class="btn s ${aiming ? '' : boss ? 'p' : 'cy'}" type="button" data-a="burn" data-v="${i}" data-k="b${c.type}">${aiming ? 'Cancel' : 'Burn it'}</button>` : ''}</li>`; }).join('');
+  const cards = groups.filter(g => UI.kitOpen.has(g.c.type)).map(({ c }) => kitCard(c, 'kd-' + c.type)).join('');
+  return `<section class="kit" aria-labelledby="kit-h"><div class="kitbar"><h2 class="sech" id="kit-h">Crew kit · ${G.held[0].length}/${cap}</h2>${chips ? `<ul class="kchips">${chips}</ul>` : '<p class="meta">No kit yet. Win a fight to draw one.</p>'}</div>
+    ${UI.aim ? aimTargets() : ''}${aiOnUI() ? '<p class="meta f">The Rogue AI has shut your agents down. You can still burn them.</p>' : ''}${cards ? `<div class="kdetail">${cards}</div>` : ''}</section>`;
 }
 function aiOnUI() { return G.play.some(m => m.ability === 'takeover' || (m.kind === 'boss' && m.id === 'ai')); }
 
-function persistBanner() { const p = G.persist; if (!p || !p.pre) return '';
-  return `<div class="panel prompt pbanner ${p.back.length ? 'hot' : ''}" role="status"><div class="d20 ${p.back.length ? '' : 'cy'}" data-roll="${p.r}"><span class="sr">Persist roll </span><span class="dv" aria-hidden="true">${p.r}</span><span class="sr">${p.r}</span></div><div style="flex:1 1 240px"><span class="meta ${p.back.length ? 'f' : 'c'}">Persist roll with the flip</span><p style="margin-top:2px">${p.back.length ? `${esc(listOf(p.back))} came back from the row and hit everyone on the way in. ${p.back.length > 1 ? 'Each needs' : 'It needs'} just one hit.` : 'Nothing in the row matched. Quiet.'}</p></div></div>`; }
+// The persist roll: one line. A comeback is told here and by the BACK stamp on its card, nowhere else on the board.
+function persistBanner() { const p = G.persist; if (!p || !p.pre) return ''; const hot = p.back.length, many = p.back.length > 1;
+  const later = G.phase === 'sit' && G.pendingBack.length ? ` You fight ${many ? 'them' : 'it'} after this situation.` : '';
+  return `<div class="panel prompt pbanner ${hot ? 'hot' : ''}" role="status"><div class="d20 ${hot ? '' : 'q'}" data-roll="${p.r}"><span class="sr">Row roll </span><span class="dv" aria-hidden="true">${p.r}</span><span class="sr">${p.r}.</span></div><p style="flex:1 1 240px">${hot ? `${esc(listOf(p.back))} came back and hit everyone on the way in. ${many ? 'Each goes' : 'It goes'} down in one hit.${later}` : 'Row roll: nothing matched. The row stays quiet.'}</p></div>`; }
 
 function tipHTML() {
   if (G.over) return '';
   const fight = G.phase === 'combat', dbl = fight && G.rolled && G.dice.some(d => d.kind === 'crew' && !d.used && isDouble(d));
+  const mv = fight && G.bossIn ? bossMove() : null;
   if (G.mode === 'intro' && D.intro) { const T = D.intro.tips;
     // Situation 1 teaches one step at a time; the doubles rule waits for a later fight.
     const first = G.sit === 1 && fight && !G.bossIn ? (!G.rolled ? (G.team.length > 1 ? FIRST_FIGHT.pre : `Hit Roll. Playing solo, you roll ${D.soloDice || 3} dice.`) : liveCount() ? FIRST_FIGHT.live : FIRST_FIGHT.spent) : null;
-    const t = G.phase === 'loot' ? T.loot : G.bossIn ? T.boss : G.phase === 'point' ? (G.sit === 0 ? (G.team.length > 1 ? 'Pick who’s on point, then flip the first situation.' : 'Flip the first situation.') : null) : first || (dbl ? TIPS.double : T[String(G.sit)]);
-    return t ? `<div class="tip" role="note"><p>${esc(t)}</p></div>` : ''; }
+    const t = G.phase === 'loot' ? T.loot : G.bossIn ? (mv ? mv.text : T.boss) : G.phase === 'point' ? (G.sit === 0 ? (G.team.length > 1 ? 'Pick who’s on point, then flip the first situation.' : 'Flip the first situation.') : null) : first || (dbl ? TIPS.double : T[String(G.sit)]);
+    return t ? `<div class="tip ${mv ? 'urge' : ''}" role="note"><p>${esc(t)}</p></div>` : ''; }
   const hurt = G.team.length > 1 && G.hps.some(h => h < G.max);
   const want = G.phase === 'loot' ? ['loot'] : G.phase === 'point' ? ['point', 'row'].filter(k => k === 'row' ? G.row.length : G.team.length > 1) : fight ? (G.bossIn ? ['boss'] : []).concat(G.rolled ? (liveCount() ? ['assign'].concat(dbl ? ['double'] : []) : ['end']) : ['roll'].concat(hurt ? ['rest'] : [])) : [];
   const k = want.find(x => !tipsSeen.has(x)); if (!k) return '';
-  const txt = k === 'roll' && G.team.length === 1 ? `Roll. Playing solo, you get ${D.soloDice || 3} dice a round.` : TIPS[k];
+  const txt = k === 'roll' && G.team.length === 1 ? `Roll. Playing solo, you get ${D.soloDice || 3} dice a round.` : k === 'boss' && mv ? mv.text : TIPS[k];
   return `<div class="tip" role="note"><p>${esc(txt)}</p><button class="btn s cy" type="button" data-a="tipx" data-v="${k}" data-k="tip${k}">Got it</button></div>`;
 }
 
 function sitResult() { const r = G.lastSit; if (!r || G.phase === 'combat') return '';
   return `<div class="panel prompt" role="status"><div><span class="meta c">${esc(r.name)}</span><p style="margin-top:2px">${r.choice ? `You chose: ${esc(r.choice)}.` : r.rolls.length ? r.rolls.map(x => `${esc(nm(x.k))} rolled ${x.t}: ${x.ok ? 'pass' : 'fail'}`).join(' · ') : 'Resolved.'}</p></div></div>`; }
 
+// Crew HP as compact readouts: name, HP, a bar whose striped end is the damage coming in, and one status line.
 function crewHTML() {
   const fight = G.phase === 'combat', by = fight ? E.incomingBy(G) : null, L = G.lastRound;
-  return `<h2 class="sech">${G.team.length > 1 ? 'Your crew' : 'You'}</h2>` + G.team.map((w, k) => { const c = E.cls(w), on = G.point === k && G.team.length > 1, low = G.hps[k] <= G.max * .25;
-    let inc = '';
+  return G.team.map((w, k) => { const c = E.cls(w), on = G.point === k && G.team.length > 1, hp = G.hps[k], low = hp <= G.max * .25;
+    let inc = '', incN = 0;
     if (fight) {
-      const list = by[k], sum = list.reduce((s, x) => s + x.d, 0);
-      inc = k === G.rest ? `<p class="inc safe"><b>Off-shift</b><span class="src"> · no damage, +1 HP</span></p>` : !sum ? `<p class="inc safe"><b>Incoming&nbsp;0</b>${G.blocks[k] ? ' · blocking' : G.decoyRound && on ? ' · decoyed' : ''}</p>`
-        : `<p class="inc"><b>Incoming&nbsp;−${sum}</b><span class="src"> · ${list.map(x => glue(x.m.name, x.d)).join(' · ')}</span></p>`;
+      const list = by[k]; incN = k === G.rest ? 0 : list.reduce((s, x) => s + x.d, 0);
+      inc = k === G.rest ? `<p class="inc safe"><b>Off-shift</b> · no damage</p>` : !incN ? `<p class="inc safe"><b>Incoming&nbsp;0</b>${G.blocks[k] ? ' · blocking' : G.decoyRound && on ? ' · decoyed' : ''}</p>`
+        : `<p class="inc">Incoming <b class="num">−${incN}</b><span class="sr"> from ${list.map(x => `${esc(x.m.name)} ${x.d}`).join(', ')}</span></p>`;
     }
     if (L && !L.ended && L.by && (!fight || !G.rolled)) {
       const got = L.by[k] || [], sum = L.inc[k];
-      inc += `<p class="inc ${sum ? '' : 'safe'}">Round ${L.round}: ${k === L.rest ? '<b>off-shift</b>' : sum ? `<b>took&nbsp;−${sum}</b><span class="src"> · ${got.map(x => glue(x.name, x.d)).join(' · ')}</span>` : L.blocks[k] ? '<b>blocked</b>' : L.decoy && k === G.point ? '<b>decoyed</b>' : '<b>not targeted</b>'}</p>`;
+      inc = `<p class="inc ${sum ? '' : 'safe'}">Round ${L.round}: ${k === L.rest ? '<b>off-shift</b>' : sum ? `<b>took&nbsp;−${sum}</b><span class="sr"> from ${got.map(x => `${esc(x.name)} ${x.d}`).join(', ')}</span>` : L.blocks[k] ? '<b>blocked</b>' : L.decoy && k === G.point ? '<b>decoyed</b>' : '<b>not targeted</b>'}</p>`;
     }
-    // The perk lives in the intro and in this tooltip; the dice show it in play as a +bonus.
-    return `<article class="pc ${on ? 'on' : ''}" data-hp="${k}" aria-labelledby="pc${k}"><span class="art">${slice(ART[w])}</span><div class="bd"><div class="pc-h"><h3 class="nm" id="pc${k}" title="${esc(c.perk)}">${esc(c.name)}</h3>${on ? `<span class="badge on">${ICON.check}On point</span>` : ''}</div>
-      <div class="hpline"><b class="num">${G.hps[k]}</b><span class="of">/ ${G.max} HP</span></div><div class="hpbar ${low ? 'low' : ''}" role="img" aria-label="${G.hps[k]} of ${G.max} HP"><i style="width:${Math.round(G.hps[k] / G.max * 1000) / 10}%"></i></div>${inc}</div></article>`; }).join('');
+    const pct = n => Math.round(n / G.max * 1000) / 10, cut = Math.min(incN, hp);
+    return `<article class="pc ${on ? 'on' : ''}" data-hp="${k}" aria-labelledby="pc${k}" title="${esc(c.perk)}"><div class="pc-h">${on ? '<i class="dot" aria-hidden="true"></i>' : ''}<h3 class="nm" id="pc${k}">${esc(c.name)}${on ? '<span class="sr">, on point</span>' : ''}</h3><span class="hpn"><b class="num">${hp}</b><span class="of">/${G.max}</span></span></div>
+      <div class="hpbar ${low ? 'low' : ''}" role="img" aria-label="${hp} of ${G.max} HP${incN ? `, ${incN} incoming` : ''}"><i style="width:${pct(hp)}%"></i>${cut ? `<i class="inci" style="left:${pct(hp - cut)}%;width:${pct(cut)}%"></i>` : ''}</div>${inc}</article>`; }).join('');
 }
 
 function dockHTML() {
-  const kb = k => `<kbd aria-hidden="true">${k}</kbd>`;
+  const kb = k => `<kbd aria-hidden="true">${k}</kbd>`, solo = G.phase === 'combat' ? '' : ' solo';
   const onp = G.team.length > 1 ? ` · ${esc(nm(G.point))} on point` : '';
-  if (G.phase === 'point') return `<div class="dock"><div class="acts"><button class="btn p big grow" type="button" data-a="flip" data-k="flip" data-primary aria-keyshortcuts="F">${G.deck.length ? (G.row.length ? `Flip it and roll the row${onp}` : `Flip it${onp}`) : 'Face the boss'} ${kb('F')}</button></div></div>`;
+  if (G.phase === 'point') return `<div class="dock${solo}"><div class="acts"><button class="btn p big grow" type="button" data-a="flip" data-k="flip" data-primary aria-keyshortcuts="F">${G.deck.length ? (G.row.length ? `Flip it and roll the row${onp}` : `Flip it${onp}`) : 'Face the boss'} ${kb('F')}</button></div></div>`;
   if (G.phase === 'sit') { const c = G.cur;
     const btns = c.type === 'choice' ? c.opts.map((o, i) => `<button class="btn ${i ? '' : 'p'} grow" type="button" data-a="sit" data-v="${i}" data-k="s${i}" ${i ? '' : 'data-primary'}>${esc(o.label)}</button>`).join('')
       : `<button class="btn p big grow" type="button" data-a="sit" data-v="0" data-k="s0" data-primary>${c.type === 'challenge' ? (c.who === 'each' ? 'Everyone rolls' : `${esc(nm(G.point))} rolls`) : 'Resolve it'}</button>`;
-    return `<div class="dock"><div class="acts">${btns}</div></div>`; }
+    return `<div class="dock${solo}"><div class="acts">${btns}</div></div>`; }
   if (G.phase === 'loot') { const room = G.held[0].length < E.slots(G, 0);
     const opts = room ? `<button class="btn p big grow" type="button" data-a="take" data-v="0" data-k="t0" data-primary>Add to the crew kit</button>` : G.held[0].map((h, i) => `<button class="btn s" type="button" data-a="take" data-v="0:${i}" data-k="t0${i}">Swap out ${esc(h.name)}</button>`).join('');
-    return `<div class="dock">${room ? '' : '<p class="ask">The kit is full. Swap one out, or leave this card.</p>'}<div class="acts">${opts}<button class="btn" type="button" data-a="take" data-v="x" data-k="tx">Leave it</button></div></div>`; }
+    return `<div class="dock${solo}">${room ? '' : '<p class="ask">The kit is full. Swap one out, or leave this card.</p>'}<div class="acts">${opts}<button class="btn" type="button" data-a="take" data-v="x" data-k="tx">Leave it</button></div></div>`; }
   if (G.phase !== 'combat') return '';
   if (!G.rolled) {
     const offs = G.team.length > 1 ? `<div class="offs"><span class="meta">Off-shift, one a round:</span>${G.team.map((w, k) => `<button class="btn s ${G.rest === k ? 'cy' : ''}" type="button" data-a="rest" data-v="${k}" data-k="r${k}" aria-pressed="${G.rest === k}">${G.rest === k ? ICON.check : ''}${esc(nm(k))}</button>`).join('')}</div>` : '';
@@ -345,26 +404,25 @@ function dockHTML() {
       const cap = UI.sel === i ? (isDouble(d) && d.kind === 'crew' ? 'picked ×2' : 'picked') : d.kind === 'agent' ? TNAME[d.card.type] + ' agent' : isDouble(d) ? 'double ×2' : d.used ? 'used' : live ? 'ready' : 'no target';
       const why = d.used ? '' : bb ? `, plus ${bb} at best` : '';
       return `<button type="button" class="die ${d.kind === 'agent' ? 'ag' : ''} ${isDouble(d) && d.kind === 'crew' ? 'nat' : ''} ${d.used ? 'used' : ''} ${!d.used && !live ? 'dead' : ''}" data-a="die" data-v="${i}" data-k="die${i}" aria-pressed="${UI.sel === i}" aria-label="${esc(d.kind === 'agent' ? d.card.name : nm(k))} die ${d.r}${why}, ${cap}" ${d.used ? 'disabled' : ''}>${burst && !reduced() ? '<i class="burst" aria-hidden="true"></i>' : ''}${n && n < 10 ? `<kbd aria-hidden="true">${n}</kbd>` : ''}<b>${d.r}${bb ? `<em>+${bb}</em>` : ''}</b><span>${cap}</span></button>`; }).join('')}</div></div>`; }).join('');
-  const n = liveCount(), inc = E.incoming(G);
+  const n = liveCount();
   // Narrow screens: once a die is picked, its targets sit in the dock itself, so a hit never needs a scroll.
   const sd = UI.sel !== null ? G.dice[UI.sel] : null, tg = sd ? G.play.filter(m => E.beats(G, sd, m)) : [];
   const tgts = sd ? `<div class="tgts" role="group" aria-label="Targets for die ${sd.r}">${tg.length ? tg.map(m => `<button class="btn p s" type="button" data-a="hit" data-v="${m.uid}" data-k="th${m.uid}">Hit ${esc(m.name)} · ${isDouble(sd) ? `${sd.r} ×2` : `${E.total(G, sd, m)} vs ${m.def}`}</button>`).join('') : `<p class="meta">Die ${sd.r} can’t hit anything in play.</p>`}</div>` : '';
   const decoy = !G.decoyUsed && E.active(G, 'decoy').length ? `<button class="btn s cy" type="button" data-a="decoy" data-k="dcy">Decoy: ${esc(nm(G.point))} takes no damage</button>` : G.decoyRound ? `<span class="badge">Decoy active: ${esc(nm(G.point))} protected</span>` : '';
   const undo = E.canUndo(G) ? `<button class="btn s" type="button" data-a="undo" data-k="undo" aria-keyshortcuts="U">${ICON.undo}Undo ${kb('U')}</button>` : '';
-  const endBtn = `<button class="btn ${UI.confirmEnd ? 'warn' : n ? '' : 'p'} big grow" type="button" data-a="end" data-k="end" ${n ? '' : 'data-primary'} aria-keyshortcuts="E">${UI.confirmEnd ? 'End anyway · take the hits' : 'End round · take the hits'} ${kb('E')}</button>`;
-  return `<div class="dock" aria-label="Round ${G.round} dice"><div class="dgroups">${groups}</div>${tgts}<p class="inc mobonly">If you end now: ${G.team.length > 1 ? G.team.map((w, k) => `${esc(nm(k))}&nbsp;<b>−${inc[k]}</b>`).join(' · ') : inc[0] ? `<b>−${inc[0]}</b>` : 'no damage'}</p>
-    ${UI.confirmEnd ? `<p class="ask" role="alert">${n} ${n > 1 ? 'dice' : 'die'} can still hit. End the round anyway?</p>` : ''}<div class="acts">${undo}${decoy}${endBtn}</div></div>`;
+  const endBtn = `<button class="btn ${UI.confirmEnd ? 'warn' : n ? '' : 'p'} big" type="button" data-a="end" data-k="end" ${n ? '' : 'data-primary'} aria-keyshortcuts="E">${UI.confirmEnd ? 'End anyway · take the hits' : 'End round · take the hits'} ${kb('E')}</button>`;
+  return `<div class="dock" aria-label="Round ${G.round} dice"><div class="dgroups">${groups}</div>${tgts}
+    ${UI.confirmEnd ? `<p class="ask" role="alert">${pl(n, 'die', 'dice')} can still hit. End the round anyway?</p>` : ''}<div class="acts">${undo}${decoy}${endBtn}</div></div>`;
 }
 
-// The persistence row is always on screen as a strip of chips (name and comeback range), in fights too.
+// The persistence row is always on screen as a strip of amber chips (name and comeback range), in fights too.
 function rowHTML() {
-  const fight = G.phase === 'combat', p = G.persist, justBack = p && p.back.length ? p.back : [];
-  const chips = G.row.map(m => `<li class="chip" data-chip="${m.uid}"><b>${esc(m.name)}</b><span class="meta">Back on ${m.persist[0]}–${m.persist[1]}</span></li>`).join('');
-  const note = !G.row.length ? (justBack.length ? `Empty: ${esc(listOf(justBack))} came back from the row this flip.` : fight ? 'Empty for now.' : 'Empty, for now. Beaten mobs land here.')
-    : justBack.length ? `${esc(listOf(justBack))} came back this flip. Every flip rolls for the rest.` : 'Every flip rolls a d20 for these.';
-  const plog = fight ? '' : G.plog.slice(-6).reverse().map(x => `<p><span class="meta">${x.sit === 'Boss' ? 'Boss' : 'S' + x.sit}${x.why ? ' · ' + x.why : ''}</span> rolled <b class="num">${x.r}</b> → ${x.back.length ? esc(listOf(x.back)) + ' came back' : 'quiet'}</p>`).join('');
+  const fight = G.phase === 'combat';
+  const chips = G.row.map(m => `<li class="chip" data-chip="${m.uid}"><b>${esc(m.name)}</b><span class="rg">Back on ${m.persist[0]}–${m.persist[1]}</span></li>`).join('');
+  const note = !G.row.length ? (fight ? 'Empty.' : 'Empty, for now. Beaten mobs land here.') : fight ? '' : 'Every flip rolls a d20 for these.';
+  const plog = fight ? '' : G.plog.slice(-6).reverse().map(x => `<p><span class="t">${x.sit === 'Boss' ? 'Boss' : 'S' + x.sit}${x.why ? ' · ' + esc(x.why) : ''}</span>rolled ${x.r} → ${x.back.length ? esc(listOf(x.back)) + ' came back' : 'quiet'}</p>`).join('');
   return `<section class="rowstrip ${fight ? 'infight' : ''}" aria-labelledby="row-h" data-rowsum><h2 class="sech a" id="row-h">Persistence row${G.row.length ? ` · ${G.row.length}` : ''}</h2>
-    ${chips ? `<ul class="prow">${chips}</ul>` : ''}<p class="meta">${note}</p>${plog ? `<div class="log" style="max-height:140px">${plog}</div>` : ''}</section>`;
+    ${chips ? `<ul class="prow">${chips}</ul>` : ''}${note ? `<p class="meta">${note}</p>` : ''}${plog ? `<div class="log">${plog}</div>` : ''}</section>`;
 }
 
 function vGame() {
@@ -376,35 +434,38 @@ function vGame() {
     const crew = G.team.length > 1;
     main += `<section class="panel pad pointp" aria-labelledby="pt-h"><span class="meta c">${G.deck.length ? `Next: situation ${G.sit + 1} of ${G.total}` : 'The feed is empty'}</span><h2 class="nm" id="pt-h">${G.deck.length ? (crew ? 'Who is on point?' : 'Flip the next situation') : `The boss is waiting${G.row.length ? `, and it rolls for the ${G.row.length} in the row` : ''}`}</h2>
       ${pk ? `<p class="meta c">Recon: next up is ${esc(pk.name)}${pk.kind === 'mob' ? ' (a mob: +5 for the whole fight)' : ''}</p>` : ''}
-      ${crew ? `<div class="seg" role="group" aria-label="On point" style="--n:${G.team.length}">${G.team.map((w, k) => `<button class="opt" type="button" data-a="point" data-v="${k}" data-k="pt${k}" aria-pressed="${G.point === k}"><b>${esc(nm(k))}</b><span class="meta">${G.point === k ? 'On point' : `${G.hps[k]} HP`}</span></button>`).join('')}</div>` : ''}</section>` + rowHTML();
+      ${crew ? `<div class="seg" role="group" aria-label="On point" style="--n:${G.team.length}">${G.team.map((w, k) => `<button class="opt" type="button" data-a="point" data-v="${k}" data-k="pt${k}" aria-pressed="${G.point === k}"><b>${esc(nm(k))}</b><span class="meta">${G.point === k ? 'On point' : `${G.hps[k]} HP`}</span></button>`).join('')}</div>` : ''}</section>` + rowHTML() + dockHTML() + kitTray();
   } else if (G.phase === 'sit') {
-    const c = G.cur; main += persistBanner(); if (G.pendingBack.length) main += `<p class="meta f">After this: fight ${esc(listOf(G.pendingBack.map(x => x.name)))}, back from the row.</p>`;
-    main += `<article class="panel sitcard" aria-labelledby="sit-h"><span class="art">${slice(sitArt(c))}</span><div class="bd"><span class="meta c">Situation ${G.sit}${G.team.length > 1 ? ` · ${esc(nm(G.point))} on point` : ''}</span><h2 class="nm" id="sit-h">${esc(c.name)}</h2><p class="fl">${esc(c.text)}</p><p class="rule">${esc(c.rule)}</p></div></article>`;
+    const c = G.cur, kind = c.type === 'challenge' ? 'Challenge' : c.type === 'choice' ? 'Choice' : 'Event';
+    main += persistBanner();
+    main += `<article class="paper cy wide" aria-labelledby="sit-h"><i class="tab" aria-hidden="true"></i><span class="scr">${slice(sitArt(c))}</span><div class="bd"><div class="mh"><span class="ptag cy">Situation ${G.sit}</span><span class="phud c">${kind}${G.team.length > 1 ? ` · ${esc(nm(G.point))} on point` : ''}</span></div><h2 class="nm" id="sit-h">${esc(c.name)}</h2><p class="txt">${esc(c.text)}</p><p class="rulebox">${esc(c.rule)}</p></div></article>` + dockHTML();
   } else if (G.phase === 'loot') {
     const c = G.loot[0];
-    main += `<article class="panel sitcard c" aria-labelledby="loot-h"><span class="art">${slice(c.kind === 'agent' ? kitArt(c.type) : pickArt('gear', 'event'))}</span><div class="bd"><span class="meta c">Kit drop${G.loot.length > 1 ? ` · ${G.loot.length} cards` : ''}</span><h2 class="nm" id="loot-h">${esc(c.name)}</h2><p><b class="kl c">Agent.</b> ${esc(c.text)}</p><p><b class="kl f">Burn it.</b> ${esc(c.burn)}</p>${G.team.length > 1 ? `<p class="body-s">${esc(nm(G.point))} is on point and takes the draw for the crew.</p>` : ''}</div></article>`;
+    main += `<article class="paper cy wide" aria-labelledby="loot-h"><i class="tab" aria-hidden="true"></i><span class="scr">${slice(c.kind === 'agent' ? kitArt(c.type) : pickArt('gear', 'event'))}</span><div class="bd"><div class="mh"><span class="ptag cy">Kit drop${G.loot.length > 1 ? ` · ${G.loot.length} cards` : ''}</span><span class="phud c">AI agent</span></div><h2 class="nm" id="loot-h" style="color:var(--cyt)">${esc(c.name)}</h2><p class="part"><span class="phud c">Run it</span>${esc(c.text)}</p><p class="part"><span class="phud a">Or burn it</span>${esc(c.burn)}</p>${G.team.length > 1 ? `<p class="txt">${esc(nm(G.point))} is on point and takes the draw for the crew.</p>` : ''}</div></article>` + dockHTML() + kitTray();
   } else if (G.phase === 'combat') {
     if (!G.rolled && G.round === 1) main += persistBanner();
-    const mobs = G.play.map(m => mobHTML(m)).join('') + UI.ko.map(m => mobHTML(m, true)).join('');
-    main += rowHTML() + `<section aria-labelledby="fight-h" style="display:flex;flex-direction:column;gap:10px"><h2 class="sech f" id="fight-h">${G.bossIn ? 'Boss fight' : `Situation ${G.sit}`} · round ${G.round}${G.team.length > 1 ? ` · ${esc(nm(G.point))} on point` : ''}</h2><div class="inplay">${mobs}</div></section>`;
-  } else main += rowHTML();
-  main += dockHTML();
-  const logs = G.log.slice(-14).reverse().map(l => `<p><span class="meta">S${l.r}</span> ${esc(l.t)}</p>`).join('');
+    const all = G.play.length + UI.ko.length, mobs = G.play.map(m => mobHTML(m)).join('') + UI.ko.map(m => mobHTML(m, true)).join('');
+    main += rowHTML() + `<section class="table" aria-labelledby="fight-h"><div class="fhead"><h2 class="sech f" id="fight-h">${G.bossIn ? 'Boss fight' : `Situation ${G.sit}`} · round ${G.round}${G.team.length > 1 ? ` · ${esc(nm(G.point))} on point` : ''}</h2>${kitTray()}</div><div class="inplay ${all === 1 ? 'solo' : ''}">${mobs}</div>${dockHTML()}</section>`;
+  } else main += rowHTML() + dockHTML();
+  const logs = G.log.slice(-40).reverse().map(l => `<p><span class="t">S${l.r}</span>${esc(l.t)}</p>`).join('');
   const total = G.total, segs = Array.from({ length: total }, (_, i) => `<i class="${i < G.sit - (G.bossIn ? 0 : 1) ? 'done' : i === G.sit - 1 && !G.bossIn ? 'now' : ''}"></i>`).join('') + `<i class="boss ${G.bossIn ? 'now' : ''}"></i>`;
   const quit = UI.quitAsk ? `<div class="quitask" role="alert"><span class="body-s" style="color:var(--ink)">Quit this shift? It won’t be scored.</span><button class="btn s warn" type="button" data-a="quity" data-k="quity">Quit</button><button class="btn s" type="button" data-a="quitn" data-k="quitn">Keep playing</button></div>`
-    : `<button class="btn s" type="button" data-a="quit" data-k="quit">Quit shift</button>`;
-  return `<div class="wrap"><header class="top"><span class="brand">Detect the Dwellers</span><div class="feed"><span class="meta c">${G.bossIn ? 'Boss fight' : G.sit ? `Situation ${G.sit} of ${total}` : `${total} situations, then the boss`}</span><span class="feedbar" aria-hidden="true">${segs}</span></div><span class="crewname meta">${esc(UI.team || 'Night shift')}</span>${quit}</header>
-    <div class="board"><section class="crew" aria-label="Crew" style="--n:${G.team.length > 3 ? 2 : G.team.length}">${crewHTML()}</section><main class="main">${main}</main>
-    <aside class="side">${kitTray()}<section aria-labelledby="log-h" style="display:flex;flex-direction:column;gap:6px"><h2 class="sech" id="log-h">Event log · kit deck ${G.kit.length}</h2><div class="log">${logs}</div></section>
-    ${keysUsed ? '' : '<p class="keys"><kbd>R</kbd>roll · <kbd>1</kbd>–<kbd>9</kbd>pick a die · <kbd>U</kbd>undo · <kbd>E</kbd>end round · <kbd>F</kbd>flip</p>'}</aside></div></div>${UI.reveal ? revealHTML() : ''}`;
+    : `<button class="btn s" type="button" data-a="quit" data-k="quit">Quit</button>`;
+  const logp = UI.logOpen ? `<aside class="logp" id="logp" aria-labelledby="log-h"><div class="lh"><h2 class="sech" id="log-h">Event log · kit deck ${G.kit.length}</h2><button class="btn s" type="button" id="logx" data-a="log" data-k="logx">Close</button></div><div class="log">${logs}</div>${keysUsed ? '' : '<p class="keys"><kbd>R</kbd>roll · <kbd>1</kbd>–<kbd>9</kbd>pick a die · <kbd>U</kbd>undo · <kbd>E</kbd>end round · <kbd>F</kbd>flip</p>'}</aside>` : '';
+  return `<div class="wrap game"><div class="gtop"><header class="top"><span class="brand">Detect the Dwellers</span><div class="feed"><span class="meta c">${G.bossIn ? 'Boss fight' : G.sit ? `Situation ${G.sit} of ${total}` : `${total} situations, then the boss`}</span><span class="feedbar" aria-hidden="true">${segs}</span></div>
+      <div class="tbtns"><button class="btn s" type="button" id="logb" data-a="log" data-k="logb" aria-expanded="${UI.logOpen}" aria-controls="logp">Log</button>${quit}</div></header>
+    <section class="crew" aria-labelledby="crew-h" style="--n:${G.team.length > 3 ? 2 : G.team.length}"><h2 class="sr" id="crew-h">${G.team.length > 1 ? 'Your crew' : 'You'}</h2>${crewHTML()}</section></div>
+    <main class="main">${main}</main></div>${logp}${UI.reveal ? revealHTML() : ''}`;
 }
 
 function revealHTML() {
-  const b = G.play.find(m => m.kind === 'boss') || G.boss, more = G.play.filter(m => m.kind !== 'boss');
-  return `<div class="reveal" role="dialog" aria-modal="true" aria-labelledby="rv-h"><div class="rv"><span class="art">${slice(bossArt(b.id))}</span><div class="bd"><span class="meta f">The feed is empty. The boss is here.</span><h2 class="nm" id="rv-h">${esc(b.name)}</h2>
-    <dl class="stat"><div class="def"><dt>Defense</dt><dd>${b.def}</dd></div><div><dt>Hits</dt><dd>${b.hits}</dd></div><div><dt>Damage</dt><dd>${E.dmgOf(G, b)}</dd></div></dl>
-    <p class="ability"><b>${esc(b.abilityName)}.</b> ${esc(b.abilityText)}</p>${more.length ? `<p class="meta f">With ${esc(listOf(more.map(m => m.name)))}, back from the row.</p>` : ''}<p class="body-s">Agents can’t touch a boss. Burn what you’ve got.</p>
-    <button class="btn p big w" type="button" data-a="fight" data-k="fight">Fight</button></div></div></div>`;
+  const b = G.play.find(m => m.kind === 'boss') || G.boss, more = G.play.filter(m => m.kind !== 'boss'), mv = bossMove();
+  const burn = mv && mv.now ? `<button class="btn pp w" type="button" data-a="burn" data-v="${mv.i}" data-k="rvburn">Burn the ${esc(G.held[0][mv.i].name)} first</button>` : '';
+  return `<div class="reveal" role="dialog" aria-modal="true" aria-labelledby="rv-h" aria-describedby="rv-mv"><div class="rv paper"><i class="tab" aria-hidden="true"></i><span class="scr">${slice(bossArt(b.id))}</span><div class="bd"><div class="mh"><span class="ptag">Boss</span><span class="phud f">The feed is empty</span></div><h2 class="nm" id="rv-h">${esc(b.name)}</h2>
+    <dl class="stat"><div class="def"><dt>Defense</dt><dd>${b.def}</dd></div><div><dt>Hits</dt><dd>${b.left != null ? b.left : b.hits}</dd></div><div><dt>Damage</dt><dd>${G.play.includes(b) ? dmgStat(b) : b.dmg}</dd></div></dl>
+    <p class="ability"><b>${esc(b.abilityName)}.</b> ${esc(b.abilityText)}</p>${more.length ? `<p class="phud a">With ${esc(listOf(more.map(m => m.name)))}, back from the row.</p>` : ''}
+    ${mv ? `<div class="move" id="rv-mv"><span class="phud c">Your move</span><p>${esc(mv.text)}</p></div>` : `<p class="txt" id="rv-mv">Agents can’t touch a boss. Every die you have goes on it.</p>`}
+    <div class="acts"><button class="btn p big w" type="button" data-a="fight" data-k="fight">Fight</button>${burn}</div></div></div></div>`;
 }
 
 // One concrete line for a loss, read from the final state: an agent never burned, off-shift healing never used,
@@ -423,12 +484,12 @@ function vEnd() {
   const who = G.dropped != null ? nm(G.dropped) : 'crew', killers = G.downBy || [];
   const lastBy = G.lastRound && G.lastRound.by && G.dropped != null ? G.lastRound.by[G.dropped] : null;
   const fromRound = lastBy && lastBy.length && killers.every(n => lastBy.some(x => x.name === n));
-  const cause = G.win ? '' : fromRound ? `The ${esc(who)} went down in round ${G.lastRound.round}: ${lastBy.map((x, i) => `${esc(x.name)} hit for <b class="num">${x.d}</b>`).join(', ')}.` : `The ${esc(who)} went down to ${esc(listOf(killers.length ? killers : ['the mobs']))}.`;
+  const cause = G.win ? '' : fromRound ? `The ${esc(who)} went down in round ${G.lastRound.round}: ${lastBy.map(x => `${esc(x.name)} hit for <b class="num">${x.d}</b>`).join(', ')}.` : `The ${esc(who)} went down to ${esc(listOf(killers.length ? killers : ['the mobs']))}.`;
   const killerMob = [...D.mobs, ...D.bosses].find(m => killers.includes(m.name));
   const artSvg = G.win ? bossArt(G.boss.id) : killerMob ? (D.bosses.includes(killerMob) ? bossArt(killerMob.id) : ART[killerMob.id]) : pickArt('hero', 'event');
-  const roster = G.team.map((w, k) => `<li class="${!G.win && k === G.dropped ? 'down' : ''}"><span class="art">${slice(ART[w])}</span><span><span class="nm">${esc(E.cls(w).name)}</span><br><span class="meta">${G.hps[k]}/${G.max} HP</span></span></li>`).join('');
+  const roster = G.team.map((w, k) => `<li class="${!G.win && k === G.dropped ? 'down' : ''}"><span class="art">${crop(ART[w], THUMB[w] && THUMB[w].replace(/ \d+ \d+$/, m => ' 90 90'))}</span><span><span class="nm">${esc(E.cls(w).name)}</span><br><span class="num">${G.hps[k]}/${G.max}</span> <span class="meta">HP</span></span></li>`).join('');
   const cta = BOOTH_CTA.url ? `<a class="cta" href="${esc(BOOTH_CTA.url)}" target="_blank" rel="noopener">${esc(BOOTH_CTA.text)}</a>` : `<p class="cta">${esc(BOOTH_CTA.text)}</p>`;
-  const help = G.win ? '' : helped();
+  const help = G.win ? '' : helped(), ah = G.stats.agentHits, ch = G.stats.crewHits;
   return `<div class="wrap"><div class="end">
     <article class="endcard ${G.win ? 'win' : 'loss'}" aria-labelledby="end-h"><div class="ec-art"><span class="art">${slice(artSvg)}</span><span class="stamp" aria-hidden="true">${G.win ? 'Contained' : 'Flatlined'}</span></div>
       <div class="ec-bd"><p class="meta ${G.win ? 'c' : 'f'}">${G.win ? 'Shift survived' : 'Shift lost'} · ${esc(D.modes[UI.mode].label)}${UI.mode === 'full' ? ' · ' + esc(UI.diff) : ''} · ${G.team.length}p</p>
@@ -436,9 +497,11 @@ function vEnd() {
         ${G.win ? `<p class="lede">${esc(G.boss.name)} is contained. ${esc(line)}</p>` : `<p class="cause">${cause}</p>${help ? `<p class="helped"><b>What would have helped.</b> ${esc(help)}</p>` : ''}<p class="lede">${esc(line)}</p>`}
         <ul class="roster" aria-label="Crew">${roster}</ul>
         <div class="stats"><div><b>${G.sit}</b><span class="meta">Situations</span></div><div><b>${G.stats.rounds}</b><span class="meta">Rounds</span></div><div><b>${G.stats.back}</b><span class="meta">Comebacks</span></div><div><b>${Math.min(...G.hps)}</b><span class="meta">Lowest HP</span></div></div>
-        <p class="body-s">Agents landed <b class="num" style="color:var(--cy)">${G.stats.agentHits}</b> hits. The crew landed <b class="num" style="color:var(--ink)">${G.stats.crewHits}</b>.</p>
+        <p class="body-s">Agents landed <b class="num" style="color:var(--cy)">${ah}</b> ${ah === 1 ? 'hit' : 'hits'}. The crew landed <b class="num" style="color:var(--ink)">${ch}</b>.</p>
         <p class="sig">${esc(UI.team || 'Night shift')} · Detect the Dwellers · Binary Defense</p></div></article>
-    <div style="display:flex;flex-direction:column;gap:18px">${cta}<div class="row"><button class="btn p big" type="button" data-a="again" data-k="again" data-primary style="min-width:190px">Run it back</button><button class="btn big" type="button" data-a="new" data-k="new">New crew</button></div>
-      <section class="panel pad" aria-labelledby="lb-h"><h2 class="sech" id="lb-h">Leaderboard · ${esc(D.modes[UI.mode].label)}</h2>${lb()}</section></div></div></div>`;
+    ${cta}
+    <section class="panel pad lbp" aria-labelledby="lb-h"><h2 class="sech" id="lb-h">Leaderboard · ${esc(D.modes[UI.mode].label)}</h2>${lb()}</section>
+    <div class="endbar" role="group" aria-label="Next shift"><button class="btn p big" type="button" data-a="again" data-k="again" data-primary>Run it back</button><button class="btn big" type="button" data-a="new" data-k="new">New crew</button></div>
+  </div></div>`;
 }
 render();

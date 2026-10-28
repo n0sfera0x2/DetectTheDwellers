@@ -91,3 +91,45 @@ test('quitting mid-shift asks first, then returns to the start screen', () => {
   d.querySelector('[data-a=quit]').click(); assert.strictEqual(w.eval('UI.screen'), 'game');
   d.querySelector('[data-a=quity]').click(); assert.ok(d.querySelector('[data-a=start]'));
 });
+
+// First Shift's boss: a solo analyst, hurt, holding the Recovery and Triage Agents the setup puts in the kit deck.
+function firstShiftBoss(hpLost) {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'intro'; UI.pick = ['HUN']; start();
+    G.held[0] = ['recover', 'triage'].map(t => ({ ...D.kit.find(c => c.type === t) }));
+    G.play = []; G.phase = 'point'; G.deck = []; G.row = []; G.hps = G.hps.map(h => h - ${hpLost}); render();`);
+  w.document.querySelector('[data-a=flip]').click();
+  return { w, d: w.document, errors };
+}
+
+test('the boss reveal names the burn that helps, with the real heal from the crew’s HP', () => {
+  const { w, d, errors } = firstShiftBoss(4);
+  const move = d.querySelector('.reveal .move'); assert.ok(move, 'no move hint at the reveal');
+  assert.match(move.textContent, /Burn your Recovery Agent now: \+4 HP/);
+  assert.ok(d.querySelector('.reveal [data-a=burn]'), 'no burn button in the reveal');
+  // The damage stat explains Ransom Demand: engine damage vs the printed number.
+  if (w.eval('G.boss.id') === 'wyrm') assert.match(d.querySelector('.reveal .stat').textContent, /Damage9.*7 \+2 until 2 hits/);
+  d.querySelector('.reveal [data-a=burn]').click();
+  assert.ok(!d.querySelector('.reveal'), 'burning should close the reveal into the fight');
+  assert.strictEqual(w.eval('G.hps[0]'), w.eval('G.max'));
+  // Next move: Triage after the roll, and its chip is lit once the dice are down.
+  assert.match(d.querySelector('.tip').textContent, /After you roll, burn your Triage Agent/);
+  d.querySelector('[data-a=roll]').click();
+  assert.ok(d.querySelector('.kchip.live.urge [data-a=burn]'), 'the burnable kit should be lit in a boss fight');
+  assert.deepStrictEqual(errors, []);
+});
+
+test('the boss reveal traps focus, and Esc does not start the fight', () => {
+  const { w, d, errors } = firstShiftBoss(4);
+  const tab = shift => d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Tab', shiftKey: !!shift, bubbles: true }));
+  const inside = () => !!d.activeElement.closest('.reveal');
+  assert.strictEqual(d.activeElement.dataset.a, 'fight', 'Fight should hold focus when the reveal opens');
+  tab(); assert.ok(inside()); assert.strictEqual(d.activeElement.dataset.a, 'burn');
+  tab(); assert.strictEqual(d.activeElement.dataset.a, 'fight', 'Tab should wrap inside the dialog');
+  tab(true); assert.strictEqual(d.activeElement.dataset.a, 'burn', 'Shift+Tab should wrap backwards');
+  d.querySelector('[data-a=quit]').focus(); assert.ok(inside(), 'focus escaped the dialog');
+  key(w, 'Escape'); assert.ok(d.querySelector('.reveal'), 'Esc should not mean Fight');
+  d.querySelector('.reveal [data-a=fight]').click(); assert.ok(!d.querySelector('.reveal'));
+  assert.deepStrictEqual(errors, []);
+});

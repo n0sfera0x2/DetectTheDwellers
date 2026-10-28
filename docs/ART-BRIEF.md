@@ -36,6 +36,7 @@ Light rules:
 - The threat lights the floor under it. That pool is offset and soft, never a ring around the shape.
 - People are dark shapes rim-lit cyan by the screen in front of them.
 - Orange belongs to the threat. Cyan belongs to the crew. Never swap them.
+- Amber marks the persistence row and every comeback, on web and print alike. Any art that shows the row or a mob coming back uses amber for it, never cyan.
 
 ## The four domains
 
@@ -85,7 +86,7 @@ Each mob is a single bold orange silhouette that reads at thumbnail size (check 
 
 Bosses fill the frame. No skyline, no backdrop showing around them. They are drawn at 400×170 and cropped for smaller frames, so keep the subject in the middle.
 
-- **The Lockjaw Syndicate (Endpoint).** A padlock that is a bear trap. The shackle is a crest. The keyhole is a burning throat. A row of status LEDs and rivets, no eyes. Encrypted desktops in the corners.
+- **The Lockjaw Syndicate (Endpoint).** Ransomware, not a monster. The SOC wall has gone dark orange, screen by screen, each one a hex dump with a small amber padlock on it. The main monitor in the middle shows the ransom note: an orange header bar, lines of demand text, a big seven-segment countdown (47:59:58) and a wallet field with an amber Pay button. On the left monitor a file tree is locked file by file; on the right one, encryption sits at 100 percent over a grid of orange files. Two empty chairs face the desk, rim-lit by the screens, and the note throws an orange pool on the desk. The padlock appears only as a small emblem. No faces, no teeth.
 - **The Persistent Operator (Identity).** A figure in the lit lobby doorway. Its shadow runs down the floor to your feet. A fan of cloned badges in one hand.
 - **The Rogue AI (Cloud).** A camera iris at the end of the rack aisle, six blades closing on a lit core. Not an eyeball. Every LED has turned orange. Cables run from the iris into the racks.
 
@@ -109,6 +110,8 @@ Every situation card has its own scene, keyed `sit_<id>`. Each is the 2 AM desk,
 
 People at consoles, seen from behind or in profile, rim-lit cyan. Each one has a pose and a screen that says the job.
 
+The web intro shows analysts at about 96×58 and the end-screen roster crops them square. So each scene is one big silhouette (head about a ninth of the frame height) and one screen, both inside the middle 112 px, on a plain wall with a desk line. No window, no clutter. The screen lights the wall behind it and the desk under it. Check every analyst at 96×58 and 96×96.
+
 - **Hunter.** Leans into the screen. A graph with one spike under a crosshair.
 - **Responder.** Standing, phone to ear, pointing at the alert. A go-bag at the feet.
 - **Engineer.** Detection as code. Brackets and rules on the screen. An open rack behind.
@@ -130,7 +133,9 @@ Kit cards are AI agents. Draw them as small cyan drones or console daemons with 
 
 ## Card back
 
-One back for every card. A console on the desk in the rain, a d20 on the screen with an orange face. The title text is set by the deck template, not the art. Leave the top third quiet for it.
+One back for every card: the 2 AM desk itself. A monitor with the alert queue (one row hot) lights the wall and the desk. A dark window with rain and a far city sits to the left, the wall clock reads 2:14 on the right, an amber sticky note clings to the bezel, and a cold mug waits by the keyboard. A shaded d20 rests on the desk beside the keyboard, lit cyan on the side that faces the screen, its facing triangle orange with a 20 on it.
+
+The title text and the footer lines are set by the deck template, not the art. Leave the top third quiet for the title and the bottom 80 px as plain desk for the footer. Keep everything that matters at least 24 px from every edge of the 240×336 card: the template fades the outer 22 px to the night ground for bleed and duplex drift.
 
 ## Frames and crops
 

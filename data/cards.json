@@ -1,0 +1,708 @@
+{
+ "tags": [
+  "Identity",
+  "Endpoint",
+  "Network",
+  "Cloud"
+ ],
+ "mobs": [
+  {
+   "id": "mailer",
+   "name": "Mailer Daemon",
+   "flavor": "MAILER-DAEMON: Message undeliverable. Click here to retry.",
+   "routine": true,
+   "def": 11,
+   "hits": 3,
+   "dmg": 1,
+   "ability": "beacon",
+   "abilityName": "Beacon",
+   "abilityText": "When it enters play or comes back, roll for the persistence row.",
+   "domain": "Identity",
+   "kw": "beacon"
+  },
+  {
+   "id": "macro",
+   "name": "Macro Gremlin",
+   "flavor": "invoice_FINAL_v2.docm really, really wants you to Enable Content.",
+   "routine": false,
+   "def": 13,
+   "hits": 2,
+   "dmg": 1,
+   "ability": "onpoint",
+   "abilityName": "Targeted",
+   "abilityText": "Only the analyst on point takes its damage, doubled.",
+   "domain": "Endpoint",
+   "kw": "targeted"
+  },
+  {
+   "id": "spray",
+   "name": "Password Sprayer",
+   "flavor": "Summer2026! against every account. It only needs one.",
+   "routine": true,
+   "def": 11,
+   "hits": 2,
+   "dmg": 1,
+   "ability": "noblock",
+   "abilityName": "Piercing",
+   "abilityText": "Blocks don't stop it.",
+   "domain": "Identity",
+   "kw": "piercing"
+  },
+  {
+   "id": "banshee",
+   "name": "MFA Banshee",
+   "flavor": "It wails push notifications until someone taps Approve.",
+   "routine": true,
+   "def": 11,
+   "hits": 2,
+   "dmg": 1,
+   "ability": "lowest",
+   "abilityName": "Stalker",
+   "abilityText": "It only hits the analyst with the lowest HP.",
+   "domain": "Identity",
+   "kw": "stalker"
+  },
+  {
+   "id": "vibe",
+   "name": "Vibe Coded App",
+   "flavor": "Shipped Friday. API keys in the frontend. Auth is a vibe.",
+   "routine": false,
+   "def": 12,
+   "hits": 3,
+   "dmg": 1,
+   "ability": "ramp",
+   "abilityName": "Escalating",
+   "abilityText": "+1 damage every round it stays up.",
+   "domain": "Cloud",
+   "kw": "escalating"
+  },
+  {
+   "id": "wraith",
+   "name": "PowerShell Wraith",
+   "flavor": "-nop -w hidden -enc JABzAD0A... It never touches disk.",
+   "routine": false,
+   "def": 13,
+   "hits": 3,
+   "dmg": 3,
+   "ability": "noagent",
+   "abilityName": "Fileless",
+   "abilityText": "Agents can't hit it.",
+   "domain": "Endpoint",
+   "kw": "fileless"
+  },
+  {
+   "id": "druid",
+   "name": "Living-off-the-Land Scavenger",
+   "flavor": "Rundll32, mshta, certutil. It only uses what already grows here.",
+   "routine": true,
+   "def": 12,
+   "hits": 3,
+   "dmg": 3,
+   "ability": "hardened",
+   "abilityName": "Evasive",
+   "abilityText": "Only a natural 12 or higher can hit it.",
+   "domain": "Endpoint",
+   "kw": "evasive"
+  },
+  {
+   "id": "bat",
+   "name": "DNS Beacon Drone",
+   "flavor": "4,000 queries to random subdomains. Echolocation.",
+   "routine": true,
+   "def": 12,
+   "hits": 3,
+   "dmg": 3,
+   "ability": "beacon",
+   "abilityName": "Beacon",
+   "abilityText": "When it enters play or comes back, roll for the persistence row.",
+   "domain": "Network",
+   "kw": "beacon"
+  },
+  {
+   "id": "imp",
+   "name": "OAuth Consent Grifter",
+   "flavor": "This app would like to read all your mail. Accept?",
+   "routine": false,
+   "def": 13,
+   "hits": 2,
+   "dmg": 3,
+   "ability": "onpoint",
+   "abilityName": "Targeted",
+   "abilityText": "Only the analyst on point takes its damage, doubled.",
+   "domain": "Cloud",
+   "kw": "targeted"
+  },
+  {
+   "id": "mimic",
+   "name": "Rootkit Implant",
+   "flavor": "Looks exactly like svchost.exe. Has teeth.",
+   "routine": false,
+   "def": 13,
+   "hits": 4,
+   "dmg": 4,
+   "ability": "regen",
+   "abilityName": "Regen",
+   "abilityText": "Heals 1 hit at the end of each round.",
+   "domain": "Endpoint",
+   "kw": "regen"
+  },
+  {
+   "id": "ogre",
+   "name": "Kerberoast Enforcer",
+   "flavor": "Roasts service tickets over an RC4 fire.",
+   "routine": false,
+   "def": 15,
+   "hits": 4,
+   "dmg": 4,
+   "ability": "noblock",
+   "abilityName": "Piercing",
+   "abilityText": "Blocks don't stop it.",
+   "domain": "Identity",
+   "kw": "piercing"
+  },
+  {
+   "id": "leech",
+   "name": "LSASS Siphon",
+   "flavor": "comsvcs.dll MiniDump. It feeds on credentials.",
+   "routine": false,
+   "def": 14,
+   "hits": 3,
+   "dmg": 4,
+   "ability": "regen",
+   "abilityName": "Regen",
+   "abilityText": "Heals 1 hit at the end of each round.",
+   "domain": "Endpoint",
+   "kw": "regen"
+  },
+  {
+   "id": "hydra",
+   "name": "PsExec Swarm",
+   "flavor": "Remove one service and two more install.",
+   "routine": true,
+   "def": 12,
+   "hits": 4,
+   "dmg": 4,
+   "ability": "beacon",
+   "abilityName": "Beacon",
+   "abilityText": "When it enters play or comes back, roll for the persistence row.",
+   "domain": "Endpoint",
+   "kw": "beacon"
+  },
+  {
+   "id": "specter",
+   "name": "Golden Ticket Ghost",
+   "flavor": "Forged with the KRBTGT hash. Valid for ten years.",
+   "routine": false,
+   "def": 14,
+   "hits": 4,
+   "dmg": 4,
+   "ability": "hardened",
+   "abilityName": "Evasive",
+   "abilityText": "Only a natural 12 or higher can hit it.",
+   "domain": "Identity",
+   "kw": "evasive"
+  },
+  {
+   "id": "wyrmling",
+   "name": "Exfil Courier",
+   "flavor": "rclone.exe, 40 GB, one cloud bucket. It's still small.",
+   "routine": false,
+   "def": 14,
+   "hits": 3,
+   "dmg": 4,
+   "ability": "ramp",
+   "abilityName": "Escalating",
+   "abilityText": "+1 damage every round it stays up.",
+   "domain": "Network",
+   "kw": "escalating"
+  }
+ ],
+ "bosses": [
+  {
+   "id": "wyrm",
+   "name": "The Lockjaw Syndicate",
+   "def": 16,
+   "dmg": 7,
+   "abilityName": "Ransom demand",
+   "abilityText": "+2 damage until it has taken two hits.",
+   "domain": "Endpoint",
+   "hitsBase": 5
+  },
+  {
+   "id": "apt",
+   "name": "The Persistent Operator",
+   "def": 15,
+   "dmg": 7,
+   "abilityName": "Living off your network",
+   "abilityText": "The first time you beat it, it comes back with 2 hits left.",
+   "domain": "Identity",
+   "hitsBase": 5
+  },
+  {
+   "id": "ai",
+   "name": "The Rogue AI",
+   "def": 17,
+   "dmg": 7,
+   "abilityName": "Hostile takeover",
+   "abilityText": "Agents can't roll while it's in play.",
+   "domain": "Cloud",
+   "hitsBase": 4
+  }
+ ],
+ "situations": [
+  {
+   "id": "travel",
+   "name": "Impossible Travel",
+   "type": "challenge",
+   "who": "point",
+   "need": 10,
+   "pass": {
+    "kit": 1
+   },
+   "fail": {
+    "hp": -2,
+    "to": "point"
+   },
+   "text": "Marketing signed in from Lisbon. Are they actually in Lisbon? Whoever is on point makes the call.",
+   "rule": "On point: roll 10+ in one attempt. Pass: draw a kit card. Fail: you lose 2 HP."
+  },
+  {
+   "id": "coffee",
+   "name": "Coffee Run",
+   "type": "event",
+   "fx": {
+    "hp": 3,
+    "to": "all"
+   },
+   "text": "Someone came back with a tray of cold brew. Morale stabilizes.",
+   "rule": "Everyone heals 3 HP."
+  },
+  {
+   "id": "blast",
+   "name": "Marketing Blast",
+   "type": "choice",
+   "text": "Ten thousand recipients, one link, and the mail filter is screaming.",
+   "rule": "Choose one.",
+   "opts": [
+    {
+     "label": "Everyone triages: everyone loses 1 HP",
+     "fx": {
+      "hp": -1,
+      "to": "all"
+     }
+    },
+    {
+     "label": "On point takes it alone: they lose 3 HP",
+     "fx": {
+      "hp": -3,
+      "to": "point"
+     }
+    }
+   ]
+  },
+  {
+   "id": "patch",
+   "name": "Patch Tuesday",
+   "type": "choice",
+   "text": "A quiet window opens while the patches deploy.",
+   "rule": "Choose one.",
+   "opts": [
+    {
+     "label": "Take a breather: everyone heals 2 HP",
+     "fx": {
+      "hp": 2,
+      "to": "all"
+     }
+    },
+    {
+     "label": "Raid the supply locker: draw a kit card",
+     "fx": {
+      "kit": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "ciso",
+   "name": "CISO Wants a Briefing",
+   "type": "challenge",
+   "who": "point",
+   "need": 12,
+   "pass": {},
+   "fail": {
+    "hp": -4,
+    "to": "point"
+   },
+   "text": "Five slides, ten minutes, and the CISO has questions.",
+   "rule": "On point: roll 12+ in one attempt. Fail: you lose 4 HP."
+  },
+  {
+   "id": "intel",
+   "name": "Threat Intel Drop",
+   "type": "event",
+   "fx": {
+    "unrow": 1
+   },
+   "text": "A partner shares indicators for something you already beat.",
+   "rule": "Discard one mob from the persistence row."
+  },
+  {
+   "id": "pentest",
+   "name": "Pentest Day",
+   "type": "challenge",
+   "who": "each",
+   "need": 8,
+   "pass": {},
+   "fail": {
+    "hp": -2,
+    "to": "self"
+   },
+   "text": "The red team is in the building and nobody told the SOC.",
+   "rule": "Everyone rolls once. Anyone under 8 loses 2 HP."
+  },
+  {
+   "id": "pager",
+   "name": "Pager Storm",
+   "type": "event",
+   "fx": {
+    "hp": -2,
+    "to": "all",
+    "pointExtra": -2
+   },
+   "text": "Four hundred alerts in four minutes. Everyone is awake now.",
+   "rule": "Everyone loses 2 HP. On point loses 2 more."
+  },
+  {
+   "id": "budget",
+   "name": "Budget Approved",
+   "type": "event",
+   "fx": {
+    "kit": 2
+   },
+   "text": "Finance said yes. Nobody knows why.",
+   "rule": "Draw two kit cards."
+  }
+ ],
+ "kit": [
+  {
+   "id": "k1",
+   "kind": "agent",
+   "type": "triage",
+   "name": "Triage Agent",
+   "text": "Rolls every round at +2 against any mob.",
+   "burn": "Roll three extra dice this round, with your bonus."
+  },
+  {
+   "id": "k2",
+   "kind": "agent",
+   "type": "triage",
+   "name": "Triage Agent",
+   "text": "Rolls every round at +2 against any mob.",
+   "burn": "Roll three extra dice this round, with your bonus."
+  },
+  {
+   "id": "k3",
+   "kind": "agent",
+   "type": "hunt",
+   "name": "Hunt Agent",
+   "text": "Rolls every round at +7, but only against a mob with 1 or 2 hits left.",
+   "burn": "A mob (not the boss) with 1 or 2 hits left is beaten."
+  },
+  {
+   "id": "k4",
+   "kind": "agent",
+   "type": "hunt",
+   "name": "Hunt Agent",
+   "text": "Rolls every round at +7, but only against a mob with 1 or 2 hits left.",
+   "burn": "A mob (not the boss) with 1 or 2 hits left is beaten."
+  },
+  {
+   "id": "k5",
+   "kind": "agent",
+   "type": "contain",
+   "name": "Containment Agent",
+   "text": "Each round, the highest-damage mob deals 1 less damage, never below 1.",
+   "burn": "Every mob in play takes 1 hit."
+  },
+  {
+   "id": "k6",
+   "kind": "agent",
+   "type": "contain",
+   "name": "Containment Agent",
+   "text": "Each round, the highest-damage mob deals 1 less damage, never below 1.",
+   "burn": "Every mob in play takes 1 hit."
+  },
+  {
+   "id": "k7",
+   "kind": "agent",
+   "type": "enrich",
+   "name": "Enrichment Agent",
+   "text": "Every analyst gets +2 against every mob.",
+   "burn": "This round, every analyst die gets +5."
+  },
+  {
+   "id": "k8",
+   "kind": "agent",
+   "type": "enrich",
+   "name": "Enrichment Agent",
+   "text": "Every analyst gets +2 against every mob.",
+   "burn": "This round, every analyst die gets +5."
+  },
+  {
+   "id": "k9",
+   "kind": "agent",
+   "type": "patch",
+   "name": "Patch Agent",
+   "text": "When you roll for the persistence row, roll an extra die and keep the highest.",
+   "burn": "Discard one mob from the persistence row for good."
+  },
+  {
+   "id": "k10",
+   "kind": "agent",
+   "type": "patch",
+   "name": "Patch Agent",
+   "text": "When you roll for the persistence row, roll an extra die and keep the highest.",
+   "burn": "Discard one mob from the persistence row for good."
+  },
+  {
+   "id": "k11",
+   "kind": "agent",
+   "type": "recover",
+   "name": "Recovery Agent",
+   "text": "After every fight, heal 3 HP split across the crew.",
+   "burn": "Heal 6 HP split across the crew."
+  },
+  {
+   "id": "k12",
+   "kind": "agent",
+   "type": "recover",
+   "name": "Recovery Agent",
+   "text": "After every fight, heal 3 HP split across the crew.",
+   "burn": "Heal 6 HP split across the crew."
+  },
+  {
+   "id": "k13",
+   "kind": "agent",
+   "type": "decoy",
+   "name": "Decoy Agent",
+   "text": "Once per fight, after the roll: the analyst on point takes no damage this round.",
+   "burn": "After the roll: everyone blocks this round."
+  },
+  {
+   "id": "k14",
+   "kind": "agent",
+   "type": "decoy",
+   "name": "Decoy Agent",
+   "text": "Once per fight, after the roll: the analyst on point takes no damage this round.",
+   "burn": "After the roll: everyone blocks this round."
+  },
+  {
+   "id": "k15",
+   "kind": "agent",
+   "type": "recon",
+   "name": "Recon Agent",
+   "text": "Peek at the next situation before picking who's on point. If it's a mob, every analyst gets +5 against it all fight.",
+   "burn": "Look at the next 3 situations and bury one at the bottom of the feed."
+  },
+  {
+   "id": "k16",
+   "kind": "agent",
+   "type": "recon",
+   "name": "Recon Agent",
+   "text": "Peek at the next situation before picking who's on point. If it's a mob, every analyst gets +5 against it all fight.",
+   "burn": "Look at the next 3 situations and bury one at the bottom of the feed."
+  }
+ ],
+ "classes": [
+  {
+   "id": "HUN",
+   "name": "Hunter",
+   "trait": "Threat hunter",
+   "perk": "+5 against mobs that came back from the row."
+  },
+  {
+   "id": "RES",
+   "name": "Responder",
+   "trait": "First responder",
+   "perk": "+5 against the highest-damage mob in play."
+  },
+  {
+   "id": "ENG",
+   "name": "Engineer",
+   "trait": "Detection as code",
+   "perk": "Your doubles are 16–20, not 18–20."
+  },
+  {
+   "id": "SOA",
+   "name": "Soarcerer",
+   "trait": "Orchestrator",
+   "perk": "+1 slot in the crew kit tray."
+  },
+  {
+   "id": "PAT",
+   "name": "Fixer",
+   "trait": "Medic",
+   "perk": "Off-shift, heal 3 HP split across the crew instead of 1 for yourself."
+  }
+ ],
+ "rolls": {
+  "1": 3,
+  "2": 2,
+  "3": 1,
+  "4": 1
+ },
+ "persist": {
+  "routine": [
+   1,
+   8
+  ],
+  "novel": [
+   1,
+   8
+  ]
+ },
+ "specBonus": 5,
+ "slots": 2,
+ "hp": {
+  "full": {
+   "1": {
+    "Recruit": 56,
+    "Analyst": 46,
+    "Veteran": 38
+   },
+   "2": {
+    "Recruit": 56,
+    "Analyst": 46,
+    "Veteran": 38
+   },
+   "3": {
+    "Recruit": 56,
+    "Analyst": 46,
+    "Veteran": 38
+   },
+   "4": {
+    "Recruit": 56,
+    "Analyst": 46,
+    "Veteran": 38
+   }
+  },
+  "quick": {
+   "1": 28,
+   "2": 28,
+   "3": 28,
+   "4": 28
+  },
+  "intro": {
+   "1": 18,
+   "2": 18,
+   "3": 18,
+   "4": 18
+  }
+ },
+ "modes": {
+  "intro": {
+   "label": "First Shift",
+   "minutes": "10",
+   "sub": "learn as you go · 6 set situations"
+  },
+  "full": {
+   "label": "Full Shift",
+   "minutes": "25–35",
+   "sub": "10 situations + boss"
+  },
+  "quick": {
+   "label": "Quick Shift",
+   "minutes": "10–15",
+   "sub": "6 situations + boss"
+  }
+ },
+ "slotsBy": {
+  "1": 4,
+  "2": 2,
+  "3": 2,
+  "4": 2
+ },
+ "quickStartAgent": 2,
+ "bossRow": "roll",
+ "persistOnFlip": true,
+ "deal": {
+  "full": 10,
+  "quick": 6,
+  "intro": 6
+ },
+ "alwaysPersist": true,
+ "flipOnlyPersist": true,
+ "returnHits": 1,
+ "returnStrike": true,
+ "pointDie": true,
+ "sharedKit": 4,
+ "mobScale": 1,
+ "soloDice": 2,
+ "keywords": {
+  "piercing": {
+   "name": "Piercing",
+   "text": "Blocks don't stop it.",
+   "icon": "<path d=\"M2 8h10M9 4l4 4-4 4\"/><path d=\"M6 3v10\" stroke-dasharray=\"2 2\"/>"
+  },
+  "targeted": {
+   "name": "Targeted",
+   "text": "Only the analyst on point takes its damage, doubled.",
+   "icon": "<circle cx=\"8\" cy=\"8\" r=\"5\"/><circle cx=\"8\" cy=\"8\" r=\"1.5\"/><path d=\"M8 1v3M8 12v3M1 8h3M12 8h3\"/>"
+  },
+  "stalker": {
+   "name": "Stalker",
+   "text": "It only hits the analyst with the lowest HP.",
+   "icon": "<path d=\"M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z\"/><circle cx=\"8\" cy=\"8\" r=\"2\"/>"
+  },
+  "evasive": {
+   "name": "Evasive",
+   "text": "Only a natural 12 or higher can hit it.",
+   "icon": "<rect x=\"3\" y=\"3\" width=\"10\" height=\"10\" stroke-dasharray=\"2 2\"/><path d=\"M6 8h4\"/>"
+  },
+  "regen": {
+   "name": "Regen",
+   "text": "Heals 1 hit at the end of each round.",
+   "icon": "<path d=\"M13 8a5 5 0 1 1-1.5-3.6\"/><path d=\"M12 1.5v3h-3\"/><path d=\"M8 6v4M6 8h4\"/>"
+  },
+  "beacon": {
+   "name": "Beacon",
+   "text": "When it enters play or comes back, roll for the persistence row.",
+   "icon": "<circle cx=\"8\" cy=\"11\" r=\"1.5\"/><path d=\"M5 8a4 4 0 0 1 6 0M2.8 5.5a7 7 0 0 1 10.4 0\"/>"
+  },
+  "fileless": {
+   "name": "Fileless",
+   "text": "Agents can't hit it.",
+   "icon": "<path d=\"M4 1.5h5l3 3v10H4z\" stroke-dasharray=\"2 1.6\"/><path d=\"M6 8l4 4M10 8l-4 4\"/>"
+  },
+  "escalating": {
+   "name": "Escalating",
+   "text": "+1 damage every round it stays up.",
+   "icon": "<path d=\"M2 14V11M6 14V8M10 14V5M14 14V2\"/>"
+  }
+ },
+ "intro": {
+  "deck": [
+   "banshee",
+   "patch",
+   "macro",
+   "travel",
+   "bat",
+   "coffee"
+  ],
+  "boss": "wyrm",
+  "kit": [
+   "recover",
+   "triage"
+  ],
+  "tips": {
+   "1": "Everyone rolls at once. Put each die on a mob it beats: d20 + bonus, at least its Defense. Anything still standing hits back. Stalker: the Banshee only goes after whoever is lowest.",
+   "loot": "Kit drop. Every kit card is an agent: keep it running, or burn it once for a big one-shot effect.",
+   "2": "Some situations are choices. The Banshee is in the persistence row now, so every flip rolls for it too.",
+   "3": "Targeted: only whoever is on point takes the Gremlin's damage, and it's doubled. Pick on point with that in mind.",
+   "4": "A challenge: the analyst on point gets one roll. Bonuses count.",
+   "5": "Beacon: the Drone rolls for the persistence row the moment it shows up. Comebacks hit everyone, then go down in one hit.",
+   "6": "A breather before the boss. Heal up and check your kit.",
+   "boss": "The boss. Its hits grow with your crew, and agents can't touch it. Burn what you've got."
+  }
+ }
+}

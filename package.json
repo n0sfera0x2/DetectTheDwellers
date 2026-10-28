@@ -1,0 +1,23 @@
+{
+  "name": "detect-the-dwellers",
+  "version": "0.17.0",
+  "private": true,
+  "description": "Detect the Dwellers: Binary Defense's co-op cyberpunk SOC card game. Engine, playable web version, print deck, and balance sims.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "npm run build:page && npm run build:deck",
+    "build:page": "node scripts/build-page.js",
+    "build:deck": "node deck/build.js",
+    "cards": "node scripts/cards-md.js",
+    "sim": "node sim/sweep.js",
+    "stats": "node sim/stats.js",
+    "balance": "node sim/check.js",
+    "golden": "node scripts/update-golden.js",
+    "test": "node --test && node sim/check.js",
+    "serve": "npx --yes http-server dist -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  },
+  "engines": { "node": ">=20" }
+}

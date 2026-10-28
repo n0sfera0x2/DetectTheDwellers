@@ -14,9 +14,13 @@
    "def": 11,
    "hits": 3,
    "dmg": 1,
+   "persist": [
+    1,
+    10
+   ],
    "ability": "beacon",
    "abilityName": "Beacon",
-   "abilityText": "When it enters play or comes back, roll for the persistence row.",
+   "abilityText": "When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too.",
    "domain": "Identity",
    "kw": "beacon"
   },
@@ -28,6 +32,10 @@
    "def": 13,
    "hits": 2,
    "dmg": 1,
+   "persist": [
+    1,
+    9
+   ],
    "ability": "onpoint",
    "abilityName": "Targeted",
    "abilityText": "Only the analyst on point takes its damage, doubled.",
@@ -42,6 +50,10 @@
    "def": 11,
    "hits": 2,
    "dmg": 1,
+   "persist": [
+    1,
+    10
+   ],
    "ability": "noblock",
    "abilityName": "Piercing",
    "abilityText": "Blocks don't stop it.",
@@ -56,6 +68,10 @@
    "def": 11,
    "hits": 2,
    "dmg": 1,
+   "persist": [
+    1,
+    10
+   ],
    "ability": "lowest",
    "abilityName": "Stalker",
    "abilityText": "It only hits the analyst with the lowest HP.",
@@ -70,6 +86,10 @@
    "def": 12,
    "hits": 3,
    "dmg": 1,
+   "persist": [
+    1,
+    9
+   ],
    "ability": "ramp",
    "abilityName": "Escalating",
    "abilityText": "+1 damage every round it stays up.",
@@ -84,6 +104,10 @@
    "def": 13,
    "hits": 3,
    "dmg": 3,
+   "persist": [
+    1,
+    7
+   ],
    "ability": "noagent",
    "abilityName": "Fileless",
    "abilityText": "Agents can't hit it.",
@@ -98,6 +122,10 @@
    "def": 12,
    "hits": 3,
    "dmg": 3,
+   "persist": [
+    1,
+    8
+   ],
    "ability": "hardened",
    "abilityName": "Evasive",
    "abilityText": "Only a natural 12 or higher can hit it.",
@@ -112,9 +140,13 @@
    "def": 12,
    "hits": 3,
    "dmg": 3,
+   "persist": [
+    1,
+    8
+   ],
    "ability": "beacon",
    "abilityName": "Beacon",
-   "abilityText": "When it enters play or comes back, roll for the persistence row.",
+   "abilityText": "When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too.",
    "domain": "Network",
    "kw": "beacon"
   },
@@ -126,6 +158,10 @@
    "def": 13,
    "hits": 2,
    "dmg": 3,
+   "persist": [
+    1,
+    6
+   ],
    "ability": "onpoint",
    "abilityName": "Targeted",
    "abilityText": "Only the analyst on point takes its damage, doubled.",
@@ -140,6 +176,10 @@
    "def": 13,
    "hits": 4,
    "dmg": 4,
+   "persist": [
+    1,
+    5
+   ],
    "ability": "regen",
    "abilityName": "Regen",
    "abilityText": "Heals 1 hit at the end of each round.",
@@ -154,6 +194,10 @@
    "def": 15,
    "hits": 4,
    "dmg": 4,
+   "persist": [
+    1,
+    5
+   ],
    "ability": "noblock",
    "abilityName": "Piercing",
    "abilityText": "Blocks don't stop it.",
@@ -168,6 +212,10 @@
    "def": 14,
    "hits": 3,
    "dmg": 4,
+   "persist": [
+    1,
+    6
+   ],
    "ability": "regen",
    "abilityName": "Regen",
    "abilityText": "Heals 1 hit at the end of each round.",
@@ -182,9 +230,13 @@
    "def": 12,
    "hits": 4,
    "dmg": 4,
+   "persist": [
+    1,
+    6
+   ],
    "ability": "beacon",
    "abilityName": "Beacon",
-   "abilityText": "When it enters play or comes back, roll for the persistence row.",
+   "abilityText": "When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too.",
    "domain": "Endpoint",
    "kw": "beacon"
   },
@@ -196,6 +248,10 @@
    "def": 14,
    "hits": 4,
    "dmg": 4,
+   "persist": [
+    1,
+    4
+   ],
    "ability": "hardened",
    "abilityName": "Evasive",
    "abilityText": "Only a natural 12 or higher can hit it.",
@@ -210,6 +266,10 @@
    "def": 14,
    "hits": 3,
    "dmg": 4,
+   "persist": [
+    1,
+    5
+   ],
    "ability": "ramp",
    "abilityName": "Escalating",
    "abilityText": "+1 damage every round it stays up.",
@@ -551,46 +611,36 @@
   "3": 1,
   "4": 1
  },
- "persist": {
-  "routine": [
-   1,
-   8
-  ],
-  "novel": [
-   1,
-   8
-  ]
- },
  "specBonus": 5,
  "slots": 2,
  "hp": {
   "full": {
    "1": {
-    "Recruit": 56,
-    "Analyst": 46,
-    "Veteran": 38
+    "Recruit": 50,
+    "Analyst": 42,
+    "Veteran": 34
    },
    "2": {
-    "Recruit": 56,
-    "Analyst": 46,
-    "Veteran": 38
+    "Recruit": 50,
+    "Analyst": 42,
+    "Veteran": 34
    },
    "3": {
-    "Recruit": 56,
-    "Analyst": 46,
-    "Veteran": 38
+    "Recruit": 50,
+    "Analyst": 42,
+    "Veteran": 34
    },
    "4": {
-    "Recruit": 56,
-    "Analyst": 46,
-    "Veteran": 38
+    "Recruit": 50,
+    "Analyst": 42,
+    "Veteran": 34
    }
   },
   "quick": {
-   "1": 28,
-   "2": 28,
-   "3": 28,
-   "4": 28
+   "1": 26,
+   "2": 26,
+   "3": 26,
+   "4": 26
   },
   "intro": {
    "1": 18,
@@ -666,7 +716,7 @@
   },
   "beacon": {
    "name": "Beacon",
-   "text": "When it enters play or comes back, roll for the persistence row.",
+   "text": "When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too.",
    "icon": "<circle cx=\"8\" cy=\"11\" r=\"1.5\"/><path d=\"M5 8a4 4 0 0 1 6 0M2.8 5.5a7 7 0 0 1 10.4 0\"/>"
   },
   "fileless": {
@@ -700,7 +750,7 @@
    "2": "Some situations are choices. The Banshee is in the persistence row now, so every flip rolls for it too.",
    "3": "Targeted: only whoever is on point takes the Gremlin's damage, and it's doubled. Pick on point with that in mind.",
    "4": "A challenge: the analyst on point gets one roll. Bonuses count.",
-   "5": "Beacon: the Drone rolls for the persistence row the moment it shows up. Comebacks hit everyone, then go down in one hit.",
+   "5": "Beacon: the Drone rolls for the persistence row the moment it shows up, and anything it calls back rolls again. Comebacks hit everyone, then go down in one hit.",
    "6": "A breather before the boss. Heal up and check your kit.",
    "boss": "The boss. Its hits grow with your crew, and agents can't touch it. Burn what you've got."
   }

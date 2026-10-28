@@ -40,4 +40,4 @@ Working with Claude Code? Start with [CLAUDE.md](CLAUDE.md).
 
 ## Status
 
-Rules v17: keywords, First Shift, dual-mode kit. Balance is tuned against a bot; human playtests come next. The art is placeholder vector art pending a commissioned illustrator. Not for distribution until counsel review and a trademark search are done.
+Rules v18: per-mob comeback ranges, chaining Beacons. (v17: keywords, First Shift, dual-mode kit.) Balance is tuned against a bot; human playtests come next. The art is placeholder vector art pending a commissioned illustrator. Not for distribution until counsel review and a trademark search are done.

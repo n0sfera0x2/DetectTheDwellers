@@ -20,9 +20,9 @@ ${table(['Keyword', 'Rule'], Object.values(D.keywords).map(k => [k.name, k.text]
 
 ## Mobs
 
-Printed hits are for two players. In play: printed + analysts − 2, never below 1. Every mob comes back from the persistence row on ${D.persist.routine[0]}–${D.persist.routine[1]}.
+Printed hits are for two players. In play: printed + analysts − 2, never below 1. Each mob comes back from the persistence row when the row die lands in its Back range.
 
-${table(['Mob', 'Domain', 'Def', 'Hits', 'Dmg', 'Keyword'], D.mobs.map(m => [m.name, m.domain, m.def, m.hits, m.dmg, D.keywords[m.kw].name]))}
+${table(['Mob', 'Domain', 'Def', 'Hits', 'Dmg', 'Back', 'Keyword'], D.mobs.map(m => [m.name, m.domain, m.def, m.hits, m.dmg, `${m.persist[0]}–${m.persist[1]}`, D.keywords[m.kw].name]))}
 
 ## Situations
 

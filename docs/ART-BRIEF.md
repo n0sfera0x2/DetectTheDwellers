@@ -1,0 +1,144 @@
+# Art brief: SOC noir
+
+This brief is for anyone who paints the final art for Detect the Dwellers. It sets the world, the cast and the rules. The vector scenes in `data/art.json` and `data/art-print.json` are placeholders drawn to this brief. Match their composition and replace their finish.
+
+## The world
+
+It’s 2 AM in the SOC. The room is dark. Light comes from screens, status LEDs and the threat itself. Rain runs down a black window. The coffee went cold an hour ago.
+
+The city can appear only far away, through a window. No skylines in front. No perspective grid floors. No neon glow halos around shapes or type.
+
+## The recurring image: the desk
+
+The analyst’s desk is the anchor of the whole game. It shows up on the intro screen (`hero`), on every situation card (one scene each, see below) and behind every analyst.
+
+- A row of monitors with alert queues. One row is hot.
+- A cold coffee mug. A desk phone or pager.
+- A window with rain and a few far city lights.
+- A wall clock at 2:14.
+
+## Palette and light
+
+Keep to the three accents on a near-black night. Neutrals are dark grey-violet steps from the background. Add no other hue.
+
+| Token | Hex | Use |
+| --- | --- | --- |
+| Background | `#07060A` | The room. |
+| Ink | `#F3E9E2` | Teeth, badges, paper, highlights. |
+| Muted | `#B9A99E` | Rain, cables, steel. |
+| Flare | `#FF5A2A` | The threat. Mobs and bosses only. |
+| Amber | `#FF9B54` | Warnings, HUD marks, gold, fire, keys. |
+| Cyan | `#38E1FF` | The crew and its tools. Screens, drones, rim light. |
+
+Light rules:
+
+- Every light has a source you can see: a screen, an LED, a lit door, a fire.
+- The threat lights the floor under it. That pool is offset and soft, never a ring around the shape.
+- People are dark shapes rim-lit cyan by the screen in front of them.
+- Orange belongs to the threat. Cyan belongs to the crew. Never swap them.
+
+## The four domains
+
+Each domain is a place. Mob scenes in a domain share its backdrop, dimmed so the mob reads first.
+
+- **Identity: the lobby after hours.** Back wall, steel elevator doors, turnstiles with badge readers. One red LED says denied.
+- **Endpoint: a laptop on a desk.** The laptop glows cyan on the left. Window and rain on the right. A cold mug.
+- **Cloud: a rack aisle.** One-point perspective down a cold aisle. Cabinet LEDs, a cable tray overhead, one reflection on the floor.
+- **Network: fiber and patch panels.** Two patch panels across the top. Copper cables droop. Thin fiber strands catch the light.
+
+## No faces
+
+Threats have no faces. No eyes, no brows, no grins, no mouths, no cartoon expressions. This is noir, not Saturday morning.
+
+Threat comes from light, shape and posture:
+
+- An orange mass lit from above that falls into shadow at the floor.
+- A hard amber rim on the back edge, as if lit from behind.
+- A hard cast shadow on the floor, thrown to the right, beside the soft orange pool the threat throws under itself.
+- Where a face would be, use a glowing aperture: a visor slit, a status LED, a lit seam, a void under a hood, an iris.
+
+Crew drones keep their single cyan lens. That lens is a tool, not a face, and it is never orange.
+
+## Mobs
+
+Each mob is a single bold orange silhouette that reads at thumbnail size (check at 96×54). If two mobs look alike in silhouette, one of them is wrong. Nothing in the cast is a sheet ghost. Keep the subject in the middle half of the frame. Web cards crop the sides hard.
+
+| Card | Domain | Silhouette | Accent |
+| --- | --- | --- | --- |
+| Mailer Daemon | Identity | An envelope torn open along a serrated flap. Light pours out of the slit. | A stream of returned envelopes behind it. A bounce-back arrow. |
+| Password Sprayer | Identity | A hunched hooded figure with one spray can. The hood is a void. | A cone of asterisks fanning across the doors. |
+| MFA Banshee | Identity | A tilted handset, shaking, screen lit with an Approve prompt. | Push prompts with orange Approve buttons radiating out. Buzz marks. A badge count. |
+| Kerberoast Enforcer | Identity | A broad, horned brute. One amber visor slit. | A service ticket on a spit over an RC4 fire. |
+| Golden Ticket Ghost | Identity | A forged ticket on a lanyard nobody wears, hovering at the turnstile. | A counterfeit seal, cracked. Faint offset copies of the ticket. The reader LED turns amber. |
+| Macro Gremlin | Endpoint | A .docm page with a lit gear cut through it. | Claws at the bottom edge gripping the amber Enable Content bar. |
+| PowerShell Wraith | Endpoint | Orange smoke curling up out of a terminal window. | A `>_` prompt. A grey disk drive the smoke never touches. |
+| Living-off-the-Land Scavenger | Endpoint | A hooded cloak, the hood a void. A sack of borrowed tools. | A staff that sprouts leaves. |
+| Rootkit Implant | Endpoint | A process window on the floor, lid prised open, light spilling up. | Dark hooks hanging over the lip. Window dots and fake svchost text on the lid. |
+| LSASS Siphon | Endpoint | A segmented leech. | Latched onto a grey credential vault. Keys drain along its back. |
+| PsExec Swarm | Endpoint | One trunk, five necks, each head a service box with one status LED. | A cut neck that grows two new heads. |
+| Vibe Coded App | Cloud | A leaning stack of blocks with one crack running down it. | An amber deploy LED on top. Keys dangling on strings. |
+| OAuth Consent Grifter | Cloud | A lanky horned figure in silhouette, lit only by the dialog it holds up. | A giant consent dialog with a big Accept button. |
+| DNS Beacon Drone | Network | A flat quad drone, rotors spinning, a row of LEDs on its rim. | Sonar arcs on both sides, pinging subdomain tags. |
+| Exfil Courier | Network | A young serpent, head a plain wedge. | A 40 GB parcel on its back. A cloud bucket ahead. |
+
+## Bosses
+
+Bosses fill the frame. No skyline, no backdrop showing around them. They are drawn at 400×170 and cropped for smaller frames, so keep the subject in the middle.
+
+- **The Lockjaw Syndicate (Endpoint).** A padlock that is a bear trap. The shackle is a crest. The keyhole is a burning throat. A row of status LEDs and rivets, no eyes. Encrypted desktops in the corners.
+- **The Persistent Operator (Identity).** A figure in the lit lobby doorway. Its shadow runs down the floor to your feet. A fan of cloned badges in one hand.
+- **The Rogue AI (Cloud).** A camera iris at the end of the rack aisle, six blades closing on a lit core. Not an eyeball. Every LED has turned orange. Cables run from the iris into the racks.
+
+## Situations
+
+Every situation card has its own scene, keyed `sit_<id>`. Each is the 2 AM desk, or a spot next to it, in a different state. The web game and the print deck both use `sit_<id>` and fall back to the type scene (`fp`, `event`, `gear`, `esc`).
+
+| Key | Card | What the desk shows |
+| --- | --- | --- |
+| `sit_travel` | Impossible Travel | A world map on the monitor. A cyan home pin and an orange Lisbon pin, joined by a dashed arc, eight minutes apart. |
+| `sit_coffee` | Coffee Run | A carrier tray of four cold brews with straws on the desk. The queue on screen is calm. |
+| `sit_blast` | Marketing Blast | The mail queue on screen is all orange envelopes. More pour off the bottom of the screen and pile on the desk. |
+| `sit_patch` | Patch Tuesday | Four progress bars crawling, one done. A big quiet window of rain. A coffee still steaming. |
+| `sit_ciso` | CISO Wants a Briefing | A slide on the big screen with one orange bar and the laser dot on it. Five slide thumbnails below. An analyst watching. |
+| `sit_intel` | Threat Intel Drop | A feed arriving: a download bar and indicator rows. One row is struck through with a cyan check. A printout curls out of the printer. |
+| `sit_pentest` | Pentest Day | A stranger in a cold-lit doorway. An orange red-team badge left on the desk. The queue on screen shows nothing. |
+| `sit_pager` | Pager Storm | Every row on the monitor is orange. Seven pagers and phones light up across the desk, buzzing. |
+| `sit_budget` | Budget Approved | The one small win. An approval dialog with a cyan check and button, a stamped purchase order, an open crate with two new agents. Cyan, never green. |
+
+## Analysts
+
+People at consoles, seen from behind or in profile, rim-lit cyan. Each one has a pose and a screen that says the job.
+
+- **Hunter.** Leans into the screen. A graph with one spike under a crosshair.
+- **Responder.** Standing, phone to ear, pointing at the alert. A go-bag at the feet.
+- **Engineer.** Detection as code. Brackets and rules on the screen. An open rack behind.
+- **Soarcerer.** Hands up, conducting a playbook that floats above the desk as a flow of nodes.
+- **Fixer.** The medic. Brings a med case and two coffees to the crew.
+
+## Kit: AI agents
+
+Kit cards are AI agents. Draw them as small cyan drones or console daemons with one lens for an eye. Each one does its job in the frame.
+
+- **Triage:** sorts tickets into three stacks.
+- **Hunt:** a searchlight finds a trail of orange footprints.
+- **Containment:** lowers a cage over an orange blob.
+- **Enrichment:** links out to tag cards (IP, hash, geo, whois).
+- **Patch:** lays a patch over a crack.
+- **Recovery:** a heartbeat line and a health bar filling up.
+- **Decoy:** a honeypot jar. An orange bug heads for it.
+- **Recon:** a radar sweep with blips.
+
+## Card back
+
+One back for every card. A console on the desk in the rain, a d20 on the screen with an orange face. The title text is set by the deck template, not the art. Leave the top third quiet for it.
+
+## Frames and crops
+
+- Scenes are 200×112. Web panels crop them tall and narrow (as narrow as 96×90). Print shows them at 210×86. Keep the subject inside the middle half.
+- Bosses are 400×170 for the banner and print. The 200×112 version is a center crop.
+- Print bosses and the back mark ids with `{{SID}}`.
+- Every gradient id in `data/art.json` carries its scene key as a suffix, so scenes can share a page.
+
+## What the placeholders are
+
+The scenes in this repo are flat vector placeholders from a generator script. They fix composition, silhouette, palette and light for each card. A commissioned artist should keep those four and replace the drawing.

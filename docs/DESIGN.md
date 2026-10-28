@@ -14,10 +14,10 @@ Tuned with `sim/` against a careful bot, never yet against enough humans.
 
 | Mode | Target win rate | Shipped |
 | --- | --- | --- |
-| Full Shift, Recruit | 60–70% | 56 HP |
-| Full Shift, Analyst | ~50% | 46 HP |
-| Full Shift, Veteran | 35–40% | 38 HP |
-| Quick Shift | ~60% (booth-friendly) | 28 HP |
+| Full Shift, Recruit | 60–70% | 50 HP |
+| Full Shift, Analyst | ~50% | 42 HP |
+| Full Shift, Veteran | 35–40% | 34 HP |
+| Quick Shift | ~60% (booth-friendly) | 26 HP |
 | First Shift | ~70% | 18 HP |
 
 Other things worth holding: every player count within about 10 points of each other; roughly 8–9 comebacks per Full Shift; a real share of losses before the boss (the row has to matter); winners usually ending at a quarter to a third of their HP. `npm run balance` enforces loose bands in CI.
@@ -30,6 +30,8 @@ Other things worth holding: every player count within about 10 points of each ot
 - **Defense floor of 11.** Mobs at 8 felt free.
 - **Containment can't reduce damage below 1; Decoy protects only whoever's on point.** Both were erasing whole rounds.
 - **Kit is all dual-mode agents (run or burn) in one shared tray.** Per-player slots let bigger crews snowball.
+- **Each mob has its own comeback range.** Nuisances come back often (1–10), heavy hitters rarely (1–4 to 1–6). Every range starts at 1, so the Patch Agent's keep-the-highest die still helps against all of them. The Threat Intel Drop removes the widest one.
+- **Beacon comebacks chain.** Anything a Beacon's roll brings back rolls the row again, until a roll comes up quiet. About one chain roll per Full Shift; it's the swing that makes Beacons feel like C2.
 - **Keywords over bespoke abilities.** Eight words to learn once. The PsExec Swarm's spread folded into Beacon, the Rootkit's wide range into Regen, the Vibe Coded App's hallucinations into Escalating.
 
 ## Open items

@@ -8,7 +8,7 @@ The full illustrated rulebook lives in Claude Docs. This file is the canonical r
 
 ## Setup
 
-1. **Each player picks one analyst** and takes an HP tracker. Put your coin on your starting HP: Recruit 56, Analyst 46, Veteran 38, Quick Shift 28. It's the same at every player count.
+1. **Each player picks one analyst** and takes an HP tracker. Put your coin on your starting HP: Recruit 50, Analyst 42, Veteran 34, Quick Shift 26. It's the same at every player count.
 2. **Shuffle the 24 situation cards** (15 mobs, 9 situations) and deal 10 face down as the feed. Quick Shift: deal 6.
 3. **Shuffle the bosses** and put one face down under the feed.
 4. **Shuffle the kit deck.** In Quick Shift, the crew starts with two AI agents from it.
@@ -35,7 +35,7 @@ For a first game, use the First Shift setup instead (below).
 
 ## The persistence row
 
-Every beaten mob goes on the row mat, every time. Every flip, roll a d20: any mob in the row whose range matches (1–8) comes back. A comeback **hits everyone for its Damage on the way in**, then joins the fight needing only **one hit**. Only burning a Patch Agent or the Threat Intel Drop situation removes a mob for good.
+Every beaten mob goes on the row mat, every time. Every flip, roll a d20: any mob in the row whose range matches comes back. Each mob prints its own range, from 1–10 for the nuisances down to 1–4 for the Golden Ticket Ghost. A comeback **hits everyone for its Damage on the way in**, then joins the fight needing only **one hit**. Only burning a Patch Agent or the Threat Intel Drop situation removes a mob for good.
 
 ## Kit
 
@@ -55,7 +55,7 @@ Rolling agents can't hit the boss. The Rogue AI boss shuts off every running age
 | Stalker | It only hits the analyst with the lowest HP. |
 | Evasive | Only a natural 12 or higher can hit it. |
 | Regen | Heals 1 hit at the end of each round. |
-| Beacon | When it enters play or comes back, roll for the persistence row. |
+| Beacon | When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too. |
 | Fileless | Agents can't hit it. |
 | Escalating | +1 damage every round it stays up. |
 
@@ -69,6 +69,6 @@ A fixed six-card game that teaches one idea per card. Stack these face down, fir
 
 ## Quick Shift (booth mode)
 
-Six situations and the boss, 28 HP each, and the crew starts with two agents. About ten minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
+Six situations and the boss, 26 HP each, and the crew starts with two agents. About ten minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
 
 Every card's exact text is in [CARDS.md](CARDS.md).

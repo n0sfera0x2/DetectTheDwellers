@@ -51,7 +51,7 @@ function burns(G, when) {
       const c = h[i]; if (G.over || G.phase !== 'combat') return;
       const t = c.type, low = Math.min(...G.hps) <= G.max * 0.4;
       if (when === 'pre' && t === 'recover' && low) E.burn(G, k, i);
-      else if (when === 'pre' && t === 'patch' && G.row.length >= 3) E.burn(G, k, i, G.row.slice().sort((a, b) => b.dmg - a.dmg)[0].uid);
+      else if (when === 'pre' && t === 'patch' && G.row.length >= 3) E.burn(G, k, i, G.row.slice().sort((a, b) => b.dmg * b.persist[1] - a.dmg * a.persist[1])[0].uid);
       else if (when === 'pre' && t === 'contain' && (G.play.length >= 3 || boss && G.play.length >= 2)) E.burn(G, k, i);
       else if (when === 'roll' && (t === 'triage' || t === 'enrich') && boss) E.burn(G, k, i);
       else if (when === 'post' && t === 'hunt') { const m = G.play.find(x => x.kind !== 'boss' && x.left <= 2); if (m) E.burn(G, k, i, m.uid); }

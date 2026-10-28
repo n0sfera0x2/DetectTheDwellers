@@ -43,3 +43,43 @@ test('the bot finishes every game without getting stuck', () => {
     assert.ok(G.over, `${mode} game ${g} never ended`);
   }
 });
+
+test('every mob prints its own comeback range, starting at 1', () => {
+  for (const m of D.mobs) assert.ok(m.persist[0] === 1 && m.persist[1] >= m.persist[0] && m.persist[1] <= 20, `${m.name} range ${m.persist}`);
+});
+
+test('a Beacon roll chains: what it brings back rolls the row again', () => {
+  const G = E.newGame(['HUN', 'RES'], 'full', { hp: 200, rnd: rng(3) });
+  const [spray, druid, mimic] = ['spray', 'druid', 'mimic'].map((id, i) => ({ ...D.mobs.find(m => m.id === id), kind: 'mob', uid: 900 + i, left: 1, hits: 2, back: 0, up: 0 }));
+  G.row = [spray, druid, mimic]; G.deck = [{ ...D.mobs.find(m => m.id === 'bat'), kind: 'mob', uid: 999, left: 3, hits: 3, back: 0, up: 0 }];
+  // Flip roll 20 (quiet), Beacon roll 9 (Sprayer 1–10 only), chain roll 1 (Scavenger and Rootkit).
+  const rolls = [20, 9, 1]; G.rnd = () => rolls.length ? (rolls.shift() - 1) / 20 : 0.99;
+  assert.ok(E.flip(G));
+  assert.deepStrictEqual(G.play.map(m => m.id).sort(), ['bat', 'druid', 'mimic', 'spray']);
+  assert.deepStrictEqual(G.plog.map(x => x.why || 'flip'), ['flip', 'beacon', 'chain']);
+  assert.strictEqual(G.row.length, 0);
+});
+
+test('undo takes back the last die that did not beat its mob', () => {
+  const G = E.newGame(['HUN', 'RES'], 'full', { hp: 200, rnd: rng(4) });
+  const ogre = { ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 901, left: 4, hits: 4, back: 0, up: 0, def: 2 };
+  G.deck = [ogre]; E.flip(G); E.rollAll(G);
+  G.dice.forEach(d => { d.r = 10; d.dbl = false; });
+  const before = { left: ogre.left, crewHits: G.stats.crewHits, log: G.log.length };
+  assert.ok(E.assign(G, 0, ogre.uid)); assert.strictEqual(ogre.left, before.left - 1);
+  assert.ok(E.canUndo(G)); assert.ok(E.unassign(G));
+  assert.strictEqual(ogre.left, before.left); assert.strictEqual(G.dice[0].used, false);
+  assert.strictEqual(G.stats.crewHits, before.crewHits); assert.strictEqual(G.log.length, before.log);
+  assert.strictEqual(E.unassign(G), false, 'nothing left to undo');
+  // A hit that beats the mob can't be taken back.
+  ogre.left = 1; assert.ok(E.assign(G, 0, ogre.uid)); assert.strictEqual(E.canUndo(G), false); assert.strictEqual(E.unassign(G), false);
+});
+
+test('a lost shift records which mobs dealt the final damage', () => {
+  const G = E.newGame(['HUN'], 'full', { hp: 3, rnd: rng(5) });
+  const bat = { ...D.mobs.find(m => m.id === 'bat'), kind: 'mob', uid: 902, left: 9, hits: 9, back: 0, up: 0, def: 30, dmg: 5 };
+  G.deck = [bat]; E.flip(G); E.rollAll(G); G.blocks = [false];
+  const by = E.incomingBy(G); assert.strictEqual(by[0][0].m, bat); assert.strictEqual(E.incoming(G)[0], by[0].reduce((s, x) => s + x.d, 0));
+  E.endRound(G);
+  assert.ok(G.over && !G.win); assert.deepStrictEqual(G.downBy, [bat.name]);
+});

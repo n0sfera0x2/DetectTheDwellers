@@ -25,9 +25,10 @@ function DTD12(D) {
   }
   const alive = G => G.hps.every(h => h > 0);
   const slots = (G, k) => D.sharedKit ? D.sharedKit + (G.team.includes('SOA') ? 1 : 0) : ((D.slotsBy && D.slotsBy[G.team.length]) || D.slots) + (k != null && G.team[k] === 'SOA' ? 1 : 0);
-  function hurt(G, k, n, why) {
+  // src: the mob names behind this damage, kept so the end screen can say what took the analyst down.
+  function hurt(G, k, n, why, src) {
     if (n <= 0 || G.over) return; G.hps[k] = Math.max(0, G.hps[k] - n); G.stats.low = Math.min(G.stats.low ?? 1, G.hps[k] / G.max); log(G, `${nm(G, k)} −${n} HP (${why}).`);
-    if (G.hps[k] <= 0) { G.over = true; G.win = false; G.phase = 'over'; G.dropped = k; log(G, `The ${nm(G, k)} flatlined. Shift lost.`); }
+    if (G.hps[k] <= 0) { G.over = true; G.win = false; G.phase = 'over'; G.dropped = k; G.downBy = src || [why]; log(G, `The ${nm(G, k)} flatlined. Shift lost.`); }
   }
   const heal = (G, k, n) => { G.hps[k] = Math.min(G.max, G.hps[k] + n); };
   function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hps.indexOf(Math.min(...G.hps)); if (G.hps[k] >= G.max) break; heal(G, k, 1); } }
@@ -40,7 +41,7 @@ function DTD12(D) {
     if (back.some(m => m.ability === 'spread')) { const extra = G.row.find(m => !back.includes(m)); if (extra) back.push(extra); }
     G.row = G.row.filter(m => !back.includes(m)); G.stats.back += back.length; if (!G.bossIn) G.stats.midBack = (G.stats.midBack || 0) + back.length; G.stats.maxBack = Math.max(G.stats.maxBack, back.length);
     back.forEach(m => { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; m.up = 0; });
-    if (D.returnStrike) for (const m of back) { if (G.over) break; G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`)); }
+    if (D.returnStrike) for (const m of back) { if (G.over) break; G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`, [m.name])); }
     log(G, back.length ? `Persist roll ${r}: ${back.map(m => m.name).join(', ')} came back. Put ${back.length > 1 ? 'them' : 'it'} down before the next flip.` : `Persist roll ${r}: the row stays quiet.`);
     return back;
   }
@@ -78,19 +79,24 @@ function DTD12(D) {
     G.lastSit = res; G.cur = null; if (!G.over) { if (G.pendingBack.length) { const b = G.pendingBack; G.pendingBack = []; const p = G.persist; startCombat(G, b); G.persist = p; } else G.phase = G.loot.length ? 'loot' : 'point'; } return res;
   }
   function drawLoot(G, n) { for (let i = 0; i < n && G.kit.length; i++) G.loot.push(G.kit.pop()); if (G.loot.length) log(G, `Kit: ${G.loot.map(c => c.name).join(', ')}.`); }
-  function persistRoll(G) {
-    if (!G.row.length) return; const r = rowDie(G), back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]);
-    G.persist = { r, back: back.map(m => m.name), round: G.round }; G.plog.push({ sit: G.sit, r, back: back.map(m => m.name), why: 'beacon' });
+  // A Beacon's roll chains: everything it brings back rolls the row again, until a roll is quiet or the row is empty.
+  function persistRoll(G, why = 'beacon') {
+    if (!G.row.length || G.over) return; const r = rowDie(G), back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]);
+    G.persist = { r, back: back.map(m => m.name), round: G.round }; G.plog.push({ sit: G.sit, r, back: back.map(m => m.name), why });
     if (!back.length) { log(G, `Persist roll ${r}: the row stays quiet.`); return; }
     if (back.some(m => m.ability === 'spread')) { const extra = G.row.find(m => !back.includes(m)); if (extra) back.push(extra); }
     G.row = G.row.filter(m => !back.includes(m)); G.stats.back += back.length; if (!G.bossIn) G.stats.midBack = (G.stats.midBack || 0) + back.length; G.stats.maxBack = Math.max(G.stats.maxBack, back.length);
     log(G, `Persist roll ${r}: ${back.map(m => m.name).join(', ')} came back.`);
-    for (const m of back) { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; m.up = 0; enter(G, m, true); if (D.returnStrike && !G.over) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`)); }
+    for (const m of back) { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; m.up = 0; if (D.returnStrike && !G.over) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`, [m.name])); enter(G, m, true, true); }
   }
-  function enter(G, m, fromRow) { G.play.push(m); if (m.ability === 'beacon') { log(G, `${m.name}: ${m.abilityName}. Persist roll now.`); persistRoll(G); } }
+  function enter(G, m, fromRow, chained) {
+    G.play.push(m);
+    if (m.ability === 'beacon') { log(G, `${m.name}: ${m.abilityName}. Persist roll now.`); persistRoll(G); }
+    else if (chained) { G.stats.chained = (G.stats.chained || 0) + 1; log(G, `${m.name} answered the beacon. Persist roll now.`); persistRoll(G, 'chain'); }
+  }
   function startCombat(G, mobs) { G.decoyUsed = false; G.scouted = false; G.phase = 'combat'; G.round = 0; G.play = []; mobs.forEach(m => enter(G, m, m.kind === 'boss' || G.bossIn)); beginRound(G); }
   function beginRound(G) {
-    if (G.over) return; G.round++; G.stats.rounds++; G.dice = []; G.rolled = false; G.rest = -1; G.blocks = G.team.map(() => false); G.persist = null; G.decoyRound = false; G.boost = 0; G.mark = G.play.length ? G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0].uid : null;
+    if (G.over) return; G.round++; G.stats.rounds++; G.dice = []; G.rolled = false; G.rest = -1; G.blocks = G.team.map(() => false); G.persist = null; G.decoyRound = false; G.boost = 0; G.undo = []; G.mark = G.play.length ? G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0].uid : null;
     if (G.round > 1 && !D.flipOnlyPersist) persistRoll(G);
   }
   function setRest(G, k) { if (G.phase !== 'combat' || G.rolled || G.team.length < 2) return false; G.rest = G.rest === k ? -1 : k; return true; }
@@ -111,7 +117,7 @@ function DTD12(D) {
     const evasive = G.play.some(m => m.ability === 'evasive');
     G.team.forEach((w, k) => {
       if (k === G.rest) { if (w === 'PAT') { spread(G, 3); log(G, 'The Fixer goes off-shift and patches up the crew: 3 HP.'); } else { heal(G, k, D.restHeal ?? 1); log(G, `${nm(G, k)} goes off-shift: +1 HP.`); } G.stats.rests++; return; }
-      const nd = G.team.length === 1 ? (D.soloDice || 3) : 1 + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) { const r = d20(G), dbl = r >= (w === 'ENG' ? 16 : 18); G.stats.crewDice = (G.stats.crewDice || 0) + 1; G.dice.push({ kind: 'crew', k, r, dbl, used: false }); if (dbl) G.blocks[k] = true; if (evasive && r <= 2) hurt(G, k, 1, 'a hallucinating app'); }
+      const nd = G.team.length === 1 ? (D.soloDice || 3) : 1 + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) { const r = d20(G), dbl = r >= (w === 'ENG' ? 16 : 18); G.stats.crewDice = (G.stats.crewDice || 0) + 1; G.dice.push({ kind: 'crew', k, r, dbl, used: false }); if (dbl) G.blocks[k] = true; if (evasive && r <= 2) hurt(G, k, 1, 'a hallucinating app', G.play.filter(m => m.ability === 'evasive').map(m => m.name)); }
       if (!aiOn(G)) G.held[k].filter(c => c.kind === 'agent' && (c.type === 'triage' || c.type === 'hunt')).forEach(a => G.dice.push({ kind: 'agent', k, card: a, r: d20(G), used: false }));
     });
     G.blocks.forEach((b, k) => { if (b) { G.stats.blocks++; log(G, `${nm(G, k)} rolled a double and blocks this round.`); } });
@@ -127,17 +133,24 @@ function DTD12(D) {
   }
   function assign(G, i, uid) {
     const d = G.dice[i], m = G.play.find(x => x.uid === uid); if (G.over || !d || !m || !beats(G, d, m)) return false;
-    d.used = true; if (d.kind === 'crew') G.stats.crewUsed = (G.stats.crewUsed || 0) + 1; const n = (d.dbl || d.r >= 18) ? 2 : 1; m.left = Math.max(0, m.left - n); G.stats[d.kind === 'agent' ? 'agentHits' : 'crewHits'] += n;
+    d.used = true; if (d.kind === 'crew') G.stats.crewUsed = (G.stats.crewUsed || 0) + 1; const n = (d.dbl || d.r >= 18) ? 2 : 1, was = m.left; m.left = Math.max(0, m.left - n); G.stats[d.kind === 'agent' ? 'agentHits' : 'crewHits'] += n;
     log(G, `${d.kind === 'agent' ? d.card.name : nm(G, d.k)} hits ${m.name}${n > 1 ? ' twice' : ''}.`);
-    if (m.left <= 0) beaten(G, m);
+    if (m.left <= 0) { G.undo = []; beaten(G, m); } else (G.undo = G.undo || []).push({ i, m, was, n, left: m.left, logAt: G.log.length });
     return true;
+  }
+  // Takes back the last die put on a mob this round, as long as that hit didn't beat it and nothing has touched the mob since.
+  const canUndo = G => { const u = G.undo && G.undo[G.undo.length - 1]; return !!u && !G.over && G.phase === 'combat' && G.play.includes(u.m) && u.m.left === u.left && G.dice[u.i] && G.dice[u.i].used; };
+  function unassign(G) {
+    if (!canUndo(G)) return false; const u = G.undo.pop(), d = G.dice[u.i];
+    d.used = false; u.m.left = u.was; if (d.kind === 'crew') G.stats.crewUsed--; G.stats[d.kind === 'agent' ? 'agentHits' : 'crewHits'] -= u.n;
+    if (G.log.length === u.logAt) G.log.pop(); return true;
   }
   function beaten(G, m) {
     if (m.kind === 'boss' && m.id === 'apt' && !m.rose) { m.rose = true; m.left = 2; log(G, `${m.name} comes back with 2 hits left.`); return; }
     G.play = G.play.filter(x => x !== m); G.stats.beaten++;
     if (m.kind === 'boss') { G.over = true; G.win = true; G.phase = 'over'; log(G, `${m.name} is down. Shift survived.`); return; }
     const lim = m.ability === 'sticky' ? 2 : 1;
-    if (D.alwaysPersist || m.back < lim) { m.persist = m.ability === 'wide' ? [1, D.persist.routine[1] + 4] : m.routine ? D.persist.routine : D.persist.novel; G.row.push(m); log(G, `${m.name} is down. Into the persistence row: back on ${m.persist[0]}–${m.persist[1]}.`); }
+    if (D.alwaysPersist || m.back < lim) { G.row.push(m); log(G, `${m.name} is down. Into the persistence row: back on ${m.persist[0]}–${m.persist[1]}.`); }
     else log(G, `${m.name} is down for good.`);
     if (!G.play.length) endCombat(G);
   }
@@ -152,7 +165,7 @@ function DTD12(D) {
     G.held[k].splice(idx, 1); log(G, `${nm(G, k)} used ${c.name}.`); return true;
   }
   function burn(G, k, idx, target) {
-    const c = G.held[k][idx]; if (!c || G.over || c.kind !== 'agent') return false;
+    const c = G.held[k][idx]; if (!c || G.over || c.kind !== 'agent') return false; G.undo = [];
     const inFight = G.phase === 'combat';
     if (c.type === 'triage') { if (!inFight || !G.rolled) return false; for (let i = 0; i < 3; i++) { const r = d20(G); G.dice.push({ kind: 'crew', k: G.point, r, dbl: r >= (G.team[k] === 'ENG' ? 16 : 18), used: false }); } }
     else if (c.type === 'hunt') { const m = G.play.find(x => x.uid === target); if (!inFight || !m || m.kind === 'boss' || m.left > 2) return false; m.left = 0; beaten(G, m); }
@@ -172,31 +185,33 @@ function DTD12(D) {
   }
   function trade(G, k, idx, j) { if (G.phase !== 'point' || !G.held[k][idx] || G.held[j].length >= slots(G, j)) return false; G.held[j].push(G.held[k].splice(idx, 1)[0]); return true; }
   function dmgOf(G, m) { if (m.kind === 'boss' && m.id === 'wyrm' && m.left > m.hits - 2) return m.dmg + 2; return m.dmg + (m.ability === 'ramp' ? m.up : 0); }
-  function incoming(G) {
-    const out = G.team.map(() => 0); const fight = G.team.map((_, k) => k !== G.rest);
+  // Who takes what at the end of this round, mob by mob: one list per analyst of { m, d }.
+  function incomingBy(G) {
+    const out = G.team.map(() => []); const fight = G.team.map((_, k) => k !== G.rest);
     const dm = new Map(G.play.map(m => [m, dmgOf(G, m)]));
     for (let i = 0; i < active(G, 'contain').length; i++) { const top = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (top && top[1] > 1) dm.set(top[0], top[1] - 1); }
     for (const m of G.play) {
       const d = dm.get(m), pierce = m.ability === 'noblock'; if (!d) continue;
-      if (m.ability === 'onpoint') { const k = G.point; if (fight[k] && (pierce || !G.blocks[k])) out[k] += d * 2; continue; }
+      if (m.ability === 'onpoint') { const k = G.point; if (fight[k] && (pierce || !G.blocks[k])) out[k].push({ m, d: d * 2 }); continue; }
       let ts = G.team.map((_, k) => k).filter(k => fight[k]);
       if (m.ability === 'lowest') { const lo = Math.min(...ts.map(k => G.hps[k])); ts = ts.filter(k => G.hps[k] === lo); }
-      for (const k of ts) if (pierce || !G.blocks[k]) out[k] += d;
+      for (const k of ts) if (pierce || !G.blocks[k]) out[k].push({ m, d });
     }
-    if (G.decoyRound) out[G.point] = 0;
+    if (G.decoyRound) out[G.point] = [];
     return out;
   }
+  const incoming = G => incomingBy(G).map(l => l.reduce((s, x) => s + x.d, 0));
   function setMark(G, uid) { if (G.phase !== 'combat' || G.rolled || !active(G, 'enrich').length || !G.play.some(m => m.uid === uid)) return false; G.mark = uid; return true; }
   function decoy(G) { if (G.phase !== 'combat' || !G.rolled || G.decoyUsed || !active(G, 'decoy').length) return false; G.decoyUsed = true; G.decoyRound = true; log(G, `The Decoy Agent draws fire: ${nm(G, G.point)} takes no damage this round.`); return true; }
   const peek = G => carried(G, 'recon') && G.deck.length ? G.deck[G.deck.length - 1] : null;
   function endRound(G) {
     if (G.phase !== 'combat' || !G.rolled || G.over) return false;
-    const inc = incoming(G); G.lastHit = inc; G.lastRound = { inc: inc.slice(), blocks: G.blocks.slice(), rest: G.rest, decoy: !!G.decoyRound, contain: active(G, 'contain').length > 0, round: G.round };
-    inc.forEach((n, k) => { if (!G.over && n) hurt(G, k, n, 'mobs still in play'); });
+    const by = incomingBy(G), inc = by.map(l => l.reduce((s, x) => s + x.d, 0)); G.lastHit = inc; G.lastRound = { inc: inc.slice(), by: by.map(l => l.map(x => ({ name: x.m.name, d: x.d }))), blocks: G.blocks.slice(), rest: G.rest, decoy: !!G.decoyRound, contain: active(G, 'contain').length > 0, round: G.round };
+    inc.forEach((n, k) => { if (!G.over && n) hurt(G, k, n, 'mobs still in play', by[k].map(x => x.m.name)); });
     if (G.over) return true;
     for (const m of G.play) { m.up++; if (m.ability === 'regen' && m.left < m.hits) m.left++; }
     beginRound(G); return true;
   }
-  return { slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, useItem, takeLoot, trade, endRound, incoming, dmgOf, cls, alive };
+  return { slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, useItem, takeLoot, trade, endRound, incoming, incomingBy, unassign, canUndo, dmgOf, cls, alive };
 }
 if (typeof module !== 'undefined') module.exports = DTD12;

@@ -8,7 +8,7 @@ Generated from `data/cards.json` by `npm run cards`. Don't edit by hand.
 
 | Recruit | Analyst | Veteran | Quick Shift | First Shift |
 | --- | --- | --- | --- | --- |
-| 56 | 46 | 38 | 28 | 18 |
+| 50 | 42 | 34 | 26 | 18 |
 
 ## Keywords
 
@@ -19,31 +19,31 @@ Generated from `data/cards.json` by `npm run cards`. Don't edit by hand.
 | Stalker | It only hits the analyst with the lowest HP. |
 | Evasive | Only a natural 12 or higher can hit it. |
 | Regen | Heals 1 hit at the end of each round. |
-| Beacon | When it enters play or comes back, roll for the persistence row. |
+| Beacon | When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too. |
 | Fileless | Agents can't hit it. |
 | Escalating | +1 damage every round it stays up. |
 
 ## Mobs
 
-Printed hits are for two players. In play: printed + analysts − 2, never below 1. Every mob comes back from the persistence row on 1–8.
+Printed hits are for two players. In play: printed + analysts − 2, never below 1. Each mob comes back from the persistence row when the row die lands in its Back range.
 
-| Mob | Domain | Def | Hits | Dmg | Keyword |
-| --- | --- | --- | --- | --- | --- |
-| Mailer Daemon | Identity | 11 | 3 | 1 | Beacon |
-| Macro Gremlin | Endpoint | 13 | 2 | 1 | Targeted |
-| Password Sprayer | Identity | 11 | 2 | 1 | Piercing |
-| MFA Banshee | Identity | 11 | 2 | 1 | Stalker |
-| Vibe Coded App | Cloud | 12 | 3 | 1 | Escalating |
-| PowerShell Wraith | Endpoint | 13 | 3 | 3 | Fileless |
-| Living-off-the-Land Scavenger | Endpoint | 12 | 3 | 3 | Evasive |
-| DNS Beacon Drone | Network | 12 | 3 | 3 | Beacon |
-| OAuth Consent Grifter | Cloud | 13 | 2 | 3 | Targeted |
-| Rootkit Implant | Endpoint | 13 | 4 | 4 | Regen |
-| Kerberoast Enforcer | Identity | 15 | 4 | 4 | Piercing |
-| LSASS Siphon | Endpoint | 14 | 3 | 4 | Regen |
-| PsExec Swarm | Endpoint | 12 | 4 | 4 | Beacon |
-| Golden Ticket Ghost | Identity | 14 | 4 | 4 | Evasive |
-| Exfil Courier | Network | 14 | 3 | 4 | Escalating |
+| Mob | Domain | Def | Hits | Dmg | Back | Keyword |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mailer Daemon | Identity | 11 | 3 | 1 | 1–10 | Beacon |
+| Macro Gremlin | Endpoint | 13 | 2 | 1 | 1–9 | Targeted |
+| Password Sprayer | Identity | 11 | 2 | 1 | 1–10 | Piercing |
+| MFA Banshee | Identity | 11 | 2 | 1 | 1–10 | Stalker |
+| Vibe Coded App | Cloud | 12 | 3 | 1 | 1–9 | Escalating |
+| PowerShell Wraith | Endpoint | 13 | 3 | 3 | 1–7 | Fileless |
+| Living-off-the-Land Scavenger | Endpoint | 12 | 3 | 3 | 1–8 | Evasive |
+| DNS Beacon Drone | Network | 12 | 3 | 3 | 1–8 | Beacon |
+| OAuth Consent Grifter | Cloud | 13 | 2 | 3 | 1–6 | Targeted |
+| Rootkit Implant | Endpoint | 13 | 4 | 4 | 1–5 | Regen |
+| Kerberoast Enforcer | Identity | 15 | 4 | 4 | 1–5 | Piercing |
+| LSASS Siphon | Endpoint | 14 | 3 | 4 | 1–6 | Regen |
+| PsExec Swarm | Endpoint | 12 | 4 | 4 | 1–6 | Beacon |
+| Golden Ticket Ghost | Identity | 14 | 4 | 4 | 1–4 | Evasive |
+| Exfil Courier | Network | 14 | 3 | 4 | 1–5 | Escalating |
 
 ## Situations
 

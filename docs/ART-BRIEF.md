@@ -62,7 +62,9 @@ Crew drones keep their single cyan lens. That lens is a tool, not a face, and it
 
 ## Mobs
 
-Each mob is a single bold orange silhouette that reads at thumbnail size (check at 96×54). If two mobs look alike in silhouette, one of them is wrong. Nothing in the cast is a sheet ghost. Keep the subject in the middle half of the frame. Web cards crop the sides hard.
+Each mob is a single bold orange silhouette that reads at thumbnail size (check at 96×54). If two mobs look alike in silhouette, one of them is wrong. Nothing in the cast is a sheet ghost.
+
+The centering rule: the whole silhouette sits inside the central 60% of the frame width (x 40 to 160 of 200), with its mass centred near x 100, and its head or top inside y 14 to 98. On a phone the web card shows the art as a tall portrait crop, sometimes only the middle 60 units of the width. A figure off to one side loses its head or half its body there. Props and accents (a vault, a bucket, a dialog, a spray of asterisks) may sit outside the band, because cropping them leaves the threat whole. Check every mob at 112×112, 84×112 and 60×112 centre crops as well as 96×54.
 
 | Card | Domain | Silhouette | Accent |
 | --- | --- | --- | --- |
@@ -75,7 +77,7 @@ Each mob is a single bold orange silhouette that reads at thumbnail size (check 
 | PowerShell Wraith | Endpoint | Orange smoke curling up out of a terminal window. | A `>_` prompt. A grey disk drive the smoke never touches. |
 | Living-off-the-Land Scavenger | Endpoint | A hooded cloak, the hood a void. A sack of borrowed tools. | A staff that sprouts leaves. |
 | Rootkit Implant | Endpoint | A process window on the floor, lid prised open, light spilling up. | Dark hooks hanging over the lip. Window dots and fake svchost text on the lid. |
-| LSASS Siphon | Endpoint | A segmented leech. | Latched onto a grey credential vault. Keys drain along its back. |
+| LSASS Siphon | Endpoint | A segmented leech rearing up from the floor in the middle of the frame. | Latched onto a grey credential vault. Keys drain along its back. |
 | PsExec Swarm | Endpoint | One trunk, five necks, each head a service box with one status LED. | A cut neck that grows two new heads. |
 | Vibe Coded App | Cloud | A leaning stack of blocks with one crack running down it. | An amber deploy LED on top. Keys dangling on strings. |
 | OAuth Consent Grifter | Cloud | A lanky horned figure in silhouette, lit only by the dialog it holds up. | A giant consent dialog with a big Accept button. |
@@ -89,6 +91,25 @@ Bosses fill the frame. No skyline, no backdrop showing around them. They are dra
 - **The Lockjaw Syndicate (Endpoint).** Ransomware, not a monster. The SOC wall has gone dark orange, screen by screen, each one a hex dump with a small amber padlock on it. The main monitor in the middle shows the ransom note: an orange header bar, lines of demand text, a big seven-segment countdown (47:59:58) and a wallet field with an amber Pay button. On the left monitor a file tree is locked file by file; on the right one, encryption sits at 100 percent over a grid of orange files. Two empty chairs face the desk, rim-lit by the screens, and the note throws an orange pool on the desk. The padlock appears only as a small emblem. No faces, no teeth.
 - **The Persistent Operator (Identity).** A figure in the lit lobby doorway. Its shadow runs down the floor to your feet. A fan of cloned badges in one hand.
 - **The Rogue AI (Cloud).** A camera iris at the end of the rack aisle, six blades closing on a lit core. Not an eyeball. Every LED has turned orange. Cables run from the iris into the racks.
+
+## Win variants
+
+When the crew holds the line, the win end screen shows the same place as the boss scene, a few minutes later. Keys: `win_wyrm`, `win_apt`, `win_ai` (200×112) and `_win.wyrm`, `_win.apt`, `_win.ai` (400×170, the same shape as `_boss`). The web falls back to the boss art if a key is missing.
+
+The rules for every win scene:
+
+- Same room, same camera, same furniture. The player has to recognise the place in one look.
+- The orange threat light is gone. At most one small ember stays: a dim padlock, a stray orange LED, a dropped badge.
+- Screens and status lights go cyan. Cyan is the crew; the room is theirs again.
+- Dawn shows in any window the room has.
+- No faces, no people celebrating. The win is in the state of the room.
+- It must read as a victory at 96×54, next to the boss scene.
+
+| Key | What changed |
+| --- | --- |
+| `win_wyrm` | The Lockjaw wall is back to cyan, each screen with a small check. The main monitor has a cyan header, a big cyan check and the countdown stopped at 00:00:00 over a full restore bar. The file tree and file grid are cyan again. The chairs are rim-lit cyan. A fresh coffee steams on the desk. One dim padlock remains on the far-left screen. |
+| `win_apt` | The lobby door is shut: two dark steel leaves, a cyan lock bar and a cyan check panel. The badge reader beside it shows a cyan LED and check. Dawn comes up in two high windows either side of the door. The cloned badges lie on the floor where the operator dropped them. Turnstile LEDs are cyan. |
+| `win_ai` | The iris is shut, six blades meeting in the middle with no core. Its cables are dead grey. The ring and ticks are dim cyan, three cyan status lights sit under it, and the racks are back to cyan with a few orange embers. |
 
 ## Situations
 
@@ -139,8 +160,8 @@ The title text and the footer lines are set by the deck template, not the art. L
 
 ## Frames and crops
 
-- Scenes are 200×112. Web panels crop them tall and narrow (as narrow as 96×90). Print shows them at 210×86. Keep the subject inside the middle half.
-- Bosses are 400×170 for the banner and print. The 200×112 version is a center crop.
+- Scenes are 200×112. Web panels crop them tall and narrow (on a phone, as narrow as the middle 60 units of the width). Print shows them at 210×86. Keep the subject inside the central 60% of the width (see the centering rule under Mobs). The web may also set a per-scene focal crop; the centering rule means the default centre crop already works.
+- Bosses are 400×170 for the banner and print. The 200×112 version is a center crop. Win variants follow the same pair (`_win.<id>` and `win_<id>`).
 - Print bosses and the back mark ids with `{{SID}}`.
 - Every gradient id in `data/art.json` carries its scene key as a suffix, so scenes can share a page.
 

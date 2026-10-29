@@ -54,12 +54,15 @@ const row = (a, b) => `<div style="display: flex; justify-content: space-between
 const HP = D.hp.full[1], QHP = D.hp.quick[1], IHP = D.hp.intro[1];
 
 function mob(m) {
-  return shell(`${art(ART[m.id], 100)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Hits', m.hits)}${stat('Damage', m.dmg)}</div>${boxes(m.hits)}\n${kwchip(m)}${foot(m.flavor)}`);
+  return shell(`${art(ART[m.id], 104)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Hits 2p', m.hits)}${stat('Damage', m.dmg)}</div>${boxes(m.hits)}\n${kwchip(m)}${foot(m.flavor)}`);
 }
 function sit(s) {
   const kind = { challenge: 'one attempt', choice: 'choose one', event: 'event' }[s.type];
   // Each situation has its own scene (sit_<id>), the same one the web game shows; older art falls back to its type.
-  return shell(`${art(ART['sit_' + s.id] || ART[s.type === 'challenge' ? 'fp' : 'event'], 118)}${row(tag('Situation', CY), hud(kind, CYT))}${nm(s.name, 17)}${tx(s.text, 11, PMUT, 500)}\n<div style="margin-top: auto; background: #FFFFFF; border: 1px solid ${CYT}; padding: 5px 8px; display: flex; flex-direction: column; gap: 2px">${tx(s.rule, 12.5, PINK, 700)}${(s.opts || []).map(o => tx('• ' + o.label, 12, PINK, 500)).join('')}</div>`, CY, CYT);
+  // Art height is fixed per card type (the largest the longest card allows) so every situation lines up;
+  // the rule box takes whatever height the copy leaves free, so a short card has no blank band.
+  const big = !s.opts && s.rule.length < 48;
+  return shell(`${art(ART['sit_' + s.id] || ART[s.type === 'challenge' ? 'fp' : 'event'], 128)}${row(tag('Situation', CY), hud(kind, CYT))}${nm(s.name, 17)}${tx(s.text, 12, PMUT, 500)}\n<div style="flex: 1 0 auto; background: #FFFFFF; border: 1px solid ${CYT}; padding: 6px 8px; display: flex; flex-direction: column; justify-content: center; gap: 3px">${tx(s.rule, big ? 15 : 12.5, PINK, 700).replace('<div style="', '<div style="text-wrap: pretty; ')}${(s.opts || []).map(o => tx('• ' + o.label, 12, PINK, 500)).join('')}</div>`, CY, CYT);
 }
 // Ransom demand (the engine's dmgOf): Lockjaw deals +2 until it has taken two hits. The card says so
 // beside the printed Damage, and its first two hit boxes are flare, so the table sees when it drops.
@@ -67,7 +70,7 @@ const RAMP = { wyrm: { add: 2, hits: 2 } };
 function boss(b) {
   const r = RAMP[b.id];
   const dmg = r ? `${b.dmg}<span style="font-size: 11px; color: ${FLT}"> +${r.add}</span>` : b.dmg;
-  return shell(`${art(PRINT_ART['boss_' + b.id], 84)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${r ? boxes(b.hitsBase, r.hits, `+${r.add} dmg until ${r.hits} hits`) : boxes(b.hitsBase)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Arrives after the last situation, with a persist roll for the row. Agents never touch the boss.')}`);
+  return shell(`${art(PRINT_ART['boss_' + b.id], 86)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${r ? boxes(b.hitsBase, r.hits, `+${r.add} dmg until ${r.hits} hits`) : boxes(b.hitsBase)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Arrives after the last situation, then make a Row roll. Agents never touch the boss.')}`);
 }
 // How to play each analyst, in a line or two. The shared fight rules live on the "A fight" reference card.
 const MOVE = {
@@ -91,14 +94,14 @@ function tracker() {
 }
 function rowmat() {
   const slots = `<div style="height: 46px; border: 1px dashed ${AMT}; display: flex; align-items: center; justify-content: center">${hud('mob', AMT)}</div>`.repeat(6);
-  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, roll a d20 for the row. Any mob whose range (on its card) matches comes back, hits everyone, and joins the fight with 1 hit.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Setup: deal ${D.deal.full} situations (Quick Shift ${D.deal.quick}, and the crew starts with ${D.quickStartAgent} agents). Boss face down underneath.`, 10, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
+  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, make the Row roll: one d20. Any mob whose range (on its card) matches comes back, hits everyone, and joins the fight with 1 hit.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Setup: deal ${D.deal.full} situations (Quick Shift ${D.deal.quick}, and the crew starts with ${D.quickStartAgent} agents). Boss face down underneath.`, 10, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
 }
 // Reference rows: a mono run-in label, then the rule, so each row spends its width on words.
 const runin = (label, t, c = FLT, size = 10) => `<div style="font-family: ${CHK}; font-weight: 500; font-size: ${size}px; line-height: ${lh(size)}px; color: ${PINK}"><span style="font-family: ${MONO}; font-weight: 600; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(label)}</span> ${e(t)}</div>`;
 const refrow = inner => `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 3px">${inner}</div>`;
 function fight() {
-  const rows = [['On point', "Before each flip, pick who's on point. They roll 2 dice and take the kit draw."], ['Mob hits', 'Printed hits + analysts − 2, never below 1. Boss: printed + 1 per analyst.'], ['Off-shift', 'One analyst may skip their roll: no damage, +1 HP.'],
-    ['Roll', 'Everyone rolls at once; agents roll too. Assign each die to a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', 'Double: two hits, and you block this round. Engineer: 16–20.'], ['Hits', "Every mob still up hits everyone who didn't block."], ['Won', 'Draw a kit card. Beaten mobs go back to the row. One that comes back hits everyone, then needs 1 hit.', AMT]];
+  const rows = [['On point', "Before each flip, pick who's on point. They roll 2 dice and take the kit draw."], ['Mob hits', 'Printed for 2p: add analysts − 2, never below 1. Boss: printed + 1 per analyst.'], ['Off-shift', 'One analyst may skip their roll: no damage, +1 HP.'],
+    ['Roll', 'Everyone rolls at once; agents roll too. Assign each die to a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', 'Double: two hits, and you block this round. Engineer: 16–20.'], ['Hits', "Every mob still up hits everyone who didn't block."], ['Won', 'Draw a kit card. Beaten mobs go to the persistence row. One that comes back hits everyone, then needs 1 hit.', AMT]];
   return shell(`${tag('Reference', CY)}${nm('A fight', 18)}${rows.map(([a, b, c]) => refrow(runin(a, b, c))).join('')}`, CY, CYT);
 }
 function glossary() {

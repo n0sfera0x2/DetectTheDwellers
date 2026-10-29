@@ -79,6 +79,16 @@ const canHit = i => { const d = G.dice[i]; return d && !d.used && G.play.some(m 
 const firstLive = () => { const i = G.dice.findIndex((d, j) => canHit(j)); return i >= 0 ? i : null; };
 const liveCount = () => G.dice.filter((d, i) => canHit(i)).length;
 const isDouble = d => d.dbl || d.r >= 18;
+// Why a picked die can't hit this card, matching the engine's beats(): the rule, not just the numbers.
+function missWhy(d, m) {
+  const who = d.kind === 'agent' ? `The ${d.card.name}’s ${d.r}` : `Die ${d.r}`;
+  if (d.kind === 'agent' && m.kind === 'boss') return `${who} can’t hit it: agents never touch the boss.`;
+  if (d.kind === 'agent' && m.ability === 'noagent') return `${who} can’t hit it: Fileless, agents can’t touch it.`;
+  if (d.kind === 'agent' && d.card.type === 'hunt' && m.left > 2) return `${who} can’t hit it: the Hunt Agent only hits a mob with 1 or 2 hits left.`;
+  if (m.ability === 'hardened' && d.r < 12) return `${who} can’t hit it: Evasive, only a natural 12 or higher.`;
+  if (d.r === 1) return `${who} can’t hit it: a natural 1 always misses.`;
+  return `${who} can’t hit it (${E.total(G, d, m)} vs ${m.def}).`;
+}
 const toTop = () => { try { scrollTo(0, 0); } catch (e) { /* jsdom */ } };
 const listOf = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 const cap1 = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
@@ -418,7 +428,7 @@ function mobHTML(m, ko, solo) {
   const d = !ko && UI.sel !== null ? G.dice[UI.sel] : null, ok = d && E.beats(G, d, m);
   // Wide screens hit from the card; narrow screens hit from the dock's target buttons, so this one hides there.
   const btn = ok ? `<button class="btn p w hitb" type="button" data-a="hit" data-v="${m.uid}" data-k="h${m.uid}">Hit it · ${hitWhy(d, m)}</button>`
-    : d ? `<p class="nohit">Die ${d.r} can’t hit this one${d.kind === 'crew' && d.r !== 1 && !(m.ability === 'hardened' && d.r < 12) ? ` (${E.total(G, d, m)} vs ${m.def})` : ''}.</p>` : '';
+    : d ? `<p class="nohit">${esc(missWhy(d, m))}</p>` : '';
   const right = boss ? `<span class="phud f">${esc(m.domain)}</span>` : `<span class="rng">${m.routine ? 'Routine · ' : ''}Back on ${m.persist[0]}–${m.persist[1]}</span>`;
   const kw = m.kw && D.keywords[m.kw] ? `<svg class="kwi" viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${D.keywords[m.kw].icon}</svg>` : '';
   const back = !ko && !boss && m.back > 0, fx = FOCAL[m.id];
@@ -569,14 +579,14 @@ function dockHTML() {
       const num = d.used ? null : (UI.order.push(i), UI.order.length), nat = d.r >= 18, burstKey = G.sit + '.' + G.round + '.' + i, burst = nat && !d.used && !UI.dice.has(burstKey); UI.dice.add(burstKey);
       // The bonus is on the die, so "no target" next to "ready" explains itself: 8 +5 still falls short of 15.
       const bb = d.used ? 0 : bestBonus(d), live = !d.used && canHit(i);
-      const cap = UI.sel === i ? (isDouble(d) && d.kind === 'crew' ? 'picked ×2' : 'picked') : d.kind === 'agent' ? TNAME[d.card.type] + ' agent' : isDouble(d) ? 'double ×2' : d.used ? 'used' : live ? 'ready' : 'no target';
+      const cap = d.kind === 'agent' ? TNAME[d.card.type] + ' agent' : UI.sel === i ? (isDouble(d) ? 'picked ×2' : 'picked') : isDouble(d) ? 'double ×2' : d.used ? 'used' : live ? 'ready' : 'no target';
       const why = d.used ? '' : bb ? `, plus ${bb} at best` : '';
       const skip = !d.used && !live && n && UI.sel !== i;
-      return `<button type="button" class="die ${d.kind === 'agent' ? 'ag' : ''} ${isDouble(d) && d.kind === 'crew' ? 'nat' : ''} ${d.used ? 'used' : ''} ${!d.used && !live ? 'dead' : ''}" data-a="die" data-v="${i}" data-k="die${i}" aria-pressed="${UI.sel === i}" aria-label="${esc(d.kind === 'agent' ? d.card.name : nm(k))} die ${d.r}${why}, ${cap}" ${d.used ? 'disabled' : ''}${skip ? ' tabindex="-1"' : ''}>${burst && !reduced() ? '<i class="burst" aria-hidden="true"></i>' : ''}${num && num < 10 ? `<kbd aria-hidden="true">${num}</kbd>` : ''}<b>${d.r}${bb ? `<em>+${bb}</em>` : ''}</b><span>${cap}</span></button>`; }).join('')}</div></div>`; }).join('');
+      return `<button type="button" class="die ${d.kind === 'agent' ? 'ag' : ''} ${isDouble(d) && d.kind === 'crew' ? 'nat' : ''} ${d.used ? 'used' : ''} ${!d.used && !live ? 'dead' : ''}" data-a="die" data-v="${i}" data-k="die${i}" aria-pressed="${UI.sel === i}" aria-label="${esc(d.kind === 'agent' ? d.card.name : nm(k))} die ${d.r}${why}, ${cap}${d.kind === 'agent' ? (UI.sel === i ? ', picked' : live || d.used ? '' : ', no target') : ''}" ${d.used ? 'disabled' : ''}${skip ? ' tabindex="-1"' : ''}>${burst && !reduced() ? '<i class="burst" aria-hidden="true"></i>' : ''}${num && num < 10 ? `<kbd aria-hidden="true">${num}</kbd>` : ''}<b>${d.r}${bb ? `<em>+${bb}</em>` : ''}</b><span>${cap}</span></button>`; }).join('')}</div></div>`; }).join('');
   // Narrow screens: once a die is picked, its targets sit in the dock itself, stacked, so a hit never needs a scroll.
   // Wide screens hit from the mob cards instead, so there is one Hit per target either way.
   const sd = UI.sel !== null ? G.dice[UI.sel] : null, tg = sd ? G.play.filter(m => E.beats(G, sd, m)) : [];
-  const tgts = sd ? `<div class="tgts" role="group" aria-label="Targets for die ${sd.r}">${tg.length ? tg.map(m => `<button class="btn p s" type="button" data-a="hit" data-v="${m.uid}" data-k="th${m.uid}">Hit ${esc(m.name)} · ${isDouble(sd) ? `${sd.r} ×2` : `${E.total(G, sd, m)} vs ${m.def}`}</button>`).join('') : `<p class="meta">Die ${sd.r} can’t hit anything in play.</p>`}</div>` : '';
+  const tgts = sd ? `<div class="tgts" role="group" aria-label="Targets for die ${sd.r}">${tg.length ? tg.map(m => `<button class="btn p s" type="button" data-a="hit" data-v="${m.uid}" data-k="th${m.uid}">Hit ${esc(m.name)} · ${isDouble(sd) ? `${sd.r} ×2` : `${E.total(G, sd, m)} vs ${m.def}`}</button>`).join('') : `<p class="meta">${esc(G.play.length === 1 ? missWhy(sd, G.play[0]) : `${sd.kind === 'agent' ? `The ${sd.card.name}’s ${sd.r}` : `Die ${sd.r}`} can’t hit anything in play.`)}</p>`}</div>` : '';
   const decoy = !G.decoyUsed && E.active(G, 'decoy').length ? `<button class="btn s cy" type="button" data-a="decoy" data-k="dcy">Decoy: ${esc(nm(G.point))} takes no damage</button>` : G.decoyRound ? `<span class="badge">Decoy active: ${esc(nm(G.point))} protected</span>` : '';
   const undo = E.canUndo(G) ? `<button class="btn s" type="button" data-a="undo" data-k="undo" aria-keyshortcuts="U">${ICON.undo}Undo ${kb('U')}</button>` : '';
   const endBtn = `<button class="btn ${UI.confirmEnd ? 'warn' : n ? '' : 'p'} big" type="button" data-a="end" data-k="end" ${n ? '' : 'data-primary'} aria-keyshortcuts="E">${UI.confirmEnd ? 'End anyway · take the hits' : 'End round · take the hits'} ${kb('E')}</button>`;

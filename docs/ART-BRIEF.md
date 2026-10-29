@@ -169,46 +169,53 @@ The title text and the footer lines are set by the deck template, not the art. L
 
 The scenes in this repo are flat vector placeholders from a generator script. They fix composition, silhouette, palette and light for each card. A commissioned artist should keep those four and replace the drawing.
 
-## Ink & Static (proposed)
+## Ink & Static
 
-A proposed art direction, prototyped on three cards for a go or no-go call: Mailer Daemon (`mailer`), The Persistent Operator (`_boss.apt` and `boss_apt`) and Pager Storm (`sit_pager`). Nothing in `data/art.json` or `data/art-print.json` has changed yet. If it is approved, it replaces the finish of every scene. The composition rules above (the centering band, the crops, the boss frame, the `{{SID}}` ids) stay.
+Ink & Static is the approved art direction for the whole deck. It replaces the finish of every scene. The composition rules above still hold: the centering band, the crops, the boss frame and the `{{SID}}` ids. Where it conflicts with the palette, light and "No faces" sections above, this section wins.
 
-It takes its cue from the black-and-white ink tradition of old-school tabletop RPG books and zines: heavy blacks, one light, hatched mid-tones and a hand-inked line. Work from those traits. Don't copy any one book, artist or illustration.
+It takes its cue from the black-and-white ink tradition of old-school tabletop RPG books and zines, pushed toward gritty dark fantasy meeting cyberpunk. Work from the traits below. Don't copy any one book, artist or illustration.
 
-### The seven traits
+### The traits
 
-1. **One light per scene: the monitor glow.** It is the torch. Every lit surface faces it, every shadow runs away from it, and nothing else in the room gives light. In the lobby it is the reception terminal or the CCTV wall; at the desk it is the screen. The screen itself is the brightest paper in the frame.
-2. **Heavy blacks.** About two thirds of the art box is solid ink. Shapes read as silhouettes against the lit area, never as lit objects against a dark one. If you fill in a shape and it still reads, it was the right shape.
-3. **Hatching and stipple for mid-tones.** No gradients, no soft glows, no transparency fades. Light falls off in bands: bare paper, then light hatch, then dense hatch, then crosshatch, then ink. Stipple is for dim floors and rough surfaces.
-4. **A rough, hand-inked line.** Contours wobble slightly and band edges are ragged, as if brushed. Paper grain shows faintly through the blacks. No ruler-straight edges except where the object is a machine (bezels, screens), and even those wobble a little.
-5. **Mobs are monster-manual creatures.** Each threat is drawn as a creature you could stat up: the Mailer Daemon is a hunched postman daemon, horns through its mail cap, a bulging sack of attachments on its back, claws past its knees and a barbed tail. Keep the one-silhouette-per-mob rule; the creature has to read when filled solid black at 96×54.
-6. **Bosses from a low camera.** Put the camera on the floor, looking up. Columns lean in toward the top, the figure towers and its head is small, and its shadow runs down the floor to the viewer.
-7. **Spot colour: flare only.** Black ink on paper. Flare `#FF5A2A` appears only on the threat: its eyes, a seal on its mail, a countdown, a badge chip, a reader LED, the alert rows on a hot screen. No cyan, no amber, no other hue inside the art box. The card frame and labels keep their own colours.
+1. **One light per scene: the monitor glow.** It is the torch. Every lit surface faces it, every shadow runs away from it, and nothing else gives light. The screen is the brightest paper in the frame. Small device screens (pagers, badges) don't light the room.
+2. **Heavy blacks.** Between 60 and 72 percent of the art box is ink. Figures read as silhouettes against the lit wall, separated from each other by paper rims, gaps or a hatched mid-tone.
+3. **Organic, never blocky.** Bodies are flowing curved contours with tapered ends. Line weight swells and thins along a stroke, like a brush or a nib: thick in shadow, thin toward the light. No rectangles or straight-edged polygons as figures. Even floor lines and frames are brushed.
+4. **Engraved light, wrapping hatch.** Light falls off in broken rings round the source, thickening with distance. Mid-tones are hatching that bows round the form and is clipped to it. No gradients, glows, blurs or flat diagonal fills.
+5. **Connected.** Every figure is grounded. It casts a shadow, overlaps the furniture, and cables, roots, smoke or rags run from it into the setting. Foreground, figure and background read as one drawing.
+6. **Grit.** Stipple on floors, drips on ledges and hems, chipped edges, broken hatching. Paper grain shows faintly through the blacks.
+7. **The keep.** The night-shift tower is a haunted keep. Racks are crypt walls and gothic arches. Cable bundles are vines and tentacles. The monitor is an altar, a scrying glass, the torch. A wall of screens is a stained-glass reliquary. Mobs are monsters built from their tech: a daemon made of mail, a wraith of PowerShell smoke, a hydra of PsExec heads on cable necks. Every scene keeps one readable tech prop: a monitor, rack, cable, phone, badge or keyboard.
+8. **Bosses from a low camera.** The camera is on the floor, looking up. Pillars lean in, the figure towers backlit by its light, and its shadow runs down the floor to the viewer.
 
-### The pattern set
+### Spot colour
 
-Four tones, shared by every scene, so the whole deck has one texture. In SVG they are four `<pattern>`s, all hatching at the same angle (about 38 degrees, falling left to right):
+Black ink on paper, plus exactly one spot colour per scene:
 
-| Tone | What it is | Use |
+| Scenes | Spot | Where |
 | --- | --- | --- |
-| Hatch 1, light | Thin lines, wide spacing (about 3 units apart at 200×112). | The first falloff band next to the light. Screens one step away from the brightest. |
-| Hatch 2, medium | Heavier lines, closer (about 2 units). | Middle falloff. Lit floors near a wall. |
-| Hatch 3, dense | Crosshatch, tight. | The last band before solid ink. |
-| Stipple | Scattered paper-coloured dots on ink. | Dim floors where the light just reaches, rough textures. A smaller, rotated copy at low opacity is the paper grain over the whole frame. |
+| Mobs, bosses, threat situations (`sit_pager`, `sit_blast`, `sit_ciso`, `sit_pentest`, `sit_travel`) | Flare `#FF5A2A` | The threat: eyes, sigils, seals, a countdown, the boss's light. |
+| Analysts and kit agents | Cyan `#3DE0FF` | Crew and actions: a crosshair, a lens, a reflection. |
+| Calm situations (`sit_coffee`, `sit_patch`, `sit_intel`, `sit_budget`) and domain scenes | Amber `#FFB547` or flare | Sparingly. |
+| Win scenes | Cyan, with paper dawn | Screens back to cyan, dawn breaking through the window. |
 
-A painter working by hand should keep to the same four steps and the same hatch angle, so a commissioned card still sits beside the vector ones.
+The card back uses flare. The torch is always paper, never the spot colour. A threat may show two small eyes in a void (under a brim, a hood or a cap); no mouths, brows, teeth or expressions.
 
-### The spot-colour rule
+### Greyscale
 
-Flare is the threat and nothing else. If a mark is flare, it is part of the threat or something the threat is doing. At most a handful of flare marks per scene, small and hard-edged, never a wash or a glow. The light source is never flare: the torch is paper.
+Every scene must read printed in greyscale. Spot colour always sits on ink or on an ink keyline. Cyan on paper gets an ink stroke about twice its width underneath, so its shape survives. Never put spot colour on a hatched band. The silhouette and the light carry the story; the spot colour is the accent.
 
-This changes one rule in "No faces" above: a threat may show two small flare eyes in a void (under a brim, a hood or a hat). Still no mouths, brows, teeth or expressions.
+### For an illustrator
 
-### The greyscale rule
+The vector scenes are drawn with a shared kit (one hand, one set of tones), and a painter can replace them one by one. Keep the following, and replace the drawing:
+- the composition;
+- the light position;
+- the silhouette;
+- the spot-colour placement;
+- the 60–72 percent ink balance.
 
-Every scene must still read when printed in greyscale on a home printer. Flare prints as a mid grey, so it can never be the only thing that carries a shape. Put flare on ink or paper, never on a hatched band where it would vanish. The silhouette and the light have to tell the story on their own, with flare as the accent. Check every scene through a greyscale filter at print size (210×86) before handing it in.
+Check each scene at 96×54 and as a 60×112 centre crop (the head or eyes must survive), and through a greyscale filter at print size (210×86).
 
-### Prototype notes
+### Production notes
 
-- The three prototype scenes are 7.0–9.0 KB each, against 2.3–5.0 KB for the current placeholders. The roughness is baked into the paths. A live `feTurbulence` plus `feDisplacementMap` filter gives the same look but cost more to paint on a phone, so don't use one in shipped art.
-- Scenes stay at 200×112 (mobs, situations) and 400×170 (bosses), with the subject in the central band, so they drop into the existing keys.
+- **Kit and guides:** the kit, the style guide for scene authors and the four reference scenes (`mailer`, `sit_pager`, `HUN`, `apt` with `_boss.apt` / `boss_apt`) were built in pass 6 (`ink-kit.js`, `STYLE.md`).
+- **Roughness:** wobble is baked into the paths. Don't use live displacement filters; they cost more to paint on a phone.
+- **Size:** the organic scenes measure 8–14 KB at 200×112 and about 21 KB at 400×170, against 2–5 KB for the old placeholders. The proposed budget is about 10 KB per 200×112 scene (at most 14 KB) and 22 KB per 400×170 scene.

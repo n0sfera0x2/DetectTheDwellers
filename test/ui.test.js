@@ -253,3 +253,14 @@ test('the sound toggle works, and is remembered, with no Web Audio at all', () =
   assert.strictEqual(w.eval('Sound.live'), false);
   assert.deepStrictEqual(errors, []);
 });
+
+test('an agent die picked in a boss fight keeps its agent label and says why it can’t hit', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  w.eval(`UI.mode = 'intro'; UI.pick = ['HUN']; start(); G.held[0] = [{ ...D.kit.find(c => c.type === 'triage') }];
+    G.play = []; G.phase = 'point'; G.deck = []; G.row = []; render(); act('flip'); act('fight'); act('roll');
+    const i = G.dice.findIndex(x => x.kind === 'agent'); G.dice[i].r = 20; UI.sel = i; render();`);
+  const die = [...d.querySelectorAll('[data-a=die]')].find(b => b.getAttribute('aria-pressed') === 'true');
+  assert.match(die.textContent, /Triage agent/); assert.match(die.getAttribute('aria-label'), /Triage Agent die 20.*picked/);
+  assert.match(d.body.textContent, /agents never touch the boss/);
+  assert.doesNotMatch(d.body.textContent, /Die 20 can’t hit this one\./);
+});

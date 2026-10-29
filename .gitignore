@@ -41,3 +41,6 @@ docs/skill-flow-diagrams.md
 
 # Print exports (npm run export:cards, npm run export:pdf)
 exports/
+
+# Ink & Static generator output (node tools/ink/<batch>/scenes.js); merged into data/ by tools/ink/merge.js
+tools/ink/*/ink-art.json

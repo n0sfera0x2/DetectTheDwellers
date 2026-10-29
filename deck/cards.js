@@ -30,9 +30,9 @@ function scene(svg) {
 
 // The card: paper ground, a cut-corner frame (drawn as two clipped layers so the diagonals show) in the card's accent, and a solid accent tab top left.
 const shell = (inner, accent = FL, line = FLT) => `<div class="card" style="width: 240px; height: 336px; box-sizing: border-box; overflow: hidden; position: relative; background: ${PAPER}; color: ${PINK}"><div style="position: absolute; inset: 5px; background: ${line}; clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));"><div style="position: absolute; inset: 1px; background: ${PAPER}; clip-path: polygon(0 0, calc(100% - 15.6px) 0, 100% 15.6px, 100% 100%, 15.6px 100%, 0 calc(100% - 15.6px));"></div></div><div style="position: absolute; left: 5px; top: 5px; width: 30px; height: 4px; background: ${accent}"></div><div style="position: relative; height: 336px; box-sizing: border-box; padding: 13px 15px 16px; display: flex; flex-direction: column; gap: 5px">${inner}</div></div>`;
-// The art panel is a dark console screen set into the card. With grow, it starts at h and takes up any
-// height the text leaves free (the scene is sliced to fill), so a card with short copy has no dead band.
-const art = (svg, h = 104, grow = false) => `<div style="width: 210px; ${grow ? `flex: 1 1 ${h}px; min-height: ${h}px` : `height: ${h}px; flex: none`}; overflow: hidden; background: ${BG}; color: ${INK}; border: 3px solid ${BG}; outline: 1px solid ${RULE}; box-sizing: border-box">${scene(svg)}</div>`;
+// The art panel is a dark console screen set into the card, one fixed height per card type so a sheet of
+// mobs lines up; any spare height goes above the flavour line, never into the art.
+const art = (svg, h = 104) => `<div style="width: 210px; height: ${h}px; flex: none; overflow: hidden; background: ${BG}; color: ${INK}; border: 3px solid ${BG}; outline: 1px solid ${RULE}; box-sizing: border-box">${scene(svg)}</div>`;
 const hud = (t, c = AMT, size = 9.5) => `<span style="font-family: ${MONO}; font-weight: 600; font-size: ${size}px; line-height: ${size + 3}px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(t)}</span>`;
 // A solid accent label with ink text: the bright accents stay bright and the text stays readable.
 const tag = (t, fill) => `<span style="align-self: flex-start; font-family: ${MONO}; font-weight: 600; font-size: 9.5px; line-height: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: ${PINK}; background: ${fill}; padding: 0 5px">${e(t)}</span>`;
@@ -60,7 +60,7 @@ const mobHits = (h, n) => Math.max(1, h + D.mobAdd[n]);
 // boxes can only match one crew size, and would read as wrong at the other three. Track hits with coins.
 const hitstrip = m => `<div style="display: flex; align-items: baseline; justify-content: space-between; background: #FFFFFF; border: 1px solid ${RULE}; padding: 0 5px; line-height: 15px">${hud('Hits', PMUT)}${CREW.map(n => `<span style="display: inline-flex; align-items: baseline; gap: 3px">${hud(`${n}p`, PMUT)}<span style="font-family: ${MONO}; font-weight: 600; font-size: 13px; line-height: 15px; font-variant-numeric: tabular-nums; color: ${PINK}">${mobHits(m.hits, n)}</span></span>`).join('')}</div>`;
 function mob(m) {
-  return shell(`${art(ART[m.id], 94, true)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(m)}\n${kwchip(m)}${foot(m.flavor)}`);
+  return shell(`${art(ART[m.id], 94)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(m)}\n${kwchip(m)}${foot(m.flavor)}`);
 }
 function sit(s) {
   const kind = { challenge: 'one attempt', choice: 'choose one', event: 'event' }[s.type];
@@ -88,7 +88,7 @@ const MOVE = {
 };
 function analyst(c) {
   const move = MOVE[c.id] ? `<div style="margin-top: auto; background: #FFFFFF; border: 1px solid ${CYT}; padding: 5px 8px 6px; display: flex; flex-direction: column; gap: 2px">${hud('Your move', CYT)}${tx(MOVE[c.id], 11.5, PINK, 500)}</div>` : '';
-  return shell(`${art(ART[c.id], 118, true)}${row(tag('Analyst', CY), hud(c.trait, CYT))}${nm(c.name, 24)}<div style="font-family: ${CHK}; font-weight: 700; font-size: 14px; line-height: 18px; text-wrap: pretty; color: ${CYT}">${e(c.perk)}</div>\n${move}`, CY, CYT);
+  return shell(`${art(ART[c.id], 118)}${row(tag('Analyst', CY), hud(c.trait, CYT))}${nm(c.name, 24)}<div style="font-family: ${CHK}; font-weight: 700; font-size: 14px; line-height: 18px; text-wrap: pretty; color: ${CYT}">${e(c.perk)}</div>\n${move}`, CY, CYT);
 }
 function kit(k) {
   const part = (label, c, t) => `<div style="border-top: 1px solid ${RULE}; padding-top: 2px">${hud(label, c)}${tx(t, 11, PINK, 500)}</div>`;

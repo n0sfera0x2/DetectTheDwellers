@@ -19,6 +19,7 @@ Detect the Dwellers: a co-op d20 card game (1–4 players) set on a cyberpunk SO
 | `ui/ui.js` | The page script, a template with `__DATA__`, `__ART__`, `__ENGINE__` slots. `ui/head.html` holds the CSS, `ui/tail.html` closes the page. |
 | `data/art.json` | SVG scenes (200×112) for cards and the UI, keyed by card id, domain, or analyst. |
 | `data/art-print.json` | Print-only art: the three boss scenes and the card back. `{{SID}}` marks ids made unique per card. |
+| `tools/ink/` | Generators for the Ink & Static art. `ink-kit.js` is the shared drawing kit (style rules in `STYLE.md`); each batch folder's `scenes.js` writes its scenes, then `node tools/ink/merge.js --write` puts them into the two art files. Edit a generator, not the SVG. |
 | `deck/cards.js` | Card templates for print. `deck/build.js` lays them out on sheets with mirrored backs. |
 | `deck/render.js` | One card face at trim + 1/8 in bleed, for the exporters (`scripts/export-cards.js`, `scripts/build-pdf.js`, output in `exports/`) and the print preview (`deck/preview.js`). |
 | `sim/bot.js` | The bot, seeded RNG, representative crews. `sweep.js`, `stats.js`, `check.js` run it. |

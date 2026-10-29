@@ -4,13 +4,15 @@ function DTD12(D) {
   const d20 = G => 1 + Math.floor(G.rnd() * 20);
   const log = (G, t) => G.log.push({ r: G.sit, t });
   const nm = (G, k) => cls(G.team[k]).name;
+  // Mob hits by crew size: printed (2p) hits + D.mobAdd[n], never below 1.
+  function mobHits(h, n) { const add = (D.mobAdd && D.mobAdd[n]) || 0; return Math.max(1, h + add); }
   function newGame(team, mode, opt = {}) {
     const rnd = opt.rnd || Math.random, per = D.rolls[team.length] || 1;
     const hpT = D.hp[mode][team.length]; const hp = opt.hp || (typeof hpT === 'number' ? hpT : hpT[opt.diff || 'Analyst']);
     const G = { mode, team: team.slice(), per, rnd, uid: 0, max: hp, hps: team.map(() => hp), deck: [], play: [], row: [], kit: [], held: team.map(() => []), discard: [],
       point: 0, phase: 'point', plog: [], pendingBack: [], cur: null, sit: 0, round: 0, rest: -1, dice: [], rolled: false, blocks: [], bossIn: false, over: false, win: false, log: [], loot: [], lastSit: null, persist: null, aiming: null,
       noAgents: !!opt.noAgents, stats: { agentHits: 0, crewHits: 0, back: 0, maxBack: 0, rounds: 0, beaten: 0, blocks: 0, rests: 0 } };
-    const mk = c => { const h = D.mobs.includes(c) && D.mobScale ? Math.max(1, c.hits + ((G.team || team).length - 2) * D.mobScale) : c.hits; return { ...c, hits: h, uid: ++G.uid, left: h, back: 0, up: 0 }; };
+    const mk = c => { const h = D.mobs.includes(c) ? mobHits(c.hits, (G.team || team).length) : c.hits; return { ...c, hits: h, uid: ++G.uid, left: h, back: 0, up: 0 }; };
     const pool = [...D.mobs.map(m => ({ ...mk(m), kind: 'mob' })), ...D.situations.map(x => ({ ...x, kind: 'sit', uid: ++G.uid }))];
     const intro = mode === 'intro' && D.intro;
     G.deck = intro ? D.intro.deck.map(id => pool.find(x => x.id === id)).reverse() : shuffle(pool, rnd).slice(0, opt.deal || D.deal[mode]);
@@ -34,6 +36,8 @@ function DTD12(D) {
   function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hps.indexOf(Math.min(...G.hps)); if (G.hps[k] >= G.max) break; heal(G, k, 1); } }
   function setPoint(G, k) { if (G.phase !== 'point' || k < 0 || k >= G.team.length) return false; G.point = k; return true; }
   function rowDie(G) { let r = d20(G); const n = aiOn(G) ? 0 : carried(G, 'patch'); for (let i = 0; i < n; i++) r = Math.max(r, d20(G)); return r; }
+  // Only the strikeCap highest-Damage comebacks of one roll hit on the way in; the rest just rejoin the fight.
+  function strikers(G, back) { if (!D.returnStrike) return []; const cap = D.strikeCap || back.length; return back.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a)).slice(0, cap); }
   function rollRow(G) {
     if (!G.row.length) { G.persist = null; return []; }
     const r = rowDie(G), back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]);
@@ -41,7 +45,7 @@ function DTD12(D) {
     if (back.some(m => m.ability === 'spread')) { const extra = G.row.find(m => !back.includes(m)); if (extra) back.push(extra); }
     G.row = G.row.filter(m => !back.includes(m)); G.stats.back += back.length; if (!G.bossIn) G.stats.midBack = (G.stats.midBack || 0) + back.length; G.stats.maxBack = Math.max(G.stats.maxBack, back.length);
     back.forEach(m => { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; m.up = 0; });
-    if (D.returnStrike) for (const m of back) { if (G.over) break; G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`, [m.name])); }
+    const hitters = strikers(G, back); G.persist.hit = hitters.map(m => m.name); for (const m of hitters) { if (G.over) break; G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`, [m.name])); }
     log(G, back.length ? `Persist roll ${r}: ${back.map(m => m.name).join(', ')} came back. Put ${back.length > 1 ? 'them' : 'it'} down before the next flip.` : `Persist roll ${r}: the row stays quiet.`);
     return back;
   }
@@ -50,7 +54,7 @@ function DTD12(D) {
     G.lastRound = null; G.lastSit = null;
     if (!G.deck.length) {
       G.bossIn = true; let back = [];
-      if (G.row.length) { const r = rowDie(G); back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]); G.row = G.row.filter(m => !back.includes(m)); G.persist = { r, back: back.map(m => m.name), pre: true }; G.plog.push({ sit: 'Boss', r, back: back.map(m => m.name) }); }
+      if (G.row.length) { const r = rowDie(G); back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]); G.row = G.row.filter(m => !back.includes(m)); G.persist = { r, back: back.map(m => m.name), hit: [], pre: true }; G.plog.push({ sit: 'Boss', r, back: back.map(m => m.name) }); }
       back.forEach(m => { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; });
       log(G, `${G.boss.name} is here${back.length ? `, with ${back.length} from the persistence row` : ''}.`); const p = G.persist; startCombat(G, [G.boss, ...back]); G.persist = p; return true;
     }
@@ -87,7 +91,8 @@ function DTD12(D) {
     if (back.some(m => m.ability === 'spread')) { const extra = G.row.find(m => !back.includes(m)); if (extra) back.push(extra); }
     G.row = G.row.filter(m => !back.includes(m)); G.stats.back += back.length; if (!G.bossIn) G.stats.midBack = (G.stats.midBack || 0) + back.length; G.stats.maxBack = Math.max(G.stats.maxBack, back.length);
     log(G, `Persist roll ${r}: ${back.map(m => m.name).join(', ')} came back.`);
-    for (const m of back) { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; m.up = 0; if (D.returnStrike && !G.over) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`, [m.name])); enter(G, m, true, true); }
+    const hitters = strikers(G, back); G.persist.hit = hitters.map(m => m.name);
+    for (const m of back) { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; m.up = 0; if (hitters.includes(m) && !G.over) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`, [m.name])); enter(G, m, true, true); }
   }
   function enter(G, m, fromRow, chained) {
     G.play.push(m);
@@ -212,6 +217,6 @@ function DTD12(D) {
     for (const m of G.play) { m.up++; if (m.ability === 'regen' && m.left < m.hits) m.left++; }
     beginRound(G); return true;
   }
-  return { slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, useItem, takeLoot, trade, endRound, incoming, incomingBy, unassign, canUndo, dmgOf, cls, alive };
+  return { mobHits, slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, useItem, takeLoot, trade, endRound, incoming, incomingBy, unassign, canUndo, dmgOf, cls, alive };
 }
 if (typeof module !== 'undefined') module.exports = DTD12;

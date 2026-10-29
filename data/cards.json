@@ -9,9 +9,9 @@
   {
    "id": "mailer",
    "name": "Mailer Daemon",
-   "flavor": "MAILER-DAEMON: Message undeliverable. Click here to retry.",
+   "flavor": "MAILER-DAEMON says your message bounced. Click here to retry. You never sent one.",
    "routine": true,
-   "def": 11,
+   "def": 12,
    "hits": 3,
    "dmg": 1,
    "persist": [
@@ -27,10 +27,10 @@
   {
    "id": "macro",
    "name": "Macro Gremlin",
-   "flavor": "invoice_FINAL_v2.docm really, really wants you to Enable Content.",
+   "flavor": "invoice_FINAL_v2.docm lands in your queue. It really, really wants you to click Enable Content.",
    "routine": false,
    "def": 13,
-   "hits": 2,
+   "hits": 3,
    "dmg": 1,
    "persist": [
     1,
@@ -45,10 +45,10 @@
   {
    "id": "spray",
    "name": "Password Sprayer",
-   "flavor": "Summer2026! against every account. It only needs one.",
+   "flavor": "Summer2026! tries every account in the tower, one a minute. It only needs one to work.",
    "routine": true,
-   "def": 11,
-   "hits": 2,
+   "def": 12,
+   "hits": 3,
    "dmg": 1,
    "persist": [
     1,
@@ -63,10 +63,10 @@
   {
    "id": "banshee",
    "name": "MFA Banshee",
-   "flavor": "It wails push notifications until someone taps Approve.",
+   "flavor": "A phone upstairs buzzes for the ninth time. It will wail until someone half asleep taps Approve.",
    "routine": true,
-   "def": 11,
-   "hits": 2,
+   "def": 12,
+   "hits": 3,
    "dmg": 1,
    "persist": [
     1,
@@ -81,9 +81,9 @@
   {
    "id": "vibe",
    "name": "Vibe Coded App",
-   "flavor": "Shipped Friday. API keys in the frontend. Auth is a vibe.",
+   "flavor": "You open the app that shipped Friday. The API keys are in the frontend, and auth is a vibe.",
    "routine": false,
-   "def": 12,
+   "def": 13,
    "hits": 3,
    "dmg": 1,
    "persist": [
@@ -99,10 +99,10 @@
   {
    "id": "wraith",
    "name": "PowerShell Wraith",
-   "flavor": "-nop -w hidden -enc JABzAD0A... It never touches disk.",
+   "flavor": "A window flashes -nop -w hidden -enc JABzAD0A… and is gone. You check the disk. Nothing touched it.",
    "routine": false,
-   "def": 13,
-   "hits": 3,
+   "def": 14,
+   "hits": 4,
    "dmg": 3,
    "persist": [
     1,
@@ -117,10 +117,10 @@
   {
    "id": "druid",
    "name": "Living-off-the-Land Scavenger",
-   "flavor": "Rundll32, mshta, certutil. It only uses what already grows here.",
+   "flavor": "Rundll32, mshta, certutil: every tool it runs is yours. It lives off what already grows here.",
    "routine": true,
-   "def": 12,
-   "hits": 3,
+   "def": 13,
+   "hits": 4,
    "dmg": 3,
    "persist": [
     1,
@@ -135,10 +135,10 @@
   {
    "id": "bat",
    "name": "DNS Beacon Drone",
-   "flavor": "4,000 queries to random subdomains. Echolocation.",
+   "flavor": "You hear it before you see it: 4,000 queries to random subdomains. Echolocation.",
    "routine": true,
-   "def": 12,
-   "hits": 3,
+   "def": 13,
+   "hits": 4,
    "dmg": 3,
    "persist": [
     1,
@@ -153,10 +153,10 @@
   {
    "id": "imp",
    "name": "OAuth Consent Grifter",
-   "flavor": "This app would like to read all your mail. Accept?",
+   "flavor": "A friendly pop-up asks if this app may read all your mail. Someone’s thumb is already on Accept.",
    "routine": false,
-   "def": 13,
-   "hits": 2,
+   "def": 14,
+   "hits": 3,
    "dmg": 3,
    "persist": [
     1,
@@ -171,10 +171,10 @@
   {
    "id": "mimic",
    "name": "Rootkit Implant",
-   "flavor": "Looks exactly like svchost.exe. Has teeth.",
+   "flavor": "You count the svchost.exe processes twice. One looks exactly right, and it has teeth.",
    "routine": false,
-   "def": 13,
-   "hits": 4,
+   "def": 14,
+   "hits": 5,
    "dmg": 4,
    "persist": [
     1,
@@ -189,10 +189,10 @@
   {
    "id": "ogre",
    "name": "Kerberoast Enforcer",
-   "flavor": "Roasts service tickets over an RC4 fire.",
+   "flavor": "You smell it in the logs first: service tickets, roasting slowly over an RC4 fire.",
    "routine": false,
-   "def": 15,
-   "hits": 4,
+   "def": 16,
+   "hits": 5,
    "dmg": 4,
    "persist": [
     1,
@@ -207,10 +207,10 @@
   {
    "id": "leech",
    "name": "LSASS Siphon",
-   "flavor": "comsvcs.dll MiniDump. It feeds on credentials.",
+   "flavor": "Someone ran comsvcs.dll MiniDump on the domain controller. It’s feeding on credentials.",
    "routine": false,
-   "def": 14,
-   "hits": 3,
+   "def": 15,
+   "hits": 4,
    "dmg": 4,
    "persist": [
     1,
@@ -225,10 +225,10 @@
   {
    "id": "hydra",
    "name": "PsExec Swarm",
-   "flavor": "Remove one service and two more install.",
+   "flavor": "You remove one PsExec service. Two more install before you’ve closed the ticket.",
    "routine": true,
-   "def": 12,
-   "hits": 4,
+   "def": 14,
+   "hits": 5,
    "dmg": 4,
    "persist": [
     1,
@@ -243,10 +243,10 @@
   {
    "id": "specter",
    "name": "Golden Ticket Ghost",
-   "flavor": "Forged with the KRBTGT hash. Valid for ten years.",
+   "flavor": "The ticket was forged with the KRBTGT hash. It’s valid for ten years, and it’s already inside.",
    "routine": false,
-   "def": 14,
-   "hits": 4,
+   "def": 15,
+   "hits": 5,
    "dmg": 4,
    "persist": [
     1,
@@ -261,10 +261,10 @@
   {
    "id": "wyrmling",
    "name": "Exfil Courier",
-   "flavor": "rclone.exe, 40 GB, one cloud bucket. It's still small.",
+   "flavor": "rclone.exe is moving 40 GB to a cloud bucket you’ve never seen. It’s still small. For now.",
    "routine": false,
-   "def": 14,
-   "hits": 3,
+   "def": 15,
+   "hits": 4,
    "dmg": 4,
    "persist": [
     1,
@@ -323,7 +323,7 @@
     "hp": -2,
     "to": "point"
    },
-   "text": "Marketing signed in from Lisbon. Are they actually in Lisbon? Whoever is on point makes the call.",
+   "text": "Marketing just signed in from Lisbon, ten minutes after badging in downstairs. You’re on point: make the call.",
    "rule": "On point: roll 10+ in one attempt. Pass: draw a kit card. Fail: you lose 2 HP."
   },
   {
@@ -334,14 +334,14 @@
     "hp": 3,
     "to": "all"
    },
-   "text": "Someone came back with a tray of cold brew. Morale stabilizes.",
+   "text": "Someone braves the rain and comes back with a tray of cold brew. Morale stabilizes.",
    "rule": "Everyone heals 3 HP."
   },
   {
    "id": "blast",
    "name": "Marketing Blast",
    "type": "choice",
-   "text": "Ten thousand recipients, one link, and the mail filter is screaming.",
+   "text": "Ten thousand inboxes, one link, and your mail filter is screaming.",
    "rule": "Choose one.",
    "opts": [
     {
@@ -364,7 +364,7 @@
    "id": "patch",
    "name": "Patch Tuesday",
    "type": "choice",
-   "text": "A quiet window opens while the patches deploy.",
+   "text": "The patches deploy and the tower goes quiet. You get a window. Use it.",
    "rule": "Choose one.",
    "opts": [
     {
@@ -393,7 +393,7 @@
     "hp": -4,
     "to": "point"
    },
-   "text": "Five slides, ten minutes, and the CISO has questions.",
+   "text": "Your phone lights up: the CISO wants five slides in ten minutes. With questions.",
    "rule": "On point: roll 12+ in one attempt. Fail: you lose 4 HP."
   },
   {
@@ -403,7 +403,7 @@
    "fx": {
     "unrow": 1
    },
-   "text": "A partner shares indicators for something you already beat.",
+   "text": "A partner sends indicators for something you already beat. For once, you’re ahead.",
    "rule": "Discard one mob from the persistence row."
   },
   {
@@ -417,7 +417,7 @@
     "hp": -2,
     "to": "self"
    },
-   "text": "The red team is in the building and nobody told the SOC.",
+   "text": "Someone in a hi-vis vest is in the server room. The red team is in the building, and nobody told you.",
    "rule": "Everyone rolls once. Anyone under 8 loses 2 HP."
   },
   {
@@ -429,7 +429,7 @@
     "to": "all",
     "pointExtra": -2
    },
-   "text": "Four hundred alerts in four minutes. Everyone is awake now.",
+   "text": "Four hundred alerts land in four minutes, and every phone on the floor goes off. Everyone is awake now.",
    "rule": "Everyone loses 2 HP. On point loses 2 more."
   },
   {
@@ -439,7 +439,7 @@
    "fx": {
     "kit": 2
    },
-   "text": "Finance said yes. Nobody knows why.",
+   "text": "An email from Finance lands in the dead of night: approved. Nobody knows why, and you don’t ask.",
    "rule": "Draw two kit cards."
   }
  ],
@@ -616,37 +616,37 @@
  "hp": {
   "full": {
    "1": {
-    "Recruit": 50,
-    "Analyst": 42,
-    "Veteran": 34
+    "Recruit": 59,
+    "Analyst": 50,
+    "Veteran": 41
    },
    "2": {
-    "Recruit": 50,
-    "Analyst": 42,
-    "Veteran": 34
+    "Recruit": 59,
+    "Analyst": 50,
+    "Veteran": 41
    },
    "3": {
-    "Recruit": 50,
-    "Analyst": 42,
-    "Veteran": 34
+    "Recruit": 59,
+    "Analyst": 50,
+    "Veteran": 41
    },
    "4": {
-    "Recruit": 50,
-    "Analyst": 42,
-    "Veteran": 34
+    "Recruit": 59,
+    "Analyst": 50,
+    "Veteran": 41
    }
   },
   "quick": {
-   "1": 26,
-   "2": 26,
-   "3": 26,
-   "4": 26
+   "1": 31,
+   "2": 31,
+   "3": 31,
+   "4": 31
   },
   "intro": {
-   "1": 18,
-   "2": 18,
-   "3": 18,
-   "4": 18
+   "1": 20,
+   "2": 20,
+   "3": 20,
+   "4": 20
   }
  },
  "modes": {
@@ -684,9 +684,10 @@
  "flipOnlyPersist": true,
  "returnHits": 1,
  "returnStrike": true,
+ "strikeCap": 2,
  "pointDie": true,
  "sharedKit": 4,
- "mobScale": 1,
+ "mobAdd": { "1": -1, "2": 0, "3": 2, "4": 4 },
  "soloDice": 2,
  "keywords": {
   "piercing": {
@@ -746,12 +747,12 @@
   ],
   "tips": {
    "1": "Everyone rolls at once. Put each die on a mob it beats: d20 + bonus, at least its Defense. Anything still standing hits back. Stalker: the Banshee only goes after whoever is lowest.",
-   "loot": "Kit drop. Every kit card is an agent: keep it running, or burn it once for a big one-shot effect.",
    "2": "Some situations are choices. The Banshee is in the persistence row now, so every flip rolls for it too.",
    "3": "Targeted: only whoever is on point takes the Gremlin's damage, and it's doubled. Pick on point with that in mind.",
    "4": "A challenge: the analyst on point gets one roll. Bonuses count.",
    "5": "Beacon: the Drone rolls for the persistence row the moment it shows up, and anything it calls back rolls again. Comebacks hit everyone, then go down in one hit.",
    "6": "A breather before the boss. Heal up and check your kit.",
+   "loot": "Kit drop. Every kit card is an agent: keep it running, or burn it once for a big one-shot effect.",
    "boss": "The boss. Its hits grow with your crew, and agents can't touch it. Burn what you've got."
   }
  }

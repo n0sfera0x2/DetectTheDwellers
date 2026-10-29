@@ -4,7 +4,7 @@
 
 An original game by Binary Defense.
 
-- **54 cards, four d20s, a few coins.** 1–4 players, 25–35 minutes (Quick Shift: about 10).
+- **54 cards, four d20s, a few coins.** 1–4 players, 25–35 minutes (Quick Shift: 10–15).
 - **Three ways in:** First Shift (a guided first game), Full Shift, and Quick Shift for the booth.
 
 ## Quick start
@@ -45,4 +45,4 @@ Working with Claude Code? Start with [CLAUDE.md](CLAUDE.md).
 
 ## Status
 
-Rules v18: per-mob comeback ranges, chaining Beacons. (v17: keywords, First Shift, dual-mode kit.) Balance is tuned against a bot; human playtests come next. The art is placeholder vector art pending a commissioned illustrator. Not for distribution until counsel review and a trademark search are done.
+Rules v19: only the two highest-Damage comebacks per Row roll hit on arrival; tougher mobs (Defense 12+, more hits) whose hits scale by a per-crew-size table printed on each card; HP 59/50/41, Quick Shift 31, First Shift 20; survive the 22:00–06:00 shift until dawn, with the boss at 05:59; read-aloud flavour on every card. (v18: per-mob comeback ranges, chaining Beacons. v17: keywords, First Shift, dual-mode kit.) Balance is tuned against a bot; human playtests come next. The art is placeholder vector art pending a commissioned illustrator. Not for distribution until counsel review and a trademark search are done.

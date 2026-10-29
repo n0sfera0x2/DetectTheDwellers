@@ -224,3 +224,13 @@ test('a single renders at 825 × 1125 px (2.75 × 3.75 in at 300 dpi)', { skip: 
     assert.deepStrictEqual(PX, [825, 1125]);
   } finally { await browser.close(); }
 });
+
+test('every mob card prints its hits for 1–4 analysts, matching the engine', () => {
+  const D = require('../data/cards.json'), E = require('../src/engine')(D), { mob } = require('../deck/cards');
+  for (const m of D.mobs) {
+    const text = mob(m).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+    const want = [1, 2, 3, 4].map(n => `${n}p ${E.mobHits(m.hits, n)}`).join(' ');
+    assert.ok(text.includes(`Hits ${want}`), `${m.name} should print "Hits ${want}"`);
+    assert.ok(!/Hits 2p/.test(text), `${m.name} still prints the old 2p-only stat`);
+  }
+});

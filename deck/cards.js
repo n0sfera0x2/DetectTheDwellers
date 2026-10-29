@@ -53,8 +53,14 @@ const kwchip = m => chip(`${kwicon(m.kw, 15)}${chipText(D.keywords[m.kw].name, D
 const row = (a, b) => `<div style="display: flex; justify-content: space-between; align-items: baseline">${a}${b}</div>`;
 const HP = D.hp.full[1], QHP = D.hp.quick[1], IHP = D.hp.intro[1];
 
+// Mob hits by crew size, from data: printed hits (the 2-player value) + mobAdd[n], never below 1 (the engine's mobHits).
+const CREW = Object.keys(D.mobAdd).map(Number).sort((a, b) => a - b);
+const mobHits = (h, n) => Math.max(1, h + D.mobAdd[n]);
+// One strip, read left to right: the crew-size column the table plays with. No hit boxes on mobs: one row of
+// boxes can only match one crew size, and would read as wrong at the other three. Track hits with coins.
+const hitstrip = m => `<div style="display: flex; align-items: baseline; justify-content: space-between; background: #FFFFFF; border: 1px solid ${RULE}; padding: 0 5px; line-height: 15px">${hud('Hits', PMUT)}${CREW.map(n => `<span style="display: inline-flex; align-items: baseline; gap: 3px">${hud(`${n}p`, PMUT)}<span style="font-family: ${MONO}; font-weight: 600; font-size: 13px; line-height: 15px; font-variant-numeric: tabular-nums; color: ${PINK}">${mobHits(m.hits, n)}</span></span>`).join('')}</div>`;
 function mob(m) {
-  return shell(`${art(ART[m.id], 102)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Hits 2p', m.hits)}${stat('Damage', m.dmg)}</div>${boxes(m.hits)}\n${kwchip(m)}${foot(m.flavor)}`);
+  return shell(`${art(ART[m.id], 94, true)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(m)}\n${kwchip(m)}${foot(m.flavor)}`);
 }
 function sit(s) {
   const kind = { challenge: 'one attempt', choice: 'choose one', event: 'event' }[s.type];
@@ -70,7 +76,7 @@ const RAMP = { wyrm: { add: 2, hits: 2 } };
 function boss(b) {
   const r = RAMP[b.id];
   const dmg = r ? `${b.dmg}<span style="font-size: 11px; color: ${FLT}"> +${r.add}</span>` : b.dmg;
-  return shell(`${art(PRINT_ART['boss_' + b.id], 84)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${r ? boxes(b.hitsBase, r.hits, `+${r.add} dmg until ${r.hits} hits`) : boxes(b.hitsBase)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Arrives after the last situation, then make a Row roll. Agents never touch the boss.')}`);
+  return shell(`${art(PRINT_ART['boss_' + b.id], 84)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${r ? boxes(b.hitsBase, r.hits, `+${r.add} dmg until ${r.hits} hits`) : boxes(b.hitsBase)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Comes last, with a Row roll (no arrival hits). Agents never touch the boss.')}`);
 }
 // How to play each analyst, in a line or two. The shared fight rules live on the "A fight" reference card.
 const MOVE = {
@@ -90,18 +96,18 @@ function kit(k) {
 }
 function tracker() {
   const top = HP.Recruit, cells = Array.from({ length: top + 1 }, (_, i) => `<div style="height: 25px; background: #FFFFFF; border: 1px solid ${RULE}; display: flex; align-items: center; justify-content: center; font-family: ${MONO}; font-weight: 600; font-size: 11px; font-variant-numeric: tabular-nums; color: ${AMT}">${top - i}</div>`).join('');
-  return shell(`${row(tag('HP tracker', CY), hud('coin on your HP', CYT))}${nm('Analyst HP', 16)}<div>${tx(`Start: Recruit ${HP.Recruit} · Analyst ${HP.Analyst} · Veteran ${HP.Veteran}`, 10.5, CYT, 700)}${tx(`Quick Shift ${QHP} · First Shift ${IHP}`, 10.5, CYT, 700)}</div><div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 2px">${cells}</div>${foot('Anyone at 0 and the shift is lost.', PINK)}`, CY, CYT);
+  return shell(`${row(tag('HP tracker', CY), hud('coin on your HP', CYT))}${nm('Analyst HP', 16)}<div>${tx(`Start: Recruit ${HP.Recruit} · Analyst ${HP.Analyst} · Veteran ${HP.Veteran}`, 10.5, CYT, 700)}${tx(`Quick Shift ${QHP} · First Shift ${IHP}`, 10.5, CYT, 700)}</div><div style="display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 2px">${cells}</div>${foot('Anyone at 0 and the shift is lost.', PINK)}`, CY, CYT);
 }
 function rowmat() {
   const slots = `<div style="height: 46px; border: 1px dashed ${AMT}; display: flex; align-items: center; justify-content: center">${hud('mob', AMT)}</div>`.repeat(6);
-  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, make the Row roll: one d20. Any mob whose range (on its card) matches comes back, hits everyone, and joins the fight with 1 hit.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Setup: deal ${D.deal.full} situations (Quick Shift ${D.deal.quick}, and the crew starts with ${D.quickStartAgent} agents). Boss face down underneath.`, 10, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
+  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, make the Row roll: one d20. Any mob whose range (on its card) matches comes back with 1 hit. The two with the highest Damage hit everyone as they arrive.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Setup: deal ${D.deal.full} situations (Quick Shift ${D.deal.quick}, and the crew starts with ${D.quickStartAgent} agents). Boss face down underneath. The shift runs 22:00 to 06:00; the boss comes at 05:59. Survive until dawn.`, 10, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
 }
 // Reference rows: a mono run-in label, then the rule, so each row spends its width on words.
 const runin = (label, t, c = FLT, size = 10) => `<div style="font-family: ${CHK}; font-weight: 500; font-size: ${size}px; line-height: ${lh(size)}px; color: ${PINK}"><span style="font-family: ${MONO}; font-weight: 600; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(label)}</span> ${e(t)}</div>`;
 const refrow = inner => `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 3px">${inner}</div>`;
 function fight() {
-  const rows = [['On point', "Before each flip, pick who's on point. They roll 2 dice and take the kit draw."], ['Mob hits', 'Printed for 2p: add analysts − 2, never below 1. Boss: printed + 1 per analyst.'], ['Off-shift', 'One analyst may skip their roll: no damage, +1 HP.'],
-    ['Roll', 'Everyone rolls at once; agents roll too. Assign each die to a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', 'Double: two hits, and you block this round. Engineer: 16–20.'], ['Hits', "Every mob still up hits everyone who didn't block."], ['Won', 'Draw a kit card. Beaten mobs go to the persistence row. One that comes back hits everyone, then needs 1 hit.', AMT]];
+  const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Mob hits', 'Use the number for your crew size. Boss: printed + 1 per analyst.'], ['Off-shift', 'One analyst may skip their roll: no damage, +1 HP.'],
+    ['Roll', 'Everyone rolls at once; agents roll too. Assign each die to a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', 'Double: two hits, and you block this round. Engineer: 16–20.'], ['Hits', "Every mob still up hits everyone who didn't block."], ['Won', 'Draw a kit card. Beaten mobs go to the persistence row. Comebacks need 1 hit; the two highest-Damage per roll hit everyone.', AMT]];
   return shell(`${tag('Reference', CY)}${nm('A fight', 18)}${rows.map(([a, b, c]) => refrow(runin(a, b, c))).join('')}`, CY, CYT);
 }
 function glossary() {

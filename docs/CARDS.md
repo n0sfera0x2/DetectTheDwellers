@@ -8,7 +8,7 @@ Generated from `data/cards.json` by `npm run cards`. Don't edit by hand.
 
 | Recruit | Analyst | Veteran | Quick Shift | First Shift |
 | --- | --- | --- | --- | --- |
-| 50 | 42 | 34 | 26 | 18 |
+| 59 | 50 | 41 | 31 | 20 |
 
 ## Keywords
 
@@ -29,21 +29,21 @@ Printed hits are for two players. In play: printed + analysts − 2, never below
 
 | Mob | Domain | Def | Hits | Dmg | Back | Keyword |
 | --- | --- | --- | --- | --- | --- | --- |
-| Mailer Daemon | Identity | 11 | 3 | 1 | 1–10 | Beacon |
-| Macro Gremlin | Endpoint | 13 | 2 | 1 | 1–9 | Targeted |
-| Password Sprayer | Identity | 11 | 2 | 1 | 1–10 | Piercing |
-| MFA Banshee | Identity | 11 | 2 | 1 | 1–10 | Stalker |
-| Vibe Coded App | Cloud | 12 | 3 | 1 | 1–9 | Escalating |
-| PowerShell Wraith | Endpoint | 13 | 3 | 3 | 1–7 | Fileless |
-| Living-off-the-Land Scavenger | Endpoint | 12 | 3 | 3 | 1–8 | Evasive |
-| DNS Beacon Drone | Network | 12 | 3 | 3 | 1–8 | Beacon |
-| OAuth Consent Grifter | Cloud | 13 | 2 | 3 | 1–6 | Targeted |
-| Rootkit Implant | Endpoint | 13 | 4 | 4 | 1–5 | Regen |
-| Kerberoast Enforcer | Identity | 15 | 4 | 4 | 1–5 | Piercing |
-| LSASS Siphon | Endpoint | 14 | 3 | 4 | 1–6 | Regen |
-| PsExec Swarm | Endpoint | 12 | 4 | 4 | 1–6 | Beacon |
-| Golden Ticket Ghost | Identity | 14 | 4 | 4 | 1–4 | Evasive |
-| Exfil Courier | Network | 14 | 3 | 4 | 1–5 | Escalating |
+| Mailer Daemon | Identity | 12 | 3 | 1 | 1–10 | Beacon |
+| Macro Gremlin | Endpoint | 13 | 3 | 1 | 1–9 | Targeted |
+| Password Sprayer | Identity | 12 | 3 | 1 | 1–10 | Piercing |
+| MFA Banshee | Identity | 12 | 3 | 1 | 1–10 | Stalker |
+| Vibe Coded App | Cloud | 13 | 3 | 1 | 1–9 | Escalating |
+| PowerShell Wraith | Endpoint | 14 | 4 | 3 | 1–7 | Fileless |
+| Living-off-the-Land Scavenger | Endpoint | 13 | 4 | 3 | 1–8 | Evasive |
+| DNS Beacon Drone | Network | 13 | 4 | 3 | 1–8 | Beacon |
+| OAuth Consent Grifter | Cloud | 14 | 3 | 3 | 1–6 | Targeted |
+| Rootkit Implant | Endpoint | 14 | 5 | 4 | 1–5 | Regen |
+| Kerberoast Enforcer | Identity | 16 | 5 | 4 | 1–5 | Piercing |
+| LSASS Siphon | Endpoint | 15 | 4 | 4 | 1–6 | Regen |
+| PsExec Swarm | Endpoint | 14 | 5 | 4 | 1–6 | Beacon |
+| Golden Ticket Ghost | Identity | 15 | 5 | 4 | 1–4 | Evasive |
+| Exfil Courier | Network | 15 | 4 | 4 | 1–5 | Escalating |
 
 ## Situations
 

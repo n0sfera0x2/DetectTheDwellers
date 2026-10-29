@@ -25,15 +25,15 @@ const BOOTH_CTA = { text: 'Talk to the night shift at the Binary Defense booth.'
 // A booth visitor usually plays alone: one analyst by default, "Playing with friends?" opens up to four.
 const UI = { screen: 'intro', mode: 'intro', diff: 'Analyst', pick: ['HUN'], friends: false, team: '', sel: null, aim: null, board: [], savedAt: null, seen: new Set(), dice: new Set(),
   reveal: false, ko: [], confirmEnd: false, quitAsk: false, kitOpen: new Set(), order: [], dmg: {}, logOpen: false, left: [], bossHp: null };
-let G = null, DB = null; const LS = 'dwellers-board-v18', TIPS_LS = 'dwellers-tips-v1', KEYS_LS = 'dwellers-keys-v1';
+let G = null, DB = null; const LS = 'dwellers-board-v19', TIPS_LS = 'dwellers-tips-v1', KEYS_LS = 'dwellers-keys-v1';
 // The shortcut legend hides for good once a player has used any shortcut.
 let keysUsed = (() => { try { return localStorage.getItem(KEYS_LS) === '1'; } catch (e) { return false; } })();
 function markKeys() { if (keysUsed) return; keysUsed = true; try { localStorage.setItem(KEYS_LS, '1'); } catch (e) { /* private mode: hidden for this visit */ } }
 function loadLocal() { try { UI.board = JSON.parse(localStorage.getItem(LS) || '[]'); } catch (e) { UI.board = []; } }
 function saveLocal(x) { try { const b = JSON.parse(localStorage.getItem(LS) || '[]'); b.push(x); b.sort((a, c) => c.score - a.score); localStorage.setItem(LS, JSON.stringify(b.slice(0, 30))); UI.board = b.slice(0, 30); } catch (e) { UI.board = [x]; } }
 loadLocal();
-(async () => { try { if (window.claude && typeof window.claude.use === 'function') { DB = await window.claude.use('db'); if (DB) DB.collection('dwellers-v18').orderBy('score', 'desc').limit(30).onSnapshot(s => { UI.board = s.docs.map(d => d.data()).filter(Boolean); if (UI.screen !== 'game') render(); }, () => { DB = null; loadLocal(); }); } } catch (e) { DB = null; } })();
-function saveScore(x) { if (DB) DB.collection('dwellers-v18').add(x).catch(() => { DB = null; saveLocal(x); }); else saveLocal(x); }
+(async () => { try { if (window.claude && typeof window.claude.use === 'function') { DB = await window.claude.use('db'); if (DB) DB.collection('dwellers-v19').orderBy('score', 'desc').limit(30).onSnapshot(s => { UI.board = s.docs.map(d => d.data()).filter(Boolean); if (UI.screen !== 'game') render(); }, () => { DB = null; loadLocal(); }); } } catch (e) { DB = null; } })();
+function saveScore(x) { if (DB) DB.collection('dwellers-v19').add(x).catch(() => { DB = null; saveLocal(x); }); else saveLocal(x); }
 
 // Tips for Full and Quick Shift: shown the first time each moment comes up, until dismissed.
 const tipsSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(TIPS_LS) || '[]')); } catch (e) { return new Set(); } })();
@@ -45,7 +45,7 @@ const TIPS = {
   assign: 'Pick a die, then a mob it beats. The die plus your bonus has to reach its Defense.',
   double: '18–20 is a double (16–20 for the Engineer): two hits, and you block that round.',
   end: 'Every mob still up hits everyone who didn’t block, unless its ability says otherwise. End the round when your dice are spent.',
-  row: 'Beaten mobs go to the persistence row. Every flip makes a Row roll: a mob whose range matches comes back, hits everyone, and needs just one hit.',
+  row: 'Beaten mobs go to the persistence row. Every flip makes a Row roll: a mob whose range matches comes back needing just one hit. The two with the highest Damage hit everyone on the way in.',
   loot: (D.intro && D.intro.tips.loot) || 'Kit drop. Every kit card is an agent: keep it running, or burn it once for a big one-shot effect.',
   boss: (D.intro && D.intro.tips.boss) || 'The boss. Burn what you’ve got.'
 };
@@ -91,17 +91,109 @@ const sitOf = n => `Situation ${n} of ${G.total}`;
 const progressLabel = () => G.bossIn ? 'Boss fight' : G.phase === 'point' ? (G.deck.length ? `Next: ${lc1(sitOf(G.sit + 1))}` : 'Next: the boss') : sitOf(G.sit);
 const sitArt = c => pickArt('sit_' + c.id, c.type === 'challenge' ? 'fp' : c.type === 'choice' ? 'esc' : 'event', 'event');
 
+// The shift clock: 22:00 to 06:00. Flip i (1-based) of n reads 22:00 + (i − 1) × 480 / n minutes, floored to 5.
+// Positional, not printed on cards (the feed is shuffled). The boss always lands at 05:59.
+const BOSS_TIME = '05:59';
+function clockAt(i, n) {
+  const m = 22 * 60 + Math.floor((Math.max(1, i) - 1) * 480 / Math.max(1, n) / 5) * 5;
+  return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+}
+// What the clock reads now: the boss, else the situation in play (or the last one flipped; 22:00 before the first).
+const clockNow = () => G.bossIn ? BOSS_TIME : clockAt(G.sit, G.total);
+const clockStamp = () => `<time class="clk" data-clock>${clockNow()}</time>`;
+
+// Sound, synthesised with Web Audio: no files, so the page stays one offline file. Rain and a server hum underneath,
+// short stings on top. Nothing starts until a user gesture, and every call is a no-op without Web Audio (jsdom).
+const SND_LS = 'dwellers-sound-v1';
+const Sound = (() => {
+  let on = true; try { on = localStorage.getItem(SND_LS) !== '0'; } catch (e) { /* private mode: on for this visit */ }
+  let ctx = null, master = null, sfx = null, amb = null, want = false;
+  const AC = () => { try { return window.AudioContext || window.webkitAudioContext || null; } catch (e) { return null; } };
+  function ensure() {
+    if (ctx) return ctx; const C = AC(); if (!C) return null;
+    try { ctx = new C(); master = ctx.createGain(); master.gain.value = on ? 1 : 0; master.connect(ctx.destination);
+      sfx = ctx.createGain(); sfx.gain.value = .32; sfx.connect(master);
+      amb = ctx.createGain(); amb.gain.value = 0; amb.connect(master); bed(); } catch (e) { ctx = null; }
+    return ctx;
+  }
+  function noiseBuf(sec) { const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * sec), ctx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
+  // Ambience: rain is looped noise, high-passed and softened; the hum is two low sines under a lowpass.
+  function bed() {
+    const rain = ctx.createBufferSource(); rain.buffer = noiseBuf(3); rain.loop = true;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 500;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600;
+    const rg = ctx.createGain(); rg.gain.value = .5; rain.connect(hp).connect(lp).connect(rg).connect(amb); rain.start();
+    const hum = ctx.createGain(); hum.gain.value = .9; const hl = ctx.createBiquadFilter(); hl.type = 'lowpass'; hl.frequency.value = 220; hl.connect(hum).connect(amb);
+    [[55, .5], [110, .25], [165, .06]].forEach(([f, g]) => { const o = ctx.createOscillator(), og = ctx.createGain(); o.frequency.value = f; og.gain.value = g; o.connect(og).connect(hl); o.start(); });
+  }
+  const now = () => ctx.currentTime;
+  function tone(f, t, dur, { type = 'sine', g = .5, to = null, a = .01 } = {}) {
+    const o = ctx.createOscillator(), v = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(g, t + a); v.gain.exponentialRampToValueAtTime(.0001, t + dur); o.connect(v).connect(sfx); o.start(t); o.stop(t + dur + .05);
+  }
+  function hiss(t, dur, { f = 3000, q = 1.2, g = .5, type = 'bandpass' } = {}) {
+    const s = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), v = ctx.createGain(); s.buffer = noiseBuf(Math.max(.05, dur)); bp.type = type; bp.frequency.value = f; bp.Q.value = q;
+    v.gain.setValueAtTime(g, t); v.gain.exponentialRampToValueAtTime(.0001, t + dur); s.connect(bp).connect(v).connect(sfx); s.start(t); s.stop(t + dur + .02);
+  }
+  const STING = {
+    roll: t => { for (let i = 0; i < 9; i++) hiss(t + i * .055 + Math.random() * .025, .045, { f: 1800 + Math.random() * 2200, q: 3, g: .55 - i * .04 }); },
+    hit: t => { tone(150, t, .16, { g: .7, to: 55 }); hiss(t, .05, { f: 1200, g: .4 }); },
+    double: t => { tone(660, t, .18, { type: 'triangle', g: .3 }); tone(990, t + .07, .3, { type: 'triangle', g: .3 }); tone(1320, t + .14, .4, { g: .18 }); },
+    down: t => { tone(320, t, .42, { type: 'sawtooth', g: .18, to: 70 }); tone(90, t, .3, { g: .6, to: 40 }); hiss(t, .3, { f: 600, q: .7, g: .3, type: 'lowpass' }); },
+    comeback: t => { tone(220, t, 1.1, { type: 'triangle', g: .22, a: .35 }); tone(233, t, 1.1, { type: 'triangle', g: .2, a: .35 }); tone(110, t + .1, 1, { g: .25, a: .3 }); },
+    boss: t => { tone(55, t, 2.2, { type: 'sawtooth', g: .22, a: .6 }); tone(58.3, t, 2.2, { type: 'sawtooth', g: .18, a: .6 }); tone(41, t + .2, 1.8, { g: .5, a: .4 }); hiss(t, 1.4, { f: 300, q: .6, g: .2, type: 'lowpass' }); },
+    win: t => { [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * .16, 1.6 - i * .2, { g: .22, a: .04 })); tone(261.6, t, 2.2, { type: 'triangle', g: .14, a: .5 }); },
+    loss: t => { [392, 311.1, 261.6].forEach((f, i) => tone(f, t + i * .32, .6, { type: 'triangle', g: .26 })); tone(880, t + 1.1, 1.2, { g: .07, a: .02 }); }
+  };
+  function play(name) { if (!on || !ensure() || !STING[name]) return; try { if (ctx.state === 'suspended') ctx.resume(); STING[name](now() + .01); } catch (e) { /* audio is best-effort */ } }
+  // The bed sits well under the stings: about a tenth of their level.
+  function ambience(yes) { want = yes; if (!ctx) return; try { amb.gain.cancelScheduledValues(now()); amb.gain.setTargetAtTime(yes && on ? .045 : 0, now(), yes ? 1.2 : .4); } catch (e) { /* best-effort */ } }
+  // First gesture: create (or resume) the context, then bring up the bed if a shift is running.
+  function unlock() { if (!on || !ensure()) return; try { if (ctx.state === 'suspended') ctx.resume(); } catch (e) { /* best-effort */ } ambience(want); }
+  function toggle() { on = !on; try { localStorage.setItem(SND_LS, on ? '1' : '0'); } catch (e) { /* remembered for this visit */ }
+    if (on) unlock(); if (ctx) try { master.gain.setTargetAtTime(on ? 1 : 0, now(), .05); } catch (e) { /* best-effort */ } return on; }
+  return { play, ambience, unlock, toggle, get on() { return on; }, get live() { return !!ctx; } };
+})();
+['pointerdown', 'keydown'].forEach(t => document.addEventListener(t, () => Sound.unlock(), { capture: true }));
+const SPK = on => ic(`<path d="M2 6h3l4-3v10l-4-3H2z"/>${on ? '<path d="M11.5 5.5a3.5 3.5 0 010 5"/><path d="M13.5 3.5a6.5 6.5 0 010 9"/>' : '<path d="M11 6l4 4M15 6l-4 4"/>'}`);
+// One toggle. Phones show it icon-only in the clock line (variant 'm'), wider screens in the top-bar buttons; CSS hides the other.
+const soundBtn = (v = 'd') => `<button class="btn s tb snd ${v}" type="button" data-a="snd" data-k="snd${v}" aria-pressed="${Sound.on}"${v === 'm' ? ' aria-label="Sound"' : ''}>${SPK(Sound.on)}${v === 'm' ? '' : '<span>Sound</span>'}</button>`;
+
+// Read-aloud: whoever is on point reads the flipped card out. The text is the card's own, from data; on the flip
+// it comes in one line at a time (CSS only, so no button waits on it). Later renders show it whole.
+const lines = t => String(t).split(/(?<=[.!?…])\s+/).filter(Boolean);
+const readAloud = (t, fresh) => fresh ? lines(t).map((s, i) => `<span class="ln" style="--i:${i}">${esc(s)}</span>`).join(' ') : esc(t);
+const aloudHint = () => `<span class="aloud">${G.team.length > 1 ? `${esc(nm(G.point))}, read it aloud` : 'Read it aloud'}</span>`;
+
+// Dice tumble on the roll: the engine has already resolved, so this is presentation only. Each die flickers through
+// faces and lands with a slight stagger; a click or key re-renders the tray and lands everything at once.
+const ROLL_MS = 560, ROLL_STAGGER = 45, D20_MS = 660;
+function tumbleDice() {
+  const dice = [...app.querySelectorAll('.dock .die:not(.used)')]; if (!dice.length) return 0;
+  if (!reduced()) dice.forEach(el => el.classList.add('rolling'));
+  if (reduced()) { dice.forEach(el => el.classList.add('fadein')); return 0; }
+  let last = 0; const tb = app.querySelector('.table'); if (tb) tb.classList.add('rolling');
+  dice.forEach((el, n) => {
+    const b = el.querySelector('b'), keep = b.innerHTML, ms = ROLL_MS + n * ROLL_STAGGER; last = Math.max(last, ms);
+    const t = setInterval(() => { if (!el.isConnected) return clearInterval(t); b.textContent = 1 + Math.floor(Math.random() * 20); }, 60);
+    setTimeout(() => { clearInterval(t); if (!el.isConnected) return; b.innerHTML = keep; el.classList.remove('rolling'); el.classList.add('landed'); }, ms);
+  });
+  setTimeout(() => { if (tb) tb.classList.remove('rolling'); }, last);
+  return last;
+}
+
 function start() {
   G = E.newGame(UI.pick, UI.mode, { diff: UI.diff });
   Object.assign(UI, { screen: 'game', sel: null, aim: null, savedAt: null, seen: new Set(), dice: new Set(), reveal: false, ko: [], confirmEnd: false, quitAsk: false, dmg: {}, left: [], bossHp: null, aim: null });
-  UI.logN = G.log.length; toTop(); render(); say('Shift started. Pick who is on point, then flip.');
+  UI.logN = G.log.length; toTop(); render(); Sound.ambience(true);
+  say(`Shift started at 22:00. Survive until 06:00. ${G.team.length > 1 ? 'Pick who is on point, then flip.' : 'Flip the first situation.'}`);
 }
 
 function snap() {
   const doc = el => { const r = el.getBoundingClientRect(); return { left: r.left + scrollX, top: r.top + scrollY, width: r.width }; };
   const rects = {}; app.querySelectorAll('[data-chip]').forEach(el => { rects[el.dataset.chip] = doc(el); });
   const sumEl = app.querySelector('[data-rowsum]'), sum = sumEl && doc(sumEl);
-  return { phase: G.phase, held: G.held[0].slice(), hps: G.hps.slice(), play: G.play.slice(), bossIn: G.bossIn, logN: G.log.length, plogN: G.plog.length, sit: G.sit, round: G.round, rects, sum };
+  return { phase: G.phase, held: G.held[0].slice(), hps: G.hps.slice(), play: G.play.slice(), bossIn: G.bossIn, logN: G.log.length, plogN: G.plog.length, sit: G.sit, round: G.round, rolled: G.rolled, hits: G.stats.crewHits + G.stats.agentHits, rects, sum };
 }
 
 function act(a, v) {
@@ -117,6 +209,7 @@ function act(a, v) {
   if (a === 'quitn') { UI.quitAsk = false; return render(); }
   if (a === 'quity') { UI.quitAsk = false; UI.screen = 'intro'; G = null; toTop(); render(); say('Shift abandoned. Back at the start screen.'); return; }
   if (a === 'tipx') { dismissTip(v); return render(); }
+  if (a === 'snd') { const on = Sound.toggle(); Sound.ambience(true); render(); say(on ? 'Sound on.' : 'Sound off.'); return; }
   if (a === 'log') { UI.logOpen = !UI.logOpen; render(); const t = document.getElementById(UI.logOpen ? 'logx' : 'logb'); if (t) t.focus(); return; }
   if (a === 'kitx') { UI.kitOpen.has(v) ? UI.kitOpen.delete(v) : UI.kitOpen.add(v); return render(); }
   if (a === 'fight') { UI.reveal = false; render(); const h = document.getElementById('fight-h'); if (h && h.scrollIntoView) h.scrollIntoView({ block: 'start' }); say(`Fight ${G.boss.name}. Roll when you’re ready.`); return; }
@@ -147,10 +240,24 @@ function act(a, v) {
   }
   if (!before.bossIn && G.bossIn && G.phase === 'combat') { UI.reveal = true; UI.bossHp = G.hps.slice(); }
   render(); effects(before);
+  const landIn = a === 'roll' && G.rolled && before.phase === 'combat' && !before.rolled ? tumbleDice() : 0;
+  stings(a, before, landIn);
   if (a === 'die' && UI.sel !== null) focusTarget();
   if (before.phase !== 'combat' && G.phase === 'combat' && !UI.reveal) { const h = app.querySelector('.pbanner') || document.getElementById('fight-h'); if (h && h.scrollIntoView) { const t = h.getBoundingClientRect().top; if (t < 0 || t > innerHeight * .45) h.scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' }); } }
   tally(a, before);
-  say(announce(a, before, extra));
+  // A roll is announced once, after the dice land; everything else straight away.
+  const line = announce(a, before, extra);
+  if (landIn) { const g = G; setTimeout(() => { if (G === g) say(line); }, landIn); } else say(line);
+}
+
+// One sting per action, timed to what is on screen: the rattle with the tumble, a double when its die lands,
+// a comeback when the Row roll die settles, the boss over its reveal.
+function stings(a, before, landIn) {
+  if (a === 'roll' && G.rolled) { Sound.play('roll'); if (G.dice.some(d => d.kind === 'crew' && isDouble(d))) setTimeout(() => Sound.play('double'), landIn); }
+  if (['hit', 'aim', 'burn'].includes(a)) { if (UI.ko.length) Sound.play('down'); else if (G.stats.crewHits + G.stats.agentHits > before.hits) Sound.play('hit'); }
+  const rolls = G.plog.slice(before.plogN);
+  if (rolls.length && !UI.reveal) { Sound.play('roll'); if (rolls.some(x => x.back.length)) setTimeout(() => Sound.play('comeback'), reduced() ? 0 : D20_MS); }
+  if (UI.reveal && !before.bossIn) Sound.play('boss');
 }
 
 // Damage per mob across the shift, for the loss screen's "what would have helped" line. Read-only on engine state.
@@ -192,9 +299,9 @@ function effects(before) {
   const motion = !reduced();
   const die = G.plog.length > before.plogN && app.querySelector('.d20[data-roll]');
   if (die && motion) {
-    const v = die.querySelector('.dv'), r = die.dataset.roll; let n = 0; die.classList.add('tumble');
-    const t = setInterval(() => { if (!v.isConnected || ++n >= 9) { clearInterval(t); v.textContent = r; die.classList.remove('tumble'); die.classList.add('landed'); return; } v.textContent = 1 + Math.floor(Math.random() * 20); }, 55);
-  }
+    const v = die.querySelector('.dv'), r = die.dataset.roll, bn = die.closest('.pbanner'); let n = 0; die.classList.add('tumble'); if (bn) bn.classList.add('rolling');
+    const t = setInterval(() => { if (!v.isConnected || ++n >= D20_MS / 60) { clearInterval(t); v.textContent = r; die.classList.remove('tumble'); die.classList.add('landed'); if (bn) bn.classList.remove('rolling'); return; } v.textContent = 1 + Math.floor(Math.random() * 20); }, 60);
+  } else if (die) die.classList.add('fadein');
   const back = G.play.filter(m => m.back > 0 && !before.play.includes(m));
   back.forEach((m, n) => {
     const card = app.querySelector(`[data-mob="${m.uid}"]`), from = before.rects[m.uid] || before.sum; if (!card) return;
@@ -203,8 +310,9 @@ function effects(before) {
     const sc = card.querySelector('.scr') || card, r = sc.getBoundingClientRect(), g = document.createElement('div');
     g.className = 'ghost'; g.innerHTML = `<b>${esc(m.name)}</b>`; g.setAttribute('aria-hidden', 'true');
     const w = Math.max(120, Math.min(180, from.width));
-    Object.assign(g.style, { left: from.left + 'px', top: from.top + 'px', width: w + 'px' }); document.body.appendChild(g);
-    const to = { left: r.left + scrollX + r.width / 2 - w / 2, top: r.top + scrollY + r.height / 2 - 18 }, dx = to.left - from.left, dy = to.top - from.top;
+    const x0 = Math.max(scrollX + 8, Math.min(from.left, scrollX + innerWidth - w - 8));
+    Object.assign(g.style, { left: x0 + 'px', top: from.top + 'px', width: w + 'px' }); document.body.appendChild(g);
+    const to = { left: r.left + scrollX + r.width / 2 - w / 2, top: r.top + scrollY + r.height / 2 - 18 }, dx = to.left - x0, dy = to.top - from.top;
     g.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(0,-10px)', opacity: 1, offset: .25 }, { transform: `translate(${dx}px,${dy}px)`, opacity: .9, offset: .85 }, { transform: `translate(${dx}px,${dy}px) scale(.9)`, opacity: 0 }],
       { duration: 820, delay: 380 + n * 110, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'both' }).onfinish = () => g.remove();
     setTimeout(() => g.remove(), 1800);
@@ -215,9 +323,9 @@ function finish(before) {
   const low = Math.min(...G.hps), f = 1 - low / G.max; G.tier = !G.win ? 'Flatlined' : f <= .3 ? 'Wingman' : f <= .6 ? 'Solid Shift' : 'Close Call';
   const rank = { Wingman: 3, 'Solid Shift': 2, 'Close Call': 1 }[G.tier] || 0;
   const x = { team: (UI.team || 'Night shift').slice(0, 24), mode: UI.mode, diff: UI.mode === 'full' ? UI.diff : UI.mode === 'intro' ? 'First Shift' : 'Quick', players: G.team.length, tier: G.tier, hp: low, max: G.max, score: rank * 1000 + Math.round(low / G.max * 500) - G.stats.rounds, at: Date.now() };
-  UI.savedAt = x.at; UI.before = before; saveScore(x); UI.screen = 'end'; UI.reveal = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); toTop(); render();
+  UI.savedAt = x.at; UI.before = before; UI.fellAt = clockNow(); saveScore(x); Sound.ambience(false); Sound.play(G.win ? 'win' : 'loss'); UI.screen = 'end'; UI.reveal = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); toTop(); render();
   const h = document.getElementById('end-h'); if (h) h.focus({ preventScroll: true });
-  say(G.win ? `Shift survived. ${G.boss.name} contained. ${G.tier}.` : `Shift lost. The ${nm(G.dropped)} went down to ${listOf(G.downBy || ['the mobs'])}.`);
+  say(G.win ? `Shift survived. You made it to 06:00. ${G.boss.name} contained. ${G.tier}.` : `Shift lost at ${UI.fellAt}. The ${nm(G.dropped)} went down to ${listOf(G.downBy || ['the mobs'])}.`);
 }
 
 app.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b || b.disabled) return; act(b.dataset.a, b.dataset.v); });
@@ -275,13 +383,13 @@ function vIntro() {
     : `<p class="meta">One analyst per player, up to 4. <button class="lnk" type="button" data-a="solo" data-k="solo">Just me</button></p>`;
   return `<div class="wrap"><div class="intro-grid">
     <section class="hero"><span class="art">${slice(pickArt('hero', 'event', 'Network'))}</span><p class="meta c">An original game by Binary Defense</p><h1 class="logo">Detect the Dwellers</h1>
-      <p class="lede">A co-op dice game on the SOC night shift. Threats show up one at a time, and you roll to put them down. What you beat can come back. Keep everyone standing to the end of the shift, then take on the boss.</p>
+      <p class="lede">A co-op dice game on the SOC night shift. The shift starts at 22:00. Threats show up one at a time, and you roll to put them down. What you beat can come back. Keep everyone standing, take the boss at 05:59, and make it to 06:00.</p>
       ${board ? `<div class="lbmini"><h2 class="sech">Leaderboard · ${esc(D.modes[UI.mode].label)}</h2>${board}</div>` : ''}</section>
     <section class="setup panel" aria-labelledby="setup-h"><h2 class="sr" id="setup-h">Set up your shift</h2>
       <h2 class="sech">Mode</h2><div class="seg" role="group" aria-label="Mode">${modes}</div><p class="body-s">${esc(cap1(D.modes[UI.mode].sub))}${UI.mode === 'intro' ? '. Tips walk you through it.' : '.'}</p>${diffs}
       <h2 class="sech" id="crew-h">${solo ? 'Your analyst' : `Crew · ${n} of 4`}</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>${more}
       <div class="field"><label class="sech" for="team">Crew name</label><input id="team" maxlength="24" autocomplete="off" value="${esc(UI.team)}" placeholder="Night Shift Six"></div>
-      <div class="startbar"><p class="meta">${n ? `${n === 1 ? `Solo · ${hpFor()} HP` : `${n} players · ${hpFor()} HP each`} · 0 HP ends the shift` : 'Pick an analyst for each player'}</p>
+      <div class="startbar"><p class="meta">${n ? `${n === 1 ? `Solo · ${hpFor()} HP` : `${n} players · ${hpFor()} HP each`} · Survive until 06:00` : 'Pick an analyst for each player'}</p>
         <button class="btn p w big" type="button" data-a="start" data-k="start" data-primary ${n ? '' : 'disabled'}>Clock in</button></div></section>
   </div></div>`;
 }
@@ -319,7 +427,7 @@ function mobHTML(m, ko, solo) {
     <div class="mh"><span class="ptag">${boss ? 'Boss' : esc(m.domain)}</span>${m.scouted && E.active(G, 'recon').length ? '<span class="phud c">Scouted +5</span>' : ''}${right}</div>
     <h3 class="nm" id="mn${m.uid}">${esc(m.name)}${ko ? '<span class="sr"> is down</span>' : back ? '<span class="sr">, back from the row</span>' : ''}</h3>
     <dl class="stat"><div class="def"><dt>Defense</dt><dd>${m.def}</dd></div><div><dt>Hits</dt><dd>${ko ? 0 : m.left}/${m.hits}${hitsNote(m)}</dd></div><div><dt>Damage</dt><dd>${dmgStat(m)}</dd></div></dl>${pips}
-    <p class="ability">${kw}<b>${esc(m.abilityName)}.</b> ${esc(m.abilityText)}</p>${m.flavor ? `<p class="fl">${esc(m.flavor)}</p>` : ''}${btn}</div></div></article>`;
+    <p class="ability">${kw}<b>${esc(m.abilityName)}.</b> ${esc(m.abilityText)}</p>${m.flavor ? `<p class="fl ${fresh && !ko && !back ? 'reveal-ln' : ''}">${solo && !ko ? aloudHint() : ''}${readAloud(m.flavor, !!fresh && !ko && !back)}</p>` : ''}${btn}</div></div></article>`;
 }
 
 const hitWhy = (d, m) => isDouble(d) ? `${d.r}: double, two hits` : `${E.total(G, d, m)} vs ${m.def}`;
@@ -385,7 +493,9 @@ function aiOnUI() { return G.play.some(m => m.ability === 'takeover' || (m.kind 
 // (the log keeps its entry). A comeback that waits behind a situation is told once, at the flip, not again at the fight.
 function persistBanner() { const p = G.persist; if (!p || !p.pre) return ''; const hot = p.back.length, many = p.back.length > 1;
   const later = G.phase === 'sit' && G.pendingBack.length ? ` You fight ${many ? 'them' : 'it'} after this situation.` : '';
-  const line = hot ? `${listOf(p.back)} ${many ? 'are' : 'is'} back: ${many ? 'they' : 'it'} hit everyone on the way in and ${many ? 'go' : 'goes'} down in one hit.${later}` : 'Nothing matched. The row stays quiet.';
+  const hit = p.hit || p.back, all = hit.length === p.back.length;
+  const line = !hot ? 'Nothing matched. The row stays quiet.' : all ? `${listOf(p.back)} ${many ? 'are' : 'is'} back: ${many ? 'they' : 'it'} hit everyone on the way in and ${many ? 'go' : 'goes'} down in one hit.${later}`
+    : `${listOf(p.back)} ${many ? 'are' : 'is'} back and ${many ? 'go' : 'goes'} down in one hit. ${hit.length ? `Only the ${hit.length > 1 ? `${['', 'one', 'two', 'three', 'four'][hit.length] || hit.length} hardest hitters` : 'hardest hitter'}, ${listOf(hit)}, ${hit.length > 1 ? 'hit' : 'hits'} everyone on the way in.` : 'Comebacks with the boss don’t hit on the way in.'}${later}`;
   return `<div class="pbanner ${hot ? 'hot' : ''}" role="status"><div class="d20 ${hot ? '' : 'q'}" data-roll="${p.r}"><span class="dv" aria-hidden="true">${p.r}</span></div><p><b>Row roll ${p.r}.</b> ${esc(line)}</p></div>`; }
 
 function tipHTML() {
@@ -525,7 +635,7 @@ function vGame() {
     const c = G.cur, kind = c.type === 'challenge' ? 'Challenge' : c.type === 'choice' ? 'Choice' : 'Event';
     // The card flips over once, when it comes off the feed; later renders (log, tips) leave it still.
     const fl = UI.seen.has('s' + G.sit) ? '' : 'flipin'; UI.seen.add('s' + G.sit);
-    const card = `<article class="paper cy pcard sitc ${fl}" aria-labelledby="sit-h"><i class="tab" aria-hidden="true"></i><span class="scr">${slice(sitArt(c))}</span><div class="mh"><span class="ptag cy">${sitOf(G.sit)}</span><span class="phud c">${kind}${G.team.length > 1 ? ` · ${esc(nm(G.point))} on point` : ''}</span></div><h2 class="nm" id="sit-h">${esc(c.name)}</h2><p class="txt">${esc(c.text)}</p><p class="rulebox">${esc(c.rule)}</p></article>`;
+    const card = `<article class="paper cy pcard sitc ${fl}" aria-labelledby="sit-h"><i class="tab" aria-hidden="true"></i><span class="scr">${slice(sitArt(c))}</span><div class="mh"><span class="ptag cy">${sitOf(G.sit)}</span><span class="phud c">${kind}${G.team.length > 1 ? ` · ${esc(nm(G.point))} on point` : ''}</span></div><h2 class="nm" id="sit-h">${esc(c.name)}</h2><p class="txt ${fl ? 'reveal-ln' : ''}">${aloudHint()}${readAloud(c.text, !!fl)}</p><p class="rulebox">${esc(c.rule)}</p></article>`;
     main += desk(card, persistBanner() + dockHTML());
   } else if (G.phase === 'loot') {
     const c = G.loot[0];
@@ -543,8 +653,8 @@ function vGame() {
   const quit = UI.quitAsk ? `<div class="quitask" role="alert"><span class="body-s" style="color:var(--ink)">Quit this shift? It won’t be scored.</span><button class="btn s tb warn" type="button" data-a="quity" data-k="quity">Quit</button><button class="btn s tb" type="button" data-a="quitn" data-k="quitn">Keep playing</button></div>`
     : `<button class="btn s tb" type="button" data-a="quit" data-k="quit">Quit</button>`;
   const logp = UI.logOpen ? `<aside class="logp" id="logp" aria-labelledby="log-h"><div class="lh"><h2 class="sech" id="log-h">Event log · kit deck ${G.kit.length}</h2><button class="btn s tb" type="button" id="logx" data-a="log" data-k="logx">Close</button></div><div class="log">${logs}</div>${keysUsed ? '' : '<p class="keys"><kbd>R</kbd>roll · <kbd>1</kbd>–<kbd>9</kbd>pick a die · <kbd>U</kbd>undo · <kbd>E</kbd>end round · <kbd>F</kbd>flip</p>'}</aside>` : '';
-  return `<div class="wrap game"><div class="gtop"><header class="top"><span class="brand">Detect the Dwellers</span><div class="feed"><span class="meta c" data-progress>${progressLabel()}</span><span class="feedbar" aria-hidden="true">${segs}</span></div>
-      <div class="tbtns"><button class="btn s tb" type="button" id="logb" data-a="log" data-k="logb" aria-expanded="${UI.logOpen}" aria-controls="logp">Log</button>${quit}</div></header>
+  return `<div class="wrap game"><div class="gtop"><header class="top"><span class="brand">Detect the Dwellers</span><div class="feed"><span class="fline">${clockStamp()}<span class="meta c" data-progress>${progressLabel()}</span>${soundBtn('m')}</span><span class="feedbar" aria-hidden="true">${segs}</span></div>
+      <div class="tbtns">${soundBtn()}<button class="btn s tb" type="button" id="logb" data-a="log" data-k="logb" aria-expanded="${UI.logOpen}" aria-controls="logp">Log</button>${quit}</div></header>
     <section class="crew ${G.team.length === 3 ? 'tight' : ''}" aria-labelledby="crew-h" style="--n:${G.team.length > 3 ? 2 : G.team.length}"><h2 class="sr" id="crew-h">${G.team.length > 1 ? 'Your crew' : 'You'}</h2>${crewHTML()}</section></div>
     <main class="main">${main}</main></div>${logp}${UI.reveal ? revealHTML() : ''}`;
 }
@@ -598,7 +708,7 @@ function vEnd() {
     <article class="endcard ${G.win ? 'win' : 'loss'}" aria-labelledby="end-h"><div class="ec-art"><span class="art">${slice(artSvg)}</span><span class="stamp" aria-hidden="true">${G.win ? 'Contained' : 'Flatlined'}</span></div>
       <div class="ec-bd"><p class="meta ${G.win ? 'c' : 'f'}">${G.win ? 'Shift survived' : 'Shift lost'} · ${esc(D.modes[UI.mode].label)}${UI.mode === 'full' ? ' · ' + esc(UI.diff) : ''} · ${G.team.length}p</p>
         <h1 class="logo" id="end-h" tabindex="-1">${esc(G.tier)}</h1>
-        ${G.win ? `<p class="lede">${esc(G.boss.name)} is contained. ${esc(line)}</p>` : `<p class="cause">${cause}</p>${help ? `<p class="helped"><b>What would have helped.</b> ${esc(help)}</p>` : ''}<p class="lede">${esc(line)}</p>`}
+        ${G.win ? `<p class="lede"><time class="clk dawn">06:00</time> You made it to dawn. ${esc(G.boss.name)} is contained. ${esc(line)}</p>` : `<p class="cause"><time class="clk">${esc(UI.fellAt || clockNow())}</time> The shift fell. ${cause}</p>${help ? `<p class="helped"><b>What would have helped.</b> ${esc(help)}</p>` : ''}<p class="lede">${esc(line)}</p>`}
         <ul class="roster" aria-label="Crew">${roster}</ul>
         <div class="stats"><div><b>${G.sit}</b><span class="meta">Situations</span></div><div><b>${G.stats.rounds}</b><span class="meta">Rounds</span></div><div><b>${G.stats.back}</b><span class="meta">Comebacks</span></div><div><b>${Math.min(...G.hps)}</b><span class="meta">Lowest HP</span></div></div>
         <p class="body-s">Agents landed <b class="num" style="color:var(--cy)">${ah}</b> ${ah === 1 ? 'hit' : 'hits'}. The crew landed <b class="num" style="color:var(--ink)">${ch}</b>.</p>

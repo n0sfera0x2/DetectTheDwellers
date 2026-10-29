@@ -172,9 +172,9 @@ test('a boss loss names a real lever, never “put it down first” for the only
   };
   let { w, line } = lose(['recover'], {});
   assert.match(line, /Recovery Agent was never burned\. Burned before that roll, it heals 6 HP\. The Hunter had 4 and took 9: those 6 HP would have kept the Hunter standing\./);
-  ({ line } = lose(['hunt'], {}));
+  ({ w, line } = lose(['hunt'], {}));
   assert.doesNotMatch(line, /Hunt Agent/, 'a Hunt Agent is no lever against a boss'); assert.doesNotMatch(line, /down first/);
-  assert.match(line, /You met The Lockjaw Syndicate with 18 of 18 HP/);
+  const max = w.eval('G.max'); assert.match(line, new RegExp(`You met The Lockjaw Syndicate with ${max} of ${max} HP`));
   ({ line } = lose([], { 'MFA Banshee': 6 }));
   assert.match(line, /MFA Banshee did the most damage: 6 HP/);
 });
@@ -218,5 +218,38 @@ test('the header, status line, feed card and fight header agree on the situation
   const sitN = `${w.eval('G.sit')}/${w.eval('G.total')}`;
   assert.strictEqual(num(d.querySelector('[data-progress]').textContent), sitN, 'header on a situation');
   assert.strictEqual(num(d.querySelector('.sitc .ptag').textContent), sitN, 'situation card');
+  assert.deepStrictEqual(errors, []);
+});
+
+// The shift clock: flip i of n reads 22:00 + (i − 1) × 480 / n minutes, floored to 5. The boss is always 05:59.
+test('the shift clock runs 22:00 to dawn, positionally, for any feed length', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window;
+  const at = (i, n) => w.eval(`clockAt(${i}, ${n})`);
+  const want = { 4: ['22:00', '00:00', '02:00', '04:00'], 5: ['22:00', '23:35', '01:10', '02:45', '04:20'],
+    6: ['22:00', '23:20', '00:40', '02:00', '03:20', '04:40'], 7: ['22:00', '23:05', '00:15', '01:25', '02:30', '03:40', '04:50'],
+    9: ['22:00', '22:50', '23:45', '00:40', '01:30', '02:25', '03:20', '04:10', '05:05'] };
+  for (const [n, times] of Object.entries(want)) assert.deepStrictEqual(times.map((_, i) => at(i + 1, +n)), times, `${n} flips`);
+  assert.strictEqual(w.eval('BOSS_TIME'), '05:59');
+  // In play: the header stamp follows the situation, and the boss reads 05:59.
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start();`);
+  const stamp = () => w.document.querySelector('[data-clock]').textContent;
+  assert.strictEqual(stamp(), '22:00');
+  w.eval(`G.sit = 3; render();`); assert.strictEqual(stamp(), at(3, w.eval('G.total')));
+  w.eval(`G.play = []; G.phase = 'point'; G.deck = []; G.row = []; render(); act('flip');`); assert.strictEqual(stamp(), '05:59');
+});
+
+test('the sound toggle works, and is remembered, with no Web Audio at all', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  assert.strictEqual(w.AudioContext, undefined, 'jsdom should have no Web Audio for this test');
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start();`);
+  const btn = () => d.querySelector('[data-a=snd]');
+  assert.ok(btn(), 'no sound toggle in the top bar'); assert.strictEqual(btn().getAttribute('aria-pressed'), 'true');
+  btn().click(); assert.strictEqual(btn().getAttribute('aria-pressed'), 'false'); assert.strictEqual(w.localStorage.getItem('dwellers-sound-v1'), '0');
+  btn().click(); assert.strictEqual(btn().getAttribute('aria-pressed'), 'true'); assert.strictEqual(w.localStorage.getItem('dwellers-sound-v1'), '1');
+  // Every sting and the ambience are silent no-ops without an AudioContext, and gestures don't throw.
+  w.eval(`['roll','hit','double','down','comeback','boss','win','loss','nope'].forEach(n => Sound.play(n)); Sound.ambience(true); Sound.unlock();`);
+  d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'x', bubbles: true }));
+  assert.strictEqual(w.eval('Sound.live'), false);
   assert.deepStrictEqual(errors, []);
 });

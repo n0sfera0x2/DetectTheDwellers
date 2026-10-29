@@ -19,16 +19,6 @@ test('one HP number per difficulty at every player count', () => {
   for (const n of ['1', '2', '3', '4']) assert.deepStrictEqual(D.hp.full[n], D.hp.full['1']);
 });
 
-test('mob hits scale as printed + analysts − 2, never below 1', () => {
-  for (const n of [1, 2, 3, 4]) {
-    const G = E.newGame(TEAMS[n][0], 'full', { rnd: rng(1) });
-    for (const m of G.deck.filter(c => c.kind === 'mob')) {
-      const base = D.mobs.find(x => x.id === m.id).hits;
-      assert.strictEqual(m.hits, Math.max(1, base + n - 2));
-    }
-  }
-});
-
 test('First Shift deals its six cards in order with the set boss and kit on top', () => {
   const G = E.newGame(['HUN', 'RES'], 'intro', { rnd: rng(2) });
   assert.deepStrictEqual(G.deck.map(c => c.id).reverse(), D.intro.deck);
@@ -46,6 +36,18 @@ test('the bot finishes every game without getting stuck', () => {
 
 test('every mob prints its own comeback range, starting at 1', () => {
   for (const m of D.mobs) assert.ok(m.persist[0] === 1 && m.persist[1] >= m.persist[0] && m.persist[1] <= 20, `${m.name} range ${m.persist}`);
+});
+
+test('only the two highest-Damage comebacks of a roll hit on the way in', () => {
+  const G = E.newGame(['HUN', 'RES'], 'full', { hp: 200, rnd: rng(3) });
+  const [spray, druid, mimic] = ['spray', 'druid', 'mimic'].map((id, i) => ({ ...D.mobs.find(m => m.id === id), kind: 'mob', uid: 900 + i, left: 1, hits: 2, back: 0, up: 0 }));
+  G.row = [spray, druid, mimic]; G.deck = [{ ...D.mobs.find(m => m.id === 'macro'), kind: 'mob', uid: 999, left: 2, hits: 2, back: 0, up: 0 }];
+  // Flip roll 1 brings all three back; Mimic (4) and Druid (3) strike, the Sprayer (1) just rejoins.
+  const rolls = [1]; G.rnd = () => rolls.length ? (rolls.shift() - 1) / 20 : 0.99;
+  assert.ok(E.flip(G));
+  assert.strictEqual(G.play.length, 4);
+  assert.deepStrictEqual(G.persist.hit.slice().sort(), [druid.name, mimic.name].sort());
+  assert.deepStrictEqual(G.hps, [200 - 7, 200 - 7]);
 });
 
 test('a Beacon roll chains: what it brings back rolls the row again', () => {
@@ -82,4 +84,13 @@ test('a lost shift records which mobs dealt the final damage', () => {
   const by = E.incomingBy(G); assert.strictEqual(by[0][0].m, bat); assert.strictEqual(E.incoming(G)[0], by[0].reduce((s, x) => s + x.d, 0));
   E.endRound(G);
   assert.ok(G.over && !G.win); assert.deepStrictEqual(G.downBy, [bat.name]);
+});
+
+test('mob hits follow the crew-size table, never below 1', () => {
+  for (const n of [1, 2, 3, 4]) {
+    const G = E.newGame(TEAMS[n][0], 'full', { hp: 50, rnd: rng(n) });
+    const mobs = G.deck.filter(c => c.kind === 'mob');
+    for (const m of mobs) { const printed = D.mobs.find(x => x.id === m.id).hits; assert.strictEqual(m.hits, Math.max(1, printed + D.mobAdd[n]), `${m.name} at ${n}p`); }
+  }
+  assert.strictEqual(E.mobHits(1, 1), 1);
 });

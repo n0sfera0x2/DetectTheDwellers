@@ -109,7 +109,10 @@ test('the boss reveal names the burn that helps, with the real heal from the cre
   assert.match(move.textContent, /Burn your Recovery Agent now: \+4 HP/);
   assert.ok(d.querySelector('.reveal [data-a=burn]'), 'no burn button in the reveal');
   // The damage stat explains Ransom Demand: engine damage vs the printed number.
-  if (w.eval('G.boss.id') === 'wyrm') assert.match(d.querySelector('.reveal .stat').textContent, /Damage9.*7 \+2 until 2 hits/);
+  if (w.eval('G.boss.id') === 'wyrm') {
+    const now = w.eval('E.dmgOf(G, G.play[0])'), printed = w.eval('G.boss.dmg');
+    assert.match(d.querySelector('.reveal .stat').textContent, new RegExp(`Damage${now}.*${printed} \\+${now - printed} until 2 hits`));
+  }
   d.querySelector('.reveal [data-a=burn]').click();
   assert.ok(!d.querySelector('.reveal'), 'burning should close the reveal into the fight');
   assert.strictEqual(w.eval('G.hps[0]'), w.eval('G.max'));
@@ -163,15 +166,17 @@ test('the boss banner and the reveal’s Your move say the same thing, and name 
 });
 
 test('a boss loss names a real lever, never “put it down first” for the only enemy left', () => {
+  // The last round starts one HP short of surviving the boss's hit, so the burn heal (read from the page) is the difference.
   const lose = (held, mobs) => {
     const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
     w.eval(`UI.mode = 'intro'; UI.pick = ['HUN']; start(); G.held[0] = ${JSON.stringify(held)}.map(t => ({ ...D.kit.find(c => c.type === t) }));
-      UI.dmg = ${JSON.stringify(mobs)}; G.play = []; G.phase = 'point'; G.deck = []; G.row = []; render(); act('flip'); act('fight'); act('roll');
-      G.dice.forEach(d => { d.used = true; }); G.hps[0] = 4; G.blocks = G.blocks.map(() => false); render(); act('end');`);
+      UI.dmg = ${JSON.stringify(mobs)}; G.play = []; G.phase = 'point'; G.deck = []; G.row = []; render(); act('flip'); act('fight'); act('roll'); const HP0 = Math.max(1, E.dmgOf(G, G.play[0]) - BURN_HEAL + 1);
+      G.dice.forEach(d => { d.used = true; }); G.hps[0] = HP0; G.blocks = G.blocks.map(() => false); render(); act('end');`);
     return { w, line: d.querySelector('.helped') ? d.querySelector('.helped').textContent : '' };
   };
   let { w, line } = lose(['recover'], {});
-  assert.match(line, /Recovery Agent was never burned\. Burned before that roll, it heals 6 HP\. The Hunter had 4 and took 9: those 6 HP would have kept the Hunter standing\./);
+  const heal = w.eval('BURN_HEAL'), took = w.eval('G.lastRound.inc[0]'), had = took - heal + 1;
+  assert.match(line, new RegExp(`Recovery Agent was never burned\\. Burned before that roll, it heals ${heal} HP\\. The Hunter had ${had} and took ${took}: those ${heal} HP would have kept the Hunter standing\\.`));
   ({ w, line } = lose(['hunt'], {}));
   assert.doesNotMatch(line, /Hunt Agent/, 'a Hunt Agent is no lever against a boss'); assert.doesNotMatch(line, /down first/);
   const max = w.eval('G.max'); assert.match(line, new RegExp(`You met The Lockjaw Syndicate with ${max} of ${max} HP`));
@@ -263,4 +268,41 @@ test('an agent die picked in a boss fight keeps its agent label and says why it 
   assert.match(die.textContent, /Triage agent/); assert.match(die.getAttribute('aria-label'), /Triage Agent die 20.*picked/);
   assert.match(d.body.textContent, /agents never touch the boss/);
   assert.doesNotMatch(d.body.textContent, /Die 20 can’t hit this one\./);
+});
+
+// The end screen's automation report, from a staged G.stats.auto: the non-zero lines show, the zero ones don't.
+function endWith(auto, win) {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN', 'RES']; start(); const before = snap();
+    G.stats.auto = ${JSON.stringify(auto)}; G.over = true; G.win = ${win}; if (!G.win) { G.dropped = 0; G.downBy = [G.boss.name]; } finish(before);`);
+  return { d, errors };
+}
+test('the end screen reports what the agents did, non-zero lines only, on a win and on a loss', () => {
+  const auto = { hits: 10, assist: 12, saved: 0, healed: 22, removed: 2, dodged: 1 };
+  for (const win of [true, false]) {
+    const { d, errors } = endWith(auto, win), rep = d.querySelector('[data-autorep]');
+    assert.ok(rep, 'no automation report'); const t = rep.textContent.replace(/\s+/g, ' ');
+    assert.match(t, /landed 10 hits/); assert.match(t, /set up 12 more/); assert.match(t, /healed 22 HP/); assert.match(t, /kept 3 comebacks down/);
+    assert.ok(!rep.querySelector('[data-auto=saved]'), 'a zero stat should not show'); assert.doesNotMatch(t, /stopped/);
+    assert.deepStrictEqual([...rep.querySelectorAll('[data-auto]')].map(e => e.dataset.auto), ['hits', 'assist', 'healed', 'down']);
+    // A loss leads with what the agents did, before the cause.
+    if (!win) assert.ok(rep.compareDocumentPosition(d.querySelector('.cause')) & 4, 'the report should come before the cause on a loss');
+    assert.deepStrictEqual(errors, []);
+  }
+  const none = endWith({ hits: 0, assist: 0, saved: 0, healed: 0, removed: 0, dodged: 0 }, false).d.querySelector('[data-autorep]');
+  assert.ok(none && !none.querySelector('[data-auto]')); assert.match(none.textContent, /No agents ran this shift/);
+});
+
+test('no on-screen rule says a comeback goes down in one hit', () => {
+  const oneHit = /(needing|needs|need) (just |only )?one hit|(go|goes) down in one hit|one hit left/i;
+  assert.doesNotMatch(html, oneHit, 'the built page still has a one-hit comeback line');
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window;
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); G.phase = 'combat';`);
+  for (const p of [{ pre: true, r: 5, back: ['Spray Bot'], hit: ['Spray Bot'] }, { pre: true, r: 5, back: ['A', 'B', 'C'], hit: ['A', 'B'] }]) {
+    const t = w.eval(`G.persist = ${JSON.stringify(p)}; persistBanner()`);
+    assert.match(t, /full strength/); assert.doesNotMatch(t, oneHit);
+  }
+  assert.match(w.eval('TIPS.row'), /full strength/);
+  for (const t of Object.values(w.eval('D.intro.tips'))) assert.doesNotMatch(t, oneHit);
 });

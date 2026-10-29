@@ -2,13 +2,15 @@
 
 A co-op card game for 1–4 players about a SOC night shift in a rain-soaked megacity. The shift runs 22:00 to 06:00. Work through a feed of situations, fight the mobs that crawl out of the network, and survive the boss that comes at 05:59. Make it to dawn and you win together; otherwise the shift is lost.
 
-**You need:** the 54-card deck, four d20s, and a handful of coins (one per HP tracker, a few to mark hits).
+**You need:** the 54-card deck, four d20s, and a handful of coins (two per HP tracker, a few to mark hits).
 
 The full illustrated rulebook lives in Claude Docs. This file is the canonical rules text for the repo; when they disagree, fix whichever is wrong.
 
 ## Setup
 
-1. **Each player picks one analyst** and takes an HP tracker. Put your coin on your starting HP: Recruit 59, Analyst 50, Veteran 41, Quick Shift 31. It's the same at every player count.
+1. **Each player picks one analyst** and takes an HP tracker. Set it to your starting HP: Recruit 70, Analyst 60, Veteran 47, Quick Shift 37 (First Shift 25). It's the same at every player count.
+
+   **Reading the tracker.** It has two tracks and takes two coins: one on the tens track (0–90), one on the ones track (0–9). Your HP is the two added together: 47 HP is one coin on 40 and one on 7. When damage takes you below the tens coin, drop it a step and move the ones coin up: at 42, taking 5 leaves 37 (tens on 30, ones on 7). Healing never takes you above your starting HP.
 2. **Shuffle the 24 situation cards** (15 mobs, 9 situations) and deal 10 face down as the feed. Quick Shift: deal 6.
 3. **Shuffle the bosses** and put one face down under the feed.
 4. **Shuffle the kit deck.** In Quick Shift, the crew starts with two AI agents from it.
@@ -18,7 +20,7 @@ For a first game, use the First Shift setup instead (below).
 
 ## A round
 
-1. **Pick who's on point.** They roll an extra die this round and take any kit draw.
+1. **Pick who's on point.** They roll an extra die this round and take the kit draw.
 2. **Flip the top card of the feed, and roll a d20 for the persistence row** at the same time (once anything is in the row). Whoever's on point reads the card aloud, flavour line first.
 3. **Resolve it.** A situation is read and resolved. A mob starts a fight, joined by anything that came back from the row. If a non-combat situation came up and something came back, resolve the situation first, then fight.
 4. **Repeat** until the feed is empty. Then the boss arrives at 05:59, with one more roll for the row.
@@ -31,22 +33,51 @@ For a first game, use the First Shift setup instead (below).
 - **Assign.** Put each die on a mob it beats: d20 + bonus ≥ the mob's Defense is one hit. A natural 18–20 is a double: two hits, and that analyst blocks this round (Engineer: 16–20).
 - **Hits back.** Every mob still standing hits everyone who didn't block, for its Damage. A mob you finish this round doesn't hit back.
 - **Off-shift.** Before the roll, one analyst may go off-shift: no roll, no damage, heal 1 HP.
-- **Won.** When the last mob falls, whoever's on point draws a kit card for the crew.
+- **Won.** When the last mob falls, whoever's on point draws two kit cards for the crew.
 
-**Mob hits scale with the crew.** Each mob card prints its hits for 1, 2, 3 and 4 analysts: use the number for your crew size. (The data stores the 2-player number and adds −1, 0, +2 or +4, never going below 1.) The boss: printed hits + 1 per analyst. Track hits with coins.
+**Mob hits scale with the crew.** Each mob card prints its hits for 1, 2, 3 and 4 analysts: use the number for your crew size. (The data stores the 2-player number and adds the `mobAdd` table, never going below 1.)
+
+| Analysts | 1 | 2 | 3 | 4 |
+| --- | --- | --- | --- | --- |
+| Mob hits | printed − 1 | printed | printed + 1 | printed + 2 |
+
+ The boss: printed hits + 1 per analyst. Track hits with coins.
 
 ## The persistence row
 
-Every beaten mob goes on the row mat, every time. Every flip, roll a d20: any mob in the row whose range matches comes back. Each mob prints its own range, from 1–10 for the nuisances down to 1–4 for the Golden Ticket Ghost. Comebacks join the fight needing only **one hit**. The **two with the highest Damage hit everyone for their Damage on the way in**; any others just rejoin. Each roll counts on its own, so a Beacon chain can bring in two more hitters. The roll made when the boss arrives brings comebacks in without the arrival hit. Only burning a Patch Agent or the Threat Intel Drop situation removes a mob for good.
+Every beaten mob goes on the row mat, every time. Every flip, roll a d20: any mob in the row whose range matches comes back. Each mob prints its own range, from 1–10 for the nuisances down to 1–4 for the Golden Ticket Ghost. Comebacks return at **full hits**, as strong as the first time. The **two with the highest Damage hit everyone for their Damage on the way in**; any others just rejoin. Each roll counts on its own, so a Beacon chain can bring in two more hitters. The roll made when the boss arrives brings comebacks in without the arrival hit. Only burning a Patch Agent or the Threat Intel Drop situation removes a mob for good. The Hunt Agent and the Hunter are built to clean up comebacks once they're back in play.
 
 ## Kit
 
-All kit is AI agents: eight types, two copies each, in one shared crew tray of four cards (five with the Soarcerer). Every card has two modes:
+All kit is AI agents: eight types, two copies each, in one shared crew tray of five cards (six with the Soarcerer). Every won fight draws two. If the tray is full, discard one to make room. Every card has two modes:
 
 - **Run it:** it works every round or every fight.
 - **Burn it:** a one-shot effect, then discard it.
 
 Rolling agents can't hit the boss. The Rogue AI boss shuts off every running agent; you can still burn them.
+
+| Agent | Run it | Burn it |
+| --- | --- | --- |
+| Triage | Rolls every round at +4 against any mob. | Roll three extra dice this round, with your bonus. |
+| Hunt | Rolls every round at +7, but only against a mob that came back from the row. | A mob that came back from the row (not the boss) is beaten. |
+| Containment | Each round, the highest-damage mob deals 2 less damage, never below 1. | Every mob in play takes 1 hit. |
+| Enrichment | Every analyst gets +3 against every mob. | This round, every analyst die gets +5. |
+| Patch | When you roll for the persistence row, roll an extra die and keep the highest. | Discard one mob from the persistence row for good. |
+| Recovery | After every fight, heal 4 HP split across the crew. | Heal 6 HP split across the crew. |
+| Decoy | Once per fight, after the roll: the analyst on point takes no damage this round. | After the roll: everyone blocks this round. |
+| Recon | Peek at the next situation before picking who's on point. If it's a mob, every analyst gets +5 against it all fight. | Look at the next 3 situations and bury one at the bottom of the feed. |
+
+A mob "came back from the row" once the Row roll has returned it, for the rest of the shift.
+
+## Bosses
+
+Boss hits are printed + 1 per analyst. The boss arrives with one more Row roll, and nothing hits on the way in.
+
+| Boss | Defense | Hits (printed) | Damage | Ability |
+| --- | --- | --- | --- | --- |
+| The Lockjaw Syndicate | 16 | 7 | 9 | +2 damage until it has taken two hits. |
+| The Persistent Operator | 15 | 7 | 9 | The first time you beat it, it comes back with 2 hits left. |
+| The Rogue AI | 17 | 6 | 9 | Agents can't roll while it's in play. |
 
 ## Mob keywords
 
@@ -67,10 +98,10 @@ Beat the boss and you've made it to dawn: the shift is won. If any analyst hits 
 
 ## First Shift (your first game)
 
-A fixed six-card game that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck, start at 20 HP each, and play normally.
+A fixed six-card game that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck, start at 25 HP each, and play normally.
 
 ## Quick Shift (booth mode)
 
-Six situations and the boss, 31 HP each, and the crew starts with two agents. About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
+Six situations and the boss, 37 HP each, and the crew starts with two agents. About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
 
 Every card's exact text is in [CARDS.md](CARDS.md).

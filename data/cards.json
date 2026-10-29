@@ -282,31 +282,31 @@
    "id": "wyrm",
    "name": "The Lockjaw Syndicate",
    "def": 16,
-   "dmg": 7,
+   "dmg": 9,
    "abilityName": "Ransom demand",
    "abilityText": "+2 damage until it has taken two hits.",
    "domain": "Endpoint",
-   "hitsBase": 5
+   "hitsBase": 7
   },
   {
    "id": "apt",
    "name": "The Persistent Operator",
    "def": 15,
-   "dmg": 7,
+   "dmg": 9,
    "abilityName": "Living off your network",
    "abilityText": "The first time you beat it, it comes back with 2 hits left.",
    "domain": "Identity",
-   "hitsBase": 5
+   "hitsBase": 7
   },
   {
    "id": "ai",
    "name": "The Rogue AI",
    "def": 17,
-   "dmg": 7,
+   "dmg": 9,
    "abilityName": "Hostile takeover",
    "abilityText": "Agents can't roll while it's in play.",
    "domain": "Cloud",
-   "hitsBase": 4
+   "hitsBase": 6
   }
  ],
  "situations": [
@@ -449,7 +449,7 @@
    "kind": "agent",
    "type": "triage",
    "name": "Triage Agent",
-   "text": "Rolls every round at +2 against any mob.",
+   "text": "Rolls every round at +4 against any mob.",
    "burn": "Roll three extra dice this round, with your bonus."
   },
   {
@@ -457,7 +457,7 @@
    "kind": "agent",
    "type": "triage",
    "name": "Triage Agent",
-   "text": "Rolls every round at +2 against any mob.",
+   "text": "Rolls every round at +4 against any mob.",
    "burn": "Roll three extra dice this round, with your bonus."
   },
   {
@@ -465,23 +465,23 @@
    "kind": "agent",
    "type": "hunt",
    "name": "Hunt Agent",
-   "text": "Rolls every round at +7, but only against a mob with 1 or 2 hits left.",
-   "burn": "A mob (not the boss) with 1 or 2 hits left is beaten."
+   "text": "Rolls every round at +7, but only against a mob that came back from the row.",
+   "burn": "A mob that came back from the row (not the boss) is beaten."
   },
   {
    "id": "k4",
    "kind": "agent",
    "type": "hunt",
    "name": "Hunt Agent",
-   "text": "Rolls every round at +7, but only against a mob with 1 or 2 hits left.",
-   "burn": "A mob (not the boss) with 1 or 2 hits left is beaten."
+   "text": "Rolls every round at +7, but only against a mob that came back from the row.",
+   "burn": "A mob that came back from the row (not the boss) is beaten."
   },
   {
    "id": "k5",
    "kind": "agent",
    "type": "contain",
    "name": "Containment Agent",
-   "text": "Each round, the highest-damage mob deals 1 less damage, never below 1.",
+   "text": "Each round, the highest-damage mob deals 2 less damage, never below 1.",
    "burn": "Every mob in play takes 1 hit."
   },
   {
@@ -489,7 +489,7 @@
    "kind": "agent",
    "type": "contain",
    "name": "Containment Agent",
-   "text": "Each round, the highest-damage mob deals 1 less damage, never below 1.",
+   "text": "Each round, the highest-damage mob deals 2 less damage, never below 1.",
    "burn": "Every mob in play takes 1 hit."
   },
   {
@@ -497,7 +497,7 @@
    "kind": "agent",
    "type": "enrich",
    "name": "Enrichment Agent",
-   "text": "Every analyst gets +2 against every mob.",
+   "text": "Every analyst gets +3 against every mob.",
    "burn": "This round, every analyst die gets +5."
   },
   {
@@ -505,7 +505,7 @@
    "kind": "agent",
    "type": "enrich",
    "name": "Enrichment Agent",
-   "text": "Every analyst gets +2 against every mob.",
+   "text": "Every analyst gets +3 against every mob.",
    "burn": "This round, every analyst die gets +5."
   },
   {
@@ -529,7 +529,7 @@
    "kind": "agent",
    "type": "recover",
    "name": "Recovery Agent",
-   "text": "After every fight, heal 3 HP split across the crew.",
+   "text": "After every fight, heal 4 HP split across the crew.",
    "burn": "Heal 6 HP split across the crew."
   },
   {
@@ -537,7 +537,7 @@
    "kind": "agent",
    "type": "recover",
    "name": "Recovery Agent",
-   "text": "After every fight, heal 3 HP split across the crew.",
+   "text": "After every fight, heal 4 HP split across the crew.",
    "burn": "Heal 6 HP split across the crew."
   },
   {
@@ -561,7 +561,7 @@
    "kind": "agent",
    "type": "recon",
    "name": "Recon Agent",
-   "text": "Peek at the next situation before picking who's on point. If it's a mob, every analyst gets +5 against it all fight.",
+   "text": "Peek at the next situation before picking who’s on point. If it’s a mob, every analyst gets +5 against it all fight.",
    "burn": "Look at the next 3 situations and bury one at the bottom of the feed."
   },
   {
@@ -569,7 +569,7 @@
    "kind": "agent",
    "type": "recon",
    "name": "Recon Agent",
-   "text": "Peek at the next situation before picking who's on point. If it's a mob, every analyst gets +5 against it all fight.",
+   "text": "Peek at the next situation before picking who’s on point. If it’s a mob, every analyst gets +5 against it all fight.",
    "burn": "Look at the next 3 situations and bury one at the bottom of the feed."
   }
  ],
@@ -616,37 +616,37 @@
  "hp": {
   "full": {
    "1": {
-    "Recruit": 59,
-    "Analyst": 50,
-    "Veteran": 41
+    "Recruit": 70,
+    "Analyst": 60,
+    "Veteran": 47
    },
    "2": {
-    "Recruit": 59,
-    "Analyst": 50,
-    "Veteran": 41
+    "Recruit": 70,
+    "Analyst": 60,
+    "Veteran": 47
    },
    "3": {
-    "Recruit": 59,
-    "Analyst": 50,
-    "Veteran": 41
+    "Recruit": 70,
+    "Analyst": 60,
+    "Veteran": 47
    },
    "4": {
-    "Recruit": 59,
-    "Analyst": 50,
-    "Veteran": 41
+    "Recruit": 70,
+    "Analyst": 60,
+    "Veteran": 47
    }
   },
   "quick": {
-   "1": 31,
-   "2": 31,
-   "3": 31,
-   "4": 31
+   "1": 37,
+   "2": 37,
+   "3": 37,
+   "4": 37
   },
   "intro": {
-   "1": 20,
-   "2": 20,
-   "3": 20,
-   "4": 20
+   "1": 25,
+   "2": 25,
+   "3": 25,
+   "4": 25
   }
  },
  "modes": {
@@ -682,12 +682,22 @@
  },
  "alwaysPersist": true,
  "flipOnlyPersist": true,
- "returnHits": 1,
  "returnStrike": true,
  "strikeCap": 2,
  "pointDie": true,
- "sharedKit": 4,
- "mobAdd": { "1": -1, "2": 0, "3": 2, "4": 4 },
+ "sharedKit": 5,
+ "kitPerFight": 2,
+ "triageBonus": 4,
+ "enrichBonus": 3,
+ "containCut": 2,
+ "recoverHeal": 4,
+ "recoverBurn": 6,
+ "mobAdd": {
+  "1": -1,
+  "2": 0,
+  "3": 1,
+  "4": 2
+ },
  "soloDice": 2,
  "keywords": {
   "piercing": {
@@ -750,7 +760,7 @@
    "2": "Some situations are choices. The Banshee is in the persistence row now, so every flip rolls for it too.",
    "3": "Targeted: only whoever is on point takes the Gremlin's damage, and it's doubled. Pick on point with that in mind.",
    "4": "A challenge: the analyst on point gets one roll. Bonuses count.",
-   "5": "Beacon: the Drone rolls for the persistence row the moment it shows up, and anything it calls back rolls again. Comebacks hit everyone, then go down in one hit.",
+   "5": "Beacon: the Drone rolls for the persistence row the moment it shows up, and anything it calls back rolls again. Comebacks return at full strength and hit everyone on the way in.",
    "6": "A breather before the boss. Heal up and check your kit.",
    "loot": "Kit drop. Every kit card is an agent: keep it running, or burn it once for a big one-shot effect.",
    "boss": "The boss. Its hits grow with your crew, and agents can't touch it. Burn what you've got."

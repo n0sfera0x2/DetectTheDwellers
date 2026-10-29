@@ -94,3 +94,24 @@ test('mob hits follow the crew-size table, never below 1', () => {
   }
   assert.strictEqual(E.mobHits(1, 1), 1);
 });
+
+test('a comeback returns at full hits, and the Hunt Agent can hit it but not a fresh mob', () => {
+  const G = E.newGame(['HUN', 'RES'], 'full', { hp: 200, rnd: rng(5) });
+  const mob = id => ({ ...D.mobs.find(m => m.id === id), kind: 'mob', back: 0, up: 0 });
+  const druid = { ...mob('druid'), uid: 910, hits: 4, left: 0 };
+  G.row = [druid]; G.deck = [{ ...mob('macro'), uid: 911, hits: 3, left: 3 }];
+  const rolls = [1]; G.rnd = () => rolls.length ? (rolls.shift() - 1) / 20 : 0.99;
+  E.flip(G);
+  const back = G.play.find(m => m.uid === 910), fresh = G.play.find(m => m.uid === 911);
+  assert.strictEqual(back.left, back.hits, 'a comeback returns at full hits');
+  assert.ok(E.huntable(back)); assert.ok(!E.huntable(fresh));
+});
+
+test('the automation report counts agent hits, healing and removals', () => {
+  const G = E.newGame(['HUN', 'RES'], 'full', { hp: 60, rnd: rng(9) });
+  assert.deepStrictEqual(G.stats.auto, { hits: 0, assist: 0, saved: 0, healed: 0, removed: 0, dodged: 0 });
+  const games = Array.from({ length: 40 }, (_, i) => play(['HUN', 'RES'], 'full', { hp: 60, rnd: rng(100 + i) }));
+  const total = k => games.reduce((s, g) => s + g.stats.auto[k], 0);
+  for (const k of ['hits', 'assist', 'saved', 'healed']) assert.ok(total(k) > 0, `agents should register ${k} over 40 games`);
+  assert.ok(games.every(g => Object.values(g.stats.auto).every(v => v >= 0)), 'no negative counts');
+});

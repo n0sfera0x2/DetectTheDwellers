@@ -8,7 +8,7 @@ Generated from `data/cards.json` by `npm run cards`. Don't edit by hand.
 
 | Recruit | Analyst | Veteran | Quick Shift | First Shift |
 | --- | --- | --- | --- | --- |
-| 59 | 50 | 41 | 31 | 20 |
+| 70 | 60 | 47 | 37 | 25 |
 
 ## Keywords
 
@@ -65,9 +65,9 @@ Hits = printed + 1 per analyst. Agents can't hit the boss.
 
 | Boss | Domain | Def | Hits | Dmg | Ability |
 | --- | --- | --- | --- | --- | --- |
-| The Lockjaw Syndicate | Endpoint | 16 | 5 + n | 7 | Ransom demand: +2 damage until it has taken two hits. |
-| The Persistent Operator | Identity | 15 | 5 + n | 7 | Living off your network: The first time you beat it, it comes back with 2 hits left. |
-| The Rogue AI | Cloud | 17 | 4 + n | 7 | Hostile takeover: Agents can't roll while it's in play. |
+| The Lockjaw Syndicate | Endpoint | 16 | 7 + n | 9 | Ransom demand: +2 damage until it has taken two hits. |
+| The Persistent Operator | Identity | 15 | 7 + n | 9 | Living off your network: The first time you beat it, it comes back with 2 hits left. |
+| The Rogue AI | Cloud | 17 | 6 + n | 9 | Hostile takeover: Agents can't roll while it's in play. |
 
 ## Analysts
 
@@ -79,18 +79,18 @@ Hits = printed + 1 per analyst. Agents can't hit the boss.
 | Soarcerer | Orchestrator | +1 slot in the crew kit tray. |
 | Fixer | Medic | Off-shift, heal 3 HP split across the crew instead of 1 for yourself. |
 
-## Kit (2 of each, shared crew tray of 4, 5 with the Soarcerer)
+## Kit (2 of each, shared crew tray of 5, 6 with the Soarcerer)
 
 | Agent | Run it | Or burn it |
 | --- | --- | --- |
-| Triage Agent | Rolls every round at +2 against any mob. | Roll three extra dice this round, with your bonus. |
-| Hunt Agent | Rolls every round at +7, but only against a mob with 1 or 2 hits left. | A mob (not the boss) with 1 or 2 hits left is beaten. |
-| Containment Agent | Each round, the highest-damage mob deals 1 less damage, never below 1. | Every mob in play takes 1 hit. |
-| Enrichment Agent | Every analyst gets +2 against every mob. | This round, every analyst die gets +5. |
+| Triage Agent | Rolls every round at +4 against any mob. | Roll three extra dice this round, with your bonus. |
+| Hunt Agent | Rolls every round at +7, but only against a mob that came back from the row. | A mob that came back from the row (not the boss) is beaten. |
+| Containment Agent | Each round, the highest-damage mob deals 2 less damage, never below 1. | Every mob in play takes 1 hit. |
+| Enrichment Agent | Every analyst gets +3 against every mob. | This round, every analyst die gets +5. |
 | Patch Agent | When you roll for the persistence row, roll an extra die and keep the highest. | Discard one mob from the persistence row for good. |
-| Recovery Agent | After every fight, heal 3 HP split across the crew. | Heal 6 HP split across the crew. |
+| Recovery Agent | After every fight, heal 4 HP split across the crew. | Heal 6 HP split across the crew. |
 | Decoy Agent | Once per fight, after the roll: the analyst on point takes no damage this round. | After the roll: everyone blocks this round. |
-| Recon Agent | Peek at the next situation before picking who's on point. If it's a mob, every analyst gets +5 against it all fight. | Look at the next 3 situations and bury one at the bottom of the feed. |
+| Recon Agent | Peek at the next situation before picking who’s on point. If it’s a mob, every analyst gets +5 against it all fight. | Look at the next 3 situations and bury one at the bottom of the feed. |
 
 ## First Shift (tutorial)
 

@@ -11,7 +11,7 @@ function DTD12(D) {
     const hpT = D.hp[mode][team.length]; const hp = opt.hp || (typeof hpT === 'number' ? hpT : hpT[opt.diff || 'Analyst']);
     const G = { mode, team: team.slice(), per, rnd, uid: 0, max: hp, hps: team.map(() => hp), deck: [], play: [], row: [], kit: [], held: team.map(() => []), discard: [],
       point: 0, phase: 'point', plog: [], pendingBack: [], cur: null, sit: 0, round: 0, rest: -1, dice: [], rolled: false, blocks: [], bossIn: false, over: false, win: false, log: [], loot: [], lastSit: null, persist: null, aiming: null,
-      noAgents: !!opt.noAgents, stats: { agentHits: 0, crewHits: 0, back: 0, maxBack: 0, rounds: 0, beaten: 0, blocks: 0, rests: 0 } };
+      noAgents: !!opt.noAgents, stats: { auto: { hits: 0, assist: 0, saved: 0, healed: 0, removed: 0, dodged: 0 }, agentHits: 0, crewHits: 0, back: 0, maxBack: 0, rounds: 0, beaten: 0, blocks: 0, rests: 0 } };
     const mk = c => { const h = D.mobs.includes(c) ? mobHits(c.hits, (G.team || team).length) : c.hits; return { ...c, hits: h, uid: ++G.uid, left: h, back: 0, up: 0 }; };
     const pool = [...D.mobs.map(m => ({ ...mk(m), kind: 'mob' })), ...D.situations.map(x => ({ ...x, kind: 'sit', uid: ++G.uid }))];
     const intro = mode === 'intro' && D.intro;
@@ -33,9 +33,15 @@ function DTD12(D) {
     if (G.hps[k] <= 0) { G.over = true; G.win = false; G.phase = 'over'; G.dropped = k; G.downBy = src || [why]; log(G, `The ${nm(G, k)} flatlined. Shift lost.`); }
   }
   const heal = (G, k, n) => { G.hps[k] = Math.min(G.max, G.hps[k] + n); };
-  function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hps.indexOf(Math.min(...G.hps)); if (G.hps[k] >= G.max) break; heal(G, k, 1); } }
+  function spread(G, n) { let h = 0; for (let i = 0; i < n; i++) { const k = G.hps.indexOf(Math.min(...G.hps)); if (G.hps[k] >= G.max) break; heal(G, k, 1); h++; } return h; }
   function setPoint(G, k) { if (G.phase !== 'point' || k < 0 || k >= G.team.length) return false; G.point = k; return true; }
-  function rowDie(G) { let r = d20(G); const n = aiOn(G) ? 0 : carried(G, 'patch'); for (let i = 0; i < n; i++) r = Math.max(r, d20(G)); return r; }
+  // The Hunt Agent's prey: by default a mob that came back from the row (D.hunt 'back'); 'low' is the old 1-or-2-hits-left rule.
+  const huntable = m => m.kind !== 'boss' && (D.hunt === 'low' ? m.left <= 2 : D.hunt === 'either' ? m.back > 0 || m.left <= 2 : m.back > 0);
+  function rowDie(G) {
+    const first = d20(G), n = aiOn(G) ? 0 : carried(G, 'patch'); let r = first; for (let i = 0; i < n; i++) r = Math.max(r, d20(G));
+    const hits = x => G.row.filter(m => x >= m.persist[0] && x <= m.persist[1]).length; if (r !== first) G.stats.auto.dodged += Math.max(0, hits(first) - hits(r));
+    return r;
+  }
   // Only the strikeCap highest-Damage comebacks of one roll hit on the way in; the rest just rejoin the fight.
   function strikers(G, back) { if (!D.returnStrike) return []; const cap = D.strikeCap || back.length; return back.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a)).slice(0, cap); }
   function rollRow(G) {
@@ -44,7 +50,7 @@ function DTD12(D) {
     G.persist = { r, back: back.map(m => m.name), round: 0, pre: true }; G.plog.push({ sit: G.sit, r, back: back.map(m => m.name) });
     if (back.some(m => m.ability === 'spread')) { const extra = G.row.find(m => !back.includes(m)); if (extra) back.push(extra); }
     G.row = G.row.filter(m => !back.includes(m)); G.stats.back += back.length; if (!G.bossIn) G.stats.midBack = (G.stats.midBack || 0) + back.length; G.stats.maxBack = Math.max(G.stats.maxBack, back.length);
-    back.forEach(m => { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; m.up = 0; });
+    back.forEach(m => { m.left = m.hits; m.back++; m.up = 0; });
     const hitters = strikers(G, back); G.persist.hit = hitters.map(m => m.name); for (const m of hitters) { if (G.over) break; G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`, [m.name])); }
     log(G, back.length ? `Persist roll ${r}: ${back.map(m => m.name).join(', ')} came back. Put ${back.length > 1 ? 'them' : 'it'} down before the next flip.` : `Persist roll ${r}: the row stays quiet.`);
     return back;
@@ -55,7 +61,7 @@ function DTD12(D) {
     if (!G.deck.length) {
       G.bossIn = true; let back = [];
       if (G.row.length) { const r = rowDie(G); back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]); G.row = G.row.filter(m => !back.includes(m)); G.persist = { r, back: back.map(m => m.name), hit: [], pre: true }; G.plog.push({ sit: 'Boss', r, back: back.map(m => m.name) }); }
-      back.forEach(m => { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; });
+      back.forEach(m => { m.left = m.hits; m.back++; });
       log(G, `${G.boss.name} is here${back.length ? `, with ${back.length} from the persistence row` : ''}.`); const p = G.persist; startCombat(G, [G.boss, ...back]); G.persist = p; return true;
     }
     const c = G.deck.pop(); G.sit++;
@@ -92,7 +98,7 @@ function DTD12(D) {
     G.row = G.row.filter(m => !back.includes(m)); G.stats.back += back.length; if (!G.bossIn) G.stats.midBack = (G.stats.midBack || 0) + back.length; G.stats.maxBack = Math.max(G.stats.maxBack, back.length);
     log(G, `Persist roll ${r}: ${back.map(m => m.name).join(', ')} came back.`);
     const hitters = strikers(G, back); G.persist.hit = hitters.map(m => m.name);
-    for (const m of back) { m.left = D.returnHits ? Math.min(D.returnHits, m.hits) : m.hits; m.back++; m.up = 0; if (hitters.includes(m) && !G.over) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`, [m.name])); enter(G, m, true, true); }
+    for (const m of back) { m.left = m.hits; m.back++; m.up = 0; if (hitters.includes(m) && !G.over) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} hits on the way back`, [m.name])); enter(G, m, true, true); }
   }
   function enter(G, m, fromRow, chained) {
     G.play.push(m);
@@ -101,7 +107,7 @@ function DTD12(D) {
   }
   function startCombat(G, mobs) { G.decoyUsed = false; G.scouted = false; G.phase = 'combat'; G.round = 0; G.play = []; mobs.forEach(m => enter(G, m, m.kind === 'boss' || G.bossIn)); beginRound(G); }
   function beginRound(G) {
-    if (G.over) return; G.round++; G.stats.rounds++; G.dice = []; G.rolled = false; G.rest = -1; G.blocks = G.team.map(() => false); G.persist = null; G.decoyRound = false; G.boost = 0; G.undo = []; G.mark = G.play.length ? G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0].uid : null;
+    if (G.over) return; G.round++; G.stats.rounds++; G.dice = []; G.rolled = false; G.rest = -1; G.blocks = G.team.map(() => false); G.persist = null; G.decoyRound = false; G.blocksPre = null; G.boost = 0; G.undo = []; G.mark = G.play.length ? G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0].uid : null;
     if (G.round > 1 && !D.flipOnlyPersist) persistRoll(G);
   }
   function setRest(G, k) { if (G.phase !== 'combat' || G.rolled || G.team.length < 2) return false; G.rest = G.rest === k ? -1 : k; return true; }
@@ -110,10 +116,12 @@ function DTD12(D) {
     const id = G.team[k]; let b = 0;
     if (m && id === 'HUN' && m.back > 0) b = 5;
     if (m && id === 'RES' && G.play.length && dmgOf(G, m) >= Math.max(...G.play.map(x => dmgOf(G, x)))) b = 5;
-    if (m) b += active(G, 'enrich').length * 2 + (G.boost || 0);
+    if (m) b += active(G, 'enrich').length * (D.enrichBonus || 2) + (G.boost || 0);
     if (m && m.scouted && active(G, 'recon').length) b += D.reconBonus || 5;
     return b + (has(G, k, 'forensic') ? 2 : 0);
   }
+  // The share of a crew die's bonus that comes from agents (Enrichment run and burn, Recon), for the automation report.
+  const agentBonus = (G, m) => active(G, 'enrich').length * (D.enrichBonus || 2) + (G.boost || 0) + (m.scouted && active(G, 'recon').length ? D.reconBonus || 5 : 0);
   function active(G, type) { if (aiOn(G)) return []; return G.held.flatMap((h, k) => k === G.rest && !D.sharedKit ? [] : h.filter(c => c.kind === 'agent' && c.type === type)); }
   const carried = (G, type) => G.held.flat().filter(c => c.kind === 'agent' && c.type === type).length;
   const aiOn = G => G.play.some(m => m.kind === 'boss' && m.id === 'ai');
@@ -132,22 +140,23 @@ function DTD12(D) {
   const total = (G, d, m) => d.r + bonusDie(G, d, m);
   function beats(G, d, m) {
     if (d.used || !G.play.includes(m)) return false;
-    if (d.kind === 'agent' && (m.kind === 'boss' || m.ability === 'noagent' || (d.card.type === 'hunt' && m.left > 2))) return false;
+    if (d.kind === 'agent' && (m.kind === 'boss' || m.ability === 'noagent' || (d.card.type === 'hunt' && !huntable(m)))) return false;
     if (m.ability === 'hardened' && d.r < 12) return false;
     return d.dbl || d.r >= 18 || (d.r !== 1 && total(G, d, m) >= m.def);
   }
   function assign(G, i, uid) {
     const d = G.dice[i], m = G.play.find(x => x.uid === uid); if (G.over || !d || !m || !beats(G, d, m)) return false;
     d.used = true; if (d.kind === 'crew') G.stats.crewUsed = (G.stats.crewUsed || 0) + 1; const n = (d.dbl || d.r >= 18) ? 2 : 1, was = m.left; m.left = Math.max(0, m.left - n); G.stats[d.kind === 'agent' ? 'agentHits' : 'crewHits'] += n;
+    const auto = d.kind === 'agent' ? 'hits' : !(d.dbl || d.r >= 18) && total(G, d, m) - agentBonus(G, m) < m.def ? 'assist' : null; if (auto) G.stats.auto[auto] += n;
     log(G, `${d.kind === 'agent' ? d.card.name : nm(G, d.k)} hits ${m.name}${n > 1 ? ' twice' : ''}.`);
-    if (m.left <= 0) { G.undo = []; beaten(G, m); } else (G.undo = G.undo || []).push({ i, m, was, n, left: m.left, logAt: G.log.length });
+    if (m.left <= 0) { G.undo = []; beaten(G, m); } else (G.undo = G.undo || []).push({ i, m, was, n, auto, left: m.left, logAt: G.log.length });
     return true;
   }
   // Takes back the last die put on a mob this round, as long as that hit didn't beat it and nothing has touched the mob since.
   const canUndo = G => { const u = G.undo && G.undo[G.undo.length - 1]; return !!u && !G.over && G.phase === 'combat' && G.play.includes(u.m) && u.m.left === u.left && G.dice[u.i] && G.dice[u.i].used; };
   function unassign(G) {
     if (!canUndo(G)) return false; const u = G.undo.pop(), d = G.dice[u.i];
-    d.used = false; u.m.left = u.was; if (d.kind === 'crew') G.stats.crewUsed--; G.stats[d.kind === 'agent' ? 'agentHits' : 'crewHits'] -= u.n;
+    d.used = false; u.m.left = u.was; if (d.kind === 'crew') G.stats.crewUsed--; G.stats[d.kind === 'agent' ? 'agentHits' : 'crewHits'] -= u.n; if (u.auto) G.stats.auto[u.auto] -= u.n;
     if (G.log.length === u.logAt) G.log.pop(); return true;
   }
   function beaten(G, m) {
@@ -159,7 +168,7 @@ function DTD12(D) {
     else log(G, `${m.name} is down for good.`);
     if (!G.play.length) endCombat(G);
   }
-  function endCombat(G) { G.lastRound = { ended: true }; G.dice.forEach(d => { d.used = true; }); log(G, 'The fight is over.'); const rc = carried(G, 'recover'), rh = 3; if (rc) { spread(G, rh * rc); log(G, `Recovery Agent${rc > 1 ? 's' : ''}: ${rh * rc} HP across the crew.`); } drawLoot(G, 1); G.phase = G.loot.length ? 'loot' : 'point'; }
+  function endCombat(G) { G.lastRound = { ended: true }; G.dice.forEach(d => { d.used = true; }); log(G, 'The fight is over.'); const rc = carried(G, 'recover'), rh = D.recoverHeal || 3; if (rc) { G.stats.auto.healed += spread(G, rh * rc); log(G, `Recovery Agent${rc > 1 ? 's' : ''}: ${rh * rc} HP across the crew.`); } drawLoot(G, D.kitPerFight || 1); G.phase = G.loot.length ? 'loot' : 'point'; }
   function useItem(G, k, idx, target) {
     const c = G.held[k][idx]; if (!c || G.over || ['agent', 'forensic'].includes(c.kind)) return false;
     if (c.kind === 'jump') { if (G.hps[k] >= G.max) return false; heal(G, k, D.jumpHeal ?? 4); }
@@ -173,12 +182,12 @@ function DTD12(D) {
     const c = G.held[k][idx]; if (!c || G.over || c.kind !== 'agent') return false; G.undo = [];
     const inFight = G.phase === 'combat';
     if (c.type === 'triage') { if (!inFight || !G.rolled) return false; for (let i = 0; i < 3; i++) { const r = d20(G); G.dice.push({ kind: 'crew', k: G.point, r, dbl: r >= (G.team[k] === 'ENG' ? 16 : 18), used: false }); } }
-    else if (c.type === 'hunt') { const m = G.play.find(x => x.uid === target); if (!inFight || !m || m.kind === 'boss' || m.left > 2) return false; m.left = 0; beaten(G, m); }
+    else if (c.type === 'hunt') { const m = G.play.find(x => x.uid === target); if (!inFight || !m || m.kind === 'boss' || !huntable(m)) return false; m.left = 0; G.stats.auto.removed++; beaten(G, m); }
     else if (c.type === 'contain') { if (!inFight || !G.play.length) return false; for (const m of G.play.slice()) { m.left = Math.max(0, m.left - 1); if (m.left <= 0) beaten(G, m); if (G.over || G.phase !== 'combat') break; } }
     else if (c.type === 'enrich') { if (!inFight || !G.rolled) return false; G.boost = (G.boost || 0) + 5; }
-    else if (c.type === 'patch') { const m = G.row.find(x => x.uid === target) || null; if (!m) return false; G.row = G.row.filter(x => x !== m); log(G, `${m.name} is patched out of the persistence row for good.`); }
-    else if (c.type === 'recover') { if (G.hps.every(h => h >= G.max)) return false; spread(G, 6); }
-    else if (c.type === 'decoy') { if (!inFight || !G.rolled) return false; G.blocks = G.blocks.map(() => true); }
+    else if (c.type === 'patch') { const m = G.row.find(x => x.uid === target) || null; if (!m) return false; G.row = G.row.filter(x => x !== m); G.stats.auto.removed++; log(G, `${m.name} is patched out of the persistence row for good.`); }
+    else if (c.type === 'recover') { if (G.hps.every(h => h >= G.max)) return false; G.stats.auto.healed += spread(G, D.recoverBurn || 6); }
+    else if (c.type === 'decoy') { if (!inFight || !G.rolled) return false; G.blocksPre = G.blocksPre || G.blocks.slice(); G.blocks = G.blocks.map(() => true); }
     else if (c.type === 'recon') { if (G.deck.length < 2) return false; const top = G.deck.slice(-3); const pick = top[Math.max(0, Math.min(top.length - 1, target ?? 0))]; G.deck = G.deck.filter(x => x !== pick); G.deck.unshift(pick); log(G, `${pick.name} is buried at the bottom of the feed.`); }
     G.held[k] = G.held[k].filter(x => x !== c); if (!G.held[k].includes(c)) { G.discard.push(c); log(G, `${nm(G, k)} burned the ${c.name}.`); } return true;
   }
@@ -191,18 +200,18 @@ function DTD12(D) {
   function trade(G, k, idx, j) { if (G.phase !== 'point' || !G.held[k][idx] || G.held[j].length >= slots(G, j)) return false; G.held[j].push(G.held[k].splice(idx, 1)[0]); return true; }
   function dmgOf(G, m) { if (m.kind === 'boss' && m.id === 'wyrm' && m.left > m.hits - 2) return m.dmg + 2; return m.dmg + (m.ability === 'ramp' ? m.up : 0); }
   // Who takes what at the end of this round, mob by mob: one list per analyst of { m, d }.
-  function incomingBy(G) {
-    const out = G.team.map(() => []); const fight = G.team.map((_, k) => k !== G.rest);
+  function incomingBy(G, raw) {
+    const out = G.team.map(() => []); const fight = G.team.map((_, k) => k !== G.rest), blocks = raw && G.blocksPre ? G.blocksPre : G.blocks;
     const dm = new Map(G.play.map(m => [m, dmgOf(G, m)]));
-    for (let i = 0; i < active(G, 'contain').length; i++) { const top = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (top && top[1] > 1) dm.set(top[0], top[1] - 1); }
+    if (!raw) for (let i = 0; i < active(G, 'contain').length; i++) { const top = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (top && top[1] > 1) dm.set(top[0], Math.max(1, top[1] - (D.containCut || 1))); }
     for (const m of G.play) {
       const d = dm.get(m), pierce = m.ability === 'noblock'; if (!d) continue;
-      if (m.ability === 'onpoint') { const k = G.point; if (fight[k] && (pierce || !G.blocks[k])) out[k].push({ m, d: d * 2 }); continue; }
+      if (m.ability === 'onpoint') { const k = G.point; if (fight[k] && (pierce || !blocks[k])) out[k].push({ m, d: d * 2 }); continue; }
       let ts = G.team.map((_, k) => k).filter(k => fight[k]);
       if (m.ability === 'lowest') { const lo = Math.min(...ts.map(k => G.hps[k])); ts = ts.filter(k => G.hps[k] === lo); }
-      for (const k of ts) if (pierce || !G.blocks[k]) out[k].push({ m, d });
+      for (const k of ts) if (pierce || !blocks[k]) out[k].push({ m, d });
     }
-    if (G.decoyRound) out[G.point] = [];
+    if (G.decoyRound && !raw) out[G.point] = [];
     return out;
   }
   const incoming = G => incomingBy(G).map(l => l.reduce((s, x) => s + x.d, 0));
@@ -211,12 +220,13 @@ function DTD12(D) {
   const peek = G => carried(G, 'recon') && G.deck.length ? G.deck[G.deck.length - 1] : null;
   function endRound(G) {
     if (G.phase !== 'combat' || !G.rolled || G.over) return false;
-    const by = incomingBy(G), inc = by.map(l => l.reduce((s, x) => s + x.d, 0)); G.lastHit = inc; G.lastRound = { inc: inc.slice(), by: by.map(l => l.map(x => ({ name: x.m.name, d: x.d }))), blocks: G.blocks.slice(), rest: G.rest, decoy: !!G.decoyRound, contain: active(G, 'contain').length > 0, round: G.round };
+    const by = incomingBy(G), inc = by.map(l => l.reduce((s, x) => s + x.d, 0)), sum = a => a.reduce((s, x) => s + x, 0);
+    G.stats.auto.saved += Math.max(0, sum(incomingBy(G, true).map(l => l.reduce((s, x) => s + x.d, 0))) - sum(inc)); G.blocksPre = null; G.lastHit = inc; G.lastRound = { inc: inc.slice(), by: by.map(l => l.map(x => ({ name: x.m.name, d: x.d }))), blocks: G.blocks.slice(), rest: G.rest, decoy: !!G.decoyRound, contain: active(G, 'contain').length > 0, round: G.round };
     inc.forEach((n, k) => { if (!G.over && n) hurt(G, k, n, 'mobs still in play', by[k].map(x => x.m.name)); });
     if (G.over) return true;
     for (const m of G.play) { m.up++; if (m.ability === 'regen' && m.left < m.hits) m.left++; }
     beginRound(G); return true;
   }
-  return { mobHits, slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, useItem, takeLoot, trade, endRound, incoming, incomingBy, unassign, canUndo, dmgOf, cls, alive };
+  return { huntable, mobHits, slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, useItem, takeLoot, trade, endRound, incoming, incomingBy, unassign, canUndo, dmgOf, cls, alive };
 }
 if (typeof module !== 'undefined') module.exports = DTD12;

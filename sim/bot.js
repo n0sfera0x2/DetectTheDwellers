@@ -54,7 +54,7 @@ function burns(G, when) {
       else if (when === 'pre' && t === 'patch' && G.row.length >= 3) E.burn(G, k, i, G.row.slice().sort((a, b) => b.dmg * b.persist[1] - a.dmg * a.persist[1])[0].uid);
       else if (when === 'pre' && t === 'contain' && (G.play.length >= 3 || boss && G.play.length >= 2)) E.burn(G, k, i);
       else if (when === 'roll' && (t === 'triage' || t === 'enrich') && boss) E.burn(G, k, i);
-      else if (when === 'post' && t === 'hunt') { const m = G.play.find(x => x.kind !== 'boss' && x.left <= 2); if (m) E.burn(G, k, i, m.uid); }
+      else if (when === 'post' && t === 'hunt') { const m = G.play.filter(E.huntable).sort((a, b) => b.left * E.dmgOf(G, b) - a.left * E.dmgOf(G, a))[0]; if (m) E.burn(G, k, i, m.uid); }
       else if (when === 'post' && t === 'decoy') { const inc = E.incoming(G); if (inc.some((d, j) => d >= G.hps[j] || d >= G.max * 0.25)) E.burn(G, k, i); }
     }
   });

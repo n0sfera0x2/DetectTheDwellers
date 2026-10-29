@@ -71,19 +71,19 @@ function sit(s) {
   return shell(`${art(ART['sit_' + s.id] || ART[s.type === 'challenge' ? 'fp' : 'event'], 128)}${row(tag('Situation', CY), hud(kind, CYT))}${nm(s.name, 17)}${tx(s.text, 12, PMUT, 500)}\n<div style="flex: 1 0 auto; background: #FFFFFF; border: 1px solid ${CYT}; padding: 6px 8px; display: flex; flex-direction: column; justify-content: center; gap: 3px">${tx(s.rule, big ? 15 : 12.5, PINK, 700).replace('<div style="', '<div style="text-wrap: pretty; ')}${(s.opts || []).map(o => tx('• ' + o.label, 12, PINK, 500)).join('')}</div>`, CY, CYT);
 }
 // Ransom demand (the engine's dmgOf): Lockjaw deals +2 until it has taken two hits. The card says so
-// beside the printed Damage, and its first two hit boxes are flare, so the table sees when it drops.
+// beside the printed Damage, and its first two hit boxes are flare (the ability box says why), so the table sees when it drops.
 const RAMP = { wyrm: { add: 2, hits: 2 } };
 function boss(b) {
   const r = RAMP[b.id];
   const dmg = r ? `${b.dmg}<span style="font-size: 11px; color: ${FLT}"> +${r.add}</span>` : b.dmg;
-  return shell(`${art(PRINT_ART['boss_' + b.id], 84)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${r ? boxes(b.hitsBase, r.hits, `+${r.add} dmg until ${r.hits} hits`) : boxes(b.hitsBase)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Comes last, with a Row roll (no arrival hits). Agents never touch the boss.')}`);
+  return shell(`${art(PRINT_ART['boss_' + b.id], 84)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${boxes(b.hitsBase, r ? r.hits : 0)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Comes last, with a Row roll (no arrival hits). Agents never touch the boss.')}`);
 }
 // How to play each analyst, in a line or two. The shared fight rules live on the "A fight" reference card.
 const MOVE = {
-  HUN: 'Comebacks need only one hit, and you get +5 on them. When the row roll lands, those mobs are yours.',
+  HUN: 'Comebacks return at full hits, but you get +5 on them. When the row roll lands, those mobs are yours.',
   RES: 'Find the mob with the biggest Damage. Put your best die on it first: a mob you finish never hits back.',
   ENG: 'Every die you roll is a 1 in 4 shot at a double: two hits and a block. Take point and roll two.',
-  SOA: 'The crew holds five kit cards, not four. Keep agents running and hold a spare to burn when a fight turns.',
+  SOA: `The crew holds ${['four', 'five', 'six', 'seven'][D.sharedKit - 3]} kit cards, not ${['three', 'four', 'five', 'six'][D.sharedKit - 3]}. Keep agents running and hold a spare to burn when a fight turns.`,
   PAT: 'When the crew is hurting, go off-shift. No roll, no damage, and the 3 HP go where they’re needed.',
 };
 function analyst(c) {
@@ -94,20 +94,24 @@ function kit(k) {
   const part = (label, c, t) => `<div style="border-top: 1px solid ${RULE}; padding-top: 2px">${hud(label, c)}${tx(t, 11, PINK, 500)}</div>`;
   return shell(`${art(ART['kit_' + k.type] || ART[AART[k.type]], 96)}${row(tag('Kit', CY), hud('AI agent', CYT))}${nm(k.name, 17, CYT)}${part('Run it', CYT, k.text)}${part('Or burn it', AMT, k.burn)}\n${foot(`Crew kit tray: ${D.sharedKit} cards (${D.sharedKit + 1} with the Soarcerer). Burn once, then discard.`)}`, CY, CYT);
 }
+// Two tracks, two coins: one on the tens, one on the ones. Your HP is the two added together, so the card
+// holds any HP up to 99 at a size a coin can sit on. The start line is read from data.
 function tracker() {
-  const top = HP.Recruit, cells = Array.from({ length: top + 1 }, (_, i) => `<div style="height: 25px; background: #FFFFFF; border: 1px solid ${RULE}; display: flex; align-items: center; justify-content: center; font-family: ${MONO}; font-weight: 600; font-size: 11px; font-variant-numeric: tabular-nums; color: ${AMT}">${top - i}</div>`).join('');
-  return shell(`${row(tag('HP tracker', CY), hud('coin on your HP', CYT))}${nm('Analyst HP', 16)}<div>${tx(`Start: Recruit ${HP.Recruit} · Analyst ${HP.Analyst} · Veteran ${HP.Veteran}`, 10.5, CYT, 700)}${tx(`Quick Shift ${QHP} · First Shift ${IHP}`, 10.5, CYT, 700)}</div><div style="display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 2px">${cells}</div>${foot('Anyone at 0 and the shift is lost.', PINK)}`, CY, CYT);
+  const cell = (v, h) => `<div style="height: ${h}px; background: #FFFFFF; border: 1px solid ${RULE}; display: flex; align-items: center; justify-content: center; font-family: ${MONO}; font-weight: 600; font-size: 13px; line-height: 15px; font-variant-numeric: tabular-nums; color: ${AMT}">${v}</div>`;
+  const track = (label, vals, cols, h) => `<div style="display: flex; flex-direction: column; gap: 2px">${hud(label, CYT)}<div style="display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); gap: 2px">${vals.map(v => cell(v, h)).join('')}</div></div>`;
+  const tens = Array.from({ length: 10 }, (_, i) => 90 - i * 10), ones = Array.from({ length: 10 }, (_, i) => 9 - i);
+  return shell(`${row(tag('HP tracker', CY), hud('two coins', CYT))}${nm('Analyst HP', 16)}<div>${tx(`Start: Recruit ${HP.Recruit} · Analyst ${HP.Analyst} · Veteran ${HP.Veteran}`, 10.5, CYT, 700)}${tx(`Quick Shift ${QHP} · First Shift ${IHP}`, 10.5, CYT, 700)}</div>${track('Tens', tens, 5, 32)}${track('Ones', ones, 5, 32)}${foot('HP = tens + ones. 47: one coin on 40, one on 7. Anyone at 0 and the shift is lost.', PINK)}`, CY, CYT);
 }
 function rowmat() {
   const slots = `<div style="height: 46px; border: 1px dashed ${AMT}; display: flex; align-items: center; justify-content: center">${hud('mob', AMT)}</div>`.repeat(6);
-  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, make the Row roll: one d20. Any mob whose range (on its card) matches comes back with 1 hit. The two with the highest Damage hit everyone as they arrive.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Setup: deal ${D.deal.full} situations (Quick Shift ${D.deal.quick}, and the crew starts with ${D.quickStartAgent} agents). Boss face down underneath. The shift runs 22:00 to 06:00; the boss comes at 05:59. Survive until dawn.`, 10, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
+  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, make the Row roll: one d20. Any mob whose range (on its card) matches comes back at full hits. The two with the highest Damage hit everyone as they arrive.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Setup: deal ${D.deal.full} situations (Quick Shift ${D.deal.quick}, and the crew starts with ${D.quickStartAgent} agents). Boss face down underneath. The shift runs 22:00 to 06:00; the boss comes at 05:59. Survive until dawn.`, 10, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
 }
 // Reference rows: a mono run-in label, then the rule, so each row spends its width on words.
 const runin = (label, t, c = FLT, size = 10) => `<div style="font-family: ${CHK}; font-weight: 500; font-size: ${size}px; line-height: ${lh(size)}px; color: ${PINK}"><span style="font-family: ${MONO}; font-weight: 600; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(label)}</span> ${e(t)}</div>`;
 const refrow = inner => `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 3px">${inner}</div>`;
 function fight() {
   const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Mob hits', 'Use the number for your crew size. Boss: printed + 1 per analyst.'], ['Off-shift', 'One analyst may skip their roll: no damage, +1 HP.'],
-    ['Roll', 'Everyone rolls at once; agents roll too. Assign each die to a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', 'Double: two hits, and you block this round. Engineer: 16–20.'], ['Hits', "Every mob still up hits everyone who didn't block."], ['Won', 'Draw a kit card. Beaten mobs go to the persistence row. Comebacks need 1 hit; the two highest-Damage per roll hit everyone.', AMT]];
+    ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', 'Double: two hits, and you block this round. Engineer: 16–20.'], ['Hits', 'Mobs still up hit everyone who didn’t block.'], ['Won', 'Draw two kit cards. Beaten mobs go to the persistence row. Comebacks return at full hits; the two highest-Damage per roll hit everyone.', AMT]];
   return shell(`${tag('Reference', CY)}${nm('A fight', 18)}${rows.map(([a, b, c]) => refrow(runin(a, b, c))).join('')}`, CY, CYT);
 }
 function glossary() {

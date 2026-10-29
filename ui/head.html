@@ -14,7 +14,9 @@
 --ch:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
 --chp:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));
 --hex:polygon(50% 0,100% 24%,100% 76%,50% 100%,0 76%,0 24%);
---ease:cubic-bezier(.16,1,.3,1);color-scheme:dark;box-sizing:border-box}
+--ease:cubic-bezier(.16,1,.3,1);color-scheme:dark;box-sizing:border-box;
+/* Cards everywhere: one portrait poker card (5:7), at most 420 px wide, smaller when the screen is short. */
+--cw:min(420px,max(300px,calc((100svh - 300px) * 5 / 7)))}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#07060A}}:root[data-theme="dark"],:root[data-theme="light"]{--bg:#07060A}
 html{scroll-padding-top:92px;scroll-padding-bottom:120px;scrollbar-color:var(--s3) var(--bg);-webkit-text-size-adjust:100%}*,*::before,*::after{box-sizing:border-box}
 body{margin:0;min-height:100vh;color:var(--ink);font:500 17px/1.45 var(--disp);letter-spacing:.005em;-webkit-font-smoothing:antialiased;
@@ -25,7 +27,7 @@ button,input{font:inherit;color:inherit;border-radius:0}input{caret-color:var(--
 :focus-visible{outline:2px solid var(--cy);outline-offset:3px}
 h1,h2,h3,h4,p,dl,dd,ul,ol{margin:0;padding:0}ul,ol{list-style:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.wrap{max-width:1400px;margin:0 auto;padding:20px clamp(16px,3vw,32px) 32px}
+.wrap{max-width:1400px;margin:0 auto;padding:20px clamp(16px,3vw,32px) 32px}.wrap.game{padding-bottom:12px}
 .ic{width:16px;height:16px;flex:none;vertical-align:-3px}
 
 /* Type roles. Chakra Petch carries words; IBM Plex Mono only numbers, dice, stats, the log and kbd (400/600 only). */
@@ -55,7 +57,8 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .btn.p:disabled{--fill:var(--s2);--bd:rgba(56,225,255,.3);--tx:var(--off)}
 .btn.cy{--bd:var(--cl);--tx:var(--cy)}.btn.cy:hover:not(:disabled){--fill:rgba(56,225,255,.12)}
 .btn.warn{--bd:var(--fl);--fill:var(--fl);--tx:#160904}.btn.warn:hover:not(:disabled){--fill:#FF7A52;--bd:#FF7A52}
-.btn.s{min-height:36px;padding:6px 12px;font-size:13px}.btn.w{width:100%}.btn.big{min-height:56px;font-size:17px}
+.btn.s{min-height:36px;padding:6px 12px;font-size:13px}.btn.tb{min-height:44px}
+@media (max-width:640px){.btn.s{min-height:44px}}.btn.w{width:100%}.btn.big{min-height:56px;font-size:17px}
 .btn kbd{border-color:currentColor}
 .lnk{background:none;border:0;padding:8px 0;min-height:44px;color:var(--cy);font-family:var(--disp);font-weight:500;font-size:16px;letter-spacing:0;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;text-align:left}
 .lnk:hover{text-decoration-thickness:2px}.meta .lnk{font-size:inherit;font-family:var(--disp);min-height:0;padding:0 2px}
@@ -72,7 +75,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .paper::before{inset:5px;background:var(--pl);clip-path:polygon(0 0,calc(100% - 13px) 0,100% 13px,100% 100%,13px 100%,0 calc(100% - 13px))}
 .paper::after{inset:6px;background:var(--pp);clip-path:polygon(0 0,calc(100% - 12.6px) 0,100% 12.6px,100% 100%,12.6px 100%,0 calc(100% - 12.6px))}
 .paper>.tab{position:absolute;left:5px;top:5px;width:34px;height:4px;background:var(--pa);z-index:1}
-.paper.cy{--pl:var(--cyt);--pa:var(--cy)}
+.paper.cy{--pl:var(--cyt);--pa:var(--cy)}.paper.am{--pl:var(--amt);--pa:var(--am)}
 .scr{position:relative;display:block;overflow:hidden;background:#07060A;border:3px solid #07060A;outline:1px solid var(--pr)}
 .scr svg{position:absolute;inset:0;display:block;width:100%;height:100%}
 .ptag{align-self:flex-start;font-family:var(--disp);font-weight:700;font-size:12px;line-height:1.35;letter-spacing:.06em;text-transform:uppercase;color:var(--pk);background:var(--fl);padding:0 6px;white-space:nowrap}
@@ -89,6 +92,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .paper .stat dd{font-family:var(--mono);font-weight:600;font-size:24px;line-height:1.15;color:var(--pk);font-variant-numeric:tabular-nums}
 .paper .stat .def dd{color:var(--flt)}
 .stat .why{display:block;font-family:var(--mono);font-weight:600;font-size:11px;line-height:1.25;color:var(--flt);letter-spacing:0}
+.paper .stat dd .why{font-size:11px}
 .pips{display:flex;gap:4px;flex-wrap:wrap;padding-left:2px}.pips i{width:14px;height:9px;background:var(--flt);border:1px solid var(--flt);transform:skewX(-14deg)}.pips i.gone{background:transparent;border-color:var(--pm)}
 .ability{padding:5px 9px;background:var(--ftint);border:1px solid var(--fl);font-size:15px;line-height:1.4;color:var(--pk)}.ability b{font-weight:700;text-transform:uppercase;font-size:14px;letter-spacing:.03em;color:var(--flt)}
 .kwi{vertical-align:-3px;margin-right:6px;color:var(--flt)}
@@ -129,14 +133,14 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .feed .meta{font-size:13px;white-space:nowrap}
 .tbtns{display:flex;gap:8px;align-items:center;margin-left:auto}
 .quitask{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.main{display:flex;flex-direction:column;gap:14px;min-width:0;margin-top:16px}
+.main{display:flex;flex-direction:column;gap:12px;min-width:0;margin-top:14px}
 
 /* Crew HP: compact readouts. In the top bar on desktop, a sticky strip on phones. */
 .crew{display:flex;gap:6px;flex:0 1 auto;min-width:0}
 .pc{display:flex;flex-direction:column;gap:4px;min-width:150px;max-width:220px;padding:6px 10px 7px;border:1px solid var(--rule);background:var(--s1)}
 .pc.on{border-color:var(--cl);background:#0E171B}
 .pc-h{display:flex;align-items:baseline;gap:8px;min-width:0}
-.pc .nm{font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc .nm{font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pc .short{display:none}
 .pc .dot{width:7px;height:7px;background:var(--cy);flex:none;align-self:center}
 .hpn{display:flex;align-items:baseline;gap:2px;white-space:nowrap}.hpn b{font-size:20px;line-height:1}.hpn .of{font-family:var(--mono);font-weight:400;font-size:12px;color:var(--mut)}
 .hpbar{position:relative;height:7px;background:var(--s3);overflow:hidden}.hpbar i{position:absolute;left:0;top:0;bottom:0;background:var(--cy)}.hpbar.low i{background:var(--am)}
@@ -149,44 +153,93 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 /* Prompts, tips */
 .prompt{padding:14px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .prompt p{font-size:17px;max-width:70ch}
-.tip{border:1px solid var(--cl);background:#0C171B;padding:10px 14px;display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap}.tip p{flex:1 1 280px;font-size:16px;line-height:1.45;max-width:80ch}
+/* Every tip and status line holds a readable measure: 70 characters at most. */
+.tip{border:1px solid var(--cl);background:#0C171B;padding:6px 14px;min-height:48px;display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap}.tip p{flex:0 1 70ch;font-size:16px;line-height:1.45;max-width:70ch}
+.status{font-size:17px;line-height:1.45;color:var(--ink);max-width:70ch}.status b{color:var(--cy);font-weight:700}
 .tip.urge{border-color:var(--cy);background:#0E2129}
 .d20{width:60px;height:60px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:25px;color:#1a0d03;background:var(--am);clip-path:var(--hex);font-variant-numeric:tabular-nums}
 .d20.q{background:var(--ink);color:#07060A}
 .d20.tumble{animation:tumble .5s cubic-bezier(.2,.8,.25,1)}.d20.landed{animation:land .32s var(--ease)}
 @keyframes tumble{from{transform:rotate(-320deg) scale(.55)}to{transform:none}}@keyframes land{0%{transform:scale(1.2)}100%{transform:none}}
-.pbanner{border-color:var(--rule2);padding:10px 14px}.pbanner.hot{border-color:var(--am);background:#1A120C}
-.pointp{display:flex;flex-direction:column;gap:12px}.pointp .nm{font-size:26px}
+.pbanner{display:flex;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--rule2);background:var(--s1)}.pbanner p{font-size:16px;line-height:1.45;max-width:70ch}.pbanner p b{font-weight:700}
+.pbanner .d20{width:48px;height:48px;font-size:21px}.pbanner.hot{border-color:var(--am);background:#1A120C}.pbanner.hot p b{color:var(--am)}
 
-/* Situation and loot: wide paper cards */
-.wide{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;padding:16px 18px 18px}
-.wide .scr{min-height:clamp(240px,42vh,440px);height:100%}
-.wide .bd{display:flex;flex-direction:column;gap:10px;padding:4px 4px 2px 0;min-width:0}
-.wide .nm{font-size:28px}.wide .txt{font-size:16px;line-height:1.45;color:var(--pm);max-width:60ch}
-.rulebox{background:#fff;border:1px solid var(--cyt);padding:9px 12px;font-size:18px;font-weight:700;line-height:1.35;color:var(--pk);max-width:60ch;margin-top:auto}
+/* The desk: one portrait card (situation, kit drop) with its actions beside it; the night desk shows around them. */
+.desk{display:grid;grid-template-columns:var(--cw) minmax(0,520px);gap:18px 32px;align-items:start;justify-content:center}
+.deskc{min-width:0}.desks{display:flex;flex-direction:column;gap:14px;min-width:0}
+.desks .dock{position:static;box-shadow:none}.desks .dock .acts{flex-direction:column;align-items:stretch}.desks .dock .acts .btn{width:100%;flex:none}
+.pcard{width:100%;aspect-ratio:5/7;display:flex;flex-direction:column;gap:9px;padding:16px 16px 18px;min-width:0}
+.pcard .scr{aspect-ratio:auto;flex:1 1 calc(var(--cw) * .5);min-height:calc(var(--cw) * .5);max-height:calc(var(--cw) * .82)}
+.pcard>.nm{font-size:26px}.pcard .txt{font-size:16px;line-height:1.45;color:var(--pm)}
+.lootc>.nm{color:var(--cyt)}
+.rulebox{background:#fff;border:1px solid var(--cyt);padding:9px 12px;font-size:18px;font-weight:700;line-height:1.35;color:var(--pk);margin-top:auto}
 .part{border-top:1px solid var(--pr);padding-top:6px;font-size:16px;line-height:1.4;color:var(--pk)}.part .phud{display:block}
-@media (max-width:760px){.wide{grid-template-columns:1fr;gap:12px;padding:12px 14px 14px}.wide .scr{min-height:0;height:auto;aspect-ratio:200/90}.wide .nm{font-size:23px}}
+.flipin{animation:flipin .5s var(--ease) both}
+@keyframes flipin{from{transform:perspective(1100px) rotateY(-78deg);opacity:.3}to{transform:none;opacity:1}}
+@media (max-width:760px){
+  .desk{grid-template-columns:minmax(0,1fr);gap:12px}.deskc{width:min(100%,420px);justify-self:center}
+  /* The side column dissolves so the dock can stick to the bottom of the screen; the status line leads. */
+  .desks{display:contents}.desk .status,.desk .pbanner{order:-1}
+  .desks .dock{position:sticky;box-shadow:0 -12px 24px rgba(0,0,0,.45)}
+  .pcard{aspect-ratio:auto;padding:12px 14px 14px}.pcard .scr{aspect-ratio:200/96;flex:none;min-height:0;max-height:none}.pcard>.nm{font-size:23px}
+  .desks .dock .acts{flex-direction:row;flex-wrap:wrap}.desks .dock .acts .btn{width:auto;flex:1 1 140px}
+}
+
+/* Between fights: the feed face down (the print card back), the analysts as cards, the row as small amber cards. */
+.pdesk{display:grid;grid-template-columns:clamp(200px,19vw,264px) minmax(0,1fr);gap:20px 40px;align-items:start}
+.pd-feed{display:flex;flex-direction:column;gap:10px;padding:0 14px 14px 0}
+.pd-side{display:flex;flex-direction:column;gap:24px;min-width:0}
+.pd-point,.pd-row{display:flex;flex-direction:column;gap:10px}
+.fdown{position:relative;isolation:isolate;display:block;width:100%;aspect-ratio:5/7;padding:0;border:1px solid var(--rule2);background:#07060A;color:var(--ink);cursor:pointer;text-align:center;
+  transition:transform .2s var(--ease),border-color .2s;box-shadow:0 14px 28px rgba(0,0,0,.5)}
+.fdown .fd-art{position:absolute;inset:0;overflow:hidden}.fdown .fd-art svg{display:block;width:100%;height:100%}
+/* The cards still in the feed sit under the top one. */
+.fdown::before,.fdown::after{content:"";position:absolute;inset:-1px;z-index:-1;background:#0E0B12;border:1px solid var(--rule2);transition:transform .2s var(--ease)}
+.fdown::before{transform:translate(calc(min(var(--stack,0),1) * 6px),calc(min(var(--stack,0),1) * 6px))}
+.fdown::after{transform:translate(calc(min(max(var(--stack,0) - 1,0),1) * 12px),calc(min(max(var(--stack,0) - 1,0),1) * 12px));z-index:-2}
+.fd-t{position:absolute;left:8%;right:8%;top:8%;font-family:var(--disp);font-weight:700;font-size:clamp(19px,1.9vw,25px);line-height:1.05;letter-spacing:.02em;text-transform:uppercase;text-wrap:balance}
+.fd-b{position:absolute;left:0;right:0;bottom:0;padding:28px 6% 8%;display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(to top,rgba(7,6,10,.94) 55%,rgba(7,6,10,0))}
+.fd-b b{font-family:var(--disp);font-weight:700;font-size:13px;line-height:1.2;letter-spacing:.1em;text-transform:uppercase;color:var(--cy)}
+.fd-b span{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 14px;background:var(--cy);color:#04141a;font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;clip-path:var(--ch)}
+.fdown:hover .fd-b span{background:#8DEEFF}
+.fdown:hover{transform:translateY(-4px);border-color:var(--cy)}.fdown:active{transform:translateY(-1px)}
+.fdown:focus-visible{outline:2px solid var(--cy);outline-offset:4px}
+.fdown.boss{border-color:var(--fl)}.fdown.boss .fd-b b{color:var(--fl)}
+.peek{max-width:30ch}
+.acards{display:flex;gap:12px;flex-wrap:wrap}
+.acard{width:150px;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:13px 13px 14px;border:0;text-align:left;cursor:pointer;transition:transform .2s var(--ease)}
+.acard:not(.on){--pl:var(--pm);--pa:var(--pm)}
+.acard .scr{aspect-ratio:3/2}.acard .nm{font-size:15px}
+.acard:hover{transform:translateY(-3px)}.acard:focus-visible{outline:2px solid var(--cy);outline-offset:3px}
+.rcards{display:flex;gap:10px;flex-wrap:wrap}
+.rcard{width:124px;aspect-ratio:5/7;display:flex;flex-direction:column;gap:5px;padding:13px 12px 14px}
+.rcard .scr{aspect-ratio:auto;flex:1 1 auto;min-height:56px;border-width:2px}.rcard .nm{font-size:13px;line-height:1.1}.rcard .rng{margin-top:auto;font-size:11px;letter-spacing:0;white-space:nowrap}
+@media (max-width:640px){
+  .pdesk{grid-template-columns:minmax(0,1fr);gap:18px}.pd-feed{align-items:center;padding:0 12px 12px 0}.fdown{width:min(62vw,220px)}.peek{text-align:center}
+  .acards{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}.acard{width:auto;padding:11px 10px 12px}.acard .nm{font-size:13px}
+  .rcard{width:112px;padding:12px 11px 13px}
+}
 
 /* The table: mobs on top, the dice tray attached directly under them */
 .table{display:flex;flex-direction:column;border:1px solid var(--rule2);background:var(--s1)}
-.table>.fhead{display:flex;align-items:center;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;padding:10px 14px 0}
+.table>.fhead{display:flex;align-items:center;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;padding:8px 14px 0}
 .fhead .kit{flex:1 1 auto;align-items:flex-end;min-width:0}.fhead .kitbar{justify-content:flex-end}.fhead .kit .sech{font-size:12px}
 .fhead .kdetail{justify-content:flex-end}
-.inplay{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;padding:12px 14px 14px}
-.inplay.solo{grid-template-columns:minmax(0,1fr)}
-.mob{container-type:inline-size;min-width:0}
-.mob.boss{grid-column:1/-1}
-.mob-in{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:14px 14px 14px}
-.mob .scr{aspect-ratio:200/100}
+.fhead .rowstrip{flex:0 1 auto;min-width:0}
+@media (max-width:1360px){.fhead .kname .kart{display:none}.fhead .kname{padding-left:10px}}
+/* Several mobs: a row of portrait cards, never wider than one poker card each, centred on the desk. */
+.inplay{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;padding:10px 14px 12px}
+.inplay>.mob{flex:1 1 280px;max-width:420px}.inplay.solo>.mob{flex:0 1 var(--cw)}
+.mob{min-width:0}
+.mob-in{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;padding:13px 13px 13px}
+.mob .scr{aspect-ratio:200/74}
 .mob .bd{display:flex;flex-direction:column;gap:8px;min-width:0}
-.mob .nm{font-size:21px}.mob .mh{display:flex;justify-content:space-between;gap:6px 10px;flex-wrap:wrap;align-items:baseline}
-@container (min-width:560px){
-  .mob-in{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;padding:16px 18px 18px}
-  .mob .scr{aspect-ratio:auto;height:100%;min-height:280px}
-  .mob .nm{font-size:30px}.mob .ability{font-size:16px}.mob .stat dd{font-size:28px}
-}
-@container (max-width:559px){.mob .fl{display:none}.mob .scr{aspect-ratio:200/84}}
-@container (min-width:900px){.mob .scr{min-height:340px}.mob .nm{font-size:36px}}
+.mob .nm{font-size:21px}.mob:not(.pcard) .stat dd{font-size:22px}.mob .mh{display:flex;justify-content:space-between;gap:6px 10px;flex-wrap:wrap;align-items:baseline}
+.mob:not(.pcard) .fl{display:none}
+/* A lone mob is one full poker card: the art takes whatever height the text leaves. */
+.mob.pcard{padding:0;gap:0}.mob.pcard .mob-in{flex:1;display:flex;flex-direction:column;gap:10px;padding:16px 16px 18px}
+.mob.pcard .scr{aspect-ratio:auto;flex:1 1 auto;min-height:calc(var(--cw) * .42)}.mob.pcard .bd{flex:none}
+.mob.pcard .nm{font-size:26px}
 .mob.back{--pl:var(--amt);--pa:var(--am)}
 .mob.boss{--pl:var(--flt)}
 .mob.can{filter:drop-shadow(0 0 0 transparent)}
@@ -201,16 +254,20 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 @keyframes ko{0%{opacity:1;transform:none}70%{opacity:1;transform:scale(.985)}100%{opacity:.3;transform:scale(.96)}}
 .nohit{font-family:var(--disp);font-weight:500;font-size:14px;color:var(--pm)}
 .hitb{margin-top:2px}
+@media (max-width:760px){.mob.pcard{aspect-ratio:auto}.mob.pcard .scr{flex:none;aspect-ratio:200/96;min-height:0}}
 @media (max-width:640px){
-  .inplay{gap:10px;padding:10px}
-  .mob-in{grid-template-columns:104px minmax(0,1fr);gap:10px;padding:12px 12px 12px}.mob .scr{aspect-ratio:auto;height:100%;min-height:120px}
-  .mob.boss .mob-in{grid-template-columns:1fr}.mob.boss .scr{aspect-ratio:200/96;height:auto}
-  .mob .fl{display:none}.mob .nm{font-size:18px}.paper .stat dd{font-size:20px}.paper .stat div{padding:2px 5px 3px}.paper .stat dt{font-size:10px}.mob .ability{font-size:14px}
+  .inplay{gap:10px;padding:10px;grid-template-columns:minmax(0,1fr)}
+  /* Several mobs on a phone: art in a narrow column, cropped on each scene's focal point (FOCAL in ui.js). */
+  .mob:not(.pcard):not(.boss) .mob-in{grid-template-columns:104px minmax(0,1fr);gap:10px;padding:12px 12px 12px}
+  .mob:not(.pcard):not(.boss) .scr{aspect-ratio:104/128;align-self:start}
+  .mob:not(.pcard):not(.boss) .scr svg{inset:0 auto 0 50%;width:auto;height:100%;aspect-ratio:200/112;transform:translateX(calc(-1 * var(--fx,50%)))}
+  .mob.boss .scr{aspect-ratio:200/96}
+  .mob .nm,.mob.pcard .nm{font-size:18px}.paper .stat dd{font-size:20px}.paper .stat div{padding:2px 5px 3px}.paper .stat dt{font-size:11px;letter-spacing:.02em}.mob .ability{font-size:14px}
   .bstamp{font-size:15px;padding:2px 6px;border-width:2px;left:5px;top:7px}
 }
 
 /* The dice tray: under the mobs, sticky so it stays in reach when the table runs tall */
-.dock{position:sticky;bottom:0;z-index:20;border-top:1px solid var(--rule2);background:var(--s2);padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;box-shadow:0 -12px 24px rgba(0,0,0,.45)}
+.dock{position:sticky;bottom:0;z-index:20;border-top:1px solid var(--rule2);background:var(--s2);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;box-shadow:0 -12px 24px rgba(0,0,0,.45)}
 .dock.solo{border:1px solid var(--rule2)}
 .dock .acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}.dock .acts .grow{flex:1 1 220px}.dock .keys{margin-right:auto}
 .dock .ask{font-size:15px;color:var(--am);flex:1 1 100%}
@@ -228,8 +285,8 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .die.ag{--bd:var(--cy)}.die.ag b{color:var(--cy)}
 .die.nat{--bd:var(--ink)}.die.nat b{color:var(--am)}.die.nat span{color:var(--ink)}
 /* Spent and no-target dice stay legible: shape at least 3:1, text at least 4.5:1 */
-.die.used{--bd:#6A6064;--fill:var(--s1);cursor:default}.die.used b,.die.used span{color:var(--off)}.die.used b{text-decoration:line-through;text-decoration-thickness:2px}
-.die.dead{--bd:#6A6064}.die.dead b{color:var(--ink)}.die.dead span{color:var(--mut)}
+.die.used{--bd:#776D72;--fill:var(--s1);cursor:default}.die.used b,.die.used span{color:var(--off)}.die.used b{text-decoration:line-through;text-decoration-thickness:2px}
+.die.dead{--bd:#776D72}.die.dead b{color:var(--ink)}.die.dead span{color:var(--mut)}
 /* A picked die reads dark on cyan, even when it has no target */
 .die[aria-pressed="true"]{--fill:var(--cy);--bd:var(--ink);--tx:#04141a}.die[aria-pressed="true"] b,.die[aria-pressed="true"] span,.die[aria-pressed="true"] b em{color:#04141a}
 .burst{position:absolute;inset:-6px;z-index:-2;pointer-events:none;clip-path:var(--hex);background:var(--cy);opacity:0;animation:burst .7s var(--ease) 1}
@@ -241,6 +298,11 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
   .table .dock{flex-direction:row;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 20px}
   .table .dock .dgroups{flex:1 1 auto}.table .dock .offs{flex:1 1 auto;align-self:center}.table .dock .ask{order:-1}
   .table .dock .acts{flex:0 1 auto}.table .dock .acts .grow{flex:0 1 420px;min-width:300px}
+  /* A lone mob: the card on the left, the dice tray beside it. */
+  .table.solo{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"h h" "c d";align-items:start}
+  .table.solo>.fhead{grid-area:h}.table.solo>.inplay{grid-area:c;padding:12px 0 16px 16px}
+  .table.solo>.dock{grid-area:d;position:static;box-shadow:none;flex-direction:column;align-items:stretch;justify-content:flex-start;margin:12px 16px 16px 28px;max-width:560px;border:1px solid var(--rule2)}
+  .table.solo .dock .acts{justify-content:flex-start}.table.solo .dock .acts .grow{flex:1 1 auto;min-width:0}
 }
 
 /* Kit: a strip of agent chips. Burnable ones light up; during a boss fight they pulse. A chip opens its card. */
@@ -252,6 +314,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .kname .kart{width:48px;height:32px;flex:none;aspect-ratio:auto;border:1px solid var(--rule)}
 .kname b{font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.03em;line-height:1.1}
 .kname .x{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--mut)}
+.kname:focus-visible{outline-offset:-3px}
 .kname .chev{transition:transform .15s var(--ease);color:var(--mut)}.kname[aria-expanded="true"] .chev{transform:rotate(180deg)}
 .kchip.live{border-color:var(--cy);background:#0E1A1F}.kchip.live .kname b{color:var(--cy)}
 .kchip.urge{animation:urge 1.6s ease-in-out infinite}
@@ -265,7 +328,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .rowstrip{display:flex;flex-direction:column;gap:8px}
 .prow{display:flex;gap:6px;flex-wrap:wrap}.chip,.ghost{border:1px solid var(--line);padding:6px 10px;background:var(--s1);display:flex;flex-direction:column;gap:1px}.chip b,.ghost b{font-weight:700;text-transform:uppercase;font-size:14px;letter-spacing:.02em;line-height:1.15;white-space:nowrap}
 .chip .rg,.ghost span{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--am);white-space:nowrap}
-.ghost{position:absolute;z-index:60;pointer-events:none;border-color:var(--am);color:var(--am);box-shadow:0 10px 24px rgba(0,0,0,.55)}
+.ghost{position:absolute;z-index:25;pointer-events:none;border-color:var(--am);color:var(--am);box-shadow:0 10px 24px rgba(0,0,0,.55)}
 .rowstrip.infight{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 12px}
 .rowstrip.infight .chip{flex-direction:row;align-items:baseline;gap:8px;padding:4px 9px}
 
@@ -277,18 +340,18 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 
 /* Boss reveal: the boss card on the desk, with the one move that helps most */
 .reveal{position:fixed;inset:0;z-index:80;background:rgba(5,4,7,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
-.rv{width:min(1000px,100%);display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;padding:18px 20px 20px;animation:scan .55s var(--ease) 1;margin:auto}
-.rv .scr{aspect-ratio:auto;height:100%;min-height:300px}.rv .bd{display:flex;flex-direction:column;gap:10px;min-width:0}.rv .nm{font-size:clamp(28px,3.6vw,40px);color:var(--flt)}
+.rv{width:min(440px,100%);display:flex;flex-direction:column;gap:12px;padding:16px 16px 18px;animation:scan .55s var(--ease) 1;margin:auto}
+.rv .scr{aspect-ratio:200/104}.rv .bd{display:flex;flex-direction:column;gap:10px;min-width:0}.rv .nm{font-size:clamp(26px,3vw,32px);color:var(--flt)}
 .move{background:#fff;border:1px solid var(--cyt);padding:9px 12px;display:flex;flex-direction:column;gap:2px}.move p{font-size:16px;line-height:1.4;font-weight:700;color:var(--pk)}
 .rv .acts{display:flex;flex-direction:column;gap:8px;margin-top:4px}
 .rv .btn.pp{--bd:var(--cyt);--fill:var(--pp);--tx:var(--cyt)}.rv .btn.pp:hover{--fill:#E6F1F3}
 @keyframes scan{0%{clip-path:inset(49.5% 0 49.5% 0)}35%{clip-path:inset(49.5% 0 49.5% 0)}100%{clip-path:var(--chp)}}
-@media (max-width:760px){.rv{grid-template-columns:1fr;padding:12px 14px 14px;gap:12px}.rv .scr{min-height:0;aspect-ratio:200/96;height:auto}}
+@media (max-width:760px){.rv{padding:12px 14px 14px;gap:10px}.rv .scr{aspect-ratio:200/90}}
 
 /* End */
 .end{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);grid-template-rows:auto auto 1fr;gap:18px 28px;align-items:start;padding-top:8px}
 .endcard{grid-column:1;grid-row:1/span 3;border:1px solid var(--rule2);background:var(--s1)}
-.end .cta{grid-column:2;grid-row:1}.endbar{grid-column:2;grid-row:2}.end .lbp{grid-column:2;grid-row:3}
+.endbar{grid-column:2;grid-row:1}.end .cta{grid-column:2;grid-row:2}.end .lbp{grid-column:2;grid-row:3}
 .endcard.win{border-color:var(--cl)}.endcard.loss{border-color:rgba(255,90,42,.6)}
 .ec-art{position:relative;overflow:hidden}.ec-art .art{aspect-ratio:200/96}
 .stamp{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-9deg);padding:6px 20px;border:4px solid var(--cy);color:var(--cy);background:rgba(7,6,10,.78);font-family:var(--disp);font-weight:700;font-size:clamp(30px,6vw,64px);letter-spacing:.14em;text-transform:uppercase;line-height:1;white-space:nowrap;animation:stamp .45s var(--ease) .25s both}
@@ -325,9 +388,10 @@ table.lb{width:100%;border-collapse:collapse;font-size:15px;margin-top:8px}.lb t
   .mobonly{display:block}
   .hitb{display:none}
   .dock{max-height:35vh;max-height:35svh;overflow-y:auto;overscroll-behavior:contain;gap:8px;padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
-  .dgroups,.tgts{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:8px 14px 8px}.dgroups::-webkit-scrollbar,.tgts::-webkit-scrollbar{display:none}
+  .dgroups{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:8px 14px 8px}.dgroups::-webkit-scrollbar{display:none}
   .dgroup{flex:none}.dice{flex-wrap:nowrap}
-  .tgts{display:flex;gap:6px;align-items:center}.tgts .btn{flex:none;white-space:nowrap;min-height:44px}
+  /* A picked die's targets stack, one full-width button each: no sideways scroll, nothing clipped. */
+  .tgts{display:flex;flex-direction:column;align-items:stretch;gap:6px}.tgts .btn{width:100%;min-height:44px;white-space:normal}
   .dock .acts{flex-wrap:nowrap}.dock .acts .grow{flex:1 1 auto}.dock .btn.big{min-height:48px;font-size:15px;padding:8px 12px}
   .dock .inc{font-size:13px;white-space:normal}
 }
@@ -335,19 +399,25 @@ table.lb{width:100%;border-collapse:collapse;font-size:15px;margin-top:8px}.lb t
   .wrap{padding-top:14px}
   .pointp .seg{grid-template-columns:repeat(min(var(--n,3),2),minmax(0,1fr))}.top{gap:8px 12px}.brand{font-size:16px;flex:1}.feed{order:3;flex-basis:100%;max-width:none}
   .table{margin:0 -16px;border-left:0;border-right:0}
-  .fhead .kit{flex-basis:100%;align-items:stretch}.fhead .kitbar{justify-content:flex-start;gap:6px}.fhead .kchips{flex:1 1 100%}.kname .kart{display:none}.kname{padding-left:10px}.fhead .kit .sech{white-space:nowrap}
+  .fhead .kit{flex-basis:100%;align-items:stretch}.fhead .kitbar{justify-content:flex-start;gap:6px}.kname .kart{display:none}.kname{padding-left:10px}.fhead .kit .sech{white-space:nowrap}
+  /* Kit chips wrap into a grid; Burn sits under the name, full width, so nothing is cut off. */
+  .kchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;flex:1 1 100%;width:100%}
+  .kchip{flex-direction:column;align-items:stretch;gap:0;padding:0 0 6px}.kchip .kname{width:100%}.kchip .btn{margin:0 6px;min-height:44px}
   .die{width:56px;height:64px}.die b{font-size:21px}.dock{padding-left:14px;padding-right:14px}.dgroups{gap:8px 14px}
   .pc .nm{font-size:13px}.hpn b{font-size:17px}.inc{font-size:12px}
+  /* Three analysts on a phone: short names, and the max HP lives in the bar, so nothing needs an ellipsis. */
+  .crew.tight .pc .full{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.crew.tight .pc .short{display:inline}.crew.tight .hpn .of{display:none}
   /* Row chips scroll sideways; a fade on the right edge says there is more. */
-  .rowstrip.infight .prow,.kchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%;padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
-  .rowstrip.infight .prow::-webkit-scrollbar,.kchips::-webkit-scrollbar{display:none}
-  .rowstrip.infight .chip,.kchip{flex:none}
+  .rowstrip.infight .prow{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%;padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
+  .rowstrip.infight .prow::-webkit-scrollbar{display:none}
+  .rowstrip.infight .chip{flex:none}
 }
 
 @media (prefers-reduced-motion:reduce){
   .fresh{animation:fade .2s linear}.mob.ko{animation:none;opacity:.5}.burst{animation:none;opacity:0}.rv{animation:fade .25s linear}.stamp{animation:fade .25s linear both}
   .flash .hpbar{animation:none;outline:2px solid var(--fl);outline-offset:2px}.flash .hpn b{animation:none;color:var(--fl)}.btn{transition:none}
   .mob.fresh .bstamp{animation:fade .25s linear both}.d20.tumble,.d20.landed{animation:none}.kchip.urge{animation:none;box-shadow:inset 0 0 0 1px var(--cy)}
+  .btn::before,.btn::after,.kname .chev,.fdown,.fdown::before,.fdown::after,.acard{transition:none}.fdown:hover,.acard:hover{transform:none}.flipin{animation:fade .2s linear}
 }
 @keyframes fade{from{opacity:0}to{opacity:1}}
 </style>

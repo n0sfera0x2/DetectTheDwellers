@@ -7,6 +7,9 @@ const pyjson = require('./pyjson');
 const R = p => path.join(__dirname, '..', p);
 const read = p => fs.readFileSync(R(p), 'utf8');
 const D = JSON.parse(read('data/cards.json')), ART = JSON.parse(read('data/art.json'));
+// The print card back (art-print.json) doubles as the web's face-down feed card, so web and print share one back.
+const PRINT = JSON.parse(read('data/art-print.json'));
+if (PRINT.back && !ART._back) ART._back = PRINT.back.replace(/\{\{SID\}\}/g, 'web');
 const FONTS = [['Chakra Petch', 'ChakraPetch', [500, 700]], ['IBM Plex Mono', 'IBMPlexMono', [400, 600]]];
 const fontCSS = FONTS.flatMap(([family, file, weights]) => weights.map(w =>
   `@font-face{font-family:"${family}";font-style:normal;font-weight:${w};font-display:swap;src:url(data:font/woff2;base64,${fs.readFileSync(R(`fonts/${file}-${w}.woff2`)).toString('base64')}) format("woff2")}`)).join('\n');

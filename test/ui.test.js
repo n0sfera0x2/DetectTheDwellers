@@ -133,3 +133,48 @@ test('the boss reveal traps focus, and Esc does not start the fight', () => {
   d.querySelector('.reveal [data-a=fight]').click(); assert.ok(!d.querySelector('.reveal'));
   assert.deepStrictEqual(errors, []);
 });
+
+test('between fights, the face-down feed card flips the next situation (tap or F)', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start();`);
+  const card = d.querySelector('.pdesk .fdown[data-a=flip]'); assert.ok(card, 'no face-down feed card');
+  assert.match(card.getAttribute('aria-label'), /Flip situation 1 of/); assert.ok(d.querySelector('.status'), 'no status line');
+  assert.ok(!d.querySelector('.pd-point'), 'a solo analyst has no on-point choice');
+  card.click(); assert.strictEqual(w.eval('G.sit'), 1); assert.ok(!d.querySelector('.fdown'));
+  // Back between fights with a crew: analyst cards pick who's on point, and F flips.
+  w.eval(`UI.pick = ['HUN', 'RES']; start();`);
+  d.querySelector('.acard[data-a=point][data-v="1"]').click(); assert.strictEqual(w.eval('G.point'), 1);
+  assert.strictEqual(d.querySelector('.acard[data-v="1"]').getAttribute('aria-pressed'), 'true');
+  key(w, 'f'); assert.strictEqual(w.eval('G.sit'), 1);
+  assert.deepStrictEqual(errors, []);
+});
+
+test('the boss banner and the reveal’s Your move say the same thing, and name kit that won’t help', () => {
+  for (const [held, hurt, want] of [[['hunt'], 0, /Your Hunt Agent can’t touch a boss\. Save it\./], [['recover', 'triage'], 4, /Burn your Recovery Agent now: \+4 HP/], [[], 0, /Every die goes on .+18–20 is two hits/]]) {
+    const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+    w.eval(`UI.mode = 'intro'; UI.pick = ['HUN']; start(); G.held[0] = ${JSON.stringify(held)}.map(t => ({ ...D.kit.find(c => c.type === t) }));
+      G.play = []; G.phase = 'point'; G.deck = []; G.row = []; G.hps = G.hps.map(h => h - ${hurt}); render();`);
+    d.querySelector('[data-a=flip]').click();
+    const move = d.querySelector('.reveal .move p'), tip = d.querySelector('.tip p');
+    assert.ok(move && tip, 'banner or reveal move missing'); assert.strictEqual(tip.textContent, move.textContent);
+    assert.match(move.textContent, want); assert.doesNotMatch(d.querySelector('.reveal').textContent, /Burn what you’ve got/);
+  }
+});
+
+test('a boss loss names a real lever, never “put it down first” for the only enemy left', () => {
+  const lose = (held, mobs) => {
+    const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+    w.eval(`UI.mode = 'intro'; UI.pick = ['HUN']; start(); G.held[0] = ${JSON.stringify(held)}.map(t => ({ ...D.kit.find(c => c.type === t) }));
+      UI.dmg = ${JSON.stringify(mobs)}; G.play = []; G.phase = 'point'; G.deck = []; G.row = []; render(); act('flip'); act('fight'); act('roll');
+      G.dice.forEach(d => { d.used = true; }); G.hps[0] = 4; G.blocks = G.blocks.map(() => false); render(); act('end');`);
+    return { w, line: d.querySelector('.helped') ? d.querySelector('.helped').textContent : '' };
+  };
+  let { w, line } = lose(['recover'], {});
+  assert.match(line, /Recovery Agent was never burned\. Burned before that roll, it heals 6 HP\. The Hunter had 4 and took 9: those 6 HP would have kept the Hunter standing\./);
+  ({ line } = lose(['hunt'], {}));
+  assert.doesNotMatch(line, /Hunt Agent/, 'a Hunt Agent is no lever against a boss'); assert.doesNotMatch(line, /down first/);
+  assert.match(line, /You met The Lockjaw Syndicate with 18 of 18 HP/);
+  ({ line } = lose([], { 'MFA Banshee': 6 }));
+  assert.match(line, /MFA Banshee did the most damage: 6 HP/);
+});

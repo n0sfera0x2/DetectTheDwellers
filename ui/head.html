@@ -118,6 +118,13 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .pick:hover:not(:disabled){border-color:var(--cy)}
 .pick[aria-pressed="true"]{border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy);background:#0E1A1F}.pick[aria-pressed="true"] .st{color:var(--cy)}
 .pick:disabled{opacity:.4;cursor:not-allowed}
+.pick .pk-t{display:flex;flex-direction:column;gap:3px;padding:8px 0}.pick .pk-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.pick .style{font-family:var(--disp);font-weight:700;font-size:13px;line-height:1.2;letter-spacing:.06em;text-transform:uppercase;color:var(--am)}
+.pick .agl{font-size:14px;line-height:1.35;color:var(--mut)}.pick .agl .phud{color:var(--cy);margin-right:6px}
+.opt .boss-l{font-size:13px}
+.nw{white-space:nowrap}
+@media (max-width:640px){.picks .pick{grid-template-columns:76px minmax(0,1fr) auto;align-items:start;gap:10px;min-height:0}.picks .pick .art{height:76px;min-height:0;aspect-ratio:auto}
+  .pick .pk-t{padding:7px 0 9px}.pick .perk{font-size:14px}.pick .agl{font-size:13px}.pick .st{align-self:center;font-size:12px}}
 .field{display:flex;flex-direction:column;gap:6px}.field input{min-height:46px;padding:10px 12px;border:1px solid var(--rule2);background:var(--bg);font-size:17px}
 .field input:focus-visible{outline-offset:0;border-color:var(--cy)}
 .startbar{position:sticky;bottom:0;z-index:5;margin:4px -20px 0;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));background:var(--s1);border-top:1px solid var(--rule);display:flex;flex-direction:column;gap:8px}
@@ -267,6 +274,11 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 @keyframes stampb{from{opacity:0;transform:rotate(-8deg) scale(1.6)}to{opacity:1;transform:rotate(-8deg) scale(1)}}
 .fresh{animation:rise .32s var(--ease)}@keyframes rise{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
 .mob.ko{pointer-events:none;animation:ko .3s var(--ease) forwards}.mob.ko .scr{filter:grayscale(1) brightness(.5)}
+.mob.ko.gonek .scr::after{content:"Gone for good";border-color:var(--am);color:var(--am);white-space:nowrap;font-size:22px}
+.pbanner.gone{border-color:var(--am);background:#1A120C}.pbanner.gone p b{color:var(--am)}
+.gstamp{flex:none;padding:3px 9px;border:2px solid var(--am);color:var(--am);font-family:var(--disp);font-weight:700;font-size:14px;line-height:1.1;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-4deg)}
+.status .gone-l{color:var(--am)}.status .fix-l b{color:var(--cy)}
+.endbar .btn .sub{font-weight:500;font-size:13px;opacity:.8;margin-left:4px}
 .mob.ko .scr::after{content:"Down";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-8deg);padding:4px 14px;border:3px solid var(--cy);color:var(--cy);font-family:var(--disp);font-weight:700;font-size:28px;letter-spacing:.12em;text-transform:uppercase;background:rgba(7,6,10,.8)}
 @keyframes ko{0%{opacity:1;transform:none}70%{opacity:1;transform:scale(.985)}100%{opacity:.3;transform:scale(.96)}}
 .nohit{font-family:var(--disp);font-weight:500;font-size:14px;color:var(--pm)}
@@ -412,6 +424,7 @@ a.cta{display:inline-block;color:var(--cy);text-decoration:underline;text-underl
   .end{grid-template-columns:1fr;grid-template-rows:none;gap:16px}.endcard,.end .cta,.end .lbp{grid-column:1;grid-row:auto}
   .endbar{grid-column:1;grid-row:auto;order:9;position:sticky;bottom:0;z-index:20;margin:0 calc(-1 * clamp(16px,3vw,32px)) -32px;padding:10px clamp(16px,3vw,32px) calc(12px + env(safe-area-inset-bottom,0px));background:var(--s1);border-top:1px solid var(--rule2);box-shadow:0 -10px 24px rgba(0,0,0,.55);flex-wrap:nowrap}
   .endbar .btn{flex:1;min-width:0}.endbar .btn.p{min-width:0;flex:1.4}
+  .endbar.three{flex-wrap:wrap}.endbar.three .btn.p{flex:1 1 100%}.endbar.three .btn:not(.p){min-height:48px;font-size:15px}
   .roster{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.roster li{grid-template-columns:36px minmax(0,1fr)}.roster .nm{font-size:13px;letter-spacing:.01em}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 table.lb{width:100%;border-collapse:collapse;font-size:15px;margin-top:8px}.lb th{text-align:left;font-family:var(--disp);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--cy);padding:7px 5px;border-bottom:1px solid var(--rule2)}.lb td{padding:8px 5px;border-bottom:1px solid var(--rule)}.lb td.n{text-align:right;font-family:var(--mono);font-weight:400;font-variant-numeric:tabular-nums}.lb tr.me td{color:var(--am)}
 

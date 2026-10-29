@@ -236,3 +236,23 @@ test('every mob card prints its hits for 1–4 analysts, matching the engine', (
     assert.ok(!/Hits 2p/.test(text), `${m.name} still prints the old 2p-only stat`);
   }
 });
+
+test('every boss card prints its hits for 1–4 analysts from bossAdd, and no per-analyst rule', () => {
+  const D = require('../data/cards.json'), { boss } = require('../deck/cards');
+  for (const b of D.bosses) {
+    const text = boss(b).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+    const want = [1, 2, 3, 4].map(n => `${n}p ${b.hitsBase + D.bossAdd[n]}`).join(' ');
+    assert.ok(text.includes(`Hits ${want}`), `${b.name} should print "Hits ${want}"`);
+    assert.ok(!/per analyst/.test(text), `${b.name} still says per analyst`);
+  }
+});
+
+test('every analyst card prints its perk and its agent link from data', () => {
+  const D = require('../data/cards.json'), { analyst } = require('../deck/cards');
+  const flat = s => s.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, '\'').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
+  for (const c of D.classes) {
+    const text = flat(analyst(c));
+    assert.ok(c.agent, `${c.name} has no agent link in data`);
+    assert.ok(text.includes(flat(c.perk)) && text.includes('Agents ' + flat(c.agent)), `${c.name} should print its perk and agent link`);
+  }
+});

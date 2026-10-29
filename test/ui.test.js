@@ -386,3 +386,59 @@ test('the automation report counts story cards Recon turned', () => {
   const { d } = endWith({ hits: 0, assist: 0, saved: 0, healed: 0, removed: 0, dodged: 0, recon: 2 }, true);
   assert.match(d.querySelector('[data-autorep]').textContent, /turned 2 story cards your way/);
 });
+
+test('the analyst picker shows each perk and agent link from data, with a playstyle line', () => {
+  const D = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'cards.json'), 'utf8'));
+  const d = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window.document;
+  for (const c of D.classes) {
+    const b = d.querySelector(`[data-a=pick][data-v=${c.id}]`), t = s => (s || '').replace(/\s+/g, ' ').trim();
+    assert.strictEqual(t(b.querySelector('.perk').textContent), t(c.perk), `${c.name} perk is not the data text`);
+    const ag = b.querySelector('.agl'); assert.ok(ag, `${c.name} has no agent line`);
+    assert.strictEqual(ag.querySelector('.phud').textContent, 'Agents'); assert.ok(t(ag.textContent).endsWith(t(c.agent)), `${c.name} agent line is not the data text`);
+    assert.ok(b.querySelector('.style').textContent.length > 0, `${c.name} has no playstyle line`);
+  }
+  // No stale perk numbers anywhere on the page.
+  assert.doesNotMatch(html, /16–20 for the Engineer|16–20 count as doubles|heals 3 HP, not just you for 1/);
+});
+
+test('a finished First Shift offers Quick Shift (random boss) first, and the next visit starts there', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  assert.strictEqual(w.eval('UI.mode'), 'intro', 'a first visit should start on First Shift');
+  assert.match(d.querySelector('[data-a=mode][data-v=quick]').textContent, /Boss: random/);
+  assert.match(d.querySelector('[data-a=mode][data-v=intro]').textContent, /Boss: Lockjaw Syndicate/);
+  w.eval(`UI.mode = 'intro'; UI.pick = ['HUN']; start(); const before = snap(); G.over = true; G.win = true; finish(before);`);
+  const p = d.querySelector('.endbar [data-primary]'); assert.strictEqual(p.dataset.a, 'next'); assert.match(p.textContent, /Next: Quick Shift/);
+  assert.match(d.querySelector('.endbar [data-a=again]').textContent, /Run First Shift again/);
+  assert.strictEqual(w.localStorage.getItem('dwellers-mode-v1'), 'quick');
+  p.click(); assert.strictEqual(w.eval('UI.screen'), 'game'); assert.strictEqual(w.eval('G.mode'), 'quick');
+  // A returning player (same browser storage, new page) lands on Quick Shift.
+  const w2 = new JSDOM(html.replace(/<script>[\s\S]*<\/script>/, ''), { runScripts: 'outside-only', url: 'https://example.org/' }).window; w2.localStorage.setItem('dwellers-mode-v1', 'quick');
+  w2.eval(html.match(/<script>([\s\S]*)<\/script>/)[1] + ';window.__mode = UI.mode;');
+  assert.strictEqual(w2.__mode, 'quick'); assert.strictEqual(w2.document.querySelector('[data-a=mode][aria-pressed=true]').dataset.v, 'quick');
+  assert.deepStrictEqual(errors, []);
+});
+
+test('a comeback finished by the Hunter is gone for good, and says so', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); G.deck.push({ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 990, left: 3, hits: 3, back: 0, up: 0, def: 5 });
+    act('flip'); act('roll');
+    G.play = [{ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 991, left: 1, hits: 2, back: 1, up: 0, def: 5 }, { ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 992, left: 3, hits: 3, back: 0, up: 0, def: 5 }];
+    G.dice.forEach(d => { d.r = 10; d.dbl = false; d.used = false; }); UI.sel = 0; render(); act('hit', '991');`);
+  assert.strictEqual(w.eval('G.row.length'), 0, 'the comeback went back to the row');
+  const g = d.querySelector('[data-gone]'); assert.ok(g, 'no gone-for-good line in the fight');
+  assert.match(g.textContent, /Gone for good/); assert.doesNotMatch(d.querySelector('.main').textContent, /Into the persistence row/);
+  assert.ok(d.querySelector('.mob.ko.gonek'), 'the knocked-out card should carry the gone-for-good stamp');
+  assert.deepStrictEqual(errors, []);
+});
+
+test('the Fixer’s after-fight heal shows in the fight summary', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'quick'; UI.friends = true; UI.pick = ['PAT', 'HUN']; start(); G.deck.push({ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 990, left: 1, hits: 1, back: 0, up: 0, def: 5 });
+    act('flip'); act('roll'); G.play.forEach(m => { m.left = 1; }); G.play.splice(1); G.hps = G.hps.map(h => h - 10); G.dice.forEach(d => { d.r = 10; d.dbl = false; d.used = false; }); UI.sel = 0; render(); act('hit', String(G.play[0].uid));`);
+  const n = (JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'cards.json'), 'utf8')).perks.PAT || {}).fight;
+  assert.match(d.querySelector('[data-fixer]').textContent, new RegExp(`The Fixer patched the crew: \\+${n} HP`));
+  assert.deepStrictEqual(errors, []);
+});

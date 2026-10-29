@@ -14,19 +14,43 @@ Tuned with `sim/` against a careful bot, never yet against enough humans.
 
 | Mode | Target win rate | Shipped |
 | --- | --- | --- |
-| Full Shift, Recruit | 60–70% | 64 HP |
-| Full Shift, Analyst | ~50% | 52 HP |
-| Full Shift, Veteran | 35–40% | 41 HP |
+| Full Shift, Recruit | 60–70% | 58 HP |
+| Full Shift, Analyst | ~50% | 47 HP |
+| Full Shift, Veteran | 35–40% | 38 HP |
 | Quick Shift | ~60% (booth-friendly) | 40 HP |
-| First Shift | ~70% | 31 HP |
+| First Shift | ~70% | 32 HP |
 
 Other things worth holding: every player count within about 10 points of each other; roughly 5–6 comebacks per Full Shift; a real share of losses before the boss (the row has to matter), but no more than about 40–45%, so the boss stays the climax; winners usually ending at a quarter to a third of their HP. `npm run balance` enforces loose bands in CI.
 
 ## Decisions worth remembering
 
+- **Analyst redesign: a perk and an agent link each (2026-10-29).** The user asked for more interesting, more balanced analysts. Solo, they ran from 40% to 73% (Full Shift, Analyst): the Responder's +5 on the highest-damage mob landed on the boss in every fight, so a solo Responder always had it, and the Fixer's off-shift heal did nothing for a crew of one. Now every analyst has a perk and an agent link, both text on the class (`perk`, `agent`) with the numbers in `perks` in `data/cards.json`:
+
+| Analyst | Perk | Agent link |
+| --- | --- | --- |
+| Hunter | +5 against comebacks; any comeback you finish is gone for good. | A comeback a Hunt Agent finishes (dice or burn) is gone for good too. |
+| Responder | +2 against the highest-damage mob in play, boss included (was +5). | Containment Agents cut 1 more damage. |
+| Engineer | Doubles on 17–20 (was 16–20). | Agent dice roll +3. |
+| Soarcerer | The crew tray holds one more agent. | Every won fight draws one more kit card. |
+| Fixer | After every fight, heal 4 split across the crew; off-shift, heal 3 split. | Recovery Agents heal 3 more after each fight. |
+
+  Solo win rates before → after (bot sims, 2026-10-29, 1,500 games each). Full Shift, Analyst: Responder 73 → 48, Engineer 61 → 48, Soarcerer 49 → 54, Hunter 44 → 54, Fixer 40 → 48. Quick Shift: 43–78 → 49–62. The engine logs a hunted comeback ("X is hunted down for good") and counts it in `G.stats.hunted`. Print: each analyst card shows the perk, the agent link under a cyan "Agents" label, and a "Your move" line that reads as a playstyle, with its numbers pulled from `perks`.
+- **Agent links: every analyst makes one kind of automation better.** The design intent is that automation is how a SOC survives the night, and the analysts should teach that too. Each agent link boosts one agent type (Hunt, Containment, the rolling agents, the tray and draw, Recovery), and it works for the whole crew's agents, not just the analyst's own. So a crew of analysts builds agent synergies: a Hunter wants Hunt Agents, an Engineer wants Triage and Hunt, a Fixer wants Recovery, and the Soarcerer feeds all of them.
+- **Boss hits by crew size: `bossAdd` {1: +1, 2: +2, 3: +4, 4: +6}** on the printed `hitsBase`, replacing "printed + 1 per analyst". The boss fight is a big share of a short game, so in Quick Shift and First Shift a flat +1 per analyst let crew sizes drift apart; a per-count table, like `mobAdd` for mobs, keeps the short modes even across crew sizes. Boss cards print all four numbers in a hit strip like the mob cards, and have no hit boxes.
+- **HP for the analyst redesign and `bossAdd`:** all bands pass in the bot sims of 2026-10-29. `mobAdd` stays {1: −1, 2: 0, 3: +2, 4: +4}.
+
+| Mode | HP |
+| --- | --- |
+| Full Shift, Recruit | 58 |
+| Full Shift, Analyst | 47 |
+| Full Shift, Veteran | 38 |
+| Quick Shift | 40 |
+| First Shift | 32 |
+
+- **Why players kept seeing Lockjaw (a bug, not the pick).** The start screen defaulted to First Shift, which always uses the Lockjaw Syndicate (`intro.boss`), and "Run it back" replays the same mode. The engine's pick is fair in Full and Quick Shift: about a third each over 3,000 games.
 - **Story cards make the Recon Agent matter (2026-10-29).** The user asked for more story-driven cards that make Recon more impactful. Nine situations are now story cards (`story: true`), each with a `recon` effect and a `reconText` line. If the crew holds a running Recon Agent when one resolves, the Recon line replaces the whole outcome: no roll, no choice (`G.lastSit.recon`, counted in `G.stats.auto.recon`). Every Full Shift feed deals 3 story cards and Quick Shift 2 (`storyDeal`); First Shift has none, so the tutorial stays fixed. Story cards bring four new effects: `row` (roll for the row now; comebacks strike on arrival and are fought after the card), `call` (the widest-range mob in the row comes back with no arrival hit), `nextMob` (the next freshly flipped mob gets a Defense or Damage change until beaten) and `bury` (the next situation goes to the bottom of the feed). The Recon Agent's run now also gives a story card's Recon line; its burn looks at the next 3 situations and pulls one from the feed for good instead of burying it. In bot sims a Recon-favouring bot no longer loses win rate against the default bot, and its burn picks out the heavy hitters. Print: story cards carry an amber "Story" tag and frame, a shorter art panel, and a separate cyan "With Recon" box with an eye icon, so the table can see at a glance which line applies.
 - **Bosses roll for the row (2026-10-29).** The user asked for boss abilities that trigger the persistence row more often. Lockjaw rolls for the row at the end of every round it's still up; the Persistent Operator rolls on every double that hits it; the Rogue AI rolls whenever an agent is burned. These are normal Row rolls (arrival strikes capped at two, plog `why` is `'boss'`), unlike the boss's own arrival roll, which brings comebacks in without the hit. With story cards and boss triggers together, losses before the boss fell to 30–43%, down from 63–70%: the boss is the climax again, not a formality after the row has already decided the shift.
-- **HP for story cards and boss row triggers:** all bands pass in the bot sims of 2026-10-29; comebacks average about 5–6 per Full Shift.
+- **HP for story cards and boss row triggers** (superseded by the analyst redesign above): all bands pass in the bot sims of 2026-10-29; comebacks average about 5–6 per Full Shift.
 
 | Mode | HP |
 | --- | --- |
@@ -41,12 +65,12 @@ Other things worth holding: every player count within about 10 points of each ot
 - **One HP number per difficulty.** Crew size is absorbed by the dice rule (one die each, two for on point) and mob hits (the `mobAdd` table). Don't reintroduce per-count HP tables; fix spread with scaling instead.
 - **Comebacks return at full hits, and still strike on arrival.** The user's call (2026-10-29): a mob that persists should come back as strong as it left, so persistence feels like real persistence. The old one-hit comeback made the row a speed bump. The arrival hit stays capped at the two highest-Damage comebacks per roll (`strikeCap`); the `returnHits` key is gone.
 - **Automation is how a SOC survives the night.** The game is balanced so the AI agents carry real weight, and the design intent is that it teaches exactly that. Bot sims on 2026-10-29 (1,200 games per player count, the balance-gate setup): without agents the bot wins 1–2% of games; with them, about 50%. In an average two-player Analyst game the agents land about 10 hits, set up 12 more crew hits (Enrichment and Recon bonuses), stop 19 damage (Containment and Decoy), heal 22 HP (Recovery), and remove or dodge about 2.5 comebacks (Hunt and Patch). The engine counts these in `G.stats.auto` so the web game can show them. To get there, a won fight draws two kit cards (`kitPerFight`), the crew tray holds five (six with the Soarcerer), and the agents got stronger: Triage +4, Enrichment +3, Containment cuts 2, Recovery heals 4, and the Hunt Agent now hunts comebacks (+7, only against a mob that came back from the row; burn beats one).
-- **Tougher bosses: +2 hits and +2 damage each.** Lockjaw 7 hits / 9 damage, Persistent Operator 7 / 9, Rogue AI 6 / 9, still printed + 1 per analyst. Stronger agents would otherwise flatten the finale; with this, about 63–70% of losses still came before the boss (since brought down to 30–43% by boss row triggers, above).
+- **Tougher bosses: +2 hits and +2 damage each.** Lockjaw 7 hits / 9 damage, Persistent Operator 7 / 9, Rogue AI 6 / 9, then printed + 1 per analyst (now the `bossAdd` table, above). Stronger agents would otherwise flatten the finale; with this, about 63–70% of losses still came before the boss (since brought down to 30–43% by boss row triggers, above).
 - **HP retuned for full comebacks and stronger agents** (superseded by the story-card retune above): Recruit 70, Analyst 60, Veteran 47, Quick Shift 37, First Shift 25. The HP tracker became a tens track plus a ones track with two coins per analyst, since one cell per HP point no longer fits a card.
 - **Only the two highest-Damage comebacks of a roll strike.** Every range starts at 1, so a roll of 1–4 empties the row. Uncapped, 6.7% of Row rolls hit one analyst for 10+ before any choice (1,500 two-player Analyst games, 2026-10-29); capped at two, 0.6%. Comebacks per shift stayed at about 8, and Full Shift HP dropped from 50/42/34 to 44/38/31 to hold the targets. `strikeCap` in `data/cards.json`.
 - **The row rolls with the flip,** so comebacks join the fight in front of you rather than becoming a separate fight.
 - **Tougher mobs: Defense floor of 12, more hits.** Mobs at 8 felt free, and at 11 they still fell too fast. In 2,000 two-player Analyst games on 2026-10-29, heavy hitters fell in their first round 8–12% of the time, down from 23–31%, and nuisances 40–49%, down from about 70%. Full Shift HP rose to 59/50/41 (Quick Shift 31, First Shift 20) to hold the targets. Quick Shift fights grew from about 10.5 to 12.9 combat rounds, so the booth length has to be re-timed with real players.
-- **Mob hits come from a per-count table, not +1 per analyst.** `mobAdd` in `data/cards.json` is now {1: −1, 2: 0, 3: +2, 4: +4} on the printed 2-player hits, never below 1 (see the steeper-table entry above; it was {−1, 0, +1, +2} with full-hit comebacks and the bigger crew tray). Each mob card prints all four numbers, and has no hit boxes: one row of boxes can only be right for one crew size. Boss scaling is still printed + 1 per analyst.
+- **Mob hits come from a per-count table, not +1 per analyst.** `mobAdd` in `data/cards.json` is now {1: −1, 2: 0, 3: +2, 4: +4} on the printed 2-player hits, never below 1 (see the steeper-table entry above; it was {−1, 0, +1, +2} with full-hit comebacks and the bigger crew tray). Each mob card prints all four numbers, and has no hit boxes: one row of boxes can only be right for one crew size. Boss scaling now uses its own table, `bossAdd` (above).
 - **The shift runs 22:00 to 06:00: survive until dawn.** Flip i of N shows 22:00 + (i − 1) × 480 / N minutes, rounded down to 5; the boss is always 05:59. Times are positional because the feed is shuffled, so they live on the row mat and in the web game, never on a card.
 - **Read-aloud cards.** Whoever's on point reads the flipped card aloud. Flavour lines are short second-person scenes (1–2 sentences, 140 characters at most), so the table hears the night instead of reading it.
 - **Containment can't reduce damage below 1; Decoy protects only whoever's on point.** Both were erasing whole rounds.
@@ -57,6 +81,7 @@ Other things worth holding: every player count within about 10 points of each ot
 
 ## Open items
 
+- **Known gap: two-player crews run a few points ahead in Full Shift.** In the 2026-10-29 gate run, Analyst difficulty ran 45–61% across crew sizes, with two players at the top. It is inside the bands, but the spread is wider than the 10-point aim. Fix it through scaling (`mobAdd`, `bossAdd`), not HP tables.
 - Human playtests: First Shift with someone new, then Full Shift at two and four players.
 - Re-time Quick Shift at the booth. Full-hit comebacks and two kit draws per fight change its length again; the 12.9-combat-round figure predates them.
 - See the printed cards by eye (longest name: Living-off-the-Land Scavenger).

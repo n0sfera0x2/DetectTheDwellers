@@ -30,13 +30,13 @@ ${table(['Situation', 'Type', 'Rule'], D.situations.map(s => [s.name, s.type, s.
 
 ## Bosses
 
-Hits = printed + 1 per analyst. Agents can't hit the boss.
+Hits by crew size (1p / 2p / 3p / 4p). Agents can't hit the boss.
 
-${table(['Boss', 'Domain', 'Def', 'Hits', 'Dmg', 'Ability'], D.bosses.map(b => [b.name, b.domain, b.def, b.hitsBase + ' + n', b.dmg, `${b.abilityName}: ${b.abilityText}`]))}
+${table(['Boss', 'Domain', 'Def', 'Hits', 'Dmg', 'Ability'], D.bosses.map(b => [b.name, b.domain, b.def, [1, 2, 3, 4].map(n => b.hitsBase + D.bossAdd[n]).join(' / '), b.dmg, `${b.abilityName}: ${b.abilityText}`]))}
 
 ## Analysts
 
-${table(['Analyst', 'Trait', 'Perk'], D.classes.map(c => [c.name, c.trait, c.perk]))}
+${table(['Analyst', 'Trait', 'Perk', 'Agent link'], D.classes.map(c => [c.name, c.trait, c.perk, c.agent || '']))}
 
 ## Kit (2 of each, shared crew tray of ${D.sharedKit}, ${D.sharedKit + 1} with the Soarcerer)
 

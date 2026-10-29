@@ -5,6 +5,8 @@ function DTD12(D) {
   const log = (G, t) => G.log.push({ r: G.sit, t });
   const nm = (G, k) => cls(G.team[k]).name;
   // Mob hits by crew size: printed (2p) hits + D.mobAdd[n], never below 1.
+  // Analyst perks live in D.perks so they can be tuned from data. on(G, id) is true when that analyst is on the crew.
+  const P = (id, k, d) => (D.perks && D.perks[id] && D.perks[id][k] != null ? D.perks[id][k] : d), on = (G, id) => G.team.includes(id);
   function mobHits(h, n) { const add = (D.mobAdd && D.mobAdd[n]) || 0; return Math.max(1, h + add); }
   function newGame(team, mode, opt = {}) {
     const rnd = opt.rnd || Math.random, per = D.rolls[team.length] || 1;
@@ -23,13 +25,13 @@ function DTD12(D) {
     G.kit = shuffle(D.kit.filter(c => !(G.noAgents && c.kind === 'agent')).map(c => ({ ...c })), rnd);
     const bb = intro ? D.bosses.find(x => x.id === D.intro.boss) : D.bosses[Math.floor(rnd() * D.bosses.length)];
     if (intro) { const top = D.intro.kit.map(t => G.kit.find(c => c.type === t)).filter(Boolean); G.kit = G.kit.filter(c => !top.includes(c)); G.kit.push(...top.slice().reverse()); }
-    G.boss = { ...mk({ ...bb, hits: bb.hitsBase != null ? bb.hitsBase + team.length : bb.hits }), kind: 'boss' };
+    G.boss = { ...mk({ ...bb, hits: bb.hitsBase != null ? bb.hitsBase + ((D.bossAdd && D.bossAdd[team.length]) ?? team.length) : bb.hits }), kind: 'boss' };
     if (mode === 'quick' && D.quickStartAgent && !G.noAgents) for (let j = 0; j < (D.sharedKit ? D.quickStartAgent : G.team.length); j++) { const i = G.kit.findIndex(c => c.kind === 'agent'); if (i >= 0) G.held[D.sharedKit ? 0 : j].push(G.kit.splice(i, 1)[0]); }
     log(G, 'Shift start. Pick who is on point and flip the first situation.');
     return G;
   }
   const alive = G => G.hps.every(h => h > 0);
-  const slots = (G, k) => D.sharedKit ? D.sharedKit + (G.team.includes('SOA') ? 1 : 0) : ((D.slotsBy && D.slotsBy[G.team.length]) || D.slots) + (k != null && G.team[k] === 'SOA' ? 1 : 0);
+  const slots = (G, k) => D.sharedKit ? D.sharedKit + (G.team.includes('SOA') ? P('SOA', 'slot', 1) : 0) : ((D.slotsBy && D.slotsBy[G.team.length]) || D.slots) + (k != null && G.team[k] === 'SOA' ? 1 : 0);
   // src: the mob names behind this damage, kept so the end screen can say what took the analyst down.
   function hurt(G, k, n, why, src) {
     if (n <= 0 || G.over) return; G.hps[k] = Math.max(0, G.hps[k] - n); G.stats.low = Math.min(G.stats.low ?? 1, G.hps[k] / G.max); log(G, `${nm(G, k)} −${n} HP (${why}).`);
@@ -125,8 +127,8 @@ function DTD12(D) {
   const has = (G, k, kind) => G.held[k].some(c => c.kind === kind);
   function bonusFor(G, k, m) {
     const id = G.team[k]; let b = 0;
-    if (m && id === 'HUN' && m.back > 0) b = 5;
-    if (m && id === 'RES' && G.play.length && dmgOf(G, m) >= Math.max(...G.play.map(x => dmgOf(G, x)))) b = 5;
+    if (m && id === 'HUN' && m.back > 0) b = P('HUN', 'back', 5);
+    if (m && id === 'RES' && G.play.length && dmgOf(G, m) >= Math.max(...G.play.map(x => dmgOf(G, x)))) b = P('RES', 'top', 5);
     if (m) b += active(G, 'enrich').length * (D.enrichBonus || 2) + (G.boost || 0);
     if (m && m.scouted && active(G, 'recon').length) b += D.reconBonus || 5;
     return b + (has(G, k, 'forensic') ? 2 : 0);
@@ -140,14 +142,14 @@ function DTD12(D) {
     if (G.phase !== 'combat' || G.rolled || G.over) return false; G.rolled = true;
     const evasive = G.play.some(m => m.ability === 'evasive');
     G.team.forEach((w, k) => {
-      if (k === G.rest) { if (w === 'PAT') { spread(G, 3); log(G, 'The Fixer goes off-shift and patches up the crew: 3 HP.'); } else { heal(G, k, D.restHeal ?? 1); log(G, `${nm(G, k)} goes off-shift: +1 HP.`); } G.stats.rests++; return; }
-      const nd = G.team.length === 1 ? (D.soloDice || 3) : 1 + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) { const r = d20(G), dbl = r >= (w === 'ENG' ? 16 : 18); G.stats.crewDice = (G.stats.crewDice || 0) + 1; G.dice.push({ kind: 'crew', k, r, dbl, used: false }); if (dbl) G.blocks[k] = true; if (evasive && r <= 2) hurt(G, k, 1, 'a hallucinating app', G.play.filter(m => m.ability === 'evasive').map(m => m.name)); }
-      if (!aiOn(G)) G.held[k].filter(c => c.kind === 'agent' && (c.type === 'triage' || c.type === 'hunt')).forEach(a => G.dice.push({ kind: 'agent', k, card: a, r: d20(G), used: false }));
+      if (k === G.rest) { if (w === 'PAT') { const h = P('PAT', 'rest', 3); spread(G, h); log(G, `The Fixer goes off-shift and patches up the crew: ${h} HP.`); } else { heal(G, k, D.restHeal ?? 1); log(G, `${nm(G, k)} goes off-shift: +1 HP.`); } G.stats.rests++; return; }
+      const nd = G.team.length === 1 ? (D.soloDice || 3) : 1 + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) { const r = d20(G), dbl = r >= (w === 'ENG' ? P('ENG', 'dbl', 16) : 18); G.stats.crewDice = (G.stats.crewDice || 0) + 1; G.dice.push({ kind: 'crew', k, r, dbl, used: false }); if (dbl) G.blocks[k] = true; if (evasive && r <= 2) hurt(G, k, 1, 'a hallucinating app', G.play.filter(m => m.ability === 'evasive').map(m => m.name)); }
+      if (!aiOn(G)) G.held[k].filter(c => c.kind === 'agent' && (c.type === 'triage' || c.type === 'hunt')).forEach(a => { const r = d20(G); G.dice.push({ kind: 'agent', k, card: a, r, dbl: on(G, 'ENG') && P('ENG', 'agentDbl', 0) > 0 && r >= P('ENG', 'agentDbl', 0), used: false }); });
     });
     G.blocks.forEach((b, k) => { if (b) { G.stats.blocks++; log(G, `${nm(G, k)} rolled a double and blocks this round.`); } });
     return true;
   }
-  function bonusDie(G, d, m) { return d.kind === 'agent' ? (d.card.type === 'hunt' ? (D.huntBonus || 7) : (D.triageBonus || 2)) : bonusFor(G, d.k, m); }
+  function bonusDie(G, d, m) { return d.kind === 'agent' ? (d.card.type === 'hunt' ? (D.huntBonus || 7) : (D.triageBonus || 2)) + (on(G, 'ENG') ? P('ENG', 'agentPlus', 0) : 0) : bonusFor(G, d.k, m); }
   const total = (G, d, m) => d.r + bonusDie(G, d, m);
   function beats(G, d, m) {
     if (d.used || !G.play.includes(m)) return false;
@@ -160,7 +162,7 @@ function DTD12(D) {
     d.used = true; if (d.kind === 'crew') G.stats.crewUsed = (G.stats.crewUsed || 0) + 1; const n = (d.dbl || d.r >= 18) ? 2 : 1, was = m.left; m.left = Math.max(0, m.left - n); G.stats[d.kind === 'agent' ? 'agentHits' : 'crewHits'] += n;
     const auto = d.kind === 'agent' ? 'hits' : !(d.dbl || d.r >= 18) && total(G, d, m) - agentBonus(G, m) < m.def ? 'assist' : null; if (auto) G.stats.auto[auto] += n;
     log(G, `${d.kind === 'agent' ? d.card.name : nm(G, d.k)} hits ${m.name}${n > 1 ? ' twice' : ''}.`);
-    if (m.left <= 0) { G.undo = []; beaten(G, m); } else (G.undo = G.undo || []).push({ i, m, was, n, auto, left: m.left, logAt: G.log.length });
+    if (m.left <= 0) { G.undo = []; if (m.back > 0 && P('HUN', 'gone', 0) && ((d.kind === 'crew' && G.team[d.k] === 'HUN') || (d.kind === 'agent' && d.card.type === 'hunt' && on(G, 'HUN')))) m.gone = true; beaten(G, m); } else (G.undo = G.undo || []).push({ i, m, was, n, auto, left: m.left, logAt: G.log.length });
     if (n === 2 && m.kind === 'boss' && m.id === 'apt' && !G.over && G.row.length) { G.undo = []; log(G, 'Living off your network: the double stirs the row.'); persistRoll(G, 'boss'); }
     return true;
   }
@@ -176,11 +178,13 @@ function DTD12(D) {
     G.play = G.play.filter(x => x !== m); G.stats.beaten++; if (m.mod) { m.def -= m.mod.def; m.dmg -= m.mod.dmg; m.mod = null; }
     if (m.kind === 'boss') { G.over = true; G.win = true; G.phase = 'over'; log(G, `${m.name} is down. Shift survived.`); return; }
     const lim = m.ability === 'sticky' ? 2 : 1;
-    if (D.alwaysPersist || m.back < lim) { G.row.push(m); log(G, `${m.name} is down. Into the persistence row: back on ${m.persist[0]}–${m.persist[1]}.`); }
+    if (m.gone) { log(G, `${m.name} is hunted down for good. It won’t come back.`); G.stats.hunted = (G.stats.hunted || 0) + 1; }
+    else if (D.alwaysPersist || m.back < lim) { G.row.push(m); log(G, `${m.name} is down. Into the persistence row: back on ${m.persist[0]}–${m.persist[1]}.`); }
     else log(G, `${m.name} is down for good.`);
     if (!G.play.length) endCombat(G);
   }
-  function endCombat(G) { G.lastRound = { ended: true }; G.dice.forEach(d => { d.used = true; }); log(G, 'The fight is over.'); const rc = carried(G, 'recover'), rh = D.recoverHeal || 3; if (rc) { G.stats.auto.healed += spread(G, rh * rc); log(G, `Recovery Agent${rc > 1 ? 's' : ''}: ${rh * rc} HP across the crew.`); } drawLoot(G, D.kitPerFight || 1); G.phase = G.loot.length ? 'loot' : 'point'; }
+  function endCombat(G) { G.lastRound = { ended: true }; G.dice.forEach(d => { d.used = true; }); log(G, 'The fight is over.'); const rc = carried(G, 'recover'), rh = (D.recoverHeal || 3) + (on(G, 'PAT') ? P('PAT', 'recover', 0) : 0);
+    if (on(G, 'PAT') && P('PAT', 'fight', 0)) { const h = spread(G, P('PAT', 'fight', 0)); if (h) log(G, `The Fixer patches the crew after the fight: ${h} HP.`); } if (rc) { G.stats.auto.healed += spread(G, rh * rc); log(G, `Recovery Agent${rc > 1 ? 's' : ''}: ${rh * rc} HP across the crew.`); } drawLoot(G, (D.kitPerFight || 1) + (on(G, 'SOA') ? P('SOA', 'draw', 0) : 0)); G.phase = G.loot.length ? 'loot' : 'point'; }
   function useItem(G, k, idx, target) {
     const c = G.held[k][idx]; if (!c || G.over || ['agent', 'forensic'].includes(c.kind)) return false;
     if (c.kind === 'jump') { if (G.hps[k] >= G.max) return false; heal(G, k, D.jumpHeal ?? 4); }
@@ -193,8 +197,8 @@ function DTD12(D) {
   function burn(G, k, idx, target) {
     const c = G.held[k][idx]; if (!c || G.over || c.kind !== 'agent') return false; G.undo = [];
     const inFight = G.phase === 'combat';
-    if (c.type === 'triage') { if (!inFight || !G.rolled) return false; for (let i = 0; i < 3; i++) { const r = d20(G); G.dice.push({ kind: 'crew', k: G.point, r, dbl: r >= (G.team[k] === 'ENG' ? 16 : 18), used: false }); } }
-    else if (c.type === 'hunt') { const m = G.play.find(x => x.uid === target); if (!inFight || !m || m.kind === 'boss' || !huntable(m)) return false; m.left = 0; G.stats.auto.removed++; beaten(G, m); }
+    if (c.type === 'triage') { if (!inFight || !G.rolled) return false; for (let i = 0; i < 3; i++) { const r = d20(G); G.dice.push({ kind: 'crew', k: G.point, r, dbl: r >= (G.team[k] === 'ENG' ? P('ENG', 'dbl', 16) : 18), used: false }); } }
+    else if (c.type === 'hunt') { const m = G.play.find(x => x.uid === target); if (!inFight || !m || m.kind === 'boss' || !huntable(m)) return false; m.left = 0; G.stats.auto.removed++; if (on(G, 'HUN') && P('HUN', 'gone', 0)) m.gone = true; beaten(G, m); }
     else if (c.type === 'contain') { if (!inFight || !G.play.length) return false; for (const m of G.play.slice()) { m.left = Math.max(0, m.left - 1); if (m.left <= 0) beaten(G, m); if (G.over || G.phase !== 'combat') break; } }
     else if (c.type === 'enrich') { if (!inFight || !G.rolled) return false; G.boost = (G.boost || 0) + 5; }
     else if (c.type === 'patch') { const m = G.row.find(x => x.uid === target) || null; if (!m) return false; G.row = G.row.filter(x => x !== m); G.stats.auto.removed++; log(G, `${m.name} is patched out of the persistence row for good.`); }
@@ -217,7 +221,7 @@ function DTD12(D) {
   function incomingBy(G, raw) {
     const out = G.team.map(() => []); const fight = G.team.map((_, k) => k !== G.rest), blocks = raw && G.blocksPre ? G.blocksPre : G.blocks;
     const dm = new Map(G.play.map(m => [m, dmgOf(G, m)]));
-    if (!raw) for (let i = 0; i < active(G, 'contain').length; i++) { const top = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (top && top[1] > 1) dm.set(top[0], Math.max(1, top[1] - (D.containCut || 1))); }
+    if (!raw) for (let i = 0; i < active(G, 'contain').length; i++) { const top = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (top && top[1] > 1) dm.set(top[0], Math.max(1, top[1] - (D.containCut || 1) - (on(G, 'RES') ? P('RES', 'contain', 0) : 0))); }
     for (const m of G.play) {
       const d = dm.get(m), pierce = m.ability === 'noblock'; if (!d) continue;
       if (m.ability === 'onpoint') { const k = G.point; if (fight[k] && (pierce || !blocks[k])) out[k].push({ m, d: d * 2 }); continue; }

@@ -39,9 +39,6 @@ const tag = (t, fill) => `<span style="align-self: flex-start; font-family: ${MO
 const nm = (t, size = 18, c = PINK) => `<div style="font-family: ${CHK}; font-weight: 700; font-size: ${size}px; line-height: ${size + 2}px; text-transform: uppercase; letter-spacing: 0.01em; color: ${c}">${e(t)}</div>`;
 const tx = (t, size, c = PINK, w = 500) => `<div style="font-family: ${CHK}; font-size: ${size}px; line-height: ${lh(size)}px; font-weight: ${w}; color: ${c}">${e(t)}</div>`;
 const stat = (label, v, c = PINK, raw = false) => `<div style="flex: 1; min-width: 0; background: #FFFFFF; border: 1px solid ${RULE}; padding: 2px 5px; line-height: 12px">${hud(label, PMUT, 9.5)}<div style="font-family: ${MONO}; font-weight: 600; font-size: 18px; line-height: 21px; font-variant-numeric: tabular-nums; color: ${c}">${raw ? v : e(v)}</div></div>`;
-// One box per hit to tick off. hot boxes (the first ones) are flare: hits taken while the card deals extra damage.
-const box = (c, fill) => `<div style="width: 13px; height: 9px; border: 1px solid ${c};${fill ? ` background: ${fill};` : ''} transform: skewX(-14deg)"></div>`;
-const boxes = (n, hot = 0, note = '') => `<div style="display: flex; gap: 3px; align-items: center">${box(FLT, FL).repeat(hot)}${box(AMT).repeat(n - hot)}${note ? `<span style="margin-left: auto">${hud(note, FLT)}</span>` : ''}</div>`;
 const foot = (t, c = PMUT) => `<div style="margin-top: auto; border-top: 1px solid ${RULE}; padding-top: 4px">${tx(t, 9.5, c, 500)}</div>`;
 // Keyword and boss-ability boxes: a full thin flare frame on a flare tint. Line-height is explicit so
 // the 10.5px text doesn't inherit the browser's default leading.
@@ -58,9 +55,9 @@ const CREW = Object.keys(D.mobAdd).map(Number).sort((a, b) => a - b);
 const mobHits = (h, n) => Math.max(1, h + D.mobAdd[n]);
 // One strip, read left to right: the crew-size column the table plays with. No hit boxes on mobs: one row of
 // boxes can only match one crew size, and would read as wrong at the other three. Track hits with coins.
-const hitstrip = m => `<div style="display: flex; align-items: baseline; justify-content: space-between; background: #FFFFFF; border: 1px solid ${RULE}; padding: 0 5px; line-height: 15px">${hud('Hits', PMUT)}${CREW.map(n => `<span style="display: inline-flex; align-items: baseline; gap: 3px">${hud(`${n}p`, PMUT)}<span style="font-family: ${MONO}; font-weight: 600; font-size: 13px; line-height: 15px; font-variant-numeric: tabular-nums; color: ${PINK}">${mobHits(m.hits, n)}</span></span>`).join('')}</div>`;
+const hitstrip = hitsAt => `<div style="display: flex; align-items: baseline; justify-content: space-between; background: #FFFFFF; border: 1px solid ${RULE}; padding: 0 5px; line-height: 15px">${hud('Hits', PMUT)}${CREW.map(n => `<span style="display: inline-flex; align-items: baseline; gap: 3px">${hud(`${n}p`, PMUT)}<span style="font-family: ${MONO}; font-weight: 600; font-size: 13px; line-height: 15px; font-variant-numeric: tabular-nums; color: ${PINK}">${hitsAt(n)}</span></span>`).join('')}</div>`;
 function mob(m) {
-  return shell(`${art(ART[m.id], 94)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(m)}\n${kwchip(m)}${foot(m.flavor)}`);
+  return shell(`${art(ART[m.id], 94)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(n => mobHits(m.hits, n))}\n${kwchip(m)}${foot(m.flavor)}`);
 }
 function sit(s) {
   const kind = { challenge: 'one attempt', choice: 'choose one', event: 'event' }[s.type];
@@ -81,29 +78,34 @@ function story(s) {
   const recon = `<div style="background: #DDF6FB; border: 1.5px solid ${CY}; padding: 3px 7px 4px; display: flex; flex-direction: column; gap: 1px"><div style="display: flex; gap: 5px; align-items: center; line-height: 13px">${EYE}${hud('With Recon', CYT)}</div>${tx(s.reconText, 11, PINK, 500).replace('<div style="', '<div style="text-wrap: pretty; ')}</div>`;
   return shell(`${art(ART['sit_' + s.id] || ART[s.type === 'challenge' ? 'fp' : 'event'], 82)}${row(tag('Story', AM), hud(kind, AMT))}${nm(s.name, 14.5)}${tx(s.text, 10.5, PMUT, 500)}\n${rule}${recon}`, AM, AMT);
 }
-// Ransom demand (the engine's dmgOf): Lockjaw deals +2 until it has taken two hits. The card says so
-// beside the printed Damage, and its first two hit boxes are flare (the ability box says why), so the table sees when it drops.
-const RAMP = { wyrm: { add: 2, hits: 2 } };
+// Boss hits by crew size, from data: hitsBase + bossAdd[n] (the engine's boss setup). Printed as a strip like the
+// mobs, with no hit boxes. Ransom demand (the engine's dmgOf): Lockjaw deals +2 until it has taken two hits; the card
+// says so beside the printed Damage, and the ability box says when it drops.
+const RAMP = { wyrm: 2 };
+const bossHits = (b, n) => b.hitsBase + D.bossAdd[n];
 function boss(b) {
   const r = RAMP[b.id];
-  const dmg = r ? `${b.dmg}<span style="font-size: 11px; color: ${FLT}"> +${r.add}</span>` : b.dmg;
-  return shell(`${art(PRINT_ART['boss_' + b.id], 74)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${boxes(b.hitsBase, r ? r.hits : 0)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Arrives last, with a Row roll (no arrival hits). Agents can’t hit it.')}`);
+  const dmg = r ? `${b.dmg}<span style="font-size: 11px; color: ${FLT}"> +${r}</span>` : b.dmg;
+  return shell(`${art(PRINT_ART['boss_' + b.id], 74)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat('Damage', dmg, PINK, true)}</div>${hitstrip(n => bossHits(b, n))}\n${ability(b.abilityName, b.abilityText)}${foot('Arrives last, with a Row roll (no arrival hits). Agents can’t hit it.')}`);
 }
-// How to play each analyst, in a line or two. The shared fight rules live on the "A fight" reference card.
+// How to play each analyst: a playstyle in two or three lines, numbers from D.perks. The perk and the agent link
+// are printed from the class data above it; the shared fight rules live on the "A fight" reference card.
+const PK = D.perks, WORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
 const MOVE = {
-  HUN: 'Comebacks return at full hits, but you get +5 on them. When the row roll lands, those mobs are yours.',
-  RES: 'Find the mob with the biggest Damage. Put your best die on it first: a mob you finish never hits back.',
-  ENG: 'Every die you roll is a 1 in 4 shot at a double: two hits and a block. Take point and roll two.',
-  SOA: `The crew holds ${['four', 'five', 'six', 'seven'][D.sharedKit - 3]} kit cards, not ${['three', 'four', 'five', 'six'][D.sharedKit - 3]}. Keep agents running and hold a spare to burn when a fight turns.`,
-  PAT: 'When the crew is hurting, go off-shift. No roll, no damage, and the 3 HP go where they’re needed.',
+  HUN: `Work the row. Hit comebacks first: your +${PK.HUN.back} lands them, and every one you finish stays gone, so the row runs dry.`,
+  RES: 'Stand in front of the worst of it. Put your best die on the biggest hitter, boss included, and keep Containment running.',
+  ENG: `Roll volume. One die in ${Math.round(20 / (21 - PK.ENG.dbl))} is a double, so take point and roll two. Triage and Hunt Agents roll at +${PK.ENG.agentPlus} for you.`,
+  SOA: `Run the tray. The crew holds ${WORD[D.sharedKit + PK.SOA.slot]} agents and draws ${WORD[D.kitPerFight + PK.SOA.draw]} kit cards a win. Keep them running; burn a spare when a fight turns.`,
+  PAT: `Keep the crew standing. You heal ${PK.PAT.fight} after every fight, each Recovery Agent heals ${D.recoverHeal + PK.PAT.recover}, and your off-shift helps everyone.`,
 };
 function analyst(c) {
-  const move = MOVE[c.id] ? `<div style="margin-top: auto; background: #FFFFFF; border: 1px solid ${CYT}; padding: 5px 8px 6px; display: flex; flex-direction: column; gap: 2px">${hud('Your move', CYT)}${tx(MOVE[c.id], 11.5, PINK, 500)}</div>` : '';
-  return shell(`${art(ART[c.id], 118)}${row(tag('Analyst', CY), hud(c.trait, CYT))}${nm(c.name, 24)}<div style="font-family: ${CHK}; font-weight: 700; font-size: 14px; line-height: 18px; text-wrap: pretty; color: ${CYT}">${e(c.perk)}</div>\n${move}`, CY, CYT);
+  const agent = c.agent ? `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 4px">${tag('Agents', CY)}${tx(c.agent, 11, PINK, 700)}</div>` : '';
+  const move = MOVE[c.id] ? `<div style="margin-top: auto; background: #FFFFFF; border: 1px solid ${CYT}; padding: 4px 8px 5px; display: flex; flex-direction: column; gap: 1px">${hud('Your move', CYT)}${tx(MOVE[c.id], 10.5, PINK, 500)}</div>` : '';
+  return shell(`${art(ART[c.id], 86)}${row(tag('Analyst', CY), hud(c.trait, CYT))}${nm(c.name, 22)}<div style="font-family: ${CHK}; font-weight: 700; font-size: 12.5px; line-height: 15.5px; text-wrap: pretty; color: ${CYT}">${e(c.perk)}</div>${agent}\n${move}`, CY, CYT);
 }
 function kit(k) {
   const part = (label, c, t) => `<div style="border-top: 1px solid ${RULE}; padding-top: 2px">${hud(label, c)}${tx(t, 11, PINK, 500)}</div>`;
-  return shell(`${art(ART['kit_' + k.type] || ART[AART[k.type]], 88)}${row(tag('Kit', CY), hud('AI agent', CYT))}${nm(k.name, 17, CYT)}${part('Run it', CYT, k.text)}${part('Or burn it', AMT, k.burn)}\n${foot(`Crew kit tray: ${D.sharedKit} cards (${D.sharedKit + 1} with the Soarcerer). Burn once, then discard.`)}`, CY, CYT);
+  return shell(`${art(ART['kit_' + k.type] || ART[AART[k.type]], 88)}${row(tag('Kit', CY), hud('AI agent', CYT))}${nm(k.name, 17, CYT)}${part('Run it', CYT, k.text)}${part('Or burn it', AMT, k.burn)}\n${foot(`Crew kit tray: ${D.sharedKit} cards (${D.sharedKit + D.perks.SOA.slot} with the Soarcerer). Burn once, then discard.`)}`, CY, CYT);
 }
 // Two tracks, two coins: one on the tens, one on the ones. Your HP is the two added together, so the card
 // holds any HP up to 99 at a size a coin can sit on. The start line is read from data.
@@ -121,8 +123,8 @@ function rowmat() {
 const runin = (label, t, c = FLT, size = 10) => `<div style="font-family: ${CHK}; font-weight: 500; font-size: ${size}px; line-height: ${lh(size)}px; color: ${PINK}"><span style="font-family: ${MONO}; font-weight: 600; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(label)}</span> ${e(t)}</div>`;
 const refrow = inner => `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 2px">${inner}</div>`;
 function fight() {
-  const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Story', 'Recon Agent in the tray? Use the card’s Recon line instead.', CYT], ['Mob hits', 'Use the number for your crew size. Boss: printed + 1 per analyst.'], ['Off-shift', 'One analyst may skip their roll: no damage, +1 HP.'],
-    ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', 'Double: two hits, and you block this round. Engineer: 16–20.'], ['Hits', 'Mobs still up hit everyone who didn’t block.'], ['Won', 'Draw two kit cards. Beaten mobs go to the persistence row.', AMT]];
+  const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Story', 'Recon Agent in the tray? Use the card’s Recon line instead.', CYT], ['Hits', 'Mobs and bosses print hits for 1–4 analysts. Use your crew size.'], ['Off-shift', `One analyst may skip their roll: no damage, +1 HP. The Fixer heals ${D.perks.PAT.rest}, split.`],
+    ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', `Double: two hits, and you block this round. Engineer: ${D.perks.ENG.dbl}–20.`], ['Hits back', 'Mobs still up hit everyone who didn’t block.'], ['Won', `Draw ${WORD[D.kitPerFight]} kit cards (Soarcerer: ${WORD[D.kitPerFight + D.perks.SOA.draw]}). Beaten mobs go to the persistence row.`, AMT]];
   return shell(`${tag('Reference', CY)}${nm('A fight', 18)}${rows.map(([a, b, c]) => refrow(runin(a, b, c))).join('')}`, CY, CYT);
 }
 function glossary() {

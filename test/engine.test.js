@@ -140,3 +140,25 @@ test('the next-mob mark applies to the next flipped mob and clears when it is be
   G.dice = [{ kind: 'crew', k: 0, r: 20, dbl: true, used: false }]; G.rolled = true; E.assign(G, 0, 960);
   assert.strictEqual(mob.def, def);
 });
+
+test('a comeback the Hunter finishes is gone for good; anyone else sends it back to the row', () => {
+  const finish = who => {
+    const G = E.newGame([who, 'RES'], 'full', { hp: 60, rnd: rng(2) });
+    const m = { ...D.mobs.find(x => x.id === 'spray'), kind: 'mob', uid: 970, hits: 1, left: 1, back: 1, up: 0 };
+    G.phase = 'combat'; G.play = [m]; G.rolled = true; G.row = [];
+    G.dice = [{ kind: 'crew', k: 0, r: 20, dbl: true, used: false }]; E.assign(G, 0, 970);
+    return G.row.length;
+  };
+  assert.strictEqual(finish('HUN'), 0); assert.strictEqual(finish('ENG'), 1);
+});
+
+test('boss hits follow the crew-size table, and the Fixer heals after every fight', () => {
+  for (const n of [1, 2, 3, 4]) {
+    const G = E.newGame(['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), 'full', { hp: 60, rnd: rng(n) });
+    assert.strictEqual(G.boss.hits, D.bosses.find(b => b.id === G.boss.id).hitsBase + D.bossAdd[n]);
+  }
+  const G = E.newGame(['PAT', 'RES'], 'full', { hp: 60, rnd: rng(3) });
+  G.hps = [30, 30]; const m = { ...D.mobs.find(x => x.id === 'spray'), kind: 'mob', uid: 980, hits: 1, left: 1, back: 0, up: 0 };
+  G.phase = 'combat'; G.play = [m]; G.rolled = true; G.dice = [{ kind: 'crew', k: 0, r: 20, dbl: true, used: false }]; E.assign(G, 0, 980);
+  assert.strictEqual(G.hps[0] + G.hps[1], 60 + D.perks.PAT.fight);
+});

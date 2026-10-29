@@ -8,7 +8,7 @@ Generated from `data/cards.json` by `npm run cards`. Don't edit by hand.
 
 | Recruit | Analyst | Veteran | Quick Shift | First Shift |
 | --- | --- | --- | --- | --- |
-| 64 | 52 | 41 | 40 | 31 |
+| 58 | 47 | 38 | 40 | 32 |
 
 ## Keywords
 
@@ -70,23 +70,23 @@ Printed hits are for two players. In play: printed + analysts − 2, never below
 
 ## Bosses
 
-Hits = printed + 1 per analyst. Agents can't hit the boss.
+Hits by crew size (1p / 2p / 3p / 4p). Agents can't hit the boss.
 
 | Boss | Domain | Def | Hits | Dmg | Ability |
 | --- | --- | --- | --- | --- | --- |
-| The Lockjaw Syndicate | Endpoint | 16 | 7 + n | 9 | Double extortion: +2 damage until it has taken two hits. At the end of every round it’s still up, roll for the row. |
-| The Persistent Operator | Identity | 15 | 7 + n | 9 | Living off your network: The first time you beat it, it comes back with 2 hits left. Every double that hits it rolls for the row. |
-| The Rogue AI | Cloud | 17 | 6 + n | 9 | Hostile takeover: Agents can’t roll while it’s in play. Burning one rolls for the row. |
+| The Lockjaw Syndicate | Endpoint | 16 | 8 / 9 / 11 / 13 | 9 | Double extortion: +2 damage until it has taken two hits. At the end of every round it’s still up, roll for the row. |
+| The Persistent Operator | Identity | 15 | 8 / 9 / 11 / 13 | 9 | Living off your network: The first time you beat it, it comes back with 2 hits left. Every double that hits it rolls for the row. |
+| The Rogue AI | Cloud | 17 | 7 / 8 / 10 / 12 | 9 | Hostile takeover: Agents can’t roll while it’s in play. Burning one rolls for the row. |
 
 ## Analysts
 
-| Analyst | Trait | Perk |
-| --- | --- | --- |
-| Hunter | Threat hunter | +5 against mobs that came back from the row. |
-| Responder | First responder | +5 against the highest-damage mob in play. |
-| Engineer | Detection as code | Your doubles are 16–20, not 18–20. |
-| Soarcerer | Orchestrator | +1 slot in the crew kit tray. |
-| Fixer | Medic | Off-shift, heal 3 HP split across the crew instead of 1 for yourself. |
+| Analyst | Trait | Perk | Agent link |
+| --- | --- | --- | --- |
+| Hunter | Threat hunter | +5 against mobs that came back from the row. Any comeback you finish is gone for good. | Hunt Agents hunt with you: a comeback they finish is gone for good too. |
+| Responder | First responder | +2 against the highest-damage mob in play, boss included. | Containment Agents cut 1 more damage. |
+| Engineer | Detection as code | Your doubles are 17–20, not 18–20. | Agent dice roll +3. |
+| Soarcerer | Orchestrator | The crew tray holds one more agent. | Every won fight draws one more kit card. |
+| Fixer | Medic | After every fight, heal 4 HP split across the crew. Off-shift, heal 3 split instead of 1 for yourself. | Recovery Agents heal 3 more after each fight. |
 
 ## Kit (2 of each, shared crew tray of 5, 6 with the Soarcerer)
 

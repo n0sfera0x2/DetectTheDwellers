@@ -14,10 +14,15 @@ npm install
 npm run build      # playable page + print deck into dist/
 npm test           # engine, print deck, headless UI, balance gate
 npm run serve      # play at http://localhost:8080
+npm run export:cards   # 300 dpi singles with bleed + manifest + zip, in exports/
+npm run export:pdf     # print-and-play PDF, in exports/
 ```
 
 - **Play:** open `dist/index.html` in a browser. It's a single file and works offline.
 - **Print:** open `dist/deck/index.html`. Print each sheet's fronts, then its backs on the reverse: 100% scale, duplex, flip on the long edge.
+- **Print preview:** open `dist/deck/preview.html` to check every card against its bleed, trim and safe-zone guides, one at a time, as a grid, or on its sheet.
+- **Print shop:** `npm run export:cards` writes one 825 × 1125 PNG per distinct card (2.75 × 3.75 in at 300 dpi, 1/8 in bleed) to `exports/cards_singles/`, a shared `card_back.png`, `exports/manifest.csv` with copy counts (kit cards print 2 each, the HP tracker 4), and a zip of the lot for MakePlayingCards or The Game Crafter.
+- **Print-and-play PDF:** `npm run export:pdf` writes `exports/detect-the-dwellers-pnp.pdf`, 12 Letter pages, each fronts page followed by its backs. Print duplex at 100%, flip on the long edge.
 
 ## How it plays
 

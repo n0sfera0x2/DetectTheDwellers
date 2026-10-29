@@ -38,3 +38,6 @@ docs/engine-reference/
 docs/registry/
 docs/migration-guide-v1.1.md
 docs/skill-flow-diagrams.md
+
+# Print exports (npm run export:cards, npm run export:pdf)
+exports/

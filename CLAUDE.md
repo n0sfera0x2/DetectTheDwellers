@@ -20,6 +20,7 @@ Detect the Dwellers: a co-op d20 card game (1–4 players) set on a cyberpunk SO
 | `data/art.json` | SVG scenes (200×112) for cards and the UI, keyed by card id, domain, or analyst. |
 | `data/art-print.json` | Print-only art: the three boss scenes and the card back. `{{SID}}` marks ids made unique per card. |
 | `deck/cards.js` | Card templates for print. `deck/build.js` lays them out on sheets with mirrored backs. |
+| `deck/render.js` | One card face at trim + 1/8 in bleed, for the exporters (`scripts/export-cards.js`, `scripts/build-pdf.js`, output in `exports/`) and the print preview (`deck/preview.js`). |
 | `sim/bot.js` | The bot, seeded RNG, representative crews. `sweep.js`, `stats.js`, `check.js` run it. |
 | `test/` | `node:test` suites: engine invariants, deck snapshot, headless UI play-throughs (jsdom). |
 | `docs/` | `RULES.md` (rules text), `CARDS.md` (generated), `DESIGN.md` (decisions and targets). |
@@ -34,6 +35,8 @@ npm run sim -- full 40,46,52   # win rate by player count at those HP values
 npm run stats          # full report at shipped HP (losses before boss, comebacks, rounds, burns)
 npm run cards          # regenerate docs/CARDS.md
 npm run golden         # re-snapshot print cards after an intentional card change
+npm run export:cards   # exports/: 825 × 1125 singles (300 dpi, bleed), manifest.csv, upload zip
+npm run export:pdf     # exports/detect-the-dwellers-pnp.pdf: the six duplex sheets, 12 Letter pages
 npm run serve          # serve dist/ on localhost:8080
 ```
 

@@ -54,7 +54,7 @@ const row = (a, b) => `<div style="display: flex; justify-content: space-between
 const HP = D.hp.full[1], QHP = D.hp.quick[1], IHP = D.hp.intro[1];
 
 function mob(m) {
-  return shell(`${art(ART[m.id], 104)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Hits 2p', m.hits)}${stat('Damage', m.dmg)}</div>${boxes(m.hits)}\n${kwchip(m)}${foot(m.flavor)}`);
+  return shell(`${art(ART[m.id], 102)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Hits 2p', m.hits)}${stat('Damage', m.dmg)}</div>${boxes(m.hits)}\n${kwchip(m)}${foot(m.flavor)}`);
 }
 function sit(s) {
   const kind = { challenge: 'one attempt', choice: 'choose one', event: 'event' }[s.type];
@@ -70,7 +70,7 @@ const RAMP = { wyrm: { add: 2, hits: 2 } };
 function boss(b) {
   const r = RAMP[b.id];
   const dmg = r ? `${b.dmg}<span style="font-size: 11px; color: ${FLT}"> +${r.add}</span>` : b.dmg;
-  return shell(`${art(PRINT_ART['boss_' + b.id], 86)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${r ? boxes(b.hitsBase, r.hits, `+${r.add} dmg until ${r.hits} hits`) : boxes(b.hitsBase)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Arrives after the last situation, then make a Row roll. Agents never touch the boss.')}`);
+  return shell(`${art(PRINT_ART['boss_' + b.id], 84)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${r ? boxes(b.hitsBase, r.hits, `+${r.add} dmg until ${r.hits} hits`) : boxes(b.hitsBase)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Arrives after the last situation, then make a Row roll. Agents never touch the boss.')}`);
 }
 // How to play each analyst, in a line or two. The shared fight rules live on the "A fight" reference card.
 const MOVE = {
@@ -137,4 +137,15 @@ function deck() {
     [rowmat(), glossary()], [fight(), firstshift()],
   ];
 }
-module.exports = { deck, mob, sit, boss, analyst, kit, tracker, rowmat, fight, glossary, firstshift, back, PAPER, BG };
+// What each card in deck() is, in the same order: id, name and type. Copies of one card share an id
+// (kit is 8 types × 2, the HP tracker is 4 copies), which is how the singles export counts quantities.
+function meta() {
+  return [
+    ...D.mobs.map(m => ({ id: m.id, name: m.name, type: 'mob' })), ...D.situations.map(s => ({ id: s.id, name: s.name, type: 'situation' })),
+    ...D.bosses.map(b => ({ id: b.id, name: b.name, type: 'boss' })), ...D.classes.map(c => ({ id: c.id, name: c.name, type: 'analyst' })),
+    ...D.kit.map(k => ({ id: 'kit_' + k.type, name: k.name, type: 'kit' })),
+    ...[0, 1, 2, 3].map(() => ({ id: 'hp_tracker', name: 'Analyst HP', type: 'hp tracker' })),
+    { id: 'ref_row', name: 'Persistence row / Mob keywords', type: 'reference' }, { id: 'ref_fight', name: 'A fight / First Shift', type: 'reference' },
+  ];
+}
+module.exports = { deck, meta, mob, sit, boss, analyst, kit, tracker, rowmat, fight, glossary, firstshift, back, PAPER, BG };

@@ -8,6 +8,8 @@
     "build": "npm run build:page && npm run build:deck",
     "build:page": "node scripts/build-page.js",
     "build:deck": "node deck/build.js",
+    "export:cards": "node scripts/export-cards.js",
+    "export:pdf": "node scripts/build-pdf.js",
     "cards": "node scripts/cards-md.js",
     "sim": "node sim/sweep.js",
     "stats": "node sim/stats.js",

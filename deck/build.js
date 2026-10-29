@@ -1,4 +1,4 @@
-// Builds the print deck into dist/deck/: seven Letter sheets of fronts and seven of mirrored backs.
+// Builds the print deck into dist/deck/: eight Letter sheets of fronts and eight of mirrored backs.
 // Print at 100%, duplex, flip on the long edge.
 //
 // Sheet math (96 px = 1 in). Letter is 816 × 1056. Nine poker cards (240 × 336 trim) in a 3 × 3 block
@@ -8,7 +8,7 @@
 // hair off lands on the same ground. Crop marks sit outside the bleed, on every cut line. The block is
 // centred left-right (48 px each side), so the mirrored backs register with the fronts on a long-edge flip.
 //
-// Also writes all-sheets.html (the fourteen pages in one file, which scripts/build-pdf.js prints) and
+// Also writes all-sheets.html (the sixteen pages in one file, which scripts/build-pdf.js prints) and
 // preview.html (deck/preview.js: every card with bleed, trim and safe-zone guides).
 const fs = require('fs'), path = require('path');
 const { deck, meta } = require('./cards');
@@ -16,7 +16,7 @@ const { FACES, fonts, groundOf } = require('./render');
 const preview = require('./preview');
 const OUT = path.join(__dirname, '..', 'dist', 'deck');
 
-const SHEETS = 7; // 63 cards, nine to a sheet
+const SHEETS = 8; // 72 cards, nine to a sheet (the eighth is the marker sheet)
 const W = 816, H = 1056, CW = 240, CH = 336, BLEED = 12;
 const X0 = (W - 3 * CW) / 2, Y0 = (H - 3 * CH) / 2; // trim block origin: 48, 24
 
@@ -60,11 +60,11 @@ function build() {
     const idx = ch.map((_, i) => s * 9 + i), midx = [0, 1, 2].flatMap(r => idx.slice(r * 3, r * 3 + 3).reverse());
     pages.push({ html: pf, cards: fr, slots: idx, side: 'f', label: `Sheet ${s + 1} fronts` }, { html: pb, cards: mirrored, slots: midx, side: 'b', label: `Sheet ${s + 1} backs` });
   }
-  // All fourteen pages in sheet order (fronts, then its backs), one Letter page each: scripts/build-pdf.js prints this.
+  // All sixteen pages in sheet order (fronts, then its backs), one Letter page each: scripts/build-pdf.js prints this.
   fs.writeFileSync(path.join(OUT, 'all-sheets.html'), doc('Detect the Dwellers · all sheets', pages.map(p => p.html.replace('<div class="sheet" style="', '<div class="sheet" style="break-after: page; ')).join('\n')));
   fs.writeFileSync(path.join(OUT, 'preview.html'), preview(items, meta(), pages, { X0, Y0, BLEED }));
   const links = sheets.map(([f, b], i) => `<li>Sheet ${i + 1}: <a href="${f}">fronts</a> · <a href="${b}">backs</a></li>`).join('\n');
-  fs.writeFileSync(path.join(OUT, 'index.html'), doc('Detect the Dwellers · print deck', `<main style="font-family: system-ui, sans-serif; padding: 24px; max-width: 640px"><h1>Detect the Dwellers · print deck</h1><p>63 poker-size cards (2.5 × 3.5 in) on seven Letter sheets. Print each fronts page, then its backs page on the reverse: 100% scale, duplex, flip on the long edge. Cut on the crop marks. The cards share cut lines and carry a 1/8 in bleed around each block of nine; a home printer may not reach the outer bleed, which is fine.</p><ol style="list-style: none; padding: 0">\n${links}\n</ol><p><a href="all-sheets.html">All fourteen pages in one file</a> · <a href="preview.html">Print preview</a>: every card with bleed, trim and safe-zone guides.</p></main>`, false));
+  fs.writeFileSync(path.join(OUT, 'index.html'), doc('Detect the Dwellers · print deck', `<main style="font-family: system-ui, sans-serif; padding: 24px; max-width: 640px"><h1>Detect the Dwellers · print deck</h1><p>${SHEETS * 9} poker-size cards (2.5 × 3.5 in) on ${SHEETS} Letter sheets; sheet ${SHEETS} is the marker cards. Print each fronts page, then its backs page on the reverse: 100% scale, duplex, flip on the long edge. Cut on the crop marks. The cards share cut lines and carry a 1/8 in bleed around each block of nine; a home printer may not reach the outer bleed, which is fine.</p><ol style="list-style: none; padding: 0">\n${links}\n</ol><p><a href="all-sheets.html">All ${SHEETS * 2} pages in one file</a> · <a href="preview.html">Print preview</a>: every card with bleed, trim and safe-zone guides.</p></main>`, false));
   return items;
 }
 if (require.main === module) { build(); console.log(`built dist/deck/ (${SHEETS} sheets, ${SHEETS * 9} cards)`); }

@@ -11,14 +11,15 @@ function DTD12(D) {
   function newGame(team, mode, opt = {}) {
     const rnd = opt.rnd || Math.random, per = D.rolls[team.length] || 1;
     const hpT = D.hp[mode][team.length]; const hp = opt.hp || (typeof hpT === 'number' ? hpT : hpT[opt.diff || 'Analyst']);
-    const G = { mode, team: team.slice(), per, rnd, uid: 0, max: hp, hps: team.map(() => hp), deck: [], play: [], row: [], kit: [], held: team.map(() => []), discard: [],
+    const adv = !D.advanced || !!D.advanced[mode];
+    const G = { mode, adv, team: team.slice(), per, rnd, uid: 0, max: hp, hps: team.map(() => hp), deck: [], play: [], row: [], kit: [], held: team.map(() => []), discard: [],
       point: 0, phase: 'point', plog: [], pendingBack: [], cur: null, sit: 0, round: 0, rest: -1, dice: [], rolled: false, blocks: [], bossIn: false, over: false, win: false, log: [], loot: [], lastSit: null, persist: null, aiming: null,
       noAgents: !!opt.noAgents, stats: { auto: { hits: 0, assist: 0, saved: 0, healed: 0, removed: 0, dodged: 0, recon: 0 }, agentHits: 0, crewHits: 0, back: 0, maxBack: 0, rounds: 0, beaten: 0, blocks: 0, rests: 0 } };
     const mk = c => { const h = D.mobs.includes(c) ? mobHits(c.hits, (G.team || team).length) : c.hits; return { ...c, hits: h, uid: ++G.uid, left: h, back: 0, up: 0 }; };
     const pool = [...D.mobs.map(m => ({ ...mk(m), kind: 'mob' })), ...D.situations.map(x => ({ ...x, kind: 'sit', uid: ++G.uid }))];
     const intro = mode === 'intro' && D.intro;
     // Every shift gets its story beats: D.storyDeal[mode] story cards, the rest of the feed from mobs and the other situations.
-    const n = opt.deal || D.deal[mode], ns = Math.min(n, (D.storyDeal && D.storyDeal[mode]) || 0), mixed = shuffle(pool, rnd);
+    const n = opt.deal || D.deal[mode], ns = adv ? Math.min(n, (D.storyDeal && D.storyDeal[mode]) || 0) : 0, mixed = shuffle(pool, rnd);
     const story = mixed.filter(x => x.story).slice(0, ns), rest = mixed.filter(x => !x.story).slice(0, n - story.length);
     G.deck = intro ? D.intro.deck.map(id => pool.find(x => x.id === id)).reverse() : shuffle([...story, ...rest], rnd);
     G.total = G.deck.length;
@@ -100,7 +101,10 @@ function DTD12(D) {
     }
     G.lastSit = res; G.cur = null; if (!G.over) { if (G.pendingBack.length) { const b = G.pendingBack; G.pendingBack = []; const p = G.persist; startCombat(G, b); G.persist = p; } else G.phase = G.loot.length ? 'loot' : 'point'; } return res;
   }
-  function drawLoot(G, n) { for (let i = 0; i < n && G.kit.length; i++) G.loot.push(G.kit.pop()); if (G.loot.length) log(G, `Kit: ${G.loot.map(c => c.name).join(', ')}.`); }
+  function drawLoot(G, n) {
+    // An empty kit deck is rebuilt from the burned agents (D.reshuffleKit), so late fights still pay.
+    if (D.reshuffleKit && G.kit.length < n && G.discard.length) { G.kit = shuffle([...G.discard, ...G.kit], G.rnd); G.discard = []; G.stats.reshuffles = (G.stats.reshuffles || 0) + 1; log(G, 'The kit deck is empty: the burned agents are shuffled into a new one.'); }
+    for (let i = 0; i < n && G.kit.length; i++) G.loot.push(G.kit.pop()); if (G.loot.length) log(G, `Kit: ${G.loot.map(c => c.name).join(', ')}.`); }
   // A Beacon's roll chains: everything it brings back rolls the row again, until a roll is quiet or the row is empty.
   function persistRoll(G, why = 'beacon') {
     if (!G.row.length || G.over) return; const r = rowDie(G), back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]);
@@ -121,14 +125,14 @@ function DTD12(D) {
   function beginRound(G) {
     if (G.over) return; G.round++; G.stats.rounds++; G.dice = []; G.rolled = false; G.rest = -1; G.blocks = G.team.map(() => false); G.persist = null; G.decoyRound = false; G.blocksPre = null; G.boost = 0; G.undo = []; G.mark = G.play.length ? G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0].uid : null;
     if (G.round > 1 && !D.flipOnlyPersist) persistRoll(G);
-    if (G.round > 1 && G.play.some(m => m.kind === 'boss' && m.id === 'wyrm')) { log(G, 'Double extortion: the Lockjaw Syndicate rolls for the row.'); persistRoll(G, 'boss'); }
+    if (G.adv && G.round > 1 && G.play.some(m => m.kind === 'boss' && m.id === 'wyrm')) { log(G, 'Double extortion: the Lockjaw Syndicate rolls for the row.'); persistRoll(G, 'boss'); }
   }
   function setRest(G, k) { if (G.phase !== 'combat' || G.rolled || G.team.length < 2) return false; G.rest = G.rest === k ? -1 : k; return true; }
   const has = (G, k, kind) => G.held[k].some(c => c.kind === kind);
   function bonusFor(G, k, m) {
     const id = G.team[k]; let b = 0;
     if (m && id === 'HUN' && m.back > 0) b = P('HUN', 'back', 5);
-    if (m && id === 'RES' && G.play.length && dmgOf(G, m) >= Math.max(...G.play.map(x => dmgOf(G, x)))) b = P('RES', 'top', 5);
+    if (m && id === 'RES' && G.play.length && (P('RES', 'boss', 1) || m.kind !== 'boss') && dmgOf(G, m) >= Math.max(...G.play.filter(x => P('RES', 'boss', 1) || x.kind !== 'boss').map(x => dmgOf(G, x)))) b = P('RES', 'top', 5);
     if (m) b += active(G, 'enrich').length * (D.enrichBonus || 2) + (G.boost || 0);
     if (m && m.scouted && active(G, 'recon').length) b += D.reconBonus || 5;
     return b + (has(G, k, 'forensic') ? 2 : 0);
@@ -163,7 +167,7 @@ function DTD12(D) {
     const auto = d.kind === 'agent' ? 'hits' : !(d.dbl || d.r >= 18) && total(G, d, m) - agentBonus(G, m) < m.def ? 'assist' : null; if (auto) G.stats.auto[auto] += n;
     log(G, `${d.kind === 'agent' ? d.card.name : nm(G, d.k)} hits ${m.name}${n > 1 ? ' twice' : ''}.`);
     if (m.left <= 0) { G.undo = []; if (m.back > 0 && P('HUN', 'gone', 0) && ((d.kind === 'crew' && G.team[d.k] === 'HUN') || (d.kind === 'agent' && d.card.type === 'hunt' && on(G, 'HUN')))) m.gone = true; beaten(G, m); } else (G.undo = G.undo || []).push({ i, m, was, n, auto, left: m.left, logAt: G.log.length });
-    if (n === 2 && m.kind === 'boss' && m.id === 'apt' && !G.over && G.row.length) { G.undo = []; log(G, 'Living off your network: the double stirs the row.'); persistRoll(G, 'boss'); }
+    if (G.adv && n === 2 && m.kind === 'boss' && m.id === 'apt' && !G.over && G.row.length) { G.undo = []; log(G, 'Living off your network: the double stirs the row.'); persistRoll(G, 'boss'); }
     return true;
   }
   // Takes back the last die put on a mob this round, as long as that hit didn't beat it and nothing has touched the mob since.
@@ -206,7 +210,7 @@ function DTD12(D) {
     else if (c.type === 'decoy') { if (!inFight || !G.rolled) return false; G.blocksPre = G.blocksPre || G.blocks.slice(); G.blocks = G.blocks.map(() => true); }
     else if (c.type === 'recon') { if (!G.deck.length) return false; const top = G.deck.slice(-3); const pick = top[Math.max(0, Math.min(top.length - 1, target ?? top.length - 1))]; G.deck = G.deck.filter(x => x !== pick); G.stats.auto.removed++; log(G, `${pick.name} is pulled from the feed for good.`); }
     G.held[k] = G.held[k].filter(x => x !== c); if (!G.held[k].includes(c)) { G.discard.push(c); log(G, `${nm(G, k)} burned the ${c.name}.`); }
-    if (aiOn(G) && G.phase === 'combat' && !G.over) { log(G, 'Hostile takeover: the Rogue AI answers the burn with a Row roll.'); persistRoll(G, 'boss'); }
+    if (G.adv && aiOn(G) && G.phase === 'combat' && !G.over) { log(G, 'Hostile takeover: the Rogue AI answers the burn with a Row roll.'); persistRoll(G, 'boss'); }
     return true;
   }
   function takeLoot(G, i, k, drop) { if (D.sharedKit && k != null) k = 0;

@@ -122,6 +122,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .pick .style{font-family:var(--disp);font-weight:700;font-size:13px;line-height:1.2;letter-spacing:.06em;text-transform:uppercase;color:var(--am)}
 .pick .agl{font-size:14px;line-height:1.35;color:var(--mut)}.pick .agl .phud{color:var(--cy);margin-right:6px}
 .opt .boss-l{font-size:13px}
+.opt .rules-l{font-size:13px;line-height:1.25;color:var(--ink);opacity:.82}.opt[aria-pressed="true"] .rules-l{opacity:1}
 .nw{white-space:nowrap}
 @media (max-width:640px){.picks .pick{grid-template-columns:76px minmax(0,1fr) auto;align-items:start;gap:10px;min-height:0}.picks .pick .art{height:76px;min-height:0;aspect-ratio:auto}
   .pick .pk-t{padding:7px 0 9px}.pick .perk{font-size:14px}.pick .agl{font-size:13px}.pick .st{align-self:center;font-size:12px}}
@@ -277,7 +278,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .mob.ko.gonek .scr::after{content:"Gone for good";border-color:var(--am);color:var(--am);white-space:nowrap;font-size:22px}
 .pbanner.gone{border-color:var(--am);background:#1A120C}.pbanner.gone p b{color:var(--am)}
 .gstamp{flex:none;padding:3px 9px;border:2px solid var(--am);color:var(--am);font-family:var(--disp);font-weight:700;font-size:14px;line-height:1.1;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-4deg)}
-.status .gone-l{color:var(--am)}.status .fix-l b{color:var(--cy)}
+.status .gone-l{color:var(--am)}.status .resh-l{color:var(--cy)}.status .fix-l b{color:var(--cy)}
 .endbar .btn .sub{font-weight:500;font-size:13px;opacity:.8;margin-left:4px}
 .mob.ko .scr::after{content:"Down";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-8deg);padding:4px 14px;border:3px solid var(--cy);color:var(--cy);font-family:var(--disp);font-weight:700;font-size:28px;letter-spacing:.12em;text-transform:uppercase;background:rgba(7,6,10,.8)}
 @keyframes ko{0%{opacity:1;transform:none}70%{opacity:1;transform:scale(.985)}100%{opacity:.3;transform:scale(.96)}}
@@ -403,6 +404,9 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .roster .art{aspect-ratio:1}.roster .nm{font-size:14px;overflow-wrap:normal;word-break:keep-all;hyphens:none}.roster li.down{border-color:var(--fl)}.roster li.down .art{filter:grayscale(1)}
 .roster .num{font-size:13px;color:var(--mut)}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}.stats div{background:var(--bg);padding:10px 12px}.stats .meta{display:block}.stats b{display:block;font-family:var(--mono);font-weight:600;font-size:26px;color:var(--ink);font-variant-numeric:tabular-nums}
+.dur{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 16px}.dur .meta{font-size:15px}.dur .num{font-family:var(--mono);font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.dur .lnk{min-height:44px;padding:0;font-size:15px;color:var(--mut);display:inline-flex;align-items:center;gap:6px}.dur .lnk:hover,.dur .lnk:focus-visible{color:var(--cy)}
+.copyx{display:flex;flex-direction:column;gap:4px}.copyx input{width:100%;font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--s2);border:1px solid var(--rule2);padding:8px}
 .sig{font-family:var(--disp);font-weight:500;font-size:13px;color:var(--mut);border-top:1px solid var(--rule);padding-top:10px}
 .cause{border:1px solid rgba(255,90,42,.4);background:rgba(255,90,42,.07);padding:10px 12px;font-size:17px;max-width:70ch}
 .helped{font-size:16px;line-height:1.45;max-width:70ch;color:var(--ink)}.helped b{color:var(--cy)}

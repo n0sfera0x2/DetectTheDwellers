@@ -7,7 +7,7 @@ const { fonts, guides, CW, CH, BLEED, SAFE } = require('./render');
 
 const json = v => JSON.stringify(v).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
-// items: deck() pairs; info: meta(); pages: the fourteen sheet pages ({ html, cards, slots, side, label }) in print order.
+// items: deck() pairs; info: meta(); pages: the sixteen sheet pages ({ html, cards, slots, side, label }) in print order.
 module.exports = function preview(items, info, pages, { X0, Y0 }) {
   // Each sheet page with its cards swapped for tokens (side + deck index); the page script puts the markup back.
   const sheets = pages.map(p => {

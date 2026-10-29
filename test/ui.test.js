@@ -369,10 +369,10 @@ test('the Recon burn lists the next three situations and pulls the one picked', 
   assert.deepStrictEqual(errors, []);
 });
 
-test('a boss ability that rolls the row names itself in the Row roll banner, and the advice names the trigger', () => {
+test('a boss ability that rolls the row names itself in the Row roll banner, and the advice names the trigger (Full Shift)', () => {
   const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
   const errors = []; w.addEventListener('error', e => errors.push(e.message));
-  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); G.boss = { ...G.boss, ...D.bosses.find(b => b.id === 'wyrm') };
+  w.eval(`UI.mode = 'full'; UI.pick = ['HUN']; start(); G.boss = { ...G.boss, ...D.bosses.find(b => b.id === 'wyrm') };
     const m = { ...D.mobs.find(x => x.id === 'ogre'), kind: 'mob', uid: 997, left: 1, hits: 1, back: 0, up: 0, persist: [1, 20] };
     G.play = []; G.phase = 'point'; G.deck = []; G.row = [m]; G.hps = [999]; G.max = 999; render(); act('flip');`);
   assert.match(d.querySelector('.reveal .move').textContent, /Double extortion: every round it’s still up rolls for the row, so end it fast\./);
@@ -441,4 +441,78 @@ test('the Fixer’s after-fight heal shows in the fight summary', () => {
   const n = (JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'cards.json'), 'utf8')).perks.PAT || {}).fight;
   assert.match(d.querySelector('[data-fixer]').textContent, new RegExp(`The Fixer patched the crew: \\+${n} HP`));
   assert.deepStrictEqual(errors, []);
+});
+
+// Core and advanced rules: First and Quick Shift never show a story card or a boss row trigger; Full Shift shows both.
+const bossReveal = (mode, id) => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = '${mode}'; UI.pick = ['HUN']; start(); G.boss = { ...G.boss, ...D.bosses.find(b => b.id === '${id}') }; G.play = []; G.phase = 'point'; G.deck = []; G.row = []; render(); act('flip');`);
+  return { w, d, errors };
+};
+test('the mode cards say which rules each mode plays', () => {
+  const d = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window.document, t = k => d.querySelector(`[data-a=mode][data-v=${k}] .rules-l`).textContent;
+  assert.strictEqual(t('intro'), 'Core rules'); assert.strictEqual(t('quick'), 'Core rules'); assert.strictEqual(t('full'), 'Core + story cards + boss row triggers');
+  assert.match(d.querySelector('[data-a=mode][data-v=full]').textContent, /Boss: random/);
+});
+test('a Quick Shift boss reveal shows only the core ability, with no row-trigger advice', () => {
+  const D = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'cards.json'), 'utf8'));
+  for (const b of D.bosses) {
+    const { w, d, errors } = bossReveal('quick', b.id);
+    const ab = d.querySelector('.reveal .ability').textContent, mv = d.querySelector('.reveal .move').textContent;
+    assert.doesNotMatch(ab, /\brow\b/, `${b.name}: the core ability mentions the row`); assert.ok(ab.length > b.abilityName.length + 4, `${b.name}: no core ability left`);
+    assert.doesNotMatch(mv, /\brow\b/, `${b.name}: Your move mentions the row trigger`);
+    w.eval(`act('fight'); render();`);
+    assert.doesNotMatch(d.querySelector('.mob .ability').textContent, /\brow\b/);
+    const tip = d.querySelector('.tip'); if (tip) assert.doesNotMatch(tip.textContent, new RegExp(b.abilityName + ':'));
+    assert.deepStrictEqual(errors, []);
+  }
+  // First Shift (Lockjaw, core) teaches the boss without the trigger too.
+  const { d } = bossReveal('intro', 'wyrm'); assert.doesNotMatch(d.querySelector('.reveal').textContent, /rolls for the row/);
+});
+test('a Full Shift boss reveal names the row trigger in the ability and in Your move', () => {
+  for (const id of ['wyrm', 'apt', 'ai']) {
+    const { d, errors } = bossReveal('full', id);
+    assert.match(d.querySelector('.reveal .ability').textContent, /\brow\b/); assert.match(d.querySelector('.reveal .move').textContent, /\brow\b/);
+    assert.deepStrictEqual(errors, []);
+  }
+});
+test('a Quick Shift never deals a story card or shows the Recon Agent’s story clause', () => {
+  for (let seed = 0; seed < 6; seed++) {
+    const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+    w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start();`);
+    assert.strictEqual(w.eval('G.deck.filter(c => c.story).length'), 0, 'a story card in a Quick Shift feed');
+    w.eval(`G.phase = 'loot'; G.loot = [D.kit.find(k => k.type === 'recon')]; render();`);
+    assert.doesNotMatch(d.querySelector('.lootc').textContent, /story card/i);
+  }
+  const r = playThrough('quick', 1); assert.deepStrictEqual(r.errors, []);
+});
+test('a rebuilt kit deck is told once in the status line', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'full'; UI.pick = ['HUN']; start(); G.deck.push({ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 990, left: 1, hits: 1, back: 0, up: 0, def: 5 });
+    act('flip'); act('roll'); G.play.splice(1); G.play[0].left = 1; G.discard = G.kit.splice(0); G.dice.forEach(d => { d.r = 10; d.dbl = false; d.used = false; }); UI.sel = 0; render(); act('hit', String(G.play[0].uid));`);
+  assert.ok(w.eval('G.log.some(l => /^The kit deck is empty/.test(l.t))'), 'the engine never rebuilt the kit deck');
+  const s = d.querySelectorAll('[data-reshuffle]'); assert.strictEqual(s.length, 1); assert.match(s[0].textContent, /Kit deck rebuilt from burned agents/);
+  w.eval(`while (G.phase === 'loot') act('take', '0'); act('flip');`); assert.strictEqual(d.querySelectorAll('[data-reshuffle]').length, 0, 'still told after the next flip');
+  assert.deepStrictEqual(errors, []);
+});
+test('the end screen shows how long the shift took, stores it, and copies a one-line result', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); Clock.t0 -= 14 * 60000; const before = snap(); G.over = true; G.win = true; finish(before);`);
+  assert.match(d.querySelector('[data-dur]').textContent, /Shift took 14 min/);
+  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v23')); assert.strictEqual(Math.round(saved[0].min), 14);
+  const line = w.eval('resultLine()');
+  assert.match(line, /Quick Shift \(core\)/); assert.match(line, /Hunter \(1p\)/); assert.match(line, /14 min/); assert.match(line, /rounds?/); assert.match(line, /agents:/); assert.match(line, /Win: /);
+  d.querySelector('[data-a=copy]').click();
+  assert.ok(d.querySelector('[data-a=copy]').textContent === 'Copied' || d.querySelector('.copyx input').value === line, 'no copy feedback');
+  assert.deepStrictEqual(errors, []);
+});
+test('the built page names its embedded fonts and the SIL Open Font License', () => {
+  const top = html.slice(0, 600);
+  const note = (top.match(/<!--([\s\S]*?)-->/) || [])[1] || '';
+  for (const t of ['Chakra Petch', 'IBM Plex Mono', 'SIL Open Font License 1.1']) assert.ok(note.includes(t), `the font notice lacks ${t}`);
+  assert.match(top, /Copyright 2018 The Chakra Petch Project Authors/); assert.match(top, /Copyright 2017 IBM Corp\./);
+  assert.match(html, /^<!doctype html>/i, 'the notice must not push the doctype down');
 });

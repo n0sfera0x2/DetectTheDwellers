@@ -2,13 +2,17 @@ const test = require('node:test'), assert = require('node:assert');
 const fs = require('fs'), path = require('path');
 const skeleton = require('../deck/skeleton');
 const { build, FACES, SHEETS } = require('../deck/build');
-const CARDS = 63; // 15 mobs, 18 situations, 3 bosses, 5 analysts, 16 kit, 4 HP trackers, 2 references
+const CARDS = 72; // 15 mobs, 18 situations, 3 bosses, 5 analysts, 16 kit, 4 HP trackers, 2 references, 9 markers
 
-test('the deck is 63 cards and builds seven duplex sheets', () => {
+test('the deck is 72 cards and builds eight duplex sheets, the last one all markers', () => {
   const items = build();
   assert.strictEqual(items.length, CARDS);
-  assert.strictEqual(SHEETS, 7);
-  for (let s = 1; s <= 7; s++) for (const side of ['fronts', 'backs'])
+  assert.strictEqual(SHEETS, 8);
+  const info = require('../deck/cards').meta();
+  assert.strictEqual(info.length, CARDS);
+  assert.deepStrictEqual(info.slice(63).map(m => m.type), Array(9).fill('marker'));
+  assert.deepStrictEqual(info.filter(m => m.type === 'marker').map(m => m.id), [...Array(6).fill('marker_back'), 'marker_next', 'marker_round', 'marker_once']);
+  for (let s = 1; s <= 8; s++) for (const side of ['fronts', 'backs'])
     assert.ok(fs.existsSync(path.join(__dirname, '..', 'dist', 'deck', `sheet-${s}-${side}.html`)));
 });
 
@@ -34,7 +38,7 @@ test('every SVG gradient id on a sheet is unique', () => {
 const { chromium, findChrome } = require('../deck/browser');
 const CHROME = findChrome();
 const NO_CHROME = CHROME === undefined ? 'no Chromium found: run `npx playwright install chromium`; rendered checks skipped' : false;
-test('no card content overflows its 240×336 card (all 63 fronts and backs, rendered)', { skip: CHROME === undefined ? 'no Chromium found: run `npx playwright install chromium`; overflow check skipped' : false }, async () => {
+test('no card content overflows its 240×336 card (all 72 fronts and backs, rendered)', { skip: CHROME === undefined ? 'no Chromium found: run `npx playwright install chromium`; overflow check skipped' : false }, async () => {
   build();
   const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});
   try {
@@ -96,7 +100,7 @@ test('no card content overflows its 240×336 card (all 63 fronts and backs, rend
       cards += r.n;
       problems.push(...r.out.map(p => `sheet-${s}-${side} ${p}`));
     }
-    assert.strictEqual(cards, 2 * CARDS, 'expected 63 fronts and 63 backs');
+    assert.strictEqual(cards, 2 * CARDS, 'expected 72 fronts and 72 backs');
     assert.deepStrictEqual(problems, []);
   } finally { await browser.close(); }
 });
@@ -138,7 +142,7 @@ function safeZoneProblems(SAFE) {
   return out;
 }
 
-test('text, numbers, icons and chips sit inside the 1/8 in safe zone (all 63 fronts and backs, rendered)', { skip: NO_CHROME }, async () => {
+test('text, numbers, icons and chips sit inside the 1/8 in safe zone (all 72 fronts and backs, rendered)', { skip: NO_CHROME }, async () => {
   build();
   const { SAFE } = require('../deck/render');
   const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});
@@ -204,16 +208,17 @@ test('a face rendered with bleed lays out its trim area exactly as on the sheet'
   } finally { await browser.close(); }
 });
 
-test('the singles export counts 63 cards: kit 8 × 2, HP tracker × 4, own backs on the two references', () => {
+test('the singles export counts 72 cards: kit 8 × 2, HP tracker × 4, Came back × 6, own backs on the two references', () => {
   const { plan, manifestCsv } = require('../scripts/export-cards');
   const p = plan();
   assert.strictEqual(p.reduce((a, e) => a + e.quantity, 0), CARDS);
-  assert.strictEqual(p.length, CARDS - 8 - 3); // kit copies and HP tracker copies share a front
+  assert.strictEqual(p.length, CARDS - 8 - 3 - 5); // kit, HP tracker and Came back copies share a front
   assert.deepStrictEqual(p.filter(e => e.type === 'kit').map(e => e.quantity), Array(8).fill(2));
   assert.strictEqual(p.find(e => e.id === 'hp_tracker').quantity, 4);
+  assert.deepStrictEqual(p.filter(e => e.type === 'marker').map(e => [e.id, e.quantity]), [['marker_back', 6], ['marker_next', 1], ['marker_round', 1], ['marker_once', 1]]);
   assert.deepStrictEqual(p.filter(e => e.backFile !== 'card_back.png').map(e => e.id), ['ref_row', 'ref_fight']);
   assert.strictEqual(new Set(p.map(e => e.frontFile)).size, p.length);
-  assert.strictEqual(manifestCsv(p).trim().split('\n').length, CARDS - 8 - 3 + 1);
+  assert.strictEqual(manifestCsv(p).trim().split('\n').length, CARDS - 8 - 3 - 5 + 1);
 });
 
 test('a single renders at 825 × 1125 px (2.75 × 3.75 in at 300 dpi)', { skip: NO_CHROME }, async () => {
@@ -256,3 +261,15 @@ test('every analyst card prints its perk and its agent link from data', () => {
     assert.ok(text.includes(flat(c.perk)) && text.includes('Agents ' + flat(c.agent)), `${c.name} should print its perk and agent link`);
   }
 });
+
+test('analyst cards print the perk numbers from data; bosses mark their row trigger as Full Shift; story cards say Advanced', () => {
+  const D = require('../data/cards.json'), { analyst, boss, story } = require('../deck/cards');
+  const flat = s => s.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, '\'').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
+  const card = id => flat(analyst(D.classes.find(c => c.id === id)));
+  assert.ok(card('HUN').includes(`+${D.perks.HUN.back} against mobs that came back`));
+  assert.ok(card('RES').includes(`+${D.perks.RES.top} against the highest-damage mob`) && card('RES').includes(`Your +${D.perks.RES.top}`));
+  assert.ok(card('PAT').includes(`heal ${D.perks.PAT.fight} HP split`) && card('PAT').includes(`You heal ${D.perks.PAT.fight} after every fight`));
+  for (const b of D.bosses) assert.match(flat(boss(b)), /Full Shift: [^.]*row\./, `${b.name} should lead its row trigger with "Full Shift:"`);
+  for (const s of D.situations.filter(x => x.story)) assert.ok(flat(story(s)).includes('Advanced · Full Shift'), `${s.name} should carry the Advanced tag`);
+});
+

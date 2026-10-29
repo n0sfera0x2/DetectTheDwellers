@@ -162,3 +162,30 @@ test('boss hits follow the crew-size table, and the Fixer heals after every figh
   G.phase = 'combat'; G.play = [m]; G.rolled = true; G.dice = [{ kind: 'crew', k: 0, r: 20, dbl: true, used: false }]; E.assign(G, 0, 980);
   assert.strictEqual(G.hps[0] + G.hps[1], 60 + D.perks.PAT.fight);
 });
+
+test('an empty kit deck is rebuilt from burned agents', () => {
+  const G = E.newGame(['HUN'], 'full', { hp: 60, rnd: rng(8) });
+  const burned = G.kit.splice(0, 3); G.discard = burned; G.kit = [];
+  G.phase = 'combat'; G.play = []; G.loot = [];
+  const before = G.discard.length; G.stats.reshuffles = 0;
+  G.play = [{ ...D.mobs.find(m => m.id === 'spray'), kind: 'mob', uid: 990, hits: 1, left: 1, back: 0, up: 0 }]; G.rolled = true;
+  G.dice = [{ kind: 'crew', k: 0, r: 20, dbl: true, used: false }]; E.assign(G, 0, 990);
+  assert.strictEqual(G.stats.reshuffles, 1); assert.strictEqual(G.discard.length, 0);
+  assert.strictEqual(G.loot.length + G.kit.length, before);
+});
+
+test('core modes deal no story cards and skip boss row triggers; Full Shift has both', () => {
+  for (let i = 0; i < 20; i++) {
+    const Q = E.newGame(['HUN', 'RES'], 'quick', { hp: 40, rnd: rng(i) });
+    assert.ok(!Q.adv); assert.strictEqual(Q.deck.filter(c => c.story).length, 0);
+  }
+  const lock = adv => {
+    const G = E.newGame(['HUN', 'RES'], adv ? 'full' : 'quick', { hp: 200, rnd: rng(1) });
+    const boss = { ...D.bosses.find(b => b.id === 'wyrm'), kind: 'boss', uid: 999, hits: 9, left: 9, back: 0, up: 0 };
+    G.row = [{ ...D.mobs.find(m => m.id === 'spray'), kind: 'mob', uid: 998, hits: 3, left: 0, back: 0, up: 0 }];
+    G.deck = []; G.boss = boss; G.phase = 'point'; E.flip(G);
+    const before = G.plog.length; G.dice.forEach(d => { d.used = true; }); G.rolled = true; E.endRound(G);
+    return G.plog.slice(before).filter(x => x.why === 'boss').length;
+  };
+  assert.strictEqual(lock(false), 0); assert.ok(lock(true) >= 1);
+});

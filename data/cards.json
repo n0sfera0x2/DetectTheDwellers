@@ -741,14 +741,14 @@
    "id": "HUN",
    "name": "Hunter",
    "trait": "Threat hunter",
-   "perk": "+5 against mobs that came back from the row. Any comeback you finish is gone for good.",
+   "perk": "+3 against mobs that came back from the row. Any comeback you finish is gone for good.",
    "agent": "Hunt Agents hunt with you: a comeback they finish is gone for good too."
   },
   {
    "id": "RES",
    "name": "Responder",
    "trait": "First responder",
-   "perk": "+2 against the highest-damage mob in play, boss included.",
+   "perk": "+3 against the highest-damage mob in play, boss included.",
    "agent": "Containment Agents cut 1 more damage."
   },
   {
@@ -769,7 +769,7 @@
    "id": "PAT",
    "name": "Fixer",
    "trait": "Medic",
-   "perk": "After every fight, heal 4 HP split across the crew. Off-shift, heal 3 split instead of 1 for yourself.",
+   "perk": "After every fight, heal 5 HP split across the crew. Off-shift, heal 3 split instead of 1 for yourself.",
    "agent": "Recovery Agents heal 3 more after each fight."
   }
  ],
@@ -784,37 +784,37 @@
  "hp": {
   "full": {
    "1": {
-    "Recruit": 58,
-    "Analyst": 47,
+    "Recruit": 60,
+    "Analyst": 48,
     "Veteran": 38
    },
    "2": {
-    "Recruit": 58,
-    "Analyst": 47,
+    "Recruit": 60,
+    "Analyst": 48,
     "Veteran": 38
    },
    "3": {
-    "Recruit": 58,
-    "Analyst": 47,
+    "Recruit": 60,
+    "Analyst": 48,
     "Veteran": 38
    },
    "4": {
-    "Recruit": 58,
-    "Analyst": 47,
+    "Recruit": 60,
+    "Analyst": 48,
     "Veteran": 38
    }
   },
   "quick": {
-   "1": 40,
-   "2": 40,
-   "3": 40,
-   "4": 40
+   "1": 37,
+   "2": 37,
+   "3": 37,
+   "4": 37
   },
   "intro": {
-   "1": 32,
-   "2": 32,
-   "3": 32,
-   "4": 32
+   "1": 29,
+   "2": 29,
+   "3": 29,
+   "4": 29
   }
  },
  "modes": {
@@ -941,11 +941,12 @@
  },
  "perks": {
   "HUN": {
-   "back": 5,
+   "back": 3,
    "gone": 1
   },
   "RES": {
-   "top": 2,
+   "top": 3,
+   "boss": 1,
    "contain": 1
   },
   "ENG": {
@@ -958,14 +959,20 @@
   },
   "PAT": {
    "rest": 3,
-   "fight": 4,
+   "fight": 5,
    "recover": 3
   }
  },
  "bossAdd": {
   "1": 1,
-  "2": 2,
+  "2": 3,
   "3": 4,
   "4": 6
+ },
+ "reshuffleKit": true,
+ "advanced": {
+  "full": true,
+  "quick": false,
+  "intro": false
  }
 }

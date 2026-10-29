@@ -14,15 +14,30 @@ Tuned with `sim/` against a careful bot, never yet against enough humans.
 
 | Mode | Target win rate | Shipped |
 | --- | --- | --- |
-| Full Shift, Recruit | 60–70% | 58 HP |
-| Full Shift, Analyst | ~50% | 47 HP |
+| Full Shift, Recruit | 60–70% | 60 HP |
+| Full Shift, Analyst | ~50% | 48 HP |
 | Full Shift, Veteran | 35–40% | 38 HP |
-| Quick Shift | ~60% (booth-friendly) | 40 HP |
-| First Shift | ~70% | 32 HP |
+| Quick Shift | ~60% (booth-friendly) | 37 HP |
+| First Shift | ~70% | 29 HP |
 
 Other things worth holding: every player count within about 10 points of each other; roughly 5–6 comebacks per Full Shift; a real share of losses before the boss (the row has to matter), but no more than about 40–45%, so the boss stays the climax; winners usually ending at a quarter to a third of their HP. `npm run balance` enforces loose bands in CI.
 
 ## Decisions worth remembering
+
+- **The kit deck reshuffles (`reshuffleKit`, 2026-10-29).** Before this, the kit deck ran dry in 32% of Full Shifts, so the late fights, the ones that matter, paid nothing. Now, when a draw needs more cards than the kit deck holds, the discard pile (burned and dropped agents) is shuffled into a new kit deck. The engine logs "The kit deck is empty: the burned agents are shuffled into a new one." and counts it in `G.stats.reshuffles`. The rule sits on the "A fight" reference card's Won line and in the Kit section of the core rules.
+- **Core rules and advanced modules (`advanced`, `G.adv`, 2026-10-29).** The rules had grown to about 2,300 words: too much to teach at a booth, where a stranger has a minute of attention before the first flip. First Shift and Quick Shift now play the **core** rules, about one printed page: no story cards and no boss row triggers. Each boss keeps the rest of its ability (Lockjaw's +2 damage, the Operator's comeback, the Rogue AI's agent shutdown). Full Shift adds the **advanced modules**: story cards (3 per feed) and boss row triggers. `docs/RULES.md` is split the same way (core, advanced, reference). Print: each boss card leads its row-trigger sentence with an amber "Full Shift:", story cards carry "Advanced · Full Shift" on their tag line, and the row mat's setup line names the split.
+- **Components for a physical release (2026-10-29).** 6 crew d20s in one colour, 3 agent d20s in a second colour, 1 row d20 in amber, and coins (2 per HP tracker plus about 20 for hits). A four-player round with a Triage burn can need 9–10 dice plus the row die; agent dice get their own colour because they can't hit the boss and the Engineer gives them +3.
+- **A marker sheet: 72 cards on eight sheets (2026-10-29).** The web build tracks state a table has to remember by hand, so an eighth sheet of 9 marker cards (`meta` type `marker`) carries it: 6 **Came back** cards (amber, tucked under a comeback so only a "BACK" band shows above it; it decides the Hunter's +3, Hunt Agent targets and gone-for-good), 1 **Next mob** card (Defense and Damage coin tracks for a story card's mark), 1 **Round** card (a 1–8 track for Escalating and Lockjaw's trigger) and 1 **Once per fight** card (Decoy used, Operator risen). Each has the shared card back. The PDF is 16 Letter pages; the singles export prints the Came back front × 6.
+- **Analyst retune (2026-10-29).** Two-player crews led by up to 16 points in Full Shift, and the win-rate spread across analyst pairs was 43–69%. After it, two-player crews sit with the other crew sizes, but pairs still run 37–60% (1,500 games per pair, Analyst HP, 2026-10-29): Engineer pairs sit lowest and Hunter + Soarcerer highest, so pair synergy is the next thing to tune. `perks` now: Hunter +3 against comebacks (was +5), and comebacks it or a Hunt Agent finishes are gone for good; Responder +3 against the highest-damage mob, boss included (was +2), Containment cuts 1 more; Engineer doubles on 17–20, agent dice +3; Soarcerer +1 tray slot and +1 kit card per won fight; Fixer heals 5 split after every fight (was 4) and 3 split off-shift, Recovery heals 3 more. The class `perk` text and the cards' "Your move" lines print the numbers from `perks`.
+- **`bossAdd` 2p goes to +3: {1: +1, 2: +3, 3: +4, 4: +6}** (was +2 at two players), with `mobAdd` unchanged at {1: −1, 2: 0, 3: +2, 4: +4}. With the analyst retune it brings two-player crews back into line. New HP, all bands passing and every mode's crew sizes within 8 points (gate run of 2026-10-29; Full Shift Analyst 49–55% across 1–4 players):
+
+| Mode | HP |
+| --- | --- |
+| Full Shift, Recruit | 60 |
+| Full Shift, Analyst | 48 |
+| Full Shift, Veteran | 38 |
+| Quick Shift | 37 |
+| First Shift | 29 |
 
 - **Analyst redesign: a perk and an agent link each (2026-10-29).** The user asked for more interesting, more balanced analysts. Solo, they ran from 40% to 73% (Full Shift, Analyst): the Responder's +5 on the highest-damage mob landed on the boss in every fight, so a solo Responder always had it, and the Fixer's off-shift heal did nothing for a crew of one. Now every analyst has a perk and an agent link, both text on the class (`perk`, `agent`) with the numbers in `perks` in `data/cards.json`:
 
@@ -36,8 +51,8 @@ Other things worth holding: every player count within about 10 points of each ot
 
   Solo win rates before → after (bot sims, 2026-10-29, 1,500 games each). Full Shift, Analyst: Responder 73 → 48, Engineer 61 → 48, Soarcerer 49 → 54, Hunter 44 → 54, Fixer 40 → 48. Quick Shift: 43–78 → 49–62. The engine logs a hunted comeback ("X is hunted down for good") and counts it in `G.stats.hunted`. Print: each analyst card shows the perk, the agent link under a cyan "Agents" label, and a "Your move" line that reads as a playstyle, with its numbers pulled from `perks`.
 - **Agent links: every analyst makes one kind of automation better.** The design intent is that automation is how a SOC survives the night, and the analysts should teach that too. Each agent link boosts one agent type (Hunt, Containment, the rolling agents, the tray and draw, Recovery), and it works for the whole crew's agents, not just the analyst's own. So a crew of analysts builds agent synergies: a Hunter wants Hunt Agents, an Engineer wants Triage and Hunt, a Fixer wants Recovery, and the Soarcerer feeds all of them.
-- **Boss hits by crew size: `bossAdd` {1: +1, 2: +2, 3: +4, 4: +6}** on the printed `hitsBase`, replacing "printed + 1 per analyst". The boss fight is a big share of a short game, so in Quick Shift and First Shift a flat +1 per analyst let crew sizes drift apart; a per-count table, like `mobAdd` for mobs, keeps the short modes even across crew sizes. Boss cards print all four numbers in a hit strip like the mob cards, and have no hit boxes.
-- **HP for the analyst redesign and `bossAdd`:** all bands pass in the bot sims of 2026-10-29. `mobAdd` stays {1: −1, 2: 0, 3: +2, 4: +4}.
+- **Boss hits by crew size: `bossAdd` {1: +1, 2: +2, 3: +4, 4: +6}** (2p since raised to +3, above) on the printed `hitsBase`, replacing "printed + 1 per analyst". The boss fight is a big share of a short game, so in Quick Shift and First Shift a flat +1 per analyst let crew sizes drift apart; a per-count table, like `mobAdd` for mobs, keeps the short modes even across crew sizes. Boss cards print all four numbers in a hit strip like the mob cards, and have no hit boxes.
+- **HP for the analyst redesign and `bossAdd`** (superseded by the analyst retune above): all bands pass in the bot sims of 2026-10-29. `mobAdd` stays {1: −1, 2: 0, 3: +2, 4: +4}.
 
 | Mode | HP |
 | --- | --- |
@@ -60,7 +75,7 @@ Other things worth holding: every player count within about 10 points of each ot
 | Quick Shift | 40 |
 | First Shift | 31 |
 
-- **63 cards, seven duplex sheets.** 15 mobs, 18 situations (9 of them story cards), 3 bosses, 5 analysts, 16 kit (8 types × 2), 4 HP trackers and 2 double-sided references: seven 9-up Letter sheets, a 14-page print-and-play PDF. The count is an invariant: `deck/build.js`, the singles export and the deck tests all check it, and changing it changes the sheet layout.
+- **72 cards, eight duplex sheets** (63 and seven before the marker sheet, above). 15 mobs, 18 situations (9 of them story cards), 3 bosses, 5 analysts, 16 kit (8 types × 2), 4 HP trackers, 2 double-sided references and 9 markers: eight 9-up Letter sheets, a 16-page print-and-play PDF. The count is an invariant: `deck/build.js`, the singles export and the deck tests all check it, and changing it changes the sheet layout.
 - **A steeper mob-hits table: `mobAdd` {1: −1, 2: 0, 3: +2, 4: +4}** on the printed 2-player hits, never below 1. It replaces {−1, 0, +1, +2}; with boss row triggers and story cards, the steeper table for big crews keeps every player count inside its band.
 - **One HP number per difficulty.** Crew size is absorbed by the dice rule (one die each, two for on point) and mob hits (the `mobAdd` table). Don't reintroduce per-count HP tables; fix spread with scaling instead.
 - **Comebacks return at full hits, and still strike on arrival.** The user's call (2026-10-29): a mob that persists should come back as strong as it left, so persistence feels like real persistence. The old one-hit comeback made the row a speed bump. The arrival hit stays capped at the two highest-Damage comebacks per roll (`strikeCap`); the `returnHits` key is gone.
@@ -81,9 +96,8 @@ Other things worth holding: every player count within about 10 points of each ot
 
 ## Open items
 
-- **Known gap: two-player crews run a few points ahead in Full Shift.** In the 2026-10-29 gate run, Analyst difficulty ran 45–61% across crew sizes, with two players at the top. It is inside the bands, but the spread is wider than the 10-point aim. Fix it through scaling (`mobAdd`, `bossAdd`), not HP tables.
-- Human playtests: First Shift with someone new, then Full Shift at two and four players.
-- Re-time Quick Shift at the booth. Full-hit comebacks and two kit draws per fight change its length again; the 12.9-combat-round figure predates them.
+- **Time human games with the web build's shift timer:** First Shift, Quick Shift and Full Shift, at two and four players. The booth promise is 10–15 minutes; nobody has timed a real table since full-hit comebacks, two kit draws per fight, the kit reshuffle and the core / advanced split.
+- Human playtests: First Shift with someone new (does the one-page core teach it?), then Full Shift at two and four players.
 - See the printed cards by eye (longest name: Living-off-the-Land Scavenger).
 - Commission real art. The vector silhouettes are placeholders, and AI-made art can't be copyrighted.
 - Counsel review and a USPTO search on the name.

@@ -1,5 +1,5 @@
-// Builds the print-and-play PDF, exports/detect-the-dwellers-pnp.pdf, from the seven 9-up Letter sheets:
-// fourteen pages in sheet order, each fronts page followed by its mirrored backs page, so a duplex print
+// Builds the print-and-play PDF, exports/detect-the-dwellers-pnp.pdf, from the eight 9-up Letter sheets:
+// sixteen pages in sheet order, each fronts page followed by its mirrored backs page, so a duplex print
 // (flip on the long edge) puts every back behind its front. Crop marks and the outer bleed are kept.
 // Print at 100% (actual size). Usage: npm run export:pdf
 const fs = require('fs'), path = require('path');
@@ -26,7 +26,7 @@ async function buildPdf() {
     await page.pdf({ path: PDF, width: '8.5in', height: '11in', margin: { top: 0, right: 0, bottom: 0, left: 0 }, printBackground: true, scale: 1, preferCSSPageSize: true });
   } finally { await browser.close(); }
   const info = inspect(fs.readFileSync(PDF));
-  if (info.pages !== 14) throw new Error(`PDF has ${info.pages} pages, expected 14`);
+  if (info.pages !== 16) throw new Error(`PDF has ${info.pages} pages, expected 16`);
   if (!info.size || Math.round(info.size[0]) !== 612 || Math.round(info.size[1]) !== 792) throw new Error(`PDF page is ${info.size}, expected 612 × 792 pt (Letter)`);
   return info;
 }

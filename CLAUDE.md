@@ -7,7 +7,7 @@ Guidance for Claude Code working in this repo.
 Detect the Dwellers: a co-op d20 card game (1–4 players) set on a cyberpunk SOC night shift. One rules engine drives three outputs:
 
 1. **The playable web version**, a single self-contained HTML file (`dist/index.html`).
-2. **The print deck**, 63 poker-size cards on seven duplex Letter sheets (`dist/deck/`).
+2. **The print deck**, 72 poker-size cards on eight duplex Letter sheets (`dist/deck/`).
 3. **The balance sims**, a bot that plays thousands of games to tune HP and check spread.
 
 ## Layout
@@ -37,7 +37,7 @@ npm run stats          # full report at shipped HP (losses before boss, comeback
 npm run cards          # regenerate docs/CARDS.md
 npm run golden         # re-snapshot print cards after an intentional card change
 npm run export:cards   # exports/: 825 × 1125 singles (300 dpi, bleed), manifest.csv, upload zip
-npm run export:pdf     # exports/detect-the-dwellers-pnp.pdf: the seven duplex sheets, 14 Letter pages
+npm run export:pdf     # exports/detect-the-dwellers-pnp.pdf: the eight duplex sheets, 16 Letter pages
 npm run serve          # serve dist/ on localhost:8080
 ```
 
@@ -56,11 +56,11 @@ A rule or card change usually touches several places. Work through them in order
 
 ## Invariants
 
-- **63 cards exactly:** 15 mobs, 18 situations (9 of them story cards with a Recon line), 3 bosses, 5 analysts, 16 kit (8 types × 2), 4 HP trackers, 2 double-sided references. Changing the count changes the sheet layout.
+- **72 cards exactly:** 15 mobs, 18 situations (9 of them story cards with a Recon line), 3 bosses, 5 analysts, 16 kit (8 types × 2), 4 HP trackers, 2 double-sided references, 9 markers (6 Came back, Next mob, Round, Once per fight) on the eighth sheet. Changing the count changes the sheet layout.
 - **One starting HP per difficulty, at every player count.** Fix crew-size spread through scaling, not HP tables.
 - **Every mob has exactly one keyword** from the eight in `data/cards.json`.
 - **The engine stays deterministic given `opt.rnd`.** Tests and sims rely on seeded games.
-- **Persisted UI state is versioned** (`dwellers-board-v22` / `dwellers-v22` in `ui/ui.js`). Bump both when the score shape or rules change enough to make old scores meaningless.
+- **Persisted UI state is versioned** (`dwellers-board-v23` / `dwellers-v23` in `ui/ui.js`). Bump both when the score shape or rules change enough to make old scores meaningless.
 
 ## Writing style
 

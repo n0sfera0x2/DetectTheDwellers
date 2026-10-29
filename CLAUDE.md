@@ -65,3 +65,42 @@ Card and rules text is punchy and plain: short sentences, second person, no corp
 ## Hosting
 
 The page is one file with no server. On GitHub Pages the leaderboard falls back to the browser's local storage. Inside a Claude artifact it uses the shared artifact database (`window.claude.use('db')`).
+
+## Game Studio framework
+
+This repo also carries [Claude Code Game Studios](https://github.com/Donchitos/Claude-Code-Game-Studios) 1.2.0 (MIT, `.claude/LICENSE-claude-code-game-studios`): 74 skills, 49 agents, hooks and rules under `.claude/`, configured by `project.yaml`. The sections above win where they conflict with it.
+
+- **Engine:** none. The game is plain JavaScript and HTML with Node tooling, so ignore the Godot, Unity and Unreal specialists and `docs/engine-reference/`.
+- **Start here:** run `/start` once to set `modes.rigor` and `modes.automation` in `project.yaml`, or `/adopt` to audit this existing project against the studio's formats.
+- Hooks, deny rules and the ask-first mode load only when Claude Code starts in this folder.
+
+### Project structure
+
+@.claude/docs/directory-structure.md
+
+### Coordination rules
+
+@.claude/docs/coordination-rules.md
+
+### Collaboration protocol
+
+**User-driven collaboration, not autonomous execution.** Every task follows: **Question -> Options -> Decision -> Draft -> Approval**
+
+- Agents MUST ask "May I write this to [filepath]?" before using Write/Edit tools (exempt: `active.md` appends, agent memory, a subagent's new file at the path its orchestrating skill named; see `.claude/rules/agent-memory.md`)
+- Agents MUST show drafts or summaries before requesting approval
+- Multi-file changes require explicit approval for the full changeset
+- No commits without user instruction
+- A skipped or dismissed question is not an answer: act on nothing, re-ask in plain text and wait
+
+See `docs/COLLABORATIVE-DESIGN-PRINCIPLE.md` for the full protocol.
+
+### Coding standards
+
+@.claude/docs/coding-standards.md
+
+### Context management
+
+Read `.claude/docs/context-management.md` on demand. Two conventions are load-bearing:
+
+- **`production/session-state/active.md` is the session checkpoint.** Read it first after any compaction, crash, or `/clear`.
+- **Helpers in `.claude/scripts/` emit observations, never verdicts.**

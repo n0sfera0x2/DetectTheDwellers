@@ -21,3 +21,20 @@ docs/consistency-failures.md
 *.key
 credentials.json
 secrets.json
+
+# Claude Code skills and Claude Code Game Studios: local tooling, not part of the game
+.claude/
+project.yaml
+design/
+production/
+.gitattributes
+.worktreeinclude
+src/CLAUDE.md
+docs/CLAUDE.md
+docs/COLLABORATIVE-DESIGN-PRINCIPLE.md
+docs/WORKFLOW-GUIDE.md
+docs/architecture/
+docs/engine-reference/
+docs/registry/
+docs/migration-guide-v1.1.md
+docs/skill-flow-diagrams.md

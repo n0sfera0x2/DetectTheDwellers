@@ -5,16 +5,22 @@ const D = require('../data/cards.json');
 const E = DTD12(D);
 
 function step(G) {
-  if (G.phase === 'point') { const k = G.hps.indexOf(Math.max(...G.hps)); E.setPoint(G, k); return E.flip(G); }
+  if (G.phase === 'point') {
+    // Burn a Recon Agent to pull the nastiest of the next three cards, when one is a heavy hitter.
+    const ri = G.held[0].findIndex(c => c.type === 'recon'), top = G.deck.slice(-3), worst = top.map((c, i) => [c.kind === 'mob' ? c.dmg * c.hits : 0, i]).sort((a, b) => b[0] - a[0])[0];
+    if (ri >= 0 && worst && worst[0] >= 16) E.burn(G, 0, ri, worst[1]);
+    const k = G.hps.indexOf(Math.max(...G.hps)); E.setPoint(G, k); return E.flip(G);
+  }
   if (G.phase === 'sit') {
     const c = G.cur; let o = 0;
     if (c.id === 'blast') o = G.hps[G.point] > 8 && G.team.length >= 3 ? 1 : 0;
+    if (c.id === 'ceo') o = G.team.length >= 2 ? 1 : 0;
     if (c.id === 'patch') o = G.hps.reduce((a, b) => a + b, 0) / G.team.length < G.max * 0.7 ? 0 : 1;
     return E.resolveSit(G, o);
   }
   if (G.phase === 'loot') {
     if (G.held[0].length < E.slots(G, 0)) return E.takeLoot(G, 0, 0);
-    const rank = t => ({ enrich: 8, triage: 7, recover: 6, contain: 5, decoy: 4, hunt: 3, patch: 2, recon: 1 })[t];
+    const rank = t => ({ enrich: 8, triage: 7, recover: 6, contain: 5, recon: D.botRecon ?? 4, decoy: 3, hunt: 2, patch: 1 })[t];
     const c = G.loot[0];
     const worst = G.held[0].map((x, i) => [rank(x.type), i]).sort((a, b) => a[0] - b[0])[0];
     return worst && rank(c.type) > worst[0] ? E.takeLoot(G, 0, 0, worst[1]) : E.takeLoot(G, 0, null);

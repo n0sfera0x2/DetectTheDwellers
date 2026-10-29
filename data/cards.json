@@ -283,8 +283,8 @@
    "name": "The Lockjaw Syndicate",
    "def": 16,
    "dmg": 9,
-   "abilityName": "Ransom demand",
-   "abilityText": "+2 damage until it has taken two hits.",
+   "abilityName": "Double extortion",
+   "abilityText": "+2 damage until it has taken two hits. At the end of every round it’s still up, roll for the row.",
    "domain": "Endpoint",
    "hitsBase": 7
   },
@@ -294,7 +294,7 @@
    "def": 15,
    "dmg": 9,
    "abilityName": "Living off your network",
-   "abilityText": "The first time you beat it, it comes back with 2 hits left.",
+   "abilityText": "The first time you beat it, it comes back with 2 hits left. Every double that hits it rolls for the row.",
    "domain": "Identity",
    "hitsBase": 7
   },
@@ -304,7 +304,7 @@
    "def": 17,
    "dmg": 9,
    "abilityName": "Hostile takeover",
-   "abilityText": "Agents can't roll while it's in play.",
+   "abilityText": "Agents can’t roll while it’s in play. Burning one rolls for the row.",
    "domain": "Cloud",
    "hitsBase": 6
   }
@@ -441,6 +441,169 @@
    },
    "text": "An email from Finance lands in the dead of night: approved. Nobody knows why, and you don’t ask.",
    "rule": "Draw two kit cards."
+  },
+  {
+   "id": "insider",
+   "name": "The Badge That Wasn’t",
+   "type": "challenge",
+   "who": "point",
+   "need": 12,
+   "pass": {},
+   "fail": {
+    "hp": -4,
+    "to": "point",
+    "row": 1
+   },
+   "text": "A badge swipes into the server room at 03:10. Its owner left on Friday. You’re on point: find out who’s holding it.",
+   "rule": "On point: roll 12+ in one attempt. Fail: you lose 4 HP and roll for the row.",
+   "recon": {
+    "kit": 1
+   },
+   "reconText": "You pulled the badge logs at 22:00. Skip the roll and draw a kit card.",
+   "story": true
+  },
+  {
+   "id": "lateral",
+   "name": "Lateral Whispers",
+   "type": "event",
+   "fx": {
+    "row": 1
+   },
+   "text": "Logons hop from host to host, one every ninety seconds. Something you beat is looking for a way back in.",
+   "rule": "Roll for the row now. Anything that comes back, you fight after this.",
+   "recon": {
+    "unrow": 1
+   },
+   "reconText": "You mapped the path first. Discard one mob from the persistence row instead.",
+   "story": true
+  },
+  {
+   "id": "ceo",
+   "name": "The CEO’s Inbox",
+   "type": "choice",
+   "text": "A wire request sits in the CEO’s inbox, signed with her name. She’s on a plane. It’s due by 04:00.",
+   "rule": "Choose one.",
+   "opts": [
+    {
+     "label": "Quarantine everything: everyone loses 2 HP",
+     "fx": {
+      "hp": -2,
+      "to": "all"
+     }
+    },
+    {
+     "label": "Let it ride: the next mob you flip gets +2 Damage",
+     "fx": {
+      "nextMob": {
+       "dmg": 2
+      }
+     }
+    }
+   ],
+   "recon": {
+    "kit": 1
+   },
+   "reconText": "You flagged the sender an hour ago. No cost, and draw a kit card.",
+   "story": true
+  },
+  {
+   "id": "change",
+   "name": "Ghost in the Change Window",
+   "type": "event",
+   "fx": {
+    "nextMob": {
+     "def": 3
+    }
+   },
+   "text": "A firewall rule changed at 01:00. There’s no ticket, and the account that made it doesn’t exist.",
+   "rule": "The next mob you flip has +3 Defense.",
+   "recon": {
+    "nextMob": {
+     "def": -3
+    }
+   },
+   "reconText": "You read the change before it landed. The next mob has −3 Defense instead.",
+   "story": true
+  },
+  {
+   "id": "chatter",
+   "name": "Dark Web Chatter",
+   "type": "event",
+   "fx": {
+    "kit": 1
+   },
+   "text": "Your company’s name turns up on a forum at 02:30, next to a price. Someone is selling a way in.",
+   "rule": "Draw a kit card.",
+   "recon": {
+    "kit": 2
+   },
+   "reconText": "You know what they’re selling. Draw two kit cards.",
+   "story": true
+  },
+  {
+   "id": "usb",
+   "name": "The Janitor’s USB",
+   "type": "challenge",
+   "who": "each",
+   "need": 10,
+   "pass": {},
+   "fail": {
+    "hp": -3,
+    "to": "self"
+   },
+   "text": "A USB stick sits on the break-room table, labelled SALARIES 2026. Three people have already plugged it in.",
+   "rule": "Everyone rolls once. Anyone under 10 loses 3 HP.",
+   "recon": {},
+   "reconText": "You blocked removable media at the last change window. Nobody rolls.",
+   "story": true
+  },
+  {
+   "id": "ioc",
+   "name": "Old Case, New IOC",
+   "type": "event",
+   "fx": {
+    "call": 1
+   },
+   "text": "A partner sends a hash from a case you closed in March. It’s running on a laptop on the fourth floor.",
+   "rule": "The mob in the row with the widest range comes back now, with no arrival hit. Fight it after this.",
+   "recon": {
+    "unrow": 1
+   },
+   "reconText": "You kept the case open. Discard that mob from the row for good instead.",
+   "story": true
+  },
+  {
+   "id": "honey",
+   "name": "Honeytoken Tripped",
+   "type": "event",
+   "fx": {
+    "hp": 2,
+    "to": "all"
+   },
+   "text": "The fake admin password you planted in 2024 just got used. Now you know exactly where they are.",
+   "rule": "Everyone heals 2 HP.",
+   "recon": {
+    "hp": 3,
+    "to": "all",
+    "kit": 1
+   },
+   "reconText": "You were watching the trap. Everyone heals 3 HP, and draw a kit card.",
+   "story": true
+  },
+  {
+   "id": "vendor",
+   "name": "Vendor Breach Notice",
+   "type": "event",
+   "fx": {
+    "hp": -2,
+    "to": "all",
+    "row": 1
+   },
+   "text": "An email from your payroll vendor lands at 04:12: they were breached in June. They’re telling you now.",
+   "rule": "Everyone loses 2 HP. Then roll for the row.",
+   "recon": {},
+   "reconText": "You rotated their keys in the spring. Nothing happens.",
+   "story": true
   }
  ],
  "kit": [
@@ -561,16 +724,16 @@
    "kind": "agent",
    "type": "recon",
    "name": "Recon Agent",
-   "text": "Peek at the next situation before picking who’s on point. If it’s a mob, every analyst gets +5 against it all fight.",
-   "burn": "Look at the next 3 situations and bury one at the bottom of the feed."
+   "text": "Peek at the next situation before picking who’s on point. A mob you peeked: everyone gets +5 against it. A story card: you get its Recon line.",
+   "burn": "Look at the next 3 situations and pull one from the feed for good."
   },
   {
    "id": "k16",
    "kind": "agent",
    "type": "recon",
    "name": "Recon Agent",
-   "text": "Peek at the next situation before picking who’s on point. If it’s a mob, every analyst gets +5 against it all fight.",
-   "burn": "Look at the next 3 situations and bury one at the bottom of the feed."
+   "text": "Peek at the next situation before picking who’s on point. A mob you peeked: everyone gets +5 against it. A story card: you get its Recon line.",
+   "burn": "Look at the next 3 situations and pull one from the feed for good."
   }
  ],
  "classes": [
@@ -616,37 +779,37 @@
  "hp": {
   "full": {
    "1": {
-    "Recruit": 70,
-    "Analyst": 60,
-    "Veteran": 47
+    "Recruit": 64,
+    "Analyst": 52,
+    "Veteran": 41
    },
    "2": {
-    "Recruit": 70,
-    "Analyst": 60,
-    "Veteran": 47
+    "Recruit": 64,
+    "Analyst": 52,
+    "Veteran": 41
    },
    "3": {
-    "Recruit": 70,
-    "Analyst": 60,
-    "Veteran": 47
+    "Recruit": 64,
+    "Analyst": 52,
+    "Veteran": 41
    },
    "4": {
-    "Recruit": 70,
-    "Analyst": 60,
-    "Veteran": 47
+    "Recruit": 64,
+    "Analyst": 52,
+    "Veteran": 41
    }
   },
   "quick": {
-   "1": 37,
-   "2": 37,
-   "3": 37,
-   "4": 37
+   "1": 40,
+   "2": 40,
+   "3": 40,
+   "4": 40
   },
   "intro": {
-   "1": 25,
-   "2": 25,
-   "3": 25,
-   "4": 25
+   "1": 31,
+   "2": 31,
+   "3": 31,
+   "4": 31
   }
  },
  "modes": {
@@ -680,6 +843,11 @@
   "quick": 6,
   "intro": 6
  },
+ "storyDeal": {
+  "full": 3,
+  "quick": 2,
+  "intro": 0
+ },
  "alwaysPersist": true,
  "flipOnlyPersist": true,
  "returnStrike": true,
@@ -695,8 +863,8 @@
  "mobAdd": {
   "1": -1,
   "2": 0,
-  "3": 1,
-  "4": 2
+  "3": 2,
+  "4": 4
  },
  "soloDice": 2,
  "keywords": {

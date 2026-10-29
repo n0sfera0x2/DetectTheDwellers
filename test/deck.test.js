@@ -1,12 +1,14 @@
 const test = require('node:test'), assert = require('node:assert');
 const fs = require('fs'), path = require('path');
 const skeleton = require('../deck/skeleton');
-const { build, FACES } = require('../deck/build');
+const { build, FACES, SHEETS } = require('../deck/build');
+const CARDS = 63; // 15 mobs, 18 situations, 3 bosses, 5 analysts, 16 kit, 4 HP trackers, 2 references
 
-test('the deck is 54 cards and builds six duplex sheets', () => {
+test('the deck is 63 cards and builds seven duplex sheets', () => {
   const items = build();
-  assert.strictEqual(items.length, 54);
-  for (let s = 1; s <= 6; s++) for (const side of ['fronts', 'backs'])
+  assert.strictEqual(items.length, CARDS);
+  assert.strictEqual(SHEETS, 7);
+  for (let s = 1; s <= 7; s++) for (const side of ['fronts', 'backs'])
     assert.ok(fs.existsSync(path.join(__dirname, '..', 'dist', 'deck', `sheet-${s}-${side}.html`)));
 });
 
@@ -32,7 +34,7 @@ test('every SVG gradient id on a sheet is unique', () => {
 const { chromium, findChrome } = require('../deck/browser');
 const CHROME = findChrome();
 const NO_CHROME = CHROME === undefined ? 'no Chromium found: run `npx playwright install chromium`; rendered checks skipped' : false;
-test('no card content overflows its 240×336 card (all 54 fronts and backs, rendered)', { skip: CHROME === undefined ? 'no Chromium found: run `npx playwright install chromium`; overflow check skipped' : false }, async () => {
+test('no card content overflows its 240×336 card (all 63 fronts and backs, rendered)', { skip: CHROME === undefined ? 'no Chromium found: run `npx playwright install chromium`; overflow check skipped' : false }, async () => {
   build();
   const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});
   try {
@@ -40,7 +42,7 @@ test('no card content overflows its 240×336 card (all 54 fronts and backs, rend
     const dir = path.join(__dirname, '..', 'dist', 'deck');
     let cards = 0;
     const problems = [];
-    for (let s = 1; s <= 6; s++) for (const side of ['fronts', 'backs']) {
+    for (let s = 1; s <= SHEETS; s++) for (const side of ['fronts', 'backs']) {
       await page.goto('file://' + path.join(dir, `sheet-${s}-${side}.html`));
       const fontsOk = await page.evaluate(async n => {
         const faces = [...document.fonts];
@@ -94,7 +96,7 @@ test('no card content overflows its 240×336 card (all 54 fronts and backs, rend
       cards += r.n;
       problems.push(...r.out.map(p => `sheet-${s}-${side} ${p}`));
     }
-    assert.strictEqual(cards, 108, 'expected 54 fronts and 54 backs');
+    assert.strictEqual(cards, 2 * CARDS, 'expected 63 fronts and 63 backs');
     assert.deepStrictEqual(problems, []);
   } finally { await browser.close(); }
 });
@@ -136,20 +138,20 @@ function safeZoneProblems(SAFE) {
   return out;
 }
 
-test('text, numbers, icons and chips sit inside the 1/8 in safe zone (all 54 fronts and backs, rendered)', { skip: NO_CHROME }, async () => {
+test('text, numbers, icons and chips sit inside the 1/8 in safe zone (all 63 fronts and backs, rendered)', { skip: NO_CHROME }, async () => {
   build();
   const { SAFE } = require('../deck/render');
   const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});
   try {
     const page = await browser.newPage({ viewport: { width: 816, height: 1056 } });
     const problems = []; let cards = 0;
-    for (let s = 1; s <= 6; s++) for (const side of ['fronts', 'backs']) {
+    for (let s = 1; s <= SHEETS; s++) for (const side of ['fronts', 'backs']) {
       await page.goto('file://' + path.join(__dirname, '..', 'dist', 'deck', `sheet-${s}-${side}.html`));
       await page.evaluate(() => document.fonts.ready);
       cards += await page.evaluate(() => document.querySelectorAll('.card').length);
       problems.push(...(await page.evaluate(safeZoneProblems, SAFE)).map(p => `sheet-${s}-${side} ${p}`));
     }
-    assert.strictEqual(cards, 108);
+    assert.strictEqual(cards, 2 * CARDS);
     assert.deepStrictEqual(problems, []);
   } finally { await browser.close(); }
 });
@@ -171,7 +173,7 @@ test('a face rendered with bleed lays out its trim area exactly as on the sheet'
   try {
     const sheet = await browser.newPage({ viewport: { width: 816, height: 1056 } }), solo = await browser.newPage({ viewport: { width: CW + 2 * BLEED, height: CH + 2 * BLEED } });
     const problems = []; let faces = 0;
-    for (let s = 0; s < 6; s++) for (const side of ['fronts', 'backs']) {
+    for (let s = 0; s < SHEETS; s++) for (const side of ['fronts', 'backs']) {
       await sheet.goto('file://' + path.join(__dirname, '..', 'dist', 'deck', `sheet-${s + 1}-${side}.html`));
       await sheet.evaluate(() => document.fonts.ready);
       // Each slot's boxes relative to its trim, against the same card rendered alone with bleed.
@@ -197,21 +199,21 @@ test('a face rendered with bleed lays out its trim area exactly as on the sheet'
         faces++;
       }
     }
-    assert.strictEqual(faces, 108);
+    assert.strictEqual(faces, 2 * CARDS);
     assert.deepStrictEqual(problems, []);
   } finally { await browser.close(); }
 });
 
-test('the singles export counts 54 cards: kit 8 × 2, HP tracker × 4, own backs on the two references', () => {
+test('the singles export counts 63 cards: kit 8 × 2, HP tracker × 4, own backs on the two references', () => {
   const { plan, manifestCsv } = require('../scripts/export-cards');
   const p = plan();
-  assert.strictEqual(p.reduce((a, e) => a + e.quantity, 0), 54);
-  assert.strictEqual(p.length, 43);
+  assert.strictEqual(p.reduce((a, e) => a + e.quantity, 0), CARDS);
+  assert.strictEqual(p.length, CARDS - 8 - 3); // kit copies and HP tracker copies share a front
   assert.deepStrictEqual(p.filter(e => e.type === 'kit').map(e => e.quantity), Array(8).fill(2));
   assert.strictEqual(p.find(e => e.id === 'hp_tracker').quantity, 4);
   assert.deepStrictEqual(p.filter(e => e.backFile !== 'card_back.png').map(e => e.id), ['ref_row', 'ref_fight']);
   assert.strictEqual(new Set(p.map(e => e.frontFile)).size, p.length);
-  assert.strictEqual(manifestCsv(p).trim().split('\n').length, 44);
+  assert.strictEqual(manifestCsv(p).trim().split('\n').length, CARDS - 8 - 3 + 1);
 });
 
 test('a single renders at 825 × 1125 px (2.75 × 3.75 in at 300 dpi)', { skip: NO_CHROME }, async () => {

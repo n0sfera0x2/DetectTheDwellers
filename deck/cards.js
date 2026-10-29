@@ -70,13 +70,24 @@ function sit(s) {
   const big = !s.opts && s.rule.length < 48;
   return shell(`${art(ART['sit_' + s.id] || ART[s.type === 'challenge' ? 'fp' : 'event'], 128)}${row(tag('Situation', CY), hud(kind, CYT))}${nm(s.name, 17)}${tx(s.text, 12, PMUT, 500)}\n<div style="flex: 1 0 auto; background: #FFFFFF; border: 1px solid ${CYT}; padding: 6px 8px; display: flex; flex-direction: column; justify-content: center; gap: 3px">${tx(s.rule, big ? 15 : 12.5, PINK, 700).replace('<div style="', '<div style="text-wrap: pretty; ')}${(s.opts || []).map(o => tx('• ' + o.label, 12, PINK, 500)).join('')}</div>`, CY, CYT);
 }
+// Story cards: a situation with a payoff for the crew that did its homework. Amber frame and a "Story" tag
+// set them apart from plain situations; the read-aloud line and the normal rule sit as usual (the rule box takes the spare height), and a
+// separate cyan "With Recon" box holds the Recon line, which replaces the whole rule when a Recon Agent
+// is running in the tray. The art panel is shorter than a plain situation's to make room for it.
+const EYE = `<svg viewBox="0 0 16 16" width="13" height="13" style="flex: none" fill="none" stroke="${CYT}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8C3.3 4.8 5.5 3.5 8 3.5s4.7 1.3 6.5 4.5c-1.8 3.2-4 4.5-6.5 4.5S3.3 11.2 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>`;
+function story(s) {
+  const kind = { challenge: 'one attempt', choice: 'choose one', event: 'event' }[s.type];
+  const rule = `<div style="flex: 1 0 auto; background: #FFFFFF; border: 1px solid ${RULE}; padding: 3px 7px 4px; display: flex; flex-direction: column; justify-content: center; gap: 1px">${tx(s.rule, s.opts ? 11 : 12, PINK, 700).replace('<div style="', '<div style="text-wrap: pretty; ')}${(s.opts || []).map(o => tx('• ' + o.label, 10.5, PINK, 500)).join('')}</div>`;
+  const recon = `<div style="background: #DDF6FB; border: 1.5px solid ${CY}; padding: 3px 7px 4px; display: flex; flex-direction: column; gap: 1px"><div style="display: flex; gap: 5px; align-items: center; line-height: 13px">${EYE}${hud('With Recon', CYT)}</div>${tx(s.reconText, 11, PINK, 500).replace('<div style="', '<div style="text-wrap: pretty; ')}</div>`;
+  return shell(`${art(ART['sit_' + s.id] || ART[s.type === 'challenge' ? 'fp' : 'event'], 82)}${row(tag('Story', AM), hud(kind, AMT))}${nm(s.name, 14.5)}${tx(s.text, 10.5, PMUT, 500)}\n${rule}${recon}`, AM, AMT);
+}
 // Ransom demand (the engine's dmgOf): Lockjaw deals +2 until it has taken two hits. The card says so
 // beside the printed Damage, and its first two hit boxes are flare (the ability box says why), so the table sees when it drops.
 const RAMP = { wyrm: { add: 2, hits: 2 } };
 function boss(b) {
   const r = RAMP[b.id];
   const dmg = r ? `${b.dmg}<span style="font-size: 11px; color: ${FLT}"> +${r.add}</span>` : b.dmg;
-  return shell(`${art(PRINT_ART['boss_' + b.id], 84)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${boxes(b.hitsBase, r ? r.hits : 0)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Comes last, with a Row roll (no arrival hits). Agents never touch the boss.')}`);
+  return shell(`${art(PRINT_ART['boss_' + b.id], 74)}${row(tag('Boss', FL), hud(b.domain, AMT))}${nm(b.name, 17, FLT)}<div style="display: flex; gap: 4px">${stat('Defense', b.def, FLT)}${stat("Hits", `${b.hitsBase}+`)}${stat('Damage', dmg, PINK, true)}</div>${boxes(b.hitsBase, r ? r.hits : 0)}\n${ability(b.abilityName, b.abilityText)}${foot('Hits: printed + 1 per analyst. Arrives last, with a Row roll (no arrival hits). Agents can’t hit it.')}`);
 }
 // How to play each analyst, in a line or two. The shared fight rules live on the "A fight" reference card.
 const MOVE = {
@@ -92,7 +103,7 @@ function analyst(c) {
 }
 function kit(k) {
   const part = (label, c, t) => `<div style="border-top: 1px solid ${RULE}; padding-top: 2px">${hud(label, c)}${tx(t, 11, PINK, 500)}</div>`;
-  return shell(`${art(ART['kit_' + k.type] || ART[AART[k.type]], 96)}${row(tag('Kit', CY), hud('AI agent', CYT))}${nm(k.name, 17, CYT)}${part('Run it', CYT, k.text)}${part('Or burn it', AMT, k.burn)}\n${foot(`Crew kit tray: ${D.sharedKit} cards (${D.sharedKit + 1} with the Soarcerer). Burn once, then discard.`)}`, CY, CYT);
+  return shell(`${art(ART['kit_' + k.type] || ART[AART[k.type]], 88)}${row(tag('Kit', CY), hud('AI agent', CYT))}${nm(k.name, 17, CYT)}${part('Run it', CYT, k.text)}${part('Or burn it', AMT, k.burn)}\n${foot(`Crew kit tray: ${D.sharedKit} cards (${D.sharedKit + 1} with the Soarcerer). Burn once, then discard.`)}`, CY, CYT);
 }
 // Two tracks, two coins: one on the tens, one on the ones. Your HP is the two added together, so the card
 // holds any HP up to 99 at a size a coin can sit on. The start line is read from data.
@@ -103,15 +114,15 @@ function tracker() {
   return shell(`${row(tag('HP tracker', CY), hud('two coins', CYT))}${nm('Analyst HP', 16)}<div>${tx(`Start: Recruit ${HP.Recruit} · Analyst ${HP.Analyst} · Veteran ${HP.Veteran}`, 10.5, CYT, 700)}${tx(`Quick Shift ${QHP} · First Shift ${IHP}`, 10.5, CYT, 700)}</div>${track('Tens', tens, 5, 32)}${track('Ones', ones, 5, 32)}${foot('HP = tens + ones. 47: one coin on 40, one on 7. Anyone at 0 and the shift is lost.', PINK)}`, CY, CYT);
 }
 function rowmat() {
-  const slots = `<div style="height: 46px; border: 1px dashed ${AMT}; display: flex; align-items: center; justify-content: center">${hud('mob', AMT)}</div>`.repeat(6);
-  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, make the Row roll: one d20. Any mob whose range (on its card) matches comes back at full hits. The two with the highest Damage hit everyone as they arrive.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Setup: deal ${D.deal.full} situations (Quick Shift ${D.deal.quick}, and the crew starts with ${D.quickStartAgent} agents). Boss face down underneath. The shift runs 22:00 to 06:00; the boss comes at 05:59. Survive until dawn.`, 10, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
+  const slots = `<div style="height: 40px; border: 1px dashed ${AMT}; display: flex; align-items: center; justify-content: center">${hud('mob', AMT)}</div>`.repeat(6);
+  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, make the Row roll: one d20. Any mob whose range matches comes back at full hits. The two with the highest Damage hit everyone as they arrive. Bosses roll for the row too: the boss card says when.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Setup: deal ${D.deal.full} situations, ${D.storyDeal.full} of them story cards (Quick Shift ${D.deal.quick} with ${D.storyDeal.quick}, and the crew starts with ${D.quickStartAgent} agents). Boss face down underneath. The shift runs 22:00 to 06:00; the boss comes at 05:59. Survive until dawn.`, 10, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
 }
 // Reference rows: a mono run-in label, then the rule, so each row spends its width on words.
 const runin = (label, t, c = FLT, size = 10) => `<div style="font-family: ${CHK}; font-weight: 500; font-size: ${size}px; line-height: ${lh(size)}px; color: ${PINK}"><span style="font-family: ${MONO}; font-weight: 600; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(label)}</span> ${e(t)}</div>`;
-const refrow = inner => `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 3px">${inner}</div>`;
+const refrow = inner => `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 2px">${inner}</div>`;
 function fight() {
-  const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Mob hits', 'Use the number for your crew size. Boss: printed + 1 per analyst.'], ['Off-shift', 'One analyst may skip their roll: no damage, +1 HP.'],
-    ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', 'Double: two hits, and you block this round. Engineer: 16–20.'], ['Hits', 'Mobs still up hit everyone who didn’t block.'], ['Won', 'Draw two kit cards. Beaten mobs go to the persistence row. Comebacks return at full hits; the two highest-Damage per roll hit everyone.', AMT]];
+  const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Story', 'Recon Agent in the tray? Use the card’s Recon line instead.', CYT], ['Mob hits', 'Use the number for your crew size. Boss: printed + 1 per analyst.'], ['Off-shift', 'One analyst may skip their roll: no damage, +1 HP.'],
+    ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', 'Double: two hits, and you block this round. Engineer: 16–20.'], ['Hits', 'Mobs still up hit everyone who didn’t block.'], ['Won', 'Draw two kit cards. Beaten mobs go to the persistence row.', AMT]];
   return shell(`${tag('Reference', CY)}${nm('A fight', 18)}${rows.map(([a, b, c]) => refrow(runin(a, b, c))).join('')}`, CY, CYT);
 }
 function glossary() {
@@ -136,11 +147,11 @@ function back() {
     + `<div style="position: absolute; left: 24px; right: 24px; bottom: 42px; text-align: center">${hud('SOC night shift · 02:14', CY)}</div><div style="position: absolute; left: 24px; right: 24px; bottom: 24px; text-align: center">${hud('An original game by Binary Defense', MUT, 8.5)}</div></div>`;
 }
 
-// The 54 cards in print order, each as [front, back].
+// The 63 cards in print order, each as [front, back].
 function deck() {
   SID = 0;
   return [
-    ...D.mobs.map(m => [mob(m), back()]), ...D.situations.map(s => [sit(s), back()]),
+    ...D.mobs.map(m => [mob(m), back()]), ...D.situations.map(s => [s.story ? story(s) : sit(s), back()]),
     ...D.bosses.map(b => [boss(b), back()]), ...D.classes.map(c => [analyst(c), back()]),
     ...D.kit.map(k => [kit(k), back()]),
     ...[0, 1, 2, 3].map(() => [tracker(), back()]),
@@ -151,11 +162,11 @@ function deck() {
 // (kit is 8 types × 2, the HP tracker is 4 copies), which is how the singles export counts quantities.
 function meta() {
   return [
-    ...D.mobs.map(m => ({ id: m.id, name: m.name, type: 'mob' })), ...D.situations.map(s => ({ id: s.id, name: s.name, type: 'situation' })),
+    ...D.mobs.map(m => ({ id: m.id, name: m.name, type: 'mob' })), ...D.situations.map(s => ({ id: s.id, name: s.name, type: s.story ? 'story' : 'situation' })),
     ...D.bosses.map(b => ({ id: b.id, name: b.name, type: 'boss' })), ...D.classes.map(c => ({ id: c.id, name: c.name, type: 'analyst' })),
     ...D.kit.map(k => ({ id: 'kit_' + k.type, name: k.name, type: 'kit' })),
     ...[0, 1, 2, 3].map(() => ({ id: 'hp_tracker', name: 'Analyst HP', type: 'hp tracker' })),
     { id: 'ref_row', name: 'Persistence row / Mob keywords', type: 'reference' }, { id: 'ref_fight', name: 'A fight / First Shift', type: 'reference' },
   ];
 }
-module.exports = { deck, meta, mob, sit, boss, analyst, kit, tracker, rowmat, fight, glossary, firstshift, back, PAPER, BG };
+module.exports = { deck, meta, mob, sit, story, boss, analyst, kit, tracker, rowmat, fight, glossary, firstshift, back, PAPER, BG };

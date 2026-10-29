@@ -4,7 +4,7 @@
 
 An original game by Binary Defense.
 
-- **54 cards, four d20s, a few coins.** 1–4 players, 25–35 minutes (Quick Shift: 10–15).
+- **63 cards, four d20s, a few coins.** 1–4 players, 25–35 minutes (Quick Shift: 10–15).
 - **Three ways in:** First Shift (a guided first game), Full Shift, and Quick Shift for the booth.
 
 ## Quick start
@@ -22,7 +22,7 @@ npm run export:pdf     # print-and-play PDF, in exports/
 - **Print:** open `dist/deck/index.html`. Print each sheet's fronts, then its backs on the reverse: 100% scale, duplex, flip on the long edge.
 - **Print preview:** open `dist/deck/preview.html` to check every card against its bleed, trim and safe-zone guides, one at a time, as a grid, or on its sheet.
 - **Print shop:** `npm run export:cards` writes one 825 × 1125 PNG per distinct card (2.75 × 3.75 in at 300 dpi, 1/8 in bleed) to `exports/cards_singles/`, a shared `card_back.png`, `exports/manifest.csv` with copy counts (kit cards print 2 each, the HP tracker 4), and a zip of the lot for MakePlayingCards or The Game Crafter.
-- **Print-and-play PDF:** `npm run export:pdf` writes `exports/detect-the-dwellers-pnp.pdf`, 12 Letter pages, each fronts page followed by its backs. Print duplex at 100%, flip on the long edge.
+- **Print-and-play PDF:** `npm run export:pdf` writes `exports/detect-the-dwellers-pnp.pdf`, 14 Letter pages, each fronts page followed by its backs. Print duplex at 100%, flip on the long edge.
 
 ## How it plays
 
@@ -45,4 +45,4 @@ Working with Claude Code? Start with [CLAUDE.md](CLAUDE.md).
 
 ## Status
 
-Rules v20: comebacks return at full hits (the two highest-Damage per roll still hit on arrival); two kit cards per won fight and a crew tray of five; stronger agents, with the Hunt Agent hunting comebacks; tougher bosses (+2 hits, +2 damage); mob hits by crew size −1/0/+1/+2; HP 70/60/47, Quick Shift 37, First Shift 25, on a two-coin tens-and-ones tracker. The game is balanced to show what automation is worth: the bot wins 1–2% without agents and about 50% with them. (v19: arrival-hit cap, tougher mobs, the 22:00–06:00 shift. v18: per-mob comeback ranges, chaining Beacons. v17: keywords, First Shift, dual-mode kit.) Balance is tuned against a bot; human playtests come next. The art is placeholder vector art pending a commissioned illustrator. Not for distribution until counsel review and a trademark search are done.
+Rules v21: nine story cards (3 per Full Shift feed, 2 per Quick Shift) whose With Recon line replaces the outcome when a Recon Agent is running; the Recon burn pulls a card from the feed for good; every boss has a trigger that rolls for the row, so the boss is the climax again; mob hits by crew size −1/0/+2/+4; HP 64/52/41, Quick Shift 40, First Shift 31; 63 cards on seven duplex sheets. (v20: comebacks return at full hits (the two highest-Damage per roll still hit on arrival); two kit cards per won fight and a crew tray of five; stronger agents, with the Hunt Agent hunting comebacks; tougher bosses (+2 hits, +2 damage); mob hits by crew size −1/0/+1/+2; HP 70/60/47, Quick Shift 37, First Shift 25, on a two-coin tens-and-ones tracker. v19: arrival-hit cap, tougher mobs, the 22:00–06:00 shift. v18: per-mob comeback ranges, chaining Beacons. v17: keywords, First Shift, dual-mode kit.) Balance is tuned against a bot; human playtests come next. The art is placeholder vector art pending a commissioned illustrator. Not for distribution until counsel review and a trademark search are done.

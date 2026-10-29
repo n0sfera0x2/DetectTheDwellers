@@ -7,7 +7,7 @@ const { fonts, guides, CW, CH, BLEED, SAFE } = require('./render');
 
 const json = v => JSON.stringify(v).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
-// items: deck() pairs; info: meta(); pages: the twelve sheet pages ({ html, cards, slots, side, label }) in print order.
+// items: deck() pairs; info: meta(); pages: the fourteen sheet pages ({ html, cards, slots, side, label }) in print order.
 module.exports = function preview(items, info, pages, { X0, Y0 }) {
   // Each sheet page with its cards swapped for tokens (side + deck index); the page script puts the markup back.
   const sheets = pages.map(p => {
@@ -117,7 +117,7 @@ function render() {
   const stage = $('stage');
   if (S.view === 'single') {
     const c = DATA.cards[S.card];
-    stage.innerHTML = '<p class="caption"><b>' + esc(c.name) + '</b>#' + String(c.n).padStart(2, '0') + ' of 54 · ' + esc(c.type) + ' · ' + S.side + ' · 2.75 × 3.75 in with bleed</p>' + scaled(face(pick(c)), FW, FH, z);
+    stage.innerHTML = '<p class="caption"><b>' + esc(c.name) + '</b>#' + String(c.n).padStart(2, '0') + ' of ' + DATA.cards.length + ' · ' + esc(c.type) + ' · ' + S.side + ' · 2.75 × 3.75 in with bleed</p>' + scaled(face(pick(c)), FW, FH, z);
   } else if (S.view === 'grid') {
     stage.innerHTML = '<p class="caption">' + list.length + ' card' + (list.length === 1 ? '' : 's') + ' · ' + S.side + 's · trim + 1/8 in bleed</p><div class="grid">' + list.map(c => '<figure data-n="' + (c.n - 1) + '">' + face(pick(c)) + '<figcaption>' + String(c.n).padStart(2, '0') + ' · <span>' + esc(c.name) + '</span></figcaption></figure>').join('') + '</div>';
   } else {
@@ -128,7 +128,7 @@ function render() {
 }
 
 $('type').innerHTML = '<option value="all">All types</option>' + types.map(t => '<option value="' + t + '">' + t + '</option>').join('');
-$('sheet').innerHTML = [1, 2, 3, 4, 5, 6].map(i => '<option value="' + (i - 1) + '">Sheet ' + i + ' of 6</option>').join('');
+$('sheet').innerHTML = DATA.sheets.filter((_, i) => i % 2 === 0).map((_, i) => '<option value="' + i + '">Sheet ' + (i + 1) + ' of ' + DATA.sheets.length / 2 + '</option>').join('');
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { S.view = b.dataset.view; render(); });
 document.querySelectorAll('[data-side]').forEach(b => b.onclick = () => { S.side = b.dataset.side; render(); });
 $('guides').onchange = e => { S.guides = e.target.checked; render(); };
@@ -144,8 +144,8 @@ const q = new URLSearchParams(location.search);
 if (['single', 'grid', 'sheet'].includes(q.get('view'))) S.view = q.get('view');
 if (q.get('side') === 'back') S.side = 'back';
 if (q.get('guides') === '0') { S.guides = false; $('guides').checked = false; }
-if (q.get('card')) S.card = Math.min(53, Math.max(0, +q.get('card') - 1 || 0));
-if (q.get('sheet')) S.sheet = Math.min(5, Math.max(0, +q.get('sheet') - 1 || 0));
+if (q.get('card')) S.card = Math.min(DATA.cards.length - 1, Math.max(0, +q.get('card') - 1 || 0));
+if (q.get('sheet')) S.sheet = Math.min(DATA.sheets.length / 2 - 1, Math.max(0, +q.get('sheet') - 1 || 0));
 render();
 </script>
 </body>

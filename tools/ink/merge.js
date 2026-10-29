@@ -2,7 +2,7 @@
 // Usage: node tools/ink/<batch>/scenes.js for each batch, then node tools/ink/merge.js [--write] (dry run without --write).
 const fs = require('fs'), path = require('path');
 const REPO = path.join(__dirname, '..', '..');
-const HERE = __dirname, ORDER = ['lead', 'mobs-a', 'mobs-b', 'bosses', 'crew', 'world'];
+const HERE = __dirname, ORDER = ['lead', 'mobs-a', 'mobs-b', 'bosses', 'crew', 'world', 'story'];
 const { JSDOM } = require(path.join(REPO, 'node_modules/jsdom'));
 const parser = new (new JSDOM('').window.DOMParser)();
 
@@ -18,10 +18,12 @@ for (const dir of ORDER) {
   const frag = JSON.parse(fs.readFileSync(f, 'utf8'));
   for (const [target, src, old] of [[art, frag.art || {}, before], [print, frag.print || {}, beforeP]]) {
     for (const [k, v] of flat(src)) {
-      if (!old.has(k)) { problems.push(`${dir}: unknown key ${k}`); continue; }
+      // New situation scenes (sit_<id> for a situation in cards.json) are added; any other unknown key is a mistake.
+      const sitIds = JSON.parse(fs.readFileSync(path.join(REPO, 'data/cards.json'), 'utf8')).situations.map(s => 'sit_' + s.id);
+      if (!old.has(k) && !(target === art && sitIds.includes(k))) { problems.push(`${dir}: unknown key ${k}`); continue; }
       const doc = parser.parseFromString(v.replace(/\{\{SID\}\}/g, 'x'), 'image/svg+xml');
       if (doc.getElementsByTagName('parsererror').length) { problems.push(`${dir}: ${k} does not parse`); continue; }
-      if (viewBox(v) !== viewBox(old.get(k))) problems.push(`${dir}: ${k} viewBox ${viewBox(v)} vs ${viewBox(old.get(k))}`);
+      if (old.has(k) && viewBox(v) !== viewBox(old.get(k))) problems.push(`${dir}: ${k} viewBox ${viewBox(v)} vs ${viewBox(old.get(k))}`);
       if (/\shref=/.test(v)) problems.push(`${dir}: ${k} uses href`);
       if (target === print && !v.includes('{{SID}}') && /\sid="/.test(v)) problems.push(`${dir}: print ${k} ids lack {{SID}}`);
       set(target, k, v); done.add((target === print ? 'print:' : '') + k);

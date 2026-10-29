@@ -2,10 +2,10 @@ const test = require('node:test'), assert = require('node:assert');
 const D = require('../data/cards.json');
 const { E, play, rng, TEAMS } = require('../sim/bot');
 
-test('card counts add up to the 54-card deck', () => {
-  assert.strictEqual(D.mobs.length, 15); assert.strictEqual(D.situations.length, 9);
+test('card counts add up to the 63-card deck', () => {
+  assert.strictEqual(D.mobs.length, 15); assert.strictEqual(D.situations.length, 18); assert.strictEqual(D.situations.filter(s => s.story).length, 9);
   assert.strictEqual(D.bosses.length, 3); assert.strictEqual(D.classes.length, 5); assert.strictEqual(D.kit.length, 16);
-  assert.strictEqual(15 + 9 + 3 + 5 + 16 + 4 + 2, 54);
+  assert.strictEqual(15 + 18 + 3 + 5 + 16 + 4 + 2, 63);
 });
 
 test('every mob has a known keyword and the kit is 8 types × 2', () => {
@@ -109,9 +109,34 @@ test('a comeback returns at full hits, and the Hunt Agent can hit it but not a f
 
 test('the automation report counts agent hits, healing and removals', () => {
   const G = E.newGame(['HUN', 'RES'], 'full', { hp: 60, rnd: rng(9) });
-  assert.deepStrictEqual(G.stats.auto, { hits: 0, assist: 0, saved: 0, healed: 0, removed: 0, dodged: 0 });
+  assert.deepStrictEqual(G.stats.auto, { hits: 0, assist: 0, saved: 0, healed: 0, removed: 0, dodged: 0, recon: 0 });
   const games = Array.from({ length: 40 }, (_, i) => play(['HUN', 'RES'], 'full', { hp: 60, rnd: rng(100 + i) }));
   const total = k => games.reduce((s, g) => s + g.stats.auto[k], 0);
   for (const k of ['hits', 'assist', 'saved', 'healed']) assert.ok(total(k) > 0, `agents should register ${k} over 40 games`);
   assert.ok(games.every(g => Object.values(g.stats.auto).every(v => v >= 0)), 'no negative counts');
+});
+
+test('a story card resolves its Recon line when the crew holds a Recon Agent', () => {
+  const run = recon => {
+    const G = E.newGame(['HUN', 'RES'], 'full', { hp: 60, rnd: rng(4) });
+    const vendor = { ...D.situations.find(s => s.id === 'vendor'), kind: 'sit', uid: 950 };
+    G.deck = [vendor]; G.row = []; if (recon) G.held[0] = [{ ...D.kit.find(c => c.type === 'recon') }];
+    E.setPoint(G, 0); E.flip(G); const res = E.resolveSit(G, 0); return { G, res };
+  };
+  const plain = run(false), scouted = run(true);
+  assert.deepStrictEqual(plain.G.hps, [58, 58]); assert.ok(!plain.res.recon);
+  assert.deepStrictEqual(scouted.G.hps, [60, 60]); assert.ok(scouted.res.recon); assert.strictEqual(scouted.G.stats.auto.recon, 1);
+});
+
+test('every Full Shift feed carries its story beats', () => {
+  for (let i = 0; i < 20; i++) { const G = E.newGame(['HUN'], 'full', { hp: 60, rnd: rng(i) }); assert.strictEqual(G.deck.filter(c => c.story).length, D.storyDeal.full); assert.strictEqual(G.deck.length, D.deal.full); }
+});
+
+test('the next-mob mark applies to the next flipped mob and clears when it is beaten', () => {
+  const G = E.newGame(['HUN'], 'full', { hp: 60, rnd: rng(6) });
+  const mob = { ...D.mobs.find(m => m.id === 'spray'), kind: 'mob', uid: 960, hits: 1, left: 1, back: 0, up: 0 }, def = mob.def;
+  G.nextMob = { def: 3, dmg: 0 }; G.deck = [mob]; G.row = []; E.flip(G);
+  assert.strictEqual(mob.def, def + 3); assert.strictEqual(G.nextMob, null);
+  G.dice = [{ kind: 'crew', k: 0, r: 20, dbl: true, used: false }]; G.rolled = true; E.assign(G, 0, 960);
+  assert.strictEqual(mob.def, def);
 });

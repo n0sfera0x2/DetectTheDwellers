@@ -8,7 +8,7 @@ Generated from `data/cards.json` by `npm run cards`. Don't edit by hand.
 
 | Recruit | Analyst | Veteran | Quick Shift | First Shift |
 | --- | --- | --- | --- | --- |
-| 70 | 60 | 47 | 37 | 25 |
+| 64 | 52 | 41 | 40 | 31 |
 
 ## Keywords
 
@@ -58,6 +58,15 @@ Printed hits are for two players. In play: printed + analysts − 2, never below
 | Pentest Day | challenge | Everyone rolls once. Anyone under 8 loses 2 HP. |
 | Pager Storm | event | Everyone loses 2 HP. On point loses 2 more. |
 | Budget Approved | event | Draw two kit cards. |
+| The Badge That Wasn’t | challenge | On point: roll 12+ in one attempt. Fail: you lose 4 HP and roll for the row. |
+| Lateral Whispers | event | Roll for the row now. Anything that comes back, you fight after this. |
+| The CEO’s Inbox | choice | Choose one. Quarantine everything: everyone loses 2 HP / Let it ride: the next mob you flip gets +2 Damage |
+| Ghost in the Change Window | event | The next mob you flip has +3 Defense. |
+| Dark Web Chatter | event | Draw a kit card. |
+| The Janitor’s USB | challenge | Everyone rolls once. Anyone under 10 loses 3 HP. |
+| Old Case, New IOC | event | The mob in the row with the widest range comes back now, with no arrival hit. Fight it after this. |
+| Honeytoken Tripped | event | Everyone heals 2 HP. |
+| Vendor Breach Notice | event | Everyone loses 2 HP. Then roll for the row. |
 
 ## Bosses
 
@@ -65,9 +74,9 @@ Hits = printed + 1 per analyst. Agents can't hit the boss.
 
 | Boss | Domain | Def | Hits | Dmg | Ability |
 | --- | --- | --- | --- | --- | --- |
-| The Lockjaw Syndicate | Endpoint | 16 | 7 + n | 9 | Ransom demand: +2 damage until it has taken two hits. |
-| The Persistent Operator | Identity | 15 | 7 + n | 9 | Living off your network: The first time you beat it, it comes back with 2 hits left. |
-| The Rogue AI | Cloud | 17 | 6 + n | 9 | Hostile takeover: Agents can't roll while it's in play. |
+| The Lockjaw Syndicate | Endpoint | 16 | 7 + n | 9 | Double extortion: +2 damage until it has taken two hits. At the end of every round it’s still up, roll for the row. |
+| The Persistent Operator | Identity | 15 | 7 + n | 9 | Living off your network: The first time you beat it, it comes back with 2 hits left. Every double that hits it rolls for the row. |
+| The Rogue AI | Cloud | 17 | 6 + n | 9 | Hostile takeover: Agents can’t roll while it’s in play. Burning one rolls for the row. |
 
 ## Analysts
 
@@ -90,7 +99,7 @@ Hits = printed + 1 per analyst. Agents can't hit the boss.
 | Patch Agent | When you roll for the persistence row, roll an extra die and keep the highest. | Discard one mob from the persistence row for good. |
 | Recovery Agent | After every fight, heal 4 HP split across the crew. | Heal 6 HP split across the crew. |
 | Decoy Agent | Once per fight, after the roll: the analyst on point takes no damage this round. | After the roll: everyone blocks this round. |
-| Recon Agent | Peek at the next situation before picking who’s on point. If it’s a mob, every analyst gets +5 against it all fight. | Look at the next 3 situations and bury one at the bottom of the feed. |
+| Recon Agent | Peek at the next situation before picking who’s on point. A mob you peeked: everyone gets +5 against it. A story card: you get its Recon line. | Look at the next 3 situations and pull one from the feed for good. |
 
 ## First Shift (tutorial)
 

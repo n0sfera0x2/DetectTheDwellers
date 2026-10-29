@@ -306,3 +306,83 @@ test('no on-screen rule says a comeback goes down in one hit', () => {
   assert.match(w.eval('TIPS.row'), /full strength/);
   for (const t of Object.values(w.eval('D.intro.tips'))) assert.doesNotMatch(t, oneHit);
 });
+
+// Story cards: a fresh Quick Shift with a chosen story card on top of the feed, with or without a Recon Agent in the tray.
+function story(id, recon) {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); G.held[0] = ${recon ? `[{ ...D.kit.find(c => c.type === 'recon') }]` : '[]'}; G.row = []; G.nextMob = null;
+    G.deck.push({ ...D.situations.find(s => s.id === '${id}'), kind: 'sit', uid: 995 }); render(); act('flip');`);
+  return { w, d, errors, sit: () => [...d.querySelectorAll('.dock [data-a=sit]')] };
+}
+
+test('a story card with a Recon Agent lights the Recon line and resolves with one button, no roll', () => {
+  for (const id of ['insider', 'ceo']) {
+    const { w, d, errors, sit } = story(id, true), card = w.eval(`D.situations.find(s => s.id === '${id}')`);
+    assert.ok(d.querySelector('.sitc .ptag.st'), 'no Story label'); assert.match(d.querySelector('.sitc').textContent, /Story/);
+    const rc = d.querySelector('.sitc .recon'); assert.ok(rc && rc.classList.contains('on'), 'the Recon line should be lit');
+    assert.match(rc.textContent, /your Recon Agent has this/); assert.ok(rc.textContent.includes(card.reconText));
+    assert.ok(d.querySelector('.sitc .rulebox.off'), 'the normal outcome should be dimmed');
+    assert.strictEqual(sit().length, 1, `${id}: one Resolve button, not the options or a roll`); assert.match(sit()[0].textContent, /Resolve with Recon/);
+    const kit = w.eval('G.kit.length'); sit()[0].click();
+    assert.strictEqual(w.eval('G.lastSit.recon'), true); assert.strictEqual(w.eval('G.lastSit.rolls.length'), 0, 'Recon skips the roll');
+    assert.strictEqual(w.eval('G.kit.length'), kit - 1, 'the Recon line draws a kit card');
+    assert.match(d.querySelector('.status').textContent, /Recon outcome/); assert.ok(d.querySelector('.status').textContent.includes(card.reconText));
+    assert.deepStrictEqual(errors, []);
+  }
+});
+
+test('a story card without Recon shows the Recon line as a hint and plays the normal outcome', () => {
+  let { w, d, errors, sit } = story('insider', false);
+  const rc = d.querySelector('.sitc .recon'); assert.ok(rc && !rc.classList.contains('on')); assert.match(rc.textContent, /^With a Recon Agent:/);
+  assert.ok(d.querySelector('.sitc .rulebox:not(.off)'), 'the normal rule leads without Recon');
+  assert.strictEqual(sit().length, 1); assert.match(sit()[0].textContent, /rolls/);
+  sit()[0].click(); assert.strictEqual(w.eval('G.lastSit.rolls.length'), 1); assert.ok(!w.eval('G.lastSit.recon'));
+  assert.deepStrictEqual(errors, []);
+  // A choice without Recon keeps both options; picking the second marks the next mob, and the mark shows until a mob flips.
+  ({ w, d, errors, sit } = story('ceo', false));
+  assert.strictEqual(sit().length, 2); sit()[1].click();
+  assert.match(d.querySelector('.status').textContent, /no Recon Agent, so the normal outcome: you chose let it ride/);
+  assert.match(d.querySelector('[data-nextmob]').textContent, /Next mob: \+2 Damage/);
+  w.eval(`G.deck.push({ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 996, left: 1, hits: 1, back: 0, up: 0 }); act('flip');`);
+  const m = w.eval('G.play[0]'); assert.ok(m.mod, 'the flipped mob should carry the mark');
+  assert.match(d.querySelector('.mob .stat').textContent, new RegExp(`Damage${m.dmg}.*${m.dmg - 2} \\+2 story`));
+  assert.ok(!d.querySelector('[data-nextmob]'));
+  assert.deepStrictEqual(errors, []);
+});
+
+test('the Recon burn lists the next three situations and pulls the one picked', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); G.held[0] = [{ ...D.kit.find(c => c.type === 'recon') }]; render();`);
+  const top = JSON.parse(w.eval('JSON.stringify(G.deck.slice(-3).map(c => c.name))')), n = w.eval('G.deck.length');
+  d.querySelector('.kchip [data-a=burn]').click();
+  const opts = [...d.querySelectorAll('.pull [data-a=aim]')]; assert.strictEqual(opts.length, 3);
+  assert.deepStrictEqual(opts.map(b => b.querySelector('b').textContent), top.slice().reverse(), 'next first');
+  assert.match(opts[0].textContent, /Next/); assert.ok(opts.every(b => b.querySelector('.pt').textContent.length));
+  opts[1].click();
+  assert.strictEqual(w.eval('G.deck.length'), n - 1); assert.ok(!w.eval('G.deck.map(c => c.name)').includes(top[1]), 'the picked card should leave the feed');
+  assert.ok(w.eval('G.deck.map(c => c.name)').includes(top[0]) && w.eval('G.deck.map(c => c.name)').includes(top[2]));
+  assert.strictEqual(w.eval('UI.pulled'), 1);
+  w.eval(`G.over = true; G.win = true; finish(snap());`);
+  assert.match(d.querySelector('[data-autorep]').textContent, /pulled 1 card from the feed/);
+  assert.deepStrictEqual(errors, []);
+});
+
+test('a boss ability that rolls the row names itself in the Row roll banner, and the advice names the trigger', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); G.boss = { ...G.boss, ...D.bosses.find(b => b.id === 'wyrm') };
+    const m = { ...D.mobs.find(x => x.id === 'ogre'), kind: 'mob', uid: 997, left: 1, hits: 1, back: 0, up: 0, persist: [1, 20] };
+    G.play = []; G.phase = 'point'; G.deck = []; G.row = [m]; G.hps = [999]; G.max = 999; render(); act('flip');`);
+  assert.match(d.querySelector('.reveal .move').textContent, /Double extortion: every round it’s still up rolls for the row, so end it fast\./);
+  w.eval(`act('fight'); G.row.push({ ...D.mobs.find(x => x.id === 'ogre'), kind: 'mob', uid: 998, left: 1, hits: 1, back: 0, up: 0, persist: [1, 20] }); act('roll'); G.dice.forEach(d => { d.used = true; }); render(); act('end'); act('end');`);
+  const lead = d.querySelector('.pbanner .lead.f'); assert.ok(lead, 'no boss Row roll banner');
+  assert.strictEqual(lead.textContent, 'Double extortion: the Lockjaw Syndicate rolls for the row.');
+  assert.deepStrictEqual(errors, []);
+});
+
+test('the automation report counts story cards Recon turned', () => {
+  const { d } = endWith({ hits: 0, assist: 0, saved: 0, healed: 0, removed: 0, dodged: 0, recon: 2 }, true);
+  assert.match(d.querySelector('[data-autorep]').textContent, /turned 2 story cards your way/);
+});

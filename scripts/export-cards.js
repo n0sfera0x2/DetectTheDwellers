@@ -4,7 +4,7 @@
 //   exports/manifest.csv               index, id, name, type, quantity, front file, back file
 //   exports/detect-the-dwellers-singles.zip  the singles plus the manifest
 // Copies print from one image: the 16 kit cards are 8 fronts × 2, the 4 HP trackers one front × 4.
-// Quantities add up to 54. Faces render from deck/cards.js through deck/render.js at 96 dpi CSS layout,
+// Quantities add up to 63. Faces render from deck/cards.js through deck/render.js at 96 dpi CSS layout,
 // with deviceScaleFactor 300/96 so the pixels come out at 300 dpi. Usage: npm run export:cards
 const fs = require('fs'), path = require('path'), zlib = require('zlib');
 const { deck, meta } = require('../deck/cards');
@@ -34,7 +34,7 @@ function plan() {
     byId.set(m.id, e); out.push(e);
   });
   const total = out.reduce((a, e) => a + e.quantity, 0);
-  if (total !== 54) throw new Error(`manifest counts ${total} cards, expected 54`);
+  if (total !== 63) throw new Error(`manifest counts ${total} cards, expected 63`);
   return out;
 }
 

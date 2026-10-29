@@ -178,3 +178,45 @@ test('a boss loss names a real lever, never “put it down first” for the only
   ({ line } = lose([], { 'MFA Banshee': 6 }));
   assert.match(line, /MFA Banshee did the most damage: 6 HP/);
 });
+
+test('on a wide screen, picking a die moves focus to its first target, so the next key is the hit', () => {
+  const { w, d, errors } = rigged();
+  w.matchMedia = q => ({ matches: /min-width:\s*1041px/.test(q), media: q });
+  w.eval(`UI.sel = null; render();`);
+  const die = d.querySelector('[data-a=die]:not(:disabled):not(.dead)'); die.focus(); die.click();
+  const t = d.activeElement;
+  assert.strictEqual(t.dataset.a, 'hit', 'focus should land on a Hit button after a pick');
+  assert.ok(t.classList.contains('hitb'), 'wide screens hit from the mob card');
+  assert.ok(w.eval(`E.beats(G, G.dice[UI.sel], G.play.find(m => m.uid === ${t.dataset.v}))`), 'the focused target must be one the die beats');
+  // One Hit per target in the markup a wide screen shows: one card button per beaten mob.
+  assert.strictEqual(d.querySelectorAll('.hitb').length, w.eval('G.play.filter(m => E.beats(G, G.dice[UI.sel], m)).length'));
+  // Number keys still pick, and still hand focus to the target.
+  w.eval(`UI.sel = null; render();`); key(w, '2');
+  assert.strictEqual(w.eval('UI.sel'), w.eval('UI.order[1]')); assert.strictEqual(d.activeElement.dataset.a, 'hit');
+  // Narrow screens keep focus on the die: their targets already follow the dice in the dock.
+  w.matchMedia = q => ({ matches: false, media: q }); w.eval(`UI.sel = null; render();`);
+  d.querySelector('[data-a=die]:not(:disabled):not(.dead)').click(); assert.strictEqual(d.activeElement.dataset.a, 'die');
+  assert.deepStrictEqual(errors, []);
+});
+
+test('the header, status line, feed card and fight header agree on the situation number', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  const num = (s, re = /situation (\d+) of (\d+)/i) => { const m = re.exec(s || ''); return m ? `${m[1]}/${m[2]}` : null; };
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); G.deck.length = G.total - 3; G.sit = 3; G.lastSit = { name: 'Coffee Run', rolls: [] }; render();`);
+  // Between fights, everything names the situation that comes next.
+  const next = `${w.eval('G.sit') + 1}/${w.eval('G.total')}`;
+  assert.strictEqual(num(d.querySelector('[data-progress]').textContent), next, 'header');
+  assert.strictEqual(num(d.querySelector('.status').textContent), next, 'status line');
+  assert.strictEqual(num(d.querySelector('.fdown').getAttribute('aria-label')), next, 'feed card');
+  // Flipped: the header, the fight or situation header and the log all name the situation in play.
+  w.eval(`G.deck.push({ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 990, left: 1, hits: 1, back: 0, up: 0 }); G.row = []; act('flip');`);
+  assert.strictEqual(num(d.querySelector('[data-progress]').textContent), next, 'header in the fight');
+  assert.strictEqual(num(d.querySelector('#fight-h').textContent), next, 'fight header');
+  assert.strictEqual(num(w.eval('G.log[G.log.length - 1].t'), /Situation (\d+)()/).split('/')[0], next.split('/')[0], 'log line');
+  w.eval(`G.play = []; G.phase = 'point'; G.deck.push({ ...D.situations.find(s => s.id === 'patch'), kind: 'sit', uid: 991 }); render(); act('flip');`);
+  const sitN = `${w.eval('G.sit')}/${w.eval('G.total')}`;
+  assert.strictEqual(num(d.querySelector('[data-progress]').textContent), sitN, 'header on a situation');
+  assert.strictEqual(num(d.querySelector('.sitc .ptag').textContent), sitN, 'situation card');
+  assert.deepStrictEqual(errors, []);
+});

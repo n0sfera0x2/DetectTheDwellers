@@ -129,7 +129,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .gtop{position:sticky;top:0;z-index:30;display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;margin:-20px calc(-1 * clamp(16px,3vw,32px)) 0;padding:10px clamp(16px,3vw,32px);background:rgba(7,6,10,.96);border-bottom:1px solid var(--rule)}
 .top{display:flex;align-items:center;gap:10px 18px;flex:1 1 440px;min-width:0}
 .brand{font-family:var(--disp);font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
-.feed{display:flex;flex-direction:column;gap:5px;flex:1 1 180px;min-width:0;max-width:300px}.feedbar{display:flex;gap:3px}.feedbar i{flex:1;height:7px;background:var(--s3)}.feedbar i.done{background:var(--am)}.feedbar i.now{background:var(--ink)}.feedbar i.boss{flex:1.8;background:transparent;border:1px solid var(--fl)}.feedbar i.boss.now{background:var(--fl)}
+.feed{display:flex;flex-direction:column;gap:5px;flex:1 1 180px;min-width:0;max-width:300px}.feedbar{display:flex;gap:3px}.feedbar i{flex:1;height:7px;background:var(--s3)}.feedbar i.done{background:var(--am)}.feedbar i.now{background:var(--ink)}.feedbar i.boss{flex:1.8;background:transparent;border:1px solid var(--fl)}.feedbar i.boss.now{background:var(--fl)}.feedbar i.next{background:transparent;box-shadow:inset 0 0 0 1px var(--ink)}.feedbar i.boss.next{box-shadow:inset 0 0 0 1px var(--fl)}
 .feed .meta{font-size:13px;white-space:nowrap}
 .tbtns{display:flex;gap:8px;align-items:center;margin-left:auto}
 .quitask{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -162,7 +162,8 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .d20.tumble{animation:tumble .5s cubic-bezier(.2,.8,.25,1)}.d20.landed{animation:land .32s var(--ease)}
 @keyframes tumble{from{transform:rotate(-320deg) scale(.55)}to{transform:none}}@keyframes land{0%{transform:scale(1.2)}100%{transform:none}}
 .pbanner{display:flex;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--rule2);background:var(--s1)}.pbanner p{font-size:16px;line-height:1.45;max-width:70ch}.pbanner p b{font-weight:700}
-.pbanner .d20{width:48px;height:48px;font-size:21px}.pbanner.hot{border-color:var(--am);background:#1A120C}.pbanner.hot p b{color:var(--am)}
+.pbanner .d20{width:48px;height:48px;font-size:21px}
+.table>.pbanner{margin:10px 14px 0;padding:6px 12px}.table>.pbanner .d20{width:40px;height:40px;font-size:18px}.table>.pbanner p{font-size:15px}.pbanner.hot{border-color:var(--am);background:#1A120C}.pbanner.hot p b{color:var(--am)}
 
 /* The desk: one portrait card (situation, kit drop) with its actions beside it; the night desk shows around them. */
 .desk{display:grid;grid-template-columns:var(--cw) minmax(0,520px);gap:18px 32px;align-items:start;justify-content:center}
@@ -294,16 +295,27 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .offs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .keys{font-family:var(--mono);font-weight:400;font-size:12px;color:var(--mut);line-height:1.8}.keys kbd{margin-right:3px}
 .mobonly{display:none}
+.rbrief{display:none}
 @media (min-width:1041px){
   .table .dock{flex-direction:row;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 20px}
   .table .dock .dgroups{flex:1 1 auto}.table .dock .offs{flex:1 1 auto;align-self:center}.table .dock .ask{order:-1}
   .table .dock .acts{flex:0 1 auto}.table .dock .acts .grow{flex:0 1 420px;min-width:300px}
-  /* A lone mob: the card on the left, the dice tray beside it. */
-  .table.solo{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"h h" "c d";align-items:start}
-  .table.solo>.fhead{grid-area:h}.table.solo>.inplay{grid-area:c;padding:12px 0 16px 16px}
-  .table.solo>.dock{grid-area:d;position:static;box-shadow:none;flex-direction:column;align-items:stretch;justify-content:flex-start;margin:12px 16px 16px 28px;max-width:560px;border:1px solid var(--rule2)}
+  /* A lone mob: one centred table. The card, and beside it one column: the Row roll (if any), the round in plain
+     numbers, then the dice tray. The pair centres on the desk, so neither side of the board sits empty. */
+  .table.solo{display:grid;grid-template-columns:minmax(16px,1fr) var(--cw) minmax(0,440px) minmax(16px,1fr);grid-template-rows:auto auto auto 1fr;grid-template-areas:"h h h h" ". c b ." ". c r ." ". c d .";align-items:start}
+  .table.solo>.fhead{grid-area:h}.table.solo>.inplay{grid-area:c;padding:14px 0 16px;justify-content:flex-start}
+  .table.solo>.pbanner{grid-area:b;margin:14px 0 0 28px}
+  .rbrief{grid-area:r;display:flex;flex-direction:column;gap:8px;margin:14px 0 0 28px}
+  .rbrief ul{list-style:none;margin:0;padding:0}
+  .rbrief li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:baseline;padding:10px 0;border-top:1px solid var(--rule);font-size:16px;line-height:1.45;color:var(--ink);text-wrap:pretty}
+  .rbrief li:last-child{border-bottom:1px solid var(--rule)}
+  .rbrief .phud{letter-spacing:.08em}.rbrief .phud.c{color:var(--cy)}.rbrief .phud.f{color:var(--fl)}.rbrief .phud.a{color:var(--am)}
+  .rbrief .num{font-size:17px}.rbrief .hurt .num{color:var(--fl)}.rbrief .rw{color:var(--mut)}
+  .table.solo>.dock{grid-area:d;position:static;box-shadow:none;flex-direction:column;align-items:stretch;justify-content:flex-start;margin:16px 0 16px 28px;border:1px solid var(--rule2)}
   .table.solo .dock .acts{justify-content:flex-start}.table.solo .dock .acts .grow{flex:1 1 auto;min-width:0}
 }
+
+@media (min-width:1041px) and (max-height:860px){.mob:not(.pcard) .scr{aspect-ratio:200/62}.mob:not(.pcard) .mob-in{gap:7px;padding:11px 13px 12px}}
 
 /* Kit: a strip of agent chips. Burnable ones light up; during a boss fight they pulse. A chip opens its card. */
 .kit{display:flex;flex-direction:column;gap:10px}

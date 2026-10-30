@@ -215,16 +215,14 @@ test('guard: a crew die showing 14+ blocks for its roller instead of hitting, an
   assert.ok(E.canUndo(G)); E.unassign(G); assert.deepStrictEqual(G.blocks, [false, false]); assert.strictEqual(G.dice[1].used, false);
 });
 
-test('pack: a 1-Damage mob brings the next mob in the feed, and the situations it passes stay on top in order', () => {
+test('a mob flip takes only the top card: no mob pulls another from deeper in the feed', () => {
   const G = E.newGame(['HUN', 'RES'], 'quick', { rnd: rng(4) });
   const mob = id => ({ ...D.mobs.find(m => m.id === id), kind: 'mob', uid: ++G.uid, left: 3, back: 0, up: 0 });
   const sit = id => ({ ...D.situations.find(s => s.id === id), kind: 'sit', uid: ++G.uid });
-  const ogre = mob('ogre'), coffee = sit('coffee'), intel = sit('intel'), spray = mob('spray');
-  G.row = []; G.deck = [ogre, intel, coffee, spray];
+  G.row = []; G.deck = [mob('ogre'), sit('intel'), mob('spray')];
   E.flip(G);
-  assert.deepStrictEqual(G.play.map(m => m.id), ['spray', 'ogre']);
-  assert.deepStrictEqual(G.deck.map(c => c.id), ['intel', 'coffee']);
-  assert.strictEqual(G.sit, 2, 'both mobs count as flips for the shift clock');
+  assert.deepStrictEqual(G.play.map(m => m.id), ['spray']); assert.deepStrictEqual(G.deck.map(c => c.id), ['ogre', 'intel']); assert.strictEqual(G.sit, 1);
+  assert.ok(D.mobs.every(m => !('pack' in m)) && !('pack' in D));
 });
 
 test('second wind: the first drop to 10 HP or below draws a kit card once per shift', () => {

@@ -274,12 +274,11 @@ test('analyst cards print the perk numbers from data; bosses mark their row trig
 });
 
 
-test('pass 11 on print: Pack chips on the pack mobs only, Guard on the fight card, Second wind on the marker, the First Shift comeback', () => {
+test('pass 11 on print: no Pack mark anywhere, Guard on the fight card, Second wind on the marker, the First Shift comeback', () => {
   const D = require('../data/cards.json'), C = require('../deck/cards');
   const flat = s => s.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, '\'').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
-  for (const m of D.mobs) assert.strictEqual(/>Pack</.test(C.mob(m)), !!m.pack, `${m.name} ${m.pack ? 'should' : 'should not'} carry the PACK chip`);
-  assert.strictEqual(D.mobs.filter(m => m.pack).length, 5);
-  assert.ok(flat(C.glossary()).includes('Pack Keep flipping to the next mob'), 'the Mob keywords card should state the Pack rule');
+  for (const m of D.mobs) assert.ok(!/>Pack</.test(C.mob(m)), `${m.name} still carries a PACK chip`);
+  assert.ok(!/Pack/.test(flat(C.glossary())), 'the Mob keywords card still mentions Pack');
   assert.ok(flat(C.fight()).includes(`Guard A crew die showing ${D.guard.min}+ can guard instead of hitting: you block this round.`));
   const once = flat(C.oncePerFight());
   assert.ok(once.includes('Once per shift') && once.includes('Don’t clear') && once.includes(`Second wind The first time anyone drops to ${D.secondWind.at} HP or less`));

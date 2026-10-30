@@ -56,11 +56,8 @@ const mobHits = (h, n) => Math.max(1, h + D.mobAdd[n]);
 // One strip, read left to right: the crew-size column the table plays with. No hit boxes on mobs: one row of
 // boxes can only match one crew size, and would read as wrong at the other three. Track hits with coins.
 const hitstrip = hitsAt => `<div style="display: flex; align-items: baseline; justify-content: space-between; background: #FFFFFF; border: 1px solid ${RULE}; padding: 0 5px; line-height: 15px">${hud('Hits', PMUT)}${CREW.map(n => `<span style="display: inline-flex; align-items: baseline; gap: 3px">${hud(`${n}p`, PMUT)}<span style="font-family: ${MONO}; font-weight: 600; font-size: 13px; line-height: 15px; font-variant-numeric: tabular-nums; color: ${PINK}">${hitsAt(n)}</span></span>`).join('')}</div>`;
-// Pack is a mark, not a keyword: an outlined chip beside the domain tag, so it can't be mistaken for the keyword box.
-// The rule itself is on the Mob keywords reference card.
-const packTag = (more = '') => `<span style="align-self: flex-start; font-family: ${MONO}; font-weight: 600; font-size: 9.5px; line-height: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: ${FLT}; background: #FFFFFF; box-shadow: inset 0 0 0 1px ${FLT}; padding: 0 5px${more}">Pack</span>`;
 function mob(m) {
-  const tags = m.pack && D.pack ? tag(m.domain, FL) + packTag('; margin: 0 auto 0 4px') : tag(m.domain, FL);
+  const tags = tag(m.domain, FL);
   return shell(`${art(ART[m.id], 94)}${row(tags, hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(n => mobHits(m.hits, n))}\n${kwchip(m)}${foot(m.flavor)}`);
 }
 function sit(s) {
@@ -139,11 +136,10 @@ function fight() {
     ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', `Double: two hits, and you block this round. Engineer: ${D.perks.ENG.dbl}–20.`], ['Guard', `A crew die showing ${D.guard.min}+ can guard instead of hitting: you block this round.`], ['Hits back', 'Mobs still up hit everyone who didn’t block.'], ['Won', `Draw ${WORD[D.kitPerFight]} kit cards (solo: ${WORD[D.kitSolo]}). Kit deck empty? Shuffle the burned agents in.`, AMT]];
   return shell(`${tag('Reference', CY)}${nm('A fight', 18)}${rows.map(([a, b, c]) => refrow(runin(a, b, c))).join('')}`, CY, CYT);
 }
-// The eight keywords, then the Pack mark under its own rule: it's printed beside a mob's domain, not in its keyword box.
+// The eight keywords.
 function glossary() {
-  const rows = Object.entries(D.keywords).map(([k, v]) => refrow(`${kwicon(k, 14)}${runin(v.name, v.text, FLT, 9.5)}`)).join('');
-  const pack = D.pack ? `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1.5px solid ${FLT}; padding-top: 3px">${packTag()}${tx('Keep flipping to the next mob: it joins this fight. Put the situations you passed back on top, in order.', 9.5, PINK, 500)}</div>` : '';
-  return shell(`${tag('Reference', CY)}${nm('Mob keywords', 16)}<div style="display: flex; flex-direction: column; gap: 3px">${rows}</div>${pack}`, CY, CYT);
+  const rows = Object.entries(D.keywords).map(([k, v]) => refrow(`${kwicon(k, 14)}${runin(v.name, v.text)}`)).join('');
+  return shell(`${tag('Reference', CY)}${nm('Mob keywords', 16)}${rows}`, CY, CYT);
 }
 function firstshift() {
   const names = Object.fromEntries([...D.mobs, ...D.situations].map(x => [x.id, x.name]));

@@ -23,7 +23,6 @@ Your first game? Use the First Shift setup instead (Reference).
 1. **Pick who’s on point.** They roll an extra die this round and take the kit draw.
 2. **Flip the top card of the feed and roll the row die** together (once anything is in the row). On point reads the card aloud, flavour line first.
 3. **Resolve it.** A situation does what it says. A mob starts a fight, joined by anything that came back from the row. Resolve a situation before any fight.
-   - **Pack.** A PACK mob brings a friend: keep flipping until you hit another mob, and it joins this fight. Put the situations you passed back on top, in order. No mob left? It comes alone. (Not in First Shift.)
 4. **Repeat** until the feed is empty. Then the boss arrives at 05:59, with one last row roll.
 
 ### A fight
@@ -61,7 +60,7 @@ Each analyst has a **perk** (what you do) and an **agent link** (what one kind o
 
 ### Mob keywords
 
-Every mob has one keyword. PACK is a separate mark, not a keyword.
+Every mob has one keyword.
 
 | Keyword | Rule |
 | --- | --- |
@@ -115,10 +114,10 @@ The same at every crew size.
 
 | Mode | HP |
 | --- | --- |
-| Full Shift, Recruit | 60 |
-| Full Shift, Analyst | 48 |
-| Full Shift, Veteran | 38 |
-| Quick Shift | 37 |
+| Full Shift, Recruit | 54 |
+| Full Shift, Analyst | 40 |
+| Full Shift, Veteran | 32 |
+| Quick Shift | 32 |
 | First Shift | 23 |
 
 When damage takes you below the tens coin, drop it a step and move the ones coin up: at 42, taking 5 leaves 37 (tens on 30, ones on 7).
@@ -173,11 +172,11 @@ The agent link works for the whole crew’s agents, so a crew builds its own age
 
 ### First Shift (your first game)
 
-Core rules, a fixed feed that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck. Start at 23 HP each, with no agents, and play normally, with one scripted moment: **on flip 2, don’t roll for the row. The MFA Banshee comes back**, hits everyone for 1 on the way in (it’s 1 Damage), and you fight it after Patch Tuesday. Pack mobs don’t pack in First Shift. The First Shift reference card has the stack.
+Core rules, a fixed feed that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck. Start at 23 HP each, with no agents, and play normally, with one scripted moment: **on flip 2, don’t roll for the row. The MFA Banshee comes back**, hits everyone for 1 on the way in (it’s 1 Damage), and you fight it after Patch Tuesday. The First Shift reference card has the stack.
 
 ### Quick Shift (booth mode)
 
-Core rules: 6 situations, no story cards, a random boss with no row trigger, 37 HP each, and the crew starts with two agents. About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
+Core rules: 6 situations, no story cards, a random boss with no row trigger, 32 HP each, and the crew starts with two agents. About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
 
 ### The shift clock
 

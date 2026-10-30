@@ -8,7 +8,7 @@ Generated from `data/cards.json` by `npm run cards`. Don't edit by hand.
 
 | Recruit | Analyst | Veteran | Quick Shift | First Shift |
 | --- | --- | --- | --- | --- |
-| 60 | 48 | 38 | 37 | 23 |
+| 54 | 40 | 32 | 32 | 23 |
 
 ## Keywords
 

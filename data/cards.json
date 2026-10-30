@@ -22,8 +22,7 @@
    "abilityName": "Beacon",
    "abilityText": "When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too.",
    "domain": "Identity",
-   "kw": "beacon",
-   "pack": true
+   "kw": "beacon"
   },
   {
    "id": "macro",
@@ -41,8 +40,7 @@
    "abilityName": "Targeted",
    "abilityText": "Only the analyst on point takes its damage, doubled.",
    "domain": "Endpoint",
-   "kw": "targeted",
-   "pack": true
+   "kw": "targeted"
   },
   {
    "id": "spray",
@@ -60,8 +58,7 @@
    "abilityName": "Piercing",
    "abilityText": "Blocks don't stop it.",
    "domain": "Identity",
-   "kw": "piercing",
-   "pack": true
+   "kw": "piercing"
   },
   {
    "id": "banshee",
@@ -79,8 +76,7 @@
    "abilityName": "Stalker",
    "abilityText": "It only hits the analyst with the lowest HP.",
    "domain": "Identity",
-   "kw": "stalker",
-   "pack": true
+   "kw": "stalker"
   },
   {
    "id": "vibe",
@@ -98,8 +94,7 @@
    "abilityName": "Escalating",
    "abilityText": "+1 damage every round it stays up.",
    "domain": "Cloud",
-   "kw": "escalating",
-   "pack": true
+   "kw": "escalating"
   },
   {
    "id": "wraith",
@@ -789,31 +784,31 @@
  "hp": {
   "full": {
    "1": {
-    "Recruit": 60,
-    "Analyst": 48,
-    "Veteran": 38
+    "Recruit": 54,
+    "Analyst": 40,
+    "Veteran": 32
    },
    "2": {
-    "Recruit": 60,
-    "Analyst": 48,
-    "Veteran": 38
+    "Recruit": 54,
+    "Analyst": 40,
+    "Veteran": 32
    },
    "3": {
-    "Recruit": 60,
-    "Analyst": 48,
-    "Veteran": 38
+    "Recruit": 54,
+    "Analyst": 40,
+    "Veteran": 32
    },
    "4": {
-    "Recruit": 60,
-    "Analyst": 48,
-    "Veteran": 38
+    "Recruit": 54,
+    "Analyst": 40,
+    "Veteran": 32
    }
   },
   "quick": {
-   "1": 37,
-   "2": 37,
-   "3": 37,
-   "4": 37
+   "1": 32,
+   "2": 32,
+   "3": 32,
+   "4": 32
   },
   "intro": {
    "1": 23,
@@ -985,7 +980,6 @@
  "guard": {
   "min": 14
  },
- "pack": true,
  "secondWind": {
   "at": 10,
   "kit": 1

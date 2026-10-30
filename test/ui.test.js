@@ -144,13 +144,12 @@ test('between fights, the face-down feed card flips the next situation (tap or F
   const card = d.querySelector('.pdesk .fdown[data-a=flip]'); assert.ok(card, 'no face-down feed card');
   assert.match(card.getAttribute('aria-label'), /Flip situation 1 of/); assert.ok(d.querySelector('.status'), 'no status line');
   assert.ok(!d.querySelector('.pd-point'), 'a solo analyst has no on-point choice');
-  // A Pack mob flipped first brings the next mob with it, so the clock moves two.
-  card.click(); assert.strictEqual(w.eval('G.sit'), w.eval(`G.log.some(l => /^Pack:/.test(l.t)) ? 2 : 1`)); assert.ok(!d.querySelector('.fdown'));
+  card.click(); assert.strictEqual(w.eval('G.sit'), 1); assert.ok(!d.querySelector('.fdown'));
   // Back between fights with a crew: analyst cards pick who's on point, and F flips.
   w.eval(`UI.pick = ['HUN', 'RES']; start();`);
   d.querySelector('.acard[data-a=point][data-v="1"]').click(); assert.strictEqual(w.eval('G.point'), 1);
   assert.strictEqual(d.querySelector('.acard[data-v="1"]').getAttribute('aria-pressed'), 'true');
-  key(w, 'f'); assert.strictEqual(w.eval('G.sit'), w.eval(`G.log.some(l => /^Pack:/.test(l.t)) ? 2 : 1`));
+  key(w, 'f'); assert.strictEqual(w.eval('G.sit'), 1);
   assert.deepStrictEqual(errors, []);
 });
 
@@ -503,7 +502,7 @@ test('the end screen shows how long the shift took, stores it, and copies a one-
   const errors = []; w.addEventListener('error', e => errors.push(e.message));
   w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); Clock.t0 -= 14 * 60000; const before = snap(); G.over = true; G.win = true; finish(before);`);
   assert.match(d.querySelector('[data-dur]').textContent, /Shift took 14 min/);
-  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v25')); assert.strictEqual(Math.round(saved[0].min), 14);
+  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v26')); assert.strictEqual(Math.round(saved[0].min), 14);
   const line = w.eval('resultLine()');
   assert.match(line, /Quick Shift \(core\)/); assert.match(line, /Hunter \(1p\)/); assert.match(line, /14 min/); assert.match(line, /rounds?/); assert.match(line, /agents:/); assert.match(line, /Win: /);
   d.querySelector('[data-a=copy]').click();
@@ -553,21 +552,6 @@ test('Second wind: the first drop to 10 HP or below draws kit, with a banner and
   assert.match(w.eval('said'), /Second wind: .* down to 9 HP\. The crew draws/);
   w.eval(`G.hps[0] = 5; G.dice.forEach(x => { x.used = true; }); act('roll'); G.dice.forEach(x => { x.used = true; }); act('end');`);
   assert.strictEqual(w.eval('G.held[0].length'), 1, 'second wind fired twice'); assert.ok(!d.querySelector('.pbanner.wind'), 'banner outlived its round');
-  assert.deepStrictEqual(errors, []);
-});
-
-test('a Pack mob brings the next mob past a situation into its fight, with a banner and the Pack mark', () => {
-  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
-  const errors = []; w.addEventListener('error', e => errors.push(e.message));
-  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); G.row = [];
-    const mob = (m, uid) => ({ ...m, kind: 'mob', uid, left: m.hits, back: 0, up: 0 });
-    const pk = D.mobs.find(m => m.pack), other = D.mobs.find(m => !m.pack && m.ability !== 'beacon'), sit = D.situations.find(s => !s.story);
-    G.deck = [mob(other, 992), { ...sit, kind: 'sit', uid: 993 }, mob(pk, 991)]; act('flip');`);
-  assert.strictEqual(w.eval('G.play.map(m => m.uid).join()'), '991,992'); assert.strictEqual(w.eval('G.deck[G.deck.length - 1].uid'), 993, 'the passed situation should go back on top');
-  const ban = d.querySelector('.pbanner.pack'); assert.ok(ban, 'no Pack banner'); assert.match(ban.textContent, new RegExp(w.eval('G.play[1].name')));
-  assert.ok(d.querySelector('[data-mob="991"] .ptag.pk'), 'pack mob card has no Pack mark'); assert.ok(!d.querySelector('[data-mob="992"] .ptag.pk'), 'a non-pack mob shows the Pack mark');
-  assert.match(w.eval('said'), /Pack: .* comes in with it/);
-  w.eval(`act('roll'); render();`); assert.ok(d.querySelector('.pbanner.pack'), 'the Pack banner should stay for round 1');
   assert.deepStrictEqual(errors, []);
 });
 

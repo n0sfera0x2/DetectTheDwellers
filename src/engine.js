@@ -81,13 +81,9 @@ function DTD12(D) {
       log(G, `${G.boss.name} is here${back.length ? `, with ${back.length} from the persistence row` : ''}.`); const p = G.persist; startCombat(G, [G.boss, ...back]); G.persist = p; return true;
     }
     const c = G.deck.pop(); G.sit++;
-    // Pack: a pack mob brings the next mob in the feed with it. D.pack 'next' looks at the top card only;
-    // otherwise flip past situations to the first mob and put them back on top in the same order.
-    let pal = null;
-    if (c.kind === 'mob' && c.pack && D.pack && G.mode !== 'intro') { const i = D.pack === 'next' ? (G.deck.length && G.deck[G.deck.length - 1].kind === 'mob' ? G.deck.length - 1 : -1) : G.deck.map(x => x.kind).lastIndexOf('mob'); if (i >= 0) { pal = G.deck.splice(i, 1)[0]; G.sit++; } }
     const back = rollRow(G, G.mode === 'intro' && D.intro && D.intro.comeback === G.sit ? 1 : null); const p = G.persist;
     if (G.over) return true;
-    if (c.kind === 'mob') { if (G.nextMob) { c.mod = G.nextMob; c.def += c.mod.def; c.dmg += c.mod.dmg; G.nextMob = null; } log(G, `Situation ${G.sit}: ${c.name}. ${nm(G, G.point)} is on point.`); c.scouted = true; if (pal) { pal.scouted = true; log(G, `Pack: ${pal.name} comes in with it.`); } startCombat(G, [c, ...(pal ? [pal] : []), ...back]); G.persist = p; }
+    if (c.kind === 'mob') { if (G.nextMob) { c.mod = G.nextMob; c.def += c.mod.def; c.dmg += c.mod.dmg; G.nextMob = null; } log(G, `Situation ${G.sit}: ${c.name}. ${nm(G, G.point)} is on point.`); c.scouted = true; startCombat(G, [c, ...back]); G.persist = p; }
     else { G.cur = c; G.phase = 'sit'; G.pendingBack = back; log(G, `Situation ${G.sit}: ${c.name}.${back.length ? ' Deal with it, then fight what came back.' : ''}`); }
     return true;
   }

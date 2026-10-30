@@ -47,16 +47,16 @@ const MODE_LS = 'dwellers-mode-v1';
 const lastMode = (() => { try { const m = localStorage.getItem(MODE_LS); return m && D.modes[m] ? m : 'intro'; } catch (e) { return 'intro'; } })();
 function rememberMode(m) { try { localStorage.setItem(MODE_LS, m); } catch (e) { /* private mode: First Shift again next visit */ } }
 const UI = { screen: 'intro', mode: lastMode, diff: 'Analyst', pick: ['HUN'], friends: false, team: '', sel: null, aim: null, board: [], savedAt: null, seen: new Set(), dice: new Set(),
-  reveal: false, ko: [], confirmEnd: false, quitAsk: false, kitOpen: new Set(), order: [], dmg: {}, logOpen: false, left: [], bossHp: null, after: null, bossRow: null, pulled: 0, gone: null, patched: null, pack: null, wind: null };
-let G = null, DB = null; const LS = 'dwellers-board-v25', TIPS_LS = 'dwellers-tips-v1', KEYS_LS = 'dwellers-keys-v1';
+  reveal: false, ko: [], confirmEnd: false, quitAsk: false, kitOpen: new Set(), order: [], dmg: {}, logOpen: false, left: [], bossHp: null, after: null, bossRow: null, pulled: 0, gone: null, patched: null, wind: null };
+let G = null, DB = null; const LS = 'dwellers-board-v26', TIPS_LS = 'dwellers-tips-v1', KEYS_LS = 'dwellers-keys-v1';
 // The shortcut legend hides for good once a player has used any shortcut.
 let keysUsed = (() => { try { return localStorage.getItem(KEYS_LS) === '1'; } catch (e) { return false; } })();
 function markKeys() { if (keysUsed) return; keysUsed = true; try { localStorage.setItem(KEYS_LS, '1'); } catch (e) { /* private mode: hidden for this visit */ } }
 function loadLocal() { try { UI.board = JSON.parse(localStorage.getItem(LS) || '[]'); } catch (e) { UI.board = []; } }
 function saveLocal(x) { try { const b = JSON.parse(localStorage.getItem(LS) || '[]'); b.push(x); b.sort((a, c) => c.score - a.score); localStorage.setItem(LS, JSON.stringify(b.slice(0, 30))); UI.board = b.slice(0, 30); } catch (e) { UI.board = [x]; } }
 loadLocal();
-(async () => { try { if (window.claude && typeof window.claude.use === 'function') { DB = await window.claude.use('db'); if (DB) DB.collection('dwellers-v25').orderBy('score', 'desc').limit(30).onSnapshot(s => { UI.board = s.docs.map(d => d.data()).filter(Boolean); if (UI.screen !== 'game') render(); }, () => { DB = null; loadLocal(); }); } } catch (e) { DB = null; } })();
-function saveScore(x) { if (DB) DB.collection('dwellers-v25').add(x).catch(() => { DB = null; saveLocal(x); }); else saveLocal(x); }
+(async () => { try { if (window.claude && typeof window.claude.use === 'function') { DB = await window.claude.use('db'); if (DB) DB.collection('dwellers-v26').orderBy('score', 'desc').limit(30).onSnapshot(s => { UI.board = s.docs.map(d => d.data()).filter(Boolean); if (UI.screen !== 'game') render(); }, () => { DB = null; loadLocal(); }); } } catch (e) { DB = null; } })();
+function saveScore(x) { if (DB) DB.collection('dwellers-v26').add(x).catch(() => { DB = null; saveLocal(x); }); else saveLocal(x); }
 
 // Tips for Full and Quick Shift: shown the first time each moment comes up, until dismissed.
 const tipsSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(TIPS_LS) || '[]')); } catch (e) { return new Set(); } })();
@@ -224,7 +224,7 @@ const minText = ms => ms < 60000 ? 'under a minute' : `${Math.round(ms / 60000)}
 
 function start() {
   G = E.newGame(UI.pick, UI.mode, { diff: UI.diff });
-  Object.assign(UI, { screen: 'game', sel: null, aim: null, savedAt: null, seen: new Set(), dice: new Set(), reveal: false, ko: [], confirmEnd: false, quitAsk: false, dmg: {}, left: [], bossHp: null, after: null, bossRow: null, pulled: 0, gone: null, patched: null, reshuffled: null, copied: null, pack: null, wind: null });
+  Object.assign(UI, { screen: 'game', sel: null, aim: null, savedAt: null, seen: new Set(), dice: new Set(), reveal: false, ko: [], confirmEnd: false, quitAsk: false, dmg: {}, left: [], bossHp: null, after: null, bossRow: null, pulled: 0, gone: null, patched: null, reshuffled: null, copied: null, wind: null });
   Clock.start();
   UI.logN = G.log.length; toTop(); render(); Sound.ambience(true);
   say(`Shift started at 22:00. Survive until 06:00. ${G.team.length > 1 ? 'Pick who is on point, then flip.' : 'Flip the first situation.'}`);
@@ -308,12 +308,10 @@ function noteAnalysts(before) {
   if (t.some(x => /^The kit deck is empty/.test(x))) UI.reshuffled = { sit: G.sit };
 }
 
-// Pack and Second wind, read from the engine's log lines: a pack pair told for its first round, the second wind for the
+// Second wind, read from the engine's log lines: told for the
 // round (or the between-fights screen) it fires in. tray: the drawn card went straight into the kit.
 function noteShift(a, before) {
   const t = G.log.slice(before.logN).map(l => l.t);
-  const pk = t.map(x => /^Pack: (.+) comes in with it\.$/.exec(x)).find(Boolean);
-  if (pk && G.phase === 'combat') UI.pack = { sit: G.sit, lead: (G.play.find(m => m.name !== pk[1]) || { name: 'A pack mob' }).name, pal: pk[1] };
   const w = t.find(x => /^Second wind: /.test(x));
   if (w && G.wind) { const got = G.held[0].filter(c => !before.held.includes(c)); UI.wind = { sit: G.sit, round: G.round, k: G.wind.k, hp: +(/down to (\d+) HP/.exec(w) || [0, G.hps[G.wind.k]])[1], card: (/The crew draws (.+)\.$/.exec(w) || [0, ''])[1], tray: got.length > 0, at: clockNow(), text: w }; }
 }
@@ -353,8 +351,8 @@ function announce(a, before, extra) {
   } else if (a !== 'roll' && a !== 'die') {
     const lines = G.log.slice(before.logN).map(l => rowWord(l.t)); out.push(...lines.slice(-2));
   }
-  const news = G.log.slice(before.logN).map(l => l.t), pk = news.find(x => /^Pack: /.test(x)), w = news.find(x => /^Second wind: /.test(x));
-  if (pk && !out.includes(pk)) out.push(pk); if (w && !out.includes(w)) out.push(w + (UI.wind && UI.wind.tray ? ' It’s in the kit now.' : UI.wind && UI.wind.card && !/^nothing/.test(UI.wind.card) ? ' It waits with the kit after the fight.' : ''));
+  const news = G.log.slice(before.logN).map(l => l.t), w = news.find(x => /^Second wind: /.test(x));
+  if (w && !out.includes(w)) out.push(w + (UI.wind && UI.wind.tray ? ' It’s in the kit now.' : UI.wind && UI.wind.card && !/^nothing/.test(UI.wind.card) ? ' It waits with the kit after the fight.' : ''));
   return [...out, extra].filter(Boolean).join(' ');
 }
 
@@ -505,14 +503,12 @@ function mobHTML(m, ko, solo) {
   const back = !ko && !boss && m.back > 0, fx = FOCAL[m.id];
   return `<article class="mob paper ${solo ? 'pcard' : ''} ${boss ? 'boss' : ''} ${fresh} ${back ? 'back' : ''} ${ok ? 'can' : ''} ${ko ? 'ko' : ''} ${ko && m.gone ? 'gonek' : ''}" data-mob="${m.uid}" aria-labelledby="mn${m.uid}"><i class="tab" aria-hidden="true"></i><div class="mob-in">
     <span class="scr"${fx ? ` style="--fx:${fx}%"` : ''}>${slice(mobArt(m))}${back ? `<span class="bstamp" aria-hidden="true">${m.back > 1 ? `Back ×${m.back}` : 'Back'}</span>` : ''}</span><div class="bd">
-    <div class="mh"><span class="tags"><span class="ptag">${boss ? 'Boss' : esc(m.domain)}</span>${packOn(m) ? `<span class="ptag pk" title="Pack: flipped, it keeps flipping to the next mob and brings it into the fight">Pack<span class="sr">: it brings the next mob in the feed into the fight</span></span>` : ''}</span>${m.scouted && E.active(G, 'recon').length ? `<span class="phud c">Scouted +${RECON}</span>` : ''}${right}</div>
+    <div class="mh"><span class="tags"><span class="ptag">${boss ? 'Boss' : esc(m.domain)}</span></span>${m.scouted && E.active(G, 'recon').length ? `<span class="phud c">Scouted +${RECON}</span>` : ''}${right}</div>
     <h3 class="nm" id="mn${m.uid}">${esc(m.name)}${ko ? `<span class="sr"> is ${m.gone ? 'gone for good' : 'down'}</span>` : back ? '<span class="sr">, back from the row</span>' : ''}</h3>
     <dl class="stat"><div class="def"><dt>Defense</dt><dd>${m.def}${ko ? '' : modNote(m, 'def')}</dd></div><div><dt>Hits</dt><dd>${ko ? 0 : m.left}/${m.hits}${hitsNote(m)}</dd></div><div><dt>Damage</dt><dd>${dmgStat(m)}</dd></div></dl>${pips}
     <p class="ability">${kw}<b>${esc(m.abilityName)}.</b> ${esc(m.kind === 'boss' ? bossText(m) : m.abilityText)}</p>${m.flavor ? `<p class="fl ${fresh && !ko && !back ? 'reveal-ln' : ''}">${solo && !ko ? aloudHint() : ''}${readAloud(m.flavor, !!fresh && !ko && !back)}</p>` : ''}${btn}</div></div></article>`;
 }
 
-// The Pack mark (D.pack): on the five pack mobs, everywhere but First Shift, where the feed is scripted.
-const packOn = m => !!(D.pack && m.pack && m.kind !== 'boss' && G && G.mode !== 'intro');
 const hitWhy = (d, m) => isDouble(d) ? `${d.r}: double, two hits` : `${E.total(G, d, m)} vs ${m.def}`;
 function canBurn(c) { const f = G.phase === 'combat', r = f && G.rolled;
   return { triage: r, hunt: f && G.play.some(E.huntable), contain: f, enrich: r, patch: G.row.length > 0, recover: G.hps.some(h => h < G.max), decoy: r, recon: G.phase === 'point' && G.deck.length >= 2 }[c.type] && !G.over; }
@@ -628,11 +624,6 @@ function persistBanner(lead) { const p = G.persist; if (!p || (!p.pre && !lead))
   return `<div class="pbanner ${hot ? 'hot' : ''}" role="status"><div class="d20 ${hot ? '' : 'q'}" data-roll="${p.r}"><span class="dv" aria-hidden="true">${p.r}</span></div><p><b>Row roll ${p.r}.</b> ${lead ? `<span class="lead ${lead.cls || ''}">${esc(lead.text)}</span> ` : ''}${esc(line)}</p></div>`; }
 
 // The Hunter's perk, told the round it lands: a comeback finished for good, stamped, instead of a trip to the row.
-// A Pack pair, told for the fight's first round: which mob brought which, and the rule in one line.
-function packBanner() {
-  const P = UI.pack; if (!P || P.sit !== G.sit || G.round !== 1 || G.phase !== 'combat' || G.bossIn) return '';
-  return `<div class="pbanner pack" role="status" data-pack><span class="kstamp" aria-hidden="true">Pack</span><p><b>${esc(P.lead)} brought ${esc(P.pal)}.</b> A Pack mob keeps flipping until it finds another mob, and they fight together.</p></div>`;
-}
 // Second wind (D.secondWind): the first time anyone drops to its line, the crew draws kit. Told the round it fires.
 function windBanner() {
   const W = UI.wind; if (!W || W.sit !== G.sit || (G.phase === 'combat' && W.round !== G.round) || !['combat', 'sit'].includes(G.phase)) return '';
@@ -854,7 +845,7 @@ function vGame() {
     const card = `<article class="paper cy pcard lootc" aria-labelledby="loot-h"><i class="tab" aria-hidden="true"></i><span class="scr">${slice(c.kind === 'agent' ? kitArt(c.type) : pickArt('gear', 'event'))}</span><div class="mh"><span class="ptag cy">Kit drop${G.loot.length > 1 ? ` · ${G.loot.length} cards` : ''}</span><span class="phud c">AI agent</span></div><h2 class="nm" id="loot-h">${esc(c.name)}</h2><p class="part"><span class="phud c">Run it</span>${esc(kitText(c))}</p><p class="part"><span class="phud a">Or burn it</span>${esc(c.burn)}</p>${linkNote(c)}</article>`;
     main += desk(card, statusLine() + sitRowBanner() + dockHTML() + kitTray());
   } else if (G.phase === 'combat') {
-    const bans = (!G.rolled && G.round === 1 ? (!G.lastSit ? persistBanner() : afterBanner()) : '') + packBanner() + windBanner() + bossBanner() + goneBanner(), banner = bans ? `<div class="bans">${bans}</div>` : '';
+    const bans = (!G.rolled && G.round === 1 ? (!G.lastSit ? persistBanner() : afterBanner()) : '') + windBanner() + bossBanner() + goneBanner(), banner = bans ? `<div class="bans">${bans}</div>` : '';
     const all = G.play.length + UI.ko.length, solo = all === 1, mobs = G.play.map(m => mobHTML(m, false, solo)).join('') + UI.ko.map(m => mobHTML(m, true, solo)).join('');
     main += `<section class="table ${solo ? 'solo' : ''}" aria-labelledby="fight-h"><div class="fhead"><h2 class="sech f" id="fight-h">${G.bossIn ? 'Boss fight' : sitOf(G.sit)} · round ${G.round}${G.team.length > 1 ? ` · ${esc(nm(G.point))} on point` : ''}</h2>${rowStrip()}${kitTray()}</div>${banner}<div class="inplay ${solo ? 'solo' : ''}">${mobs}</div>${solo ? roundBrief() : ''}${dockHTML()}</section>`;
   }

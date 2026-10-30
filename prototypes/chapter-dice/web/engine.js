@@ -2,12 +2,13 @@
 // Plays exactly the paper rules sheet (../paper/build.js): the human assigns dice, the engine checks and resolves.
 // Exact numbers (2026-10-30): every die is a standard pip d6, { n: 1–6, dbl }. A mob's hits are the threat dice set
 // under its card (../cards.js slotsFor); a rolled die takes out one showing exactly its number. A double counts as two
-// dice showing its number (d.takes holds up to two takes, on one mob or two), or guards. Throwaway prototype code.
+// dice showing its number (d.takes holds up to two takes, on one mob or two), or guards. Once a round each player may
+// reroll one of their own dice. Beaten mobs always go back to the row. Throwaway prototype code.
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('../../../data/cards.json'), require('../cards'));
   else root.CDEngine = factory(root.CD_DATA, root.CDCards);
 })(typeof self !== 'undefined' ? self : this, function (D, CARDS) {
-  const HP = 25; // starting HP for clustered dice and two-of-a-number doubles (2026-10-30): about 53% at two players in the sim
+  const HP = 24; // starting HP (2026-10-30): always-persist row, no one-off matches, one reroll each a round; ~50% at two players in the sim
   // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   const KIT_NAME = { triage: 'Triage Agent', enrich: 'Enrichment Agent', contain: 'Containment Agent', recover: 'Recovery Agent' };
@@ -50,7 +51,6 @@
   // Damage right now: Lockjaw +2 until it has lost two dice; Escalating +1 per round it stayed up.
   const dmgOf = (G, m) => m.boss ? m.dmg + (left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0);
   // The highest-Damage mob(s), judged on the Damage at the start of the round so a match can't flicker mid-assignment.
-  const isTop = (G, m) => { const d = x => G.roundDmg[x.uid] != null ? G.roundDmg[x.uid] : dmgOf(G, x); const up = G.play.filter(x => left(x) || x === m); return up.length && d(m) >= Math.max(...up.map(d)); };
   const d6 = G => Math.floor(G.r() * 6);
   const findMob = (G, uid) => G.play.find(m => m.uid === uid);
   const fail = msg => { const e = new Error(msg); e.rule = true; throw e; };
@@ -129,7 +129,7 @@
     // Each running Triage Agent rolls its own die; kuid ties the die to its card (it sits under that card on the mat).
     for (const c of G.tray.filter(c => c.t === 'triage')) dice.push({ k: G.point, crew: false, src: 'agent', kuid: c.uid, ...pipDie(1 + d6(G), 'AGENT') });
     dice.forEach((d, i) => { d.i = i; d.used = null; d.takes = []; d.turned = false; });
-    G.dice = dice; G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = [];
+    G.dice = dice; G.rerolled = G.team.map(() => false); G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = [];
     G.roundDmg = {}; G.play.forEach(m => { G.roundDmg[m.uid] = dmgOf(G, m); });
     G.phase = 'assign';
     say(G, `Round ${G.round}: rolled ${dice.map(faceText).join(', ')}.`, 'roll');
@@ -137,8 +137,6 @@
   }
   const faceText = d => `${d.n}${d.dbl ? ' (double)' : ''}${d.turned ? ' (turned)' : ''}${d.crew ? '' : ' (agent)'}`;
 
-  // Does this die's Hunter/Responder perk let it match one higher or one lower on this mob?
-  const nearOK = (G, d, m) => { const id = d.crew ? G.team[d.k] : null; return (id === 'HUN' && m.back > 0) || (id === 'RES' && isTop(G, m)); };
   // What one die can do to one mob: { slots: indices it may take first, near: the ±1 ones, wild, dbl } or null.
   function canHit(G, d, m) {
     if (!d || !m || d.used || !left(m)) return null;               // d.used: spent (guarded, or every take made)
@@ -146,7 +144,7 @@
     if (m.kw === 'hardened' && !d.dbl) return null;               // Evasive: only a double hits it
     const free = m.slots.map((v, i) => i).filter(i => !m.off[i]);
     if (G.wildAll) return { slots: free, near: [], wild: true, dbl: d.dbl };
-    const exact = free.filter(i => m.slots[i] === d.n), near = nearOK(G, d, m) ? free.filter(i => Math.abs(m.slots[i] - d.n) === 1) : [];
+    const exact = free.filter(i => m.slots[i] === d.n), near = []; // no one-higher-or-lower matches in this test
     if (!exact.length && !near.length) return null;
     return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
@@ -200,6 +198,19 @@
     say(G, `${nameOf(G.team[d.k])} guards with a ${faceText(d)}: blocking this round.`, 'guard');
     return G;
   }
+  // Reroll: once a round each player may reroll one of their own dice (crew dice they rolled, the solo crew die, and
+  // Triage burn dice for whoever is on point), before it is used or turned. It can't be undone.
+  const canReroll = (G, d) => !!d && G.phase === 'assign' && d.crew && !d.used && !(d.takes || []).length && !d.turned && !(G.rerolled || [])[d.k];
+  function reroll(G, di) {
+    if (G.phase !== 'assign') fail('Roll first.');
+    const d = G.dice[di]; if (!d) fail('No such die.');
+    if (!d.crew) fail('Agent dice can’t be rerolled.'); if (d.used || d.takes.length) fail('That die is already used.'); if (d.turned) fail('A turned die can’t be rerolled.');
+    if (G.rerolled[d.k]) fail(`${nameOf(G.team[d.k])} has already rerolled this round.`);
+    const was = d.n; Object.assign(d, pipDie(1 + d6(G), d.src === 'crew' ? 'CREW' : G.team[d.k])); G.rerolled[d.k] = true; G.undo = [];
+    G.stats.rerolls = (G.stats.rerolls || 0) + 1;
+    say(G, `${dieOwner(G, d)} rerolls a ${was}: ${faceText(d)}.`, 'roll');
+    return G;
+  }
   // Running Enrichment Agent: once a round (per running card), turn one crew die to any number. The die keeps what it
   // was: a double stays a double, a single stays single (the sim's rule, and it stops "always turn to 6").
   function enrichTurn(G, di, n) {
@@ -241,9 +252,8 @@
     const beaten = G.play.filter(m => !left(m)); G.beaten = beaten.map(m => m.uid);
     if (beaten.some(m => m.boss)) { G.over = true; G.win = true; G.phase = 'over'; say(G, `${G.boss.name} is beaten. You survived the night.`, 'end'); return G; }
     for (const m of beaten) {
-      const hunted = on(G, 'HUN') && m.back > 0 && G.dice.some(d => d.crew && G.team[d.k] === 'HUN' && (d.takes || []).some(t => t.uid === m.uid));
-      if (m.back >= 1) { G.gone.push(m); G.stats.gone++; say(G, `${m.name} is beaten and gone for good${hunted ? ' (the Hunter finished it)' : ' (it already came back once)'}.`, 'beat'); }
-      else { G.row.push(m); say(G, `${m.name} is beaten and goes on the persistence row (back on 2–${m.top}).`, 'beat'); }
+      // Every beaten mob goes back on the row, however often it has come back.
+      G.row.push(m); say(G, `${m.name} is beaten and goes on the persistence row (back on 2–${m.top}).`, 'beat');
     }
     G.play = G.play.filter(m => left(m));
     const inc = incoming(G, G.blocks);
@@ -319,5 +329,5 @@
   }
 
   return { HP, KIT_NAME, pipDie, rng, shuffle, newGame, setPoint, flip, roll, assign, guard, enrichTurn, unassign, endRound, burn, canBurn,
-    discardKit, keepKit, targets, canHit, canGuard, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
+    discardKit, keepKit, targets, canHit, canGuard, canReroll, reroll, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

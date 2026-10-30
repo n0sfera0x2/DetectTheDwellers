@@ -28,8 +28,9 @@
   const DOUBLES = { HUN: [1, 2, 6], RES: [3, 4, 6], ENG: [2, 4, 6], SOA: [1, 6], PAT: [3, 6], CREW: [6], AGENT: [6] };
   const isDouble = (id, n) => (DOUBLES[id] || DOUBLES.CREW).includes(n);
   // The persistence row on 2d6: a row mob comes back if the sum is at most its number. The data's d20 ranges map by
-  // tier (top 12+ → 8, 10–11 → 7, 8–9 → 6, 7 or less → 5). Same as sim.js rowTop.
-  const rowTop = N => N >= 12 ? 8 : N >= 10 ? 7 : N >= 8 ? 6 : 5;
+  // tier (top 12+ → 5, 10–11 → 4, 8–9 → 3, 7 or less → 2): every beaten mob goes back to the row, so the odds sit
+  // three lower than they did when a comeback was gone for good. Same as sim.js rowTop (ROWSHIFT 3).
+  const rowTop = N => N >= 12 ? 5 : N >= 10 ? 4 : N >= 8 ? 3 : 2;
   const cls = id => D.classes.find(c => c.id === id);
   // The dice printed on a mob or boss card: the base dice (sim.js numbersFor, clustered round the mob's main number,
   // printed low to high so they're quick to set out) and the + die a crew adds per player past three: always a 6.
@@ -68,8 +69,8 @@
   ${strip(diceFor(b, true), 24)}</div>`;
   }
   const PERK = {
-    HUN: 'Against a mob that came back from the row, your dice also match one higher or one lower. A comeback you finish is gone for good.',
-    RES: 'Against the highest-Damage mob (boss included), your dice also match one higher or one lower.',
+    HUN: 'Your doubles run low: 1 and 2, plus the 6 everyone has.',
+    RES: 'Your doubles sit in the middle: 3 and 4, plus the 6 everyone has.',
     ENG: 'Every even number is a double for you.',
     SOA: `The tray holds one more agent (${D.sharedKit + 1}). Every won fight draws one more agent card.`,
     PAT: `After every fight, heal ${D.perks.PAT.fight} HP split across the crew. Recovery Agents heal ${D.perks.PAT.recover} more.`,
@@ -86,13 +87,13 @@
   const agentCard = t => `<div class="card agent cy">${tab}${art(SCENE.agent(t))}${hd('Agent', 'AI agent')}<div class="nm">${AGENT[t][0]}</div>
   <div class="mode"><b>Run it</b> ${AGENT[t][1]}</div><div class="mode"><b>Or burn it</b> ${AGENT[t][2]}</div></div>`;
   const legend = `<div class="card ref am">${tab}${hd('Reference', 'every die')}<div class="nm">Dice</div>
-  <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>under a mob</span></div>
-  <div class="note">A die takes out one die under a mob showing <b>exactly</b> its number.</div>
+  <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
   <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards. Never both.</div>
-  <div class="note">Your analyst card shows your doubles. Other dice (crew die, agent dice): only a ${pip(6, 14)} is a double.</div>
+  <div class="note">Your doubles are on your analyst card. Crew and agent dice: only a ${pip(6, 14)} is a double.</div>
+  <div class="note"><b>Once a round, reroll one of your own dice.</b></div>
   <div class="note">4 players: add the card’s + die.</div>
-  <div class="note">Row: roll 2 amber dice; a row mob comes back if the sum is at most its number.</div></div>`;
+  <div class="note">Row: 2 amber dice; a row mob comes back if the sum is at most its number.</div></div>`;
 
   // The prototype's card set: six mobs, the Lockjaw Syndicate, five analysts, four agent types (two each).
   const MOB_IDS = ['mailer', 'spray', 'imp', 'druid', 'wyrmling', 'mimic'];

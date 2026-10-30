@@ -47,7 +47,19 @@ const ROW = process.env.ROW || (CUSTOM ? 'd20' : '2d6');
 // ROWMAP=near picks the k whose 2d6 odds are closest to N/20 (rejected: it collapses every mob to 2–6 or 2–7).
 const P2 = k => { let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if (a + b <= k) c++; return c / 36; };
 const rowTopNear = N => { let best = 2; for (let k = 2; k <= 12; k++) if (Math.abs(P2(k) - N / 20) < Math.abs(P2(best) - N / 20)) best = k; return best; };
-const rowTop = N => process.env.ROWMAP === 'near' ? rowTopNear(N) : (N >= 12 ? 8 : N >= 10 ? 7 : N >= 8 ? 6 : 5);
+// ROWSHIFT lowers every tier by that much. Default 3 (2026-10-30): with every beaten mob going back to the row, the
+// old tiers (8/7/6/5) spiral (shift 2 needs 97 HP for half the games); shift 3 gives 2–5/2–4/2–3 and ~6 comebacks a game.
+const ROWSHIFT = +(process.env.ROWSHIFT ?? 3);
+const rowTop = N => process.env.ROWMAP === 'near' ? rowTopNear(N) : (N >= 12 ? 8 : N >= 10 ? 7 : N >= 8 ? 6 : 5) - ROWSHIFT;
+// PERSIST=always (n6 default, 2026-10-30): a beaten mob always goes back to the row; nothing removes it for good.
+// PERSIST=once: the earlier rule, a mob that came back once is gone for good when beaten.
+const PERSIST = process.env.PERSIST || 'always';
+// NEAR=1 brings back the Hunter's and Responder's one-higher-or-lower matches (n6). Off by default since 2026-10-30.
+const NEAR = process.env.NEAR === '1';
+// REROLL (n6): 'all' (default, 2026-10-30) lets every player reroll one of their own dice once a round. 'perks'
+// gives it to the Hunter (own dice) and the Responder (any crew die) only: solo spread 25 pts, rejected. '0' off.
+// The bot rerolls a die that can't do anything.
+const REROLL = process.env.REROLL || 'all';
 const KIT = ['triage', 'enrich', 'contain', 'recover'];
 // n6 (exact numbers, 2026-10-30): the mob card prints the dice to set under it, e.g. 1 2 2 3 + 6. A rolled die takes
 // out a die showing exactly its number. A double counts as two dice showing its number, or guards (never both).
@@ -110,7 +122,10 @@ function enter(G, m) { G.play.push(m); if (m.kw === 'beacon') for (const b of ro
 function roll(G) {
   const dice = [];
   if (G.sys === 'n6') {
-    G.team.forEach((id, k) => { const nd = G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) n6die(G, dice, k, true, G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : DOUBLES[id]); });
+    const raw = [];
+    G.team.forEach((id, k) => { const nd = G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) raw.push({ k, v: 1 + d6(G), dbl: G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : DOUBLES[id] }); });
+    if (REROLL !== '0') rerolls(G, raw);
+    raw.forEach(r => n6die(G, dice, r.k, true, r.dbl, r.v));
     for (let i = 0; i < active(G, 'triage'); i++) n6die(G, dice, G.point, false, DOUBLES.AGENT);
     return dice;
   }
@@ -118,6 +133,15 @@ function roll(G) {
     for (let i = 0; i < nd; i++) dice.push(G.sys === 'd20' ? { k, crew: true, r: d20(G) } : { k, crew: true, f: (SOLO === 'mixed' && G.n === 1 && i === nd - 1 ? CREW_DIE : DICE[id])[d6(G)] }); });
   for (let i = 0; i < active(G, 'triage'); i++) dice.push(G.sys === 'd20' ? { k: G.point, crew: false, r: d20(G) } : { k: G.point, crew: false, f: AGENT_DIE[d6(G)] });
   return dice;
+}
+// n6 rerolls: a die is dead if it isn't a double (doubles can always guard) and no mob in play shows its number.
+function rerolls(G, raw) {
+  const dead = r => !r.dbl.includes(r.v) && !G.play.some(m => m.need.includes(r.v) && m.kw !== 'hardened');
+  const go = r => { if (r) { r.v = 1 + d6(G); G.stats.rerolls = (G.stats.rerolls || 0) + 1; } };
+  // all: everyone may reroll one of their own dice once a round (a shared rule instead of two perks).
+  if (REROLL === 'all') { G.team.forEach((_, k) => go(raw.find(r => r.k === k && dead(r)))); return; }
+  const h = G.team.indexOf('HUN'); if (h >= 0) go(raw.find(r => r.k === h && dead(r)));
+  if (on(G, 'RES')) go(raw.find(dead));
 }
 // n6: roll one die into the list. A double counts as two dice showing that number: two entries, the second with
 // half: 1 and pair pointing at the first. The pair guards as one (the first half guards; the second then sits out).
@@ -149,7 +173,7 @@ function matchAt(G, d, m, need, wild) {
   if (m.kw === 'hardened' && d.f[1] < 2) return -1;
   if (wild || d.wildAll) return need.length ? 0 : -1;
   const i = need.indexOf(v); if (i >= 0) return i;
-  const adj = (id === 'HUN' && m.back) || (id === 'RES' && m === top(G));
+  const adj = NEAR && ((id === 'HUN' && m.back) || (id === 'RES' && m === top(G)));
   return adj ? need.findIndex(x => Math.abs(x - v) === 1) : -1;
 }
 const top = G => G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0];
@@ -249,6 +273,7 @@ function fight(G, mobs) {
     const beaten = G.play.filter(m => !m.left), alive = G.play.filter(m => m.left);
     for (const m of beaten) {
       if (m.boss) { if (m.kw === 'apt' && !m.rose) { m.rose = true; m.left = 2; m.need = G.sys === 'd6' ? ['D', 'C'] : G.sys === 'n6' ? numbersFor(m.id, 2) : null; alive.push(m); continue; } G.over = true; G.win = true; return; }
+      if (G.sys === 'n6' && PERSIST === 'always') { G.row.push(m); continue; }
       const gone = on(G, 'HUN') && m.back > 0; if (!gone && m.back < 1) G.row.push(m);
     }
     G.play = alive;
@@ -263,7 +288,7 @@ function fight(G, mobs) {
 function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hp.indexOf(Math.min(...G.hp)); if (G.hp[k] >= G.max) return; G.hp[k]++; } }
 function burn(G, t) {
   G.tray.splice(G.tray.indexOf(t), 1); G.discard.push(t);
-  if (t === 'contain') for (const m of G.play.slice()) { if (m.boss) { m.left = Math.max(1, m.left - 1); if (m.need) m.need.pop(); continue; } m.left--; if (m.need) m.need.pop(); if (!m.left) { G.play = G.play.filter(x => x !== m); if (m.back < 1) G.row.push(m); } }
+  if (t === 'contain') for (const m of G.play.slice()) { if (m.boss) { m.left = Math.max(1, m.left - 1); if (m.need) m.need.pop(); continue; } m.left--; if (m.need) m.need.pop(); if (!m.left) { G.play = G.play.filter(x => x !== m); if (m.back < 1 || (G.sys === 'n6' && PERSIST === 'always')) G.row.push(m); } }
   if (t === 'recover') spread(G, D.recoverBurn);
 }
 function draw(G, n) {
@@ -274,21 +299,21 @@ function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
   while (!G.over && G.feed.length) { G.point = G.hp.indexOf(Math.max(...G.hp)); const m = G.feed.pop(); const back = rollRow(G, true); if (G.over) break; fight(G, [m, ...back]); }
-  if (!G.over) { const back = rollRow(G, false); fight(G, [G.boss, ...back]); }
+  if (!G.over) { G.stats.boss = 1; const back = rollRow(G, false); fight(G, [G.boss, ...back]); }
   return G;
 }
 
-module.exports = { play, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, pipDie, rowTop, KEY, DOUBLES };
+module.exports = { play, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, ROWSHIFT, pipDie, rowTop, KEY, DOUBLES };
 
 if (require.main === module) {
   const N = +(process.env.N || 600), TEAMS = { 1: [['HUN'], ['RES'], ['ENG'], ['SOA'], ['PAT']], 2: [['HUN', 'RES'], ['ENG', 'SOA'], ['RES', 'PAT'], ['HUN', 'PAT'], ['SOA', 'PAT'], ['HUN', 'ENG']], 4: [['HUN', 'RES', 'ENG', 'SOA'], ['HUN', 'RES', 'SOA', 'PAT'], ['RES', 'ENG', 'SOA', 'PAT'], ['HUN', 'RES', 'ENG', 'PAT']] };
-  const run = (sys, teams, hp, smart = true) => { let w = 0, rounds = 0, choice = 0, back = 0, seed = 5; for (let g = 0; g < N; g++) { const G = play(sys, teams[g % teams.length], { hp, rnd: rng(seed++ * 2654435761), smart }); w += G.win; rounds += G.stats.rounds; choice += G.stats.choice; back += G.stats.back; } return { win: w / N, choice: choice / rounds, rounds: rounds / N, back: back / N }; };
+  const run = (sys, teams, hp, smart = true) => { let w = 0, rounds = 0, choice = 0, back = 0, early = 0, seed = 5; for (let g = 0; g < N; g++) { const G = play(sys, teams[g % teams.length], { hp, rnd: rng(seed++ * 2654435761), smart }); w += G.win; rounds += G.stats.rounds; choice += G.stats.choice; back += G.stats.back; early += !G.win && !G.stats.boss; } return { win: w / N, choice: choice / rounds, rounds: rounds / N, back: back / N, early: early / Math.max(1, N - w) }; };
   // Tune HP per system so the smart bot wins about half its two-player games: spreads only compare at equal odds.
   const tune = sys => { let lo = 5, hi = 200; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (run(sys, TEAMS[2], mid).win < 0.5) lo = mid; else hi = mid; } return hi; };
   const pct = x => Math.round(x * 100) + '%';
   for (const sys of (process.env.SYS || 'd20,n6').split(',')) {
     const hp = process.env.HP ? +process.env.HP : tune(sys); console.log(`\n== ${sys} · HP ${hp} ${process.env.HP ? '(set by HP)' : '(tuned to ~50% at 2p)'} ==`);
-    for (const n of [1, 2, 4]) { const s = run(sys, TEAMS[n], hp), r = run(sys, TEAMS[n], hp, false); console.log(`${n}p  win ${pct(s.win)} | random placement ${pct(r.win)} (skill gap ${Math.round((s.win - r.win) * 100)} pts) | rounds with a real dice choice ${pct(s.choice)} | rounds ${s.rounds.toFixed(1)} | comebacks ${s.back.toFixed(1)}`); }
+    for (const n of [1, 2, 4]) { const s = run(sys, TEAMS[n], hp), r = run(sys, TEAMS[n], hp, false); console.log(`${n}p  win ${pct(s.win)} | random placement ${pct(r.win)} (skill gap ${Math.round((s.win - r.win) * 100)} pts) | rounds with a real dice choice ${pct(s.choice)} | rounds ${s.rounds.toFixed(1)} | comebacks ${s.back.toFixed(1)} | losses before the boss ${pct(s.early)}`); }
     const solo = ['HUN', 'RES', 'ENG', 'SOA', 'PAT'].map(id => [id, run(sys, [[id]], hp).win]);
     console.log('solo by analyst: ' + solo.map(([id, w]) => `${id} ${pct(w)}`).join(' · ') + `  (spread ${Math.round((Math.max(...solo.map(x => x[1])) - Math.min(...solo.map(x => x[1]))) * 100)} pts)`);
     const ids = ['HUN', 'RES', 'ENG', 'SOA', 'PAT'], pairs = []; for (let i = 0; i < 5; i++) for (let j = i + 1; j < 5; j++) pairs.push([[ids[i], ids[j]], run(sys, [[ids[i], ids[j]]], hp).win]);

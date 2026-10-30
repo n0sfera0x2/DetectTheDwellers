@@ -34,7 +34,7 @@ const hitsOn = (G, di, m) => E.targets(G, di).hits.filter(h => h.uid === m.uid).
 const PRINTED = { mailer: [[2, 2], 6], spray: [[4, 4], 6], imp: [[1, 1], 6], druid: [[2, 3, 3], 6], wyrmling: [[4, 5, 5], 6], mimic: [[5, 5, 6, 6], 6], wyrm: [[2, 2, 3, 3, 3, 3, 3, 4], 6] };
 const otherSlot = (m, n, p) => m.slots.findIndex((v, i) => v === n && !m.off[i] && i !== p);
 
-test('mob dice come from the sim’s numbersFor, one fewer than the d20 hits (boss two fewer); HP 25', () => {
+test('mob dice come from the sim’s numbersFor, one fewer than the d20 hits (boss two fewer); HP 24', () => {
   for (const m of CARDS.mobs()) {
     const d = CARDS.diceFor(m); assert.deepEqual([d.base, d.extra], PRINTED[m.id], m.id);
     assert.deepEqual(d.base, SIM.numbersFor(m.id, m.hits - 1).slice().sort((a, b) => a - b));
@@ -44,7 +44,7 @@ test('mob dice come from the sim’s numbersFor, one fewer than the d20 hits (bo
   // Clustered: the main number repeats, e.g. 1 2 2 2 3 for five dice.
   assert.deepEqual(SIM.numbersFor('mailer', 5).sort(), [1, 2, 2, 2, 3]); assert.deepEqual(SIM.numbersFor('imp', 5).sort(), [1, 1, 1, 2, 2]);
   const G = E.newGame({ team: ['HUN', 'RES'], seed: 3 });
-  assert.equal(G.hp[0], 25); assert.equal(E.HP, 25); assert.equal(G.tray.length, D.quickStartAgent);
+  assert.equal(G.hp[0], 24); assert.equal(E.HP, 24); assert.equal(G.tray.length, D.quickStartAgent);
   assert.equal(E.newGame({ team: ['ENG'], seed: 3 }).tray.length, D.quickStartSolo);
   assert.equal(E.newGame({ team: ['SOA', 'HUN'], seed: 3 }).cap, D.sharedKit + 1);
 });
@@ -99,24 +99,26 @@ test('a double counts as two dice showing its number, on one mob or two, or guar
   const S = fight(['ENG', 'SOA'], ['spray'], { dice: [[1, 4]] }), ss = mob(S, 'spray');
   throwsRule(() => E.assign(S, 0, ss.uid, slotOf(ss, 4), otherSlot(ss, 4, slotOf(ss, 4))), /Only a double/);
 });
-test('Hunter: one higher or lower also matches against a comeback, not a fresh mob', () => {
-  const G = fight(['HUN', 'ENG'], ['spray'], { dice: [[0, 3]] }); // spray 4 4
-  const s = mob(G, 'spray');
-  assert.deepEqual(hitsOn(G, 0, s), []);
-  s.back = 1;
-  assert.deepEqual(hitsOn(G, 0, s), [4, 4]); assert.ok(E.targets(G, 0).hits.every(h => h.near));
-  E.assign(G, 0, s.uid, slotOf(s, 4)); assert.deepEqual(E.remaining(s), [4]);
-  // The Engineer's dice get no ±1.
-  setDice(G, [[1, 3]]); assert.deepEqual(hitsOn(G, 0, s), []);
+test('no one-higher-or-lower matches: the Hunter against a comeback, the Responder against the top hitter', () => {
+  const G = fight(['HUN', 'RES'], ['spray', 'mimic'], { dice: [[0, 3], [1, 5]] }); // spray 4 4; mimic D4: 5 5 6 6
+  const s = mob(G, 'spray'); s.back = 1;
+  assert.deepEqual(hitsOn(G, 0, s), []); // a 3 can't take a 4, comeback or not
+  assert.deepEqual(hitsOn(G, 1, mob(G, 'mimic')), [5, 5]); // exact only, even on the highest-Damage mob
+  assert.ok(E.targets(G, 1).hits.every(h => !h.near));
+  assert.doesNotMatch(CARDS.analystCard('HUN') + CARDS.analystCard('RES'), /one higher|gone for good/);
 });
-test('Responder: one higher or lower also matches against the highest-Damage mob only, boss included', () => {
-  const G = fight(['RES', 'SOA'], ['imp', 'mimic'], { dice: [[0, 5], [0, 2], [1, 4]] }); // imp D3: 1 1. mimic D4: 5 5 6 6
-  assert.deepEqual(hitsOn(G, 0, mob(G, 'mimic')).sort(), [5, 5, 6, 6]);
-  assert.deepEqual(hitsOn(G, 1, mob(G, 'imp')), []); // exact only on imp: a 2 can't take a 1
-  assert.deepEqual(hitsOn(G, 2, mob(G, 'mimic')), []); // the Soarcerer's 4 gets no ±1
-  const B = fight(['RES', 'ENG'], ['boss'], { dice: [[0, 5]] }); // boss: 2 2 3 3 3 3 3 4, no 5
-  assert.deepEqual([...new Set(hitsOn(B, 0, B.boss))].sort(), [4]);
-  E.assign(B, 0, 'boss'); assert.equal(offCount(B.boss), 1);
+test('reroll: once a round each player rerolls one of their own unused dice; it can’t be undone', () => {
+  const G = fight(['ENG', 'SOA'], ['spray'], { dice: [[0, 3], [0, 4], [1, 2], ['agent', 5]] }); // ENG 4 is a double
+  G.rerolled = [false, false]; const s = mob(G, 'spray');
+  throwsRule(() => E.reroll(G, 3), /Agent dice/);
+  E.assign(G, 1, s.uid, slotOf(s, 4)); throwsRule(() => E.reroll(G, 1), /already used/); // half-used double
+  assert.ok(E.canReroll(G, G.dice[0])); E.reroll(G, 0);
+  assert.ok(G.dice[0].n >= 1 && G.dice[0].n <= 6); assert.equal(G.dice[0].dbl, CARDS.DOUBLES.ENG.includes(G.dice[0].n));
+  assert.equal(G.undo.length, 0, 'a reroll clears undo'); throwsRule(() => E.reroll(G, 0), /already rerolled/);
+  assert.ok(E.canReroll(G, G.dice[2])); E.reroll(G, 2); assert.equal(G.rerolled.join(), 'true,true');
+  // A new round resets it; the engine rolls fresh.
+  const H = E.newGame({ team: ['HUN', 'RES'], seed: 9 }); E.flip(H); if (H.phase === 'roll') E.roll(H);
+  assert.equal(H.rerolled.join(), 'false,false'); assert.match(CARDS.legend, /reroll one of your own dice/);
 });
 test('Evasive: only a double can hit it', () => {
   const G = fight(['PAT', 'SOA'], ['druid'], { dice: [[1, 3], [0, 3]] }); // druid: 2 3 3; PAT doubles 3, 6
@@ -151,25 +153,25 @@ test('the row: comebacks return with all their dice; only the two highest-Damage
   E.flip(G);
   assert.equal(G.play.length, 5); assert.equal(G.row.length, 0);
   assert.ok(row.every(m => m.back === 1 && E.left(m) === m.hits));
-  assert.deepEqual(G.hp, [25 - 8, 25 - 8]);
+  assert.deepEqual(G.hp, [24 - 8, 24 - 8]);
   assert.equal(G.lastRow.strikes.length, 2);
   assert.equal(G.lastRow.pair.length, 2); assert.equal(G.lastRow.roll, G.lastRow.pair[0] + G.lastRow.pair[1]);
 });
 
 test('the row on 2d6: tiers from the d20 ranges; a mob comes back if the sum is at most its number', () => {
-  for (const [N, k] of [[13, 8], [12, 8], [11, 7], [10, 7], [9, 6], [8, 6], [7, 5], [5, 5]]) { assert.equal(CARDS.rowTop(N), k); assert.equal(SIM.rowTop(N), k); }
+  for (const [N, k] of [[13, 5], [12, 5], [11, 4], [10, 4], [9, 3], [8, 3], [7, 2], [5, 2]]) { assert.equal(CARDS.rowTop(N), k); assert.equal(SIM.rowTop(N), k); }
   const G = E.newGame({ team: ['ENG', 'SOA'], seed: 2 });
   const tops = Object.fromEntries(G.feed.map(m => [m.id, m.top]));
-  assert.deepEqual(tops, { mailer: 8, spray: 8, druid: 7, imp: 6, mimic: 6, wyrmling: 6 });
+  assert.deepEqual(tops, { mailer: 5, spray: 5, druid: 4, imp: 3, mimic: 3, wyrmling: 3 });
   const take = id => { const m = G.feed.find(x => x.id === id); G.feed = G.feed.filter(x => x !== m); return m; };
-  const imp = take('imp'), spray = take('spray'), druid = take('druid'); // back on 2–6, 2–8, 2–7
+  const imp = take('imp'), spray = take('spray'), druid = take('druid'); // back on 2–3, 2–5, 2–4
   G.row = [imp, spray, druid];
-  const seq = [2.5 / 6, 3.5 / 6]; G.r = () => seq.shift(); // the amber pair rolls 3 + 4 = 7
+  const seq = [1.5 / 6, 1.5 / 6]; G.r = () => seq.shift(); // the amber pair rolls 2 + 2 = 4
   const back = E.rollRow(G, false, 'test');
-  assert.deepEqual(G.lastRow.pair, [3, 4]); assert.equal(G.lastRow.roll, 7);
+  assert.deepEqual(G.lastRow.pair, [2, 2]); assert.equal(G.lastRow.roll, 4);
   assert.deepEqual(back.map(m => m.id).sort(), ['druid', 'spray']); assert.deepEqual(G.row, [imp]);
   // The printed card says the same number.
-  assert.match(CARDS.mobCard(D.mobs.find(m => m.id === 'imp')), /back on 2–6/);
+  assert.match(CARDS.mobCard(D.mobs.find(m => m.id === 'imp')), /back on 2–3/);
 });
 
 test('Beacon rolls the row when it arrives; the boss arrives with no arrival hits', () => {
@@ -182,15 +184,15 @@ test('Beacon rolls the row when it arrives; the boss arrives with no arrival hit
   E.flip(G); assert.ok(G.rows.length >= 1); // the flip rolls, and the Beacon rolls again (empty row by then)
   const B = E.newGame({ team: ['ENG', 'SOA'], seed: 4 }); const m = B.feed.find(x => x.id === 'mimic'); m.top = 12;
   B.row = [m]; B.feed = []; E.flip(B);
-  assert.ok(B.play.includes(B.boss) && B.play.includes(m)); assert.deepEqual(B.hp, [25, 25]);
+  assert.ok(B.play.includes(B.boss) && B.play.includes(m)); assert.deepEqual(B.hp, [24, 24]);
 });
 
-test('after a fight: beaten mobs go to the row unless they came back once; then gone for good', () => {
-  const G = fight(['HUN', 'ENG'], ['spray', 'imp'], { dice: [[1, 4]] }); // ENG 4 is a double: both of spray's 4s
-  const s = mob(G, 'spray'), i = mob(G, 'imp'); i.back = 1; i.off = i.off.map(() => true);
+test('after a fight: every beaten mob goes back to the row, comebacks too, whoever beat it', () => {
+  const G = fight(['HUN', 'ENG'], ['spray', 'imp'], { dice: [[1, 4]] }); // ENG 4 is a double: both of spray's 4s; the Hunter is on the crew
+  const s = mob(G, 'spray'), i = mob(G, 'imp'); i.back = 2; i.off = i.off.map(() => true);
   E.assign(G, 0, s.uid, slotOf(s, 4)); E.assign(G, 0, s.uid, slotOf(s, 4));
   E.endRound(G);
-  assert.ok(G.row.includes(s)); assert.ok(G.gone.includes(i)); assert.equal(G.play.length, 0);
+  assert.ok(G.row.includes(s)); assert.ok(G.row.includes(i)); assert.equal(G.gone.length, 0); assert.equal(G.play.length, 0);
   assert.ok(['flip', 'loot'].includes(G.phase));
 });
 
@@ -376,7 +378,7 @@ test('page: agents sit on the mat; a Triage Agent’s die lands under its own ca
   click('[data-a="start"]');
   const G = w.CDUI.UI.G; G.tray = [{ uid: 'k1', t: 'triage' }, { uid: 'k2', t: 'recover' }, { uid: 'k3', t: 'triage' }]; w.CDUI.render();
   assert.ok(d.querySelector('.table .t-agents [data-kuid="k1"]'), 'agents are on the play mat'); assert.ok(!d.querySelector('.t-side .t-kslot'), 'not in the side panel');
-  assert.equal(d.querySelectorAll('.t-agents .t-die.ph').length, 2, 'a spot under each Triage card before the roll');
+  assert.equal(d.querySelectorAll('.t-agents .t-dph').length, 2, 'a spot under each Triage card before the roll');
   click('[data-a="flip"]'); if (G.phase === 'roll') click('[data-a="roll"]'); assert.equal(G.phase, 'assign');
   const ag = G.dice.filter(x => !x.crew); assert.equal(ag.map(x => x.kuid).join(), 'k1,k3');
   for (const x of ag) assert.ok(d.querySelector(`[data-kuid="${x.kuid}"] .t-adice [data-k="die${x.i}"]`), 'under its card');
@@ -384,4 +386,13 @@ test('page: agents sit on the mat; a Triage Agent’s die lands under its own ca
   assert.equal(d.querySelectorAll('[data-kuid="k2"] .t-die').length, 0, 'only Triage rolls');
   // Picking the agent die under its card works like any die.
   d.querySelector(`[data-k="die${ag[0].i}"]`).click(); assert.equal(w.CDUI.UI.sel, ag[0].i);
+});
+
+test('page: hovering a small card on the mat shows it full size, with the shared card markup', { skip: !JSDOM && 'jsdom not installed' }, () => {
+  const w = load(8), d = w.document; d.querySelector('[data-a="start"]').click();
+  const slot = d.querySelector('.t-cslot[data-card^="analyst:"]'), id = slot.dataset.card.slice(8);
+  slot.querySelector('.card .nm').dispatchEvent(new w.MouseEvent('mouseover', { bubbles: true }));
+  const pk = d.querySelector('.t-peek'); assert.ok(pk.classList.contains('on'), 'peek shows');
+  const t = d.createElement('div'); t.innerHTML = CARDS.analystCard(id); assert.equal(pk.querySelector('.card').outerHTML, t.firstElementChild.outerHTML);
+  d.querySelector('.top').dispatchEvent(new w.MouseEvent('mouseover', { bubbles: true })); assert.ok(!pk.classList.contains('on'), 'peek hides off the card');
 });

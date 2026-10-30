@@ -254,7 +254,7 @@
     const dmg = E.dmgOf(G, m), inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null;
     const enter = FX && FX.enter.has(m.uid), ko = FX && FX.ko.has(m.uid), struck = FX && [...FX.struck].some(k => k.startsWith(m.uid + '-'));
     const lines = [];
-    if (down) lines.push(`<span>Beaten. ${m.back ? 'Gone for good' : 'Goes on the row'} at the end of the round.</span>`);
+    if (down) lines.push('<span>Beaten. Goes back on the row at the end of the round.</span>');
     else {
       lines.push(`<span><b class="num">${E.left(m)}</b> of ${m.hits} dice left · hits for <b class="num">${dmg}</b>${dmg !== m.dmg ? ` <span class="hot">(${dmg > m.dmg ? '+' : ''}${dmg - m.dmg})</span>` : ''}</span>`);
       if (inc) lines.push(inc.to.length ? `<span class="hot">At round end: ${inc.dmg} to ${inc.to.map(k => esc(nm(G.team[k]))).join(', ')}</span>` : '<span class="safe">At round end: blocked</span>');
@@ -262,7 +262,7 @@
     if (G.n >= 3) lines.push(`<span>${G.n} players: + die set ${G.n - 2}× (marked +)</span>`);
     const cls = ['t-slot', down ? 'down' : '', ko ? 'ko' : '', enter ? (m.back ? 'fresh' : 'flipin') : '', struck && !ko ? 'struck' : '', m.back && !down ? 'back' : ''].filter(Boolean).join(' ');
     return `<div class="${cls}" data-card="${cardKey(m)}" data-uid="${m.uid}">${cardFor(m)}
-      ${m.back && !down ? `<span class="t-stamp bstamp${enter ? ' new' : ''}" aria-hidden="true">${m.back > 1 ? `Back ×${m.back}` : 'Came back'}</span>` : ''}${down ? `<span class="t-stamp beat${ko ? ' new' : ''}">${m.back ? 'Gone' : 'Down'}</span>` : ''}
+      ${m.back && !down ? `<span class="t-stamp bstamp${enter ? ' new' : ''}" aria-hidden="true">${m.back > 1 ? `Back ×${m.back}` : 'Came back'}</span>` : ''}${down ? `<span class="t-stamp beat${ko ? ' new' : ''}">Down</span>` : ''}
       ${vThreat(m)}<div class="t-under">${lines.join('')}</div></div>`;
   }
   // Between fights: the feed face down (the print card back) and who's on point, as analyst cards with portraits.
@@ -296,7 +296,7 @@
     // With any Triage on the mat, every card keeps the die row's height so the Burn buttons line up.
     const anyT = G.tray.some(c => c.t === 'triage');
     const under = c => { if (c.t !== 'triage') return anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''; const ds = G.dice.filter(d => d.kuid === c.uid);
-      return `<div class="t-adice" role="group" aria-label="${esc(E.KIT_NAME[c.t])} die">${ds.length ? ds.map(d => dieHtml(d, G.dice.length)).join('') : '<span class="t-die ph" aria-hidden="true"><span class="o">Rolls 1</span></span>'}</div>`; };
+      return `<div class="t-adice" role="group" aria-label="${esc(E.KIT_NAME[c.t])} die">${ds.length ? ds.map(d => dieHtml(d, G.dice.length)).join('') : '<span class="t-dph" aria-hidden="true">Rolls<br>1 die</span>'}</div>`; };
     const kit = G.tray.length ? `<div class="t-kit">${G.tray.map(c => { const can = !loot && E.canBurn(G, c.t);
       return `<div class="t-kslot${loot && drawn.has(c.uid) ? ' drawn' : ''}${can ? ' live' : ''}" data-card="agent:${c.t}" data-kuid="${c.uid}">${A.agentCard(c.t)}${under(c)}
       <div class="row"><span class="run">${loot ? (drawn.has(c.uid) ? 'New' : '') : 'Running'}</span>${loot ? `<button class="btn s warn" data-a="discard" data-u="${c.uid}" data-k="disc${c.uid}">Discard</button>` : `<button class="btn s cy" data-a="burn" data-u="${c.uid}" data-k="burn${c.uid}" ${can ? '' : 'disabled'} aria-label="Burn the ${E.KIT_NAME[c.t]}">Burn</button>`}</div></div>`; }).join('')}</div>`
@@ -308,7 +308,7 @@
     const rows = [['c', 'To hit', 'A die takes one die under it showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards.'],
       ['f', m.boss ? 'Boss' : 'Keyword', m.boss ? 'Agent dice can’t hit it. +2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`],
       ['f', 'Round end', !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`],
-      ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : m.back ? 'Gone for good: it already came back once.' : `It goes on the persistence row, and comes back on a row roll of 2–${m.top}.`]];
+      ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : `It goes back on the persistence row, every time, and comes back on a row roll of 2–${m.top}.`]];
     return `<div class="rbrief"><h2 class="sech">Round ${G.round || 1}</h2><ul>${rows.map(([c, h, t]) => `<li><span class="phud ${c}">${h}</span><span>${t}</span></li>`).join('')}</ul></div>`;
   }
   function vSide() {
@@ -318,7 +318,7 @@
       <span class="t-track" aria-hidden="true">${Array.from({ length: 11 }, (_, i) => `<i class="${i + 2 <= m.top ? 'on' : ''}${r && r.fight === G.fight && r.roll === i + 2 ? ' roll' : ''}">${i + 2}</i>`).join('')}</span></div></div>`).join('')}</div>`
       : '<p class="empty">Empty. Beaten mobs land here and come back on the 2 amber dice.</p>';
     return `<aside class="t-side">
-      <div class="panel pad"><h2 class="sech a"><span>Persistence row</span><span class="cnt">${G.gone.length ? `${G.gone.length} gone for good` : ''}</span></h2>${rowHtml}</div>
+      <div class="panel pad"><h2 class="sech a"><span>Persistence row</span><span class="cnt"></span></h2>${rowHtml}</div>
       <div class="panel pad"><h2 class="sech"><span>Crew cards</span><span class="cnt">${esc(nm(G.team[G.point]))} on point</span></h2><div class="t-crewcards">${G.team.map((id, k) => `<div class="t-cslot${k === G.point ? ' pt' : ''}" data-card="analyst:${id}">${A.analystCard(id)}${k === G.point ? '<div class="lbl">On point</div>' : ''}</div>`).join('')}
         <div class="t-cslot" data-card="legend">${A.legend}</div></div></div>
     </aside>`;
@@ -346,12 +346,13 @@
       if (d && !d.used && d.takes.length) hint = `<b>${esc(E.dieOwner(G, d))}: double ${d.n}, one more ${d.n} to place.</b> ${t.hits.length ? 'Tap another matching die, under this mob or another.' : `No ${d.n} left to take.`} Or pick another die.`;
       else if (!d) hint = G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under a mob. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.';
       else if (d.used) hint = 'That die is used. <b>Undo</b> to take it back.';
-      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one mob or two, <b>or Guard</b>.` : 'Tap a glowing die under a mob that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') : 'Nothing it can hit.'}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
+      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one mob or two, <b>or Guard</b>.` : 'Tap a glowing die under a mob that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it?</b>' : ''}`}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
       const ag = G.dice.filter(x => x.kuid).length;
       ctl = `<div class="t-dice" role="group" aria-label="Crew dice">${G.dice.filter(x => !x.kuid).map(x => dieHtml(x, G.dice.length)).join('')}${ag ? `<span class="t-agnote">+ ${ag} agent ${ag === 1 ? 'die' : 'dice'} under ${ag === 1 ? 'its card' : 'their cards'}</span>` : ''}</div>
         <div class="acts">
         ${sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard <kbd>G</kbd></button>` : ''}
+        ${d && E.canReroll(G, d) ? `<button class="btn" data-a="reroll" data-k="reroll">Reroll it <kbd>X</kbd></button>` : ''}${G.rerolled ? `<span class="inc rr">Rerolls left: ${G.team.map((id, k) => G.rerolled[k] ? '' : esc(SHORT[id])).filter(Boolean).join(', ') || 'none'}</span>` : ''}
         ${sel && t.enrich ? `<span class="inc">Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
         <span class="inc grow dk">${incText()}</span>
         <button class="btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <kbd>U</kbd></button>
@@ -418,6 +419,30 @@
   }
   function focusKey(k) { const el = app.querySelector(`[data-k="${k}"]`); if (el && !el.disabled) el.focus({ preventScroll: true }); }
 
+  // ---- Card peek: hover a small card (tap it on a phone) to read it full size ----------------------------------
+  // The peek holds the same shared card markup as print and the gallery. It lives outside #app so renders keep it.
+  const peek = document.createElement('div'); peek.className = 't-peek'; peek.setAttribute('aria-hidden', 'true'); document.body.appendChild(peek);
+  const cardByKey = k => k === 'boss' ? A.bossCard(A.boss()) : k === 'legend' ? A.legend : k.startsWith('mob:') ? A.mobCard(dataMob(k.slice(4)))
+    : k.startsWith('analyst:') ? A.analystCard(k.slice(8)) : k.startsWith('agent:') ? A.agentCard(k.slice(6)) : '';
+  let peekKey = null, lastPtr = 'mouse';
+  function showPeek(slot) {
+    const c = slot && slot.querySelector('.card'); if (!c || slot.closest('.t-gallery')) return hidePeek();
+    const r = c.getBoundingClientRect(); if (r.width >= 300) return hidePeek(); // already big enough to read
+    const k = slot.dataset.card; if (peekKey !== k) { peek.innerHTML = cardByKey(k); peekKey = k; }
+    const vw = window.innerWidth, vh = window.innerHeight, W = Math.min(360, vw - 16, (vh - 16) * 240 / 336), H = W * 336 / 240, gap = 12;
+    let x = r.right + gap; if (x + W > vw - 8) x = r.left - gap - W; if (x < 8) x = (vw - W) / 2;
+    const y = Math.max(8, Math.min(r.top + r.height / 2 - H / 2, vh - H - 8));
+    peek.style.setProperty('--pz', (W / 240).toFixed(3)); peek.style.left = x + 'px'; peek.style.top = y + 'px'; peek.classList.add('on');
+  }
+  function hidePeek() { peek.classList.remove('on'); peekKey = null; }
+  const peekSlot = t => t && t.closest && t.closest('.card') && !t.closest('[data-a]') ? t.closest('[data-card]') : null;
+  app.addEventListener('pointerdown', e => { lastPtr = e.pointerType || 'mouse'; }, { capture: true });
+  app.addEventListener('mouseover', e => { if (lastPtr === 'touch') return; const s = peekSlot(e.target); if (s) showPeek(s); else hidePeek(); });
+  app.addEventListener('mouseleave', hidePeek);
+  app.addEventListener('click', e => { if (lastPtr !== 'touch') return; const s = peekSlot(e.target);
+    if (s && !(peek.classList.contains('on') && peekKey === s.dataset.card)) showPeek(s); else hidePeek(); });
+  window.addEventListener('scroll', hidePeek, { passive: true });
+
   app.addEventListener('click', e => {
     const G = UI.G;
     const b = e.target.closest && e.target.closest('[data-a]'); if (!b || b.disabled) return;
@@ -437,6 +462,7 @@
     if (a === 'die') { const i = +b.dataset.i; UI.more = null; UI.sel = UI.sel === i ? null : i; UI.msg = ''; return render(); }
     if (a === 'slot') return tapSlot(b.dataset.u, +b.dataset.p);
     if (a === 'guard') return doGuard();
+    if (a === 'reroll') { const i = UI.sel; act(() => E.reroll(G, i)); return focusKey('die' + i); }
     if (a === 'turn') { const i = UI.sel; return act(() => E.enrichTurn(G, i, +b.dataset.n)); }
     if (a === 'undo') { UI.more = null; act(() => E.unassign(G)); const last = G.dice.filter(d => !d.used).map(d => d.i); if (UI.sel == null || (G.dice[UI.sel] && G.dice[UI.sel].used)) UI.sel = last.length ? last[last.length - 1] : null; return render(); }
     if (a === 'end') { UI.sel = null; UI.more = null; act(() => E.endRound(G)); return focusKey(G.phase === 'roll' ? 'roll' : 'flip'); }
@@ -447,6 +473,7 @@
   document.addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target || {}).tagName || '')) return;
     const G = UI.G, key = e.key.toLowerCase(), click = k => { const el = app.querySelector(`[data-a="${k}"]`); if (el && !el.disabled) { el.click(); e.preventDefault(); } };
+    if (key === 'escape' && peek.classList.contains('on')) { hidePeek(); return; }
     if (key === 'escape') { if (UI.cards) UI.cards = false; else if (UI.drawer) UI.drawer = null; else if (UI.reveal) UI.reveal = false; else UI.sel = null; return render(); }
     if (!G) return;
     if (key === 'l') return click('log');
@@ -456,6 +483,7 @@
     if (G.phase === 'assign') {
       if (/^[1-9]$/.test(key) && G.dice[+key - 1]) { UI.more = null; UI.sel = +key - 1; UI.msg = ''; render(); return focusKey('die' + UI.sel); }
       if (key === 'g') return click('guard');
+      if (key === 'x') return click('reroll');
       if (key === 'u' || key === 'backspace') return click('undo');
       if (key === 'e') return click('end');
     }

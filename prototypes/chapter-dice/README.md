@@ -1,6 +1,6 @@
 # Prototype: chapter dice (d6s) against the current d20
 
-**Status:** exact numbers with **clustered dice and two-of-a-number doubles** since 2026-10-30 (see [Clustered dice](#clustered-dice-and-two-of-a-number-doubles-2026-10-30)). Mob cards print the dice to set under them, bunched round a main number (1 2 2 3); a rolled die takes out a die showing exactly its number, and a double counts as two dice showing its number. The sim (`SYS=n6`, the default d6 family), the paper prototype and the web version all play these rules at 25 HP. The earlier symbol system stays reachable in the sim with `SYS=d6`. Next step: a table playtest against today's Quick Shift.
+**Status:** since the [row and reroll pass](#always-persist-row-no-one-off-matches-rerolls-2026-10-30) (2026-10-30), beaten mobs always go back to the row (row numbers retuned to 2–5 / 2–4 / 2–3), there are no one-higher-or-lower matches, and once a round each player may reroll one of their own dice. HP 24. Before that: exact numbers with **clustered dice and two-of-a-number doubles** (see [Clustered dice](#clustered-dice-and-two-of-a-number-doubles-2026-10-30)). Mob cards print the dice to set under them, bunched round a main number (1 2 2 3); a rolled die takes out a die showing exactly its number, and a double counts as two dice showing its number. The sim (`SYS=n6`, the default d6 family), the paper prototype and the web version all play these rules at 25 HP. The earlier symbol system stays reachable in the sim with `SYS=d6`. Next step: a table playtest against today's Quick Shift.
 
 ## Hypothesis
 
@@ -71,6 +71,37 @@ Both play the same cut-down shift.
 | Enrichment burn | Every die is wild this round |
 | Evasive ("natural 12+") | Only a double face hits it |
 | Triage Agent's die | A plain six-face die: one each of D, C, E, D, C, E |
+
+## Always-persist row, no one-off matches, rerolls (2026-10-30)
+
+Asked for: the Hunter can't remove row mobs for good; the row retuned for the d6 game; no matching one higher or lower, so the test shows what the printed numbers and each class's doubles do on their own; and some way to reroll.
+
+### The rules now
+
+- **Every beaten mob goes back on the row, every time.** Before, a mob that had come back once was gone for good when beaten (for anyone), and the Hunter's "gone for good" line did nothing extra. Now nothing removes a mob, as in the real game minus the Hunter.
+- **Row numbers three lower:** the d20 tiers map to 2–5 (top 12+), 2–4 (10–11), 2–3 (8–9), 2 (7 or less). Mailer Daemon and Password Sprayer 2–5 (28%), Living-off-the-Land Scavenger 2–4 (17%), the rest 2–3 (8%).
+- **No one-higher-or-lower matches.** The Hunter and Responder perks are gone; their cards now just point at their doubles (low: 1, 2; middle: 3, 4). The Soarcerer's and Fixer's kit and heal perks stay.
+- **Rerolls: once a round, each player may reroll one of their own dice** (solo: one die; the solo crew die and Triage burn dice count as yours), before it's used or turned by Enrichment. It can't be undone. Agent dice can't be rerolled. Web: **Reroll it** (X) under a selected die.
+- **HP 24.**
+
+### Sim (2026-10-30, `SYS=n6`, 300–400 games per row)
+
+| Row tiers | HP for ~50% at 2p | Comebacks / game (2p) | Rounds (2p) |
+| --- | --- | --- | --- |
+| Old, once-then-gone (before) | 25 | 4.5 | 19.7 |
+| Always persist, as printed (8/7/6/5) | — | 8.2 (1% wins at HP 25) | 13.8 |
+| Always persist, 2 lower | 97 | 13.9 | 30.7 |
+| **Always persist, 3 lower** | 32 (perk rerolls) / **24 (everyone rerolls)** | **6.1** | **17.7** |
+
+| Rerolls (3 lower) | HP | 1p / 2p / 4p | Solo spread |
+| --- | --- | --- | --- |
+| None | 44 | 41 / 50 / 51% | 7 pts |
+| Hunter (own) and Responder (any crew die) as perks | 32 | 38 / 50 / 56% | 25 pts (Responder 56%, Fixer 31%): rejected |
+| **Everyone, one own die a round** | **24** | **42 / 50 / 47%** (3p 55%) | **11 pts** |
+
+Rerolls are strong: they move HP 44 → 24 and fights 21.6 → 17.6 rounds. The bot rerolls about one die a round at two players. Skill gap at 2p 12 points (random placement 38%). **Open:** losses before the boss run 75–80% at 2p; the boss is the easy part of the d6 game, so the row is doing the killing. Worth a look at the table.
+
+Sim knobs: `ROWSHIFT` (default 3), `PERSIST` (`always`, or `once`), `NEAR=1` (one-off matches back), `REROLL` (`all`, `perks`, `0`).
 
 ## Clustered dice and two-of-a-number doubles (2026-10-30)
 
@@ -364,7 +395,7 @@ Add `?seed=123` to the URL to replay a shift.
 
 **What it plays:** exactly the paper rules sheet.
 
-- 1–4 players, each with their own analyst, all at 25 HP. Tuned for 2 players, and the setup screen says so.
+- 1–4 players, each with their own analyst, all at 24 HP. Tuned for 2 players, and the setup screen says so.
 - The six paper mobs are shuffled, with the Lockjaw Syndicate underneath. 4 players get the card's + die (a 6).
 - The kit deck is the 8 agents. The crew starts with 2 (1 solo), and the tray holds 5 (6 with the Soarcerer). When a draw overfills the tray, you choose what to discard.
 - **A flip:** pick who's on point, then flip. The row roll shows the amber pair, their sum and what came back; the side panel shows each row mob's number on a 2–12 track. The two highest-Damage comebacks hit everyone on arrival, and the Beacon chains.

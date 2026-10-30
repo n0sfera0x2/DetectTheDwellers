@@ -8,7 +8,7 @@ const { fonts } = require('../../../deck/render');
 const { launch, fontsReady } = require('../../../deck/browser');
 const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, mobs: cardMobs, boss, ANALYST_IDS, AGENT_IDS, CARD_CSS } = require('../cards');
 
-const OUT = __dirname, HP = 25; // starting HP for clustered dice and two-of-a-number doubles (2026-10-30): about 53% at two players in the sim
+const OUT = __dirname, HP = 24; // starting HP (2026-10-30): always-persist row, no one-off matches, one reroll each a round; ~50% at two players in the sim
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
@@ -42,14 +42,14 @@ const rules = `<section class="page rules">
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>
-<li><b>Roll.</b> Everyone rolls one crew die. On point rolls two. Solo: two of your own dice plus the crew die (second colour). Each running Triage Agent rolls an agent die (second colour).</li>
+<li><b>Roll.</b> Everyone rolls one crew die. On point rolls two. Solo: two of your own dice plus the crew die (second colour). Each running Triage Agent rolls an agent die (second colour), set under its card. <b>Once a round, each player may reroll one of their own dice</b> before using it.</li>
 <li><b>Match.</b> A die takes out one threat die showing <b>exactly</b> its number: a ${P(4)} takes a ${P(4)}. Turn the taken die aside.</li>
 <li><b>Hits back.</b> Every mob with dice left hits everyone who isn’t blocking, for its Damage. A mob with no dice left is beaten.</li>
 </ol>
 <h2>Doubles</h2>
 <p>Your analyst card shows your doubles: ${['HUN', 'RES', 'ENG', 'SOA', 'PAT'].map(id => `${cls(id).name} ${DOUBLES[id].join(', ')}`).join(' · ')}. Every other die (the solo crew die, agent dice): <b>only a 6</b>. A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(2)} takes two ${P(2)}s, under one mob or two. <b>Or</b> it guards: you block this round. Never both. Agent dice can’t guard or hit the boss.</p>
 <h2>After a fight</h2>
-<p>Beaten mobs go on the row, unless they already came back once: then they’re gone for good. Draw ${D.kitPerFight} agent cards (${D.kitSolo} solo) into the tray, which holds ${D.sharedKit}. Run an agent every round, or burn it once for its big effect. A die turned by Enrichment keeps what it was: a double stays a double.</p>
+<p>Beaten mobs go back on the row, <b>every time</b>: nothing removes them for good. Draw ${D.kitPerFight} agent cards (${D.kitSolo} solo) into the tray, which holds ${D.sharedKit}. Run an agent every round, or burn it once for its big effect. A die turned by Enrichment keeps what it was: a double stays a double.</p>
 <h2>Win or lose</h2>
 <p>Beat the boss and you’ve survived the night. Anyone at 0 HP and the shift is lost.</p>
 <h2>Keywords in this test</h2>

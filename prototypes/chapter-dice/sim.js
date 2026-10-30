@@ -1,9 +1,9 @@
 // Chapter dice prototype: the same cut-down shift played several ways, to decide whether d6s (Escape the Dark
 // Castle's chapter dice) beat the current d20 + bonus ≥ Defense system.
 //   d20: today's rules. Hit = d20 + bonus ≥ Defense; 18–20 is two hits and blocks; a 14+ crew die can guard.
-//   n6 (default, exact numbers, 2026-10-30): the mob card prints the dice to set under it. A rolled die takes out a
-//        die showing exactly its number; a double takes its match plus any one more, or guards. Crews of 3–4 add
-//        the card's extra number once per player past two. The persistence row rolls 2d6.
+//   n6 (default, exact numbers, 2026-10-30): the mob card prints the dice to set under it, clustered round a main
+//        number (1 2 2 2 3). A rolled die takes out a die showing exactly its number; a double counts as two dice
+//        showing its number (or guards). Four players add a 6 under every mob. The persistence row rolls 2d6.
 //   d6 (SYS=d6, the earlier symbol system): pip d6s read 1–2 Detect, 3–4 Contain, 5–6 Eradicate; a mob's hits are
 //        a row of symbols (DICE=custom: the custom symbol dice before that).
 // Shared: the real mobs, bosses, keywords, damage, persistence row ranges, kit economy, one bot brain that scores
@@ -49,19 +49,29 @@ const P2 = k => { let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6
 const rowTopNear = N => { let best = 2; for (let k = 2; k <= 12; k++) if (Math.abs(P2(k) - N / 20) < Math.abs(P2(best) - N / 20)) best = k; return best; };
 const rowTop = N => process.env.ROWMAP === 'near' ? rowTopNear(N) : (N >= 12 ? 8 : N >= 10 ? 7 : N >= 8 ? 6 : 5);
 const KIT = ['triage', 'enrich', 'contain', 'recover'];
-// n6 (exact numbers, 2026-10-30): the mob card prints the dice to set under it, e.g. 2 4 5 + 3. A rolled die takes
-// out a die showing exactly its number. A double takes its match plus any one more, or guards. Crews of 3–4 add
-// the card's extra number once per player past two; solo plays the two-player dice. Hunter (vs comebacks) and
+// n6 (exact numbers, 2026-10-30): the mob card prints the dice to set under it, e.g. 1 2 2 3 + 6. A rolled die takes
+// out a die showing exactly its number. A double counts as two dice showing its number, or guards (never both).
+// A crew of four adds the card's + die; solo plays the two-player dice. Hunter (vs comebacks) and
 // Responder (vs the biggest hitter) match one higher or lower too. N6DICE: dice per analyst (on point +1).
+// Bigger crews (2026-10-30, clustered dice): one more threat die showing 6 per player past three. Past two (the
+// first exact-numbers rule) left 3p at 36% and 4p at 19% once doubles stopped taking "any one more".
+const XFROM = +(process.env.XFROM || 3);
 const N6DICE = +(process.env.N6DICE || 1), N6SOLO = +(process.env.N6SOLO || 3);
+// Clustered dice (2026-10-30): each mob has a main number and its dice bunch around it, e.g. main 2 prints
+// 1 2 2 2 3. Repeats make a double on the main number (it counts as two of that number) worth the most. MAIN
+// spreads the prototype's six mobs and the boss across the faces; any other mob takes a main from its id.
+// Self-contained: web/build.js lifts this function into the page.
 function numbersFor(id, n) {
+  const MAIN = { mailer: 2, spray: 4, imp: 1, druid: 3, wyrmling: 5, mimic: 6, wyrm: 3 };
   let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  const out = [], cnt = [0, 0, 0, 0, 0, 0, 0];
-  while (out.length < n) { h = (h * 1103515245 + 12345) >>> 0; const v = 1 + (h >>> 16) % 6; if (cnt[v] < 2) { cnt[v]++; out.push(v); } }
-  return out;
+  // Main twice, the one below, the one above, then main again: 2 dice 2 2, 3 dice 1 2 2, 4 dice 1 2 2 3, 5 dice 1 2 2 2 3. At the
+  // edges both neighbours are the inside one (main 1: 1 2 2 1 1).
+  const m = MAIN[id] || 1 + h % 6, lo = m > 1 ? m - 1 : m + 1, hi = m < 6 ? m + 1 : m - 1, pat = [m, m, lo, hi, m];
+  return Array.from({ length: n }, (_, i) => pat[i % 5]);
 }
-// The dice a mob shows for this crew: its printed dice, then its extra number once per player past two.
-function slotsFor(m, crew) { const base = numbersFor(m.id, m.base), extra = numbersFor(m.id + '+', 1)[0]; return [...base, ...Array(Math.max(0, crew - 2)).fill(extra)]; }
+// The dice a mob shows for this crew: its printed dice (one fewer than its d20 hits; the boss two fewer than its
+// two-player hits), then a 6 once per player past three.
+function slotsFor(m, crew) { const base = numbersFor(m.id, m.base), extra = 6; return [...base, ...Array(Math.max(0, crew - 2)).fill(extra)].slice(0, base.length + Math.max(0, crew - XFROM)); }
 
 function rng(seed) { let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const shuffle = (a, r) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -70,8 +80,8 @@ const needFor = (sys, m, n) => sys === 'd6' ? symbolsFor(m.domain, m.hits) : sys
 function newGame(sys, team, opt) {
   const r = opt.rnd, n = team.length;
   const mk = (m, boss) => {
-    const base = boss ? m.hitsBase + D.bossAdd[2] : m.hits;
-    const hits = sys === 'n6' ? base + Math.max(0, n - 2) : boss ? m.hitsBase + D.bossAdd[n] : Math.max(1, m.hits + (D.mobAdd[n] || 0));
+    const base = boss ? m.hitsBase + D.bossAdd[2] - +(process.env.BOSSLESS ?? 2) : m.hits - +(process.env.MOBLESS ?? 1);
+    const hits = sys === 'n6' ? base + Math.max(0, n - XFROM) : boss ? m.hitsBase + D.bossAdd[n] : Math.max(1, m.hits + (D.mobAdd[n] || 0));
     const domain = boss ? 'Identity' : m.domain, o = { id: m.id, name: m.name, boss, def: m.def, dmg: m.dmg, kw: boss ? m.id : m.ability, persist: m.persist, hits, left: hits, base, domain, back: 0, up: 0 };
     o.need = needFor(sys, o, n); return o;
   };
@@ -100,15 +110,20 @@ function enter(G, m) { G.play.push(m); if (m.kw === 'beacon') for (const b of ro
 function roll(G) {
   const dice = [];
   if (G.sys === 'n6') {
-    const die = (k, crew, dbl) => { const v = 1 + d6(G); return { k, crew, f: [v, dbl.includes(v) ? 2 : 1] }; };
-    G.team.forEach((id, k) => { const nd = G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) dice.push(die(k, true, G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : DOUBLES[id])); });
-    for (let i = 0; i < active(G, 'triage'); i++) dice.push(die(G.point, false, DOUBLES.AGENT));
+    G.team.forEach((id, k) => { const nd = G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) n6die(G, dice, k, true, G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : DOUBLES[id]); });
+    for (let i = 0; i < active(G, 'triage'); i++) n6die(G, dice, G.point, false, DOUBLES.AGENT);
     return dice;
   }
   G.team.forEach((id, k) => { const nd = G.n === 1 ? D.soloDice : k === G.point ? 2 : 1;
     for (let i = 0; i < nd; i++) dice.push(G.sys === 'd20' ? { k, crew: true, r: d20(G) } : { k, crew: true, f: (SOLO === 'mixed' && G.n === 1 && i === nd - 1 ? CREW_DIE : DICE[id])[d6(G)] }); });
   for (let i = 0; i < active(G, 'triage'); i++) dice.push(G.sys === 'd20' ? { k: G.point, crew: false, r: d20(G) } : { k: G.point, crew: false, f: AGENT_DIE[d6(G)] });
   return dice;
+}
+// n6: roll one die into the list. A double counts as two dice showing that number: two entries, the second with
+// half: 1 and pair pointing at the first. The pair guards as one (the first half guards; the second then sits out).
+function n6die(G, dice, k, crew, dbl, v = 1 + d6(G)) {
+  if (!dbl.includes(v)) { dice.push({ k, crew, f: [v, 1] }); return; }
+  const a = { k, crew, f: [v, 2], half: 0 }; dice.push(a, { k, crew, f: [v, 2], half: 1, pair: a });
 }
 // What one die can do: a list of { mob, hits removed } targets, and whether it can guard. d20 doubles block on their own.
 function options(G, d, m, enrichLeft) {
@@ -119,7 +134,7 @@ function options(G, d, m, enrichLeft) {
     let b = (d.boost || 0) + (d.crew ? active(G, 'enrich') * D.enrichBonus + (id === 'HUN' && m.back ? D.perks.HUN.back : 0) + (id === 'RES' && m === top(G) ? D.perks.RES.top : 0) : D.triageBonus);
     return dbl || d.r >= 18 ? 2 : d.r !== 1 && d.r + b >= m.def ? 1 : 0;
   }
-  if (G.sys === 'n6') { const i = matchAt(G, d, m, m.need, enrichLeft); return i < 0 ? 0 : d.f[1] === 2 ? Math.min(2, m.need.length) : 1; }
+  if (G.sys === 'n6') return matchAt(G, d, m, m.need, enrichLeft) < 0 ? 0 : 1;
   // d6: the face must match a symbol still needed. Hunter: any face is wild against comebacks; Responder: Contain
   // faces are wild against the biggest hitter. A running Enrichment Agent turns one die a round into any symbol.
   const [s, c] = d.f, id = d.crew ? G.team[d.k] : null;
@@ -138,7 +153,7 @@ function matchAt(G, d, m, need, wild) {
   return adj ? need.findIndex(x => Math.abs(x - v) === 1) : -1;
 }
 const top = G => G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0];
-const canGuard = (G, d) => d.crew && (G.sys === 'd20' ? d.r >= D.guard.min && d.r < (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18) : d.f[1] === 2);
+const canGuard = (G, d) => d.crew && (G.sys === 'd20' ? d.r >= D.guard.min && d.r < (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18) : d.f[1] === 2 && !d.half);
 const autoBlock = (G, d) => G.sys === 'd20' && d.crew && d.r >= (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18);
 
 // Damage the crew takes at the end of the round, given who is blocking.
@@ -157,11 +172,12 @@ function incoming(G, blocks) {
 // Every legal way to use this round's dice: each die goes on a mob it can hit, guards, or sits out.
 // Returns the end states with the bot's score. The same scorer judges both systems.
 function allocations(G, dice) {
-  if (Math.pow(G.play.length + 2, dice.length) > 40000) return greedy(G, dice);
+  if (Math.pow(G.play.length + 2, dice.length) > +(process.env.ENUM || 200000)) return greedy(G, dice);
   const res = [], hasEnrich = G.sys !== 'd20' && active(G, 'enrich') > 0;
   const rec = (i, left, blocks, enrichUsed, plan) => {
     if (i === dice.length) { res.push({ plan: plan.slice(), left: new Map(left), blocks: blocks.slice(), score: score(G, left, blocks) }); return; }
     const d = dice[i]; let any = false;
+    if (d.pair && plan.some(p => dice[p[0]] === d.pair && p[1] === 'guard')) { plan.push([i, 'idle', false]); rec(i + 1, left, blocks, enrichUsed, plan); plan.pop(); return; }
     for (const m of G.play) {
       const L = left.get(m); if (!L.n) continue;
       for (const useE of hasEnrich && !enrichUsed && d.crew ? [false, true] : [false]) {
@@ -182,19 +198,21 @@ function allocations(G, dice) {
 // Too many dice to enumerate (big Triage turns): place dice one at a time, each where it scores best.
 function greedy(G, dice) {
   let left = new Map(G.play.map(m => [m, { n: m.left, need: m.need ? m.need.slice() : null }])), blocks = G.team.map(() => false);
+  const guarded = new Set();
   for (const d of dice) {
+    if (d.pair && guarded.has(d.pair)) continue;
     if (autoBlock(G, d)) blocks[d.k] = true;
     let best = { s: score(G, left, blocks), left, blocks };
     for (const m of G.play) { const L = left.get(m); if (!L.n) continue; const h = G.sys === 'd20' ? Math.min(options(G, d, m), L.n) : options(G, d, { ...m, need: L.need }, false); if (!h) continue;
       const nl = new Map(left); nl.set(m, takeHits(G, m, L, d, h, false)); const sc = score(G, nl, blocks); if (sc > best.s) best = { s: sc, left: nl, blocks }; }
-    if (canGuard(G, d) && !blocks[d.k]) { const nb = blocks.slice(); nb[d.k] = true; const sc = score(G, left, nb); if (sc > best.s) best = { s: sc, left, blocks: nb }; }
-    left = best.left; blocks = best.blocks;
+    if (canGuard(G, d) && !blocks[d.k]) { const nb = blocks.slice(); nb[d.k] = true; const sc = score(G, left, nb); if (sc > best.s) best = { s: sc, left, blocks: nb, g: true }; }
+    if (best.g) guarded.add(d); left = best.left; blocks = best.blocks;
   }
   return [{ plan: [], left, blocks, score: score(G, left, blocks), greedy: true }];
 }
 function takeHits(G, m, L, d, h, wild) {
   if (G.sys === 'd20') return { n: L.n - h, need: null };
-  if (G.sys === 'n6') { const need = L.need.slice(), i = matchAt(G, d, m, need, wild); if (i >= 0) need.splice(i, 1); if (h === 2 && need.length) need.splice(0, 1); return { n: need.length, need }; }
+  if (G.sys === 'n6') { const need = L.need.slice(), i = matchAt(G, d, m, need, wild); if (i >= 0) need.splice(i, 1); return { n: need.length, need }; }
   const need = L.need.slice(); const id = d.crew ? G.team[d.k] : null;
   for (let j = 0; j < h; j++) { let i = need.indexOf(d.f[0]); if (i < 0 && (wild || d.wildAll || (id === 'HUN' && m.back) || (id === 'RES' && d.f[0] === 'C' && m === top(G)))) i = 0; if (i < 0) break; need.splice(i, 1); }
   return { n: need.length, need };
@@ -211,14 +229,14 @@ function score(G, left, blocks) {
 function fight(G, mobs) {
   G.play = []; mobs.forEach(m => enter(G, m)); let round = 0;
   while (!G.over && G.play.length) {
-    round++; G.stats.rounds++; if (round > 1) for (const b of rollRow(G, true)) enter(G, b); if (G.over) return;
+    round++; G.stats.rounds++; if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rollRow(G, true)) enter(G, b); if (G.over) return;
     const boss = G.play.some(m => m.boss);
     if (G.tray.includes('contain') && (G.play.length >= 3 || boss && G.play.length >= 2)) burn(G, 'contain');
     if (G.tray.includes('recover') && Math.min(...G.hp) <= G.max * 0.4) burn(G, 'recover');
     let dice = roll(G);
     // SOLO_REROLL=1: playing solo, once a round reroll one crew die that can't hit anything.
     if (process.env.SOLO_REROLL && G.n === 1 && G.sys === 'd6') { const i = dice.findIndex(d => d.crew && G.play.every(m => !options(G, d, m))); if (i >= 0) dice[i] = { ...dice[i], f: (G.r() < 1 / 3 ? CREW_DIE : DICE[G.team[0]])[d6(G)] }; }
-    if (boss && G.tray.includes('triage')) { burn(G, 'triage'); for (let i = 0; i < 3; i++) { const id = G.team[G.point]; dice.push(G.sys === 'd20' ? { k: G.point, crew: true, r: d20(G) } : G.sys === 'n6' ? (v => ({ k: G.point, crew: true, f: [v, DOUBLES[id].includes(v) ? 2 : 1] }))(1 + d6(G)) : { k: G.point, crew: true, f: DICE[id][d6(G)] }); } }
+    if (boss && G.tray.includes('triage')) { burn(G, 'triage'); for (let i = 0; i < 3; i++) { const id = G.team[G.point]; if (G.sys === 'n6') n6die(G, dice, G.point, true, DOUBLES[id]); else dice.push(G.sys === 'd20' ? { k: G.point, crew: true, r: d20(G) } : { k: G.point, crew: true, f: DICE[id][d6(G)] }); } }
     let wildAll = false; if (boss && G.tray.includes('enrich')) { burn(G, 'enrich'); wildAll = true; }
     if (G.over || !G.play.length) break;
     if (wildAll) dice = dice.map(d => G.sys === 'd20' ? { ...d, r: d.r, boost: 5 } : d);
@@ -260,7 +278,7 @@ function play(sys, team, opt) {
   return G;
 }
 
-module.exports = { play, rng, DICE, symbolsFor, numbersFor, slotsFor, pipDie, rowTop, KEY, DOUBLES };
+module.exports = { play, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, pipDie, rowTop, KEY, DOUBLES };
 
 if (require.main === module) {
   const N = +(process.env.N || 600), TEAMS = { 1: [['HUN'], ['RES'], ['ENG'], ['SOA'], ['PAT']], 2: [['HUN', 'RES'], ['ENG', 'SOA'], ['RES', 'PAT'], ['HUN', 'PAT'], ['SOA', 'PAT'], ['HUN', 'ENG']], 4: [['HUN', 'RES', 'ENG', 'SOA'], ['HUN', 'RES', 'SOA', 'PAT'], ['RES', 'ENG', 'SOA', 'PAT'], ['HUN', 'RES', 'ENG', 'PAT']] };

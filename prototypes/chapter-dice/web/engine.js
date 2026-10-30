@@ -1,12 +1,13 @@
 // Chapter dice web prototype: the rules engine. DOM-free and deterministic given a seeded rng (opt.rnd or opt.seed).
 // Plays exactly the paper rules sheet (../paper/build.js): the human assigns dice, the engine checks and resolves.
 // Exact numbers (2026-10-30): every die is a standard pip d6, { n: 1–6, dbl }. A mob's hits are the threat dice set
-// under its card (../cards.js slotsFor); a rolled die takes out one showing exactly its number. Throwaway prototype code.
+// under its card (../cards.js slotsFor); a rolled die takes out one showing exactly its number. A double counts as two
+// dice showing its number (d.takes holds up to two takes, on one mob or two), or guards. Throwaway prototype code.
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('../../../data/cards.json'), require('../cards'));
   else root.CDEngine = factory(root.CD_DATA, root.CDCards);
 })(typeof self !== 'undefined' ? self : this, function (D, CARDS) {
-  const HP = 30; // starting HP for exact numbers (2026-10-30): about 55% at two players in the sim
+  const HP = 25; // starting HP for clustered dice and two-of-a-number doubles (2026-10-30): about 53% at two players in the sim
   // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   const KIT_NAME = { triage: 'Triage Agent', enrich: 'Enrichment Agent', contain: 'Containment Agent', recover: 'Recovery Agent' };
@@ -126,7 +127,7 @@
       for (let i = 0; i < nd; i++) { const crewDie = G.n === 1 && i === nd - 1; dice.push({ k, crew: true, src: crewDie ? 'crew' : 'own', ...pipDie(1 + d6(G), crewDie ? 'CREW' : id) }); }
     });
     for (let i = 0; i < running(G, 'triage'); i++) dice.push({ k: G.point, crew: false, src: 'agent', ...pipDie(1 + d6(G), 'AGENT') });
-    dice.forEach((d, i) => { d.i = i; d.used = null; d.turned = false; });
+    dice.forEach((d, i) => { d.i = i; d.used = null; d.takes = []; d.turned = false; });
     G.dice = dice; G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = [];
     G.roundDmg = {}; G.play.forEach(m => { G.roundDmg[m.uid] = dmgOf(G, m); });
     G.phase = 'assign';
@@ -139,7 +140,7 @@
   const nearOK = (G, d, m) => { const id = d.crew ? G.team[d.k] : null; return (id === 'HUN' && m.back > 0) || (id === 'RES' && isTop(G, m)); };
   // What one die can do to one mob: { slots: indices it may take first, near: the ±1 ones, wild, dbl } or null.
   function canHit(G, d, m) {
-    if (!d || !m || d.used || !left(m)) return null;
+    if (!d || !m || d.used || !left(m)) return null;               // d.used: spent (guarded, or every take made)
     if (!d.crew && m.boss) return null;                           // agent dice can't hit the boss
     if (m.kw === 'hardened' && !d.dbl) return null;               // Evasive: only a double hits it
     const free = m.slots.map((v, i) => i).filter(i => !m.off[i]);
@@ -148,20 +149,24 @@
     if (!exact.length && !near.length) return null;
     return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
-  const canGuard = (G, d) => !!d && d.crew && !d.used && d.dbl && !G.blocks[d.k];
+  const canGuard = (G, d) => !!d && d.crew && !d.used && !(d.takes || []).length && d.dbl && !G.blocks[d.k];
+  // How many takes a die has left: a double counts as two dice showing its number.
+  const takesLeft = d => !d || d.used ? 0 : (d.dbl ? 2 : 1) - (d.takes || []).length;
   // Every legal use of a die, for the UI's slot highlights and for tests.
   function targets(G, di) {
     const d = G.dice[di]; if (!d || G.phase !== 'assign') return { hits: [], guard: false, enrich: false };
     const hits = []; for (const m of G.play) { const o = canHit(G, d, m); if (o) o.slots.forEach(p => hits.push({ uid: m.uid, p, n: m.slots[p], near: o.near.includes(p), wild: o.wild, dbl: o.dbl })); }
-    return { hits, guard: canGuard(G, d), enrich: G.enrichLeft > 0 && d.crew && !d.used && !d.turned };
+    return { hits, guard: canGuard(G, d), enrich: G.enrichLeft > 0 && d.crew && !d.used && !d.takes.length && !d.turned };
   }
-  // After a double takes slot p on a mob: the slots it may take as its "one more" (any die still under that mob).
-  const moreSlots = (m, p) => m.slots.map((v, i) => i).filter(i => i !== p && !m.off[i]);
+  // After a double takes slot p on mob m: the other slots under m its second take may have (it may also go to
+  // another mob; this is for taking both at once).
+  const moreSlots = (G, d, m, p) => { const o = canHit(G, d, m); return o ? o.slots.filter(i => i !== p) : []; };
   const snap = G => ({ dice: clone(G.dice), blocks: G.blocks.slice(), enrichLeft: G.enrichLeft, mobs: G.play.map(m => ({ uid: m.uid, off: m.off.slice(), offStack: m.offStack.slice() })) });
   const take = (m, p) => { m.off[p] = true; m.offStack.push(p); };
 
-  // A die takes slot p (a die showing its number, or ±1 with a perk, or anything when wild). A double may also take
-  // slot q: any one more die from the same mob. Omit p to take the first legal slot.
+  // A die takes slot p (a die showing its number, or ±1 with a perk, or anything when wild). A double counts as two
+  // dice showing its number: call assign again (same mob or another) for its second take, or pass q to take a second
+  // slot on this mob at once. Omit p to take the first legal slot.
   function assign(G, di, uid, p, q) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di], m = findMob(G, uid); if (!d) fail('No such die.'); if (!m) fail('That mob isn’t in the fight.');
@@ -169,11 +174,13 @@
     const o = canHit(G, d, m); if (!o) fail(cantWhy(G, d, m));
     if (p == null) p = o.slots[0];
     if (!o.slots.includes(p)) fail(m.off[p] ? 'That die is already taken.' : `A ${d.n} can’t take the ${m.slots[p]} under ${m.name}.`);
-    if (q != null) { if (!d.dbl) fail('Only a double takes one more.'); if (!moreSlots(m, p).includes(q)) fail('Pick another die still under the same mob.'); }
+    if (q != null) { if (takesLeft(d) < 2) fail('Only a double takes two.'); if (!moreSlots(G, d, m, p).includes(q)) fail(`A ${d.n} can’t take the ${m.slots[q]} under ${m.name}.`); }
     G.undo.push(snap(G));
-    take(m, p); const took = [m.slots[p]]; if (q != null) { take(m, q); took.push(m.slots[q]); }
-    d.used = { uid, slots: q != null ? [p, q] : [p] };
-    say(G, `${dieOwner(G, d)}’s ${faceText(d)} takes ${took.length > 1 ? `the ${took[0]} and the ${took[1]}` : `the ${took[0]}`} under ${m.name}${left(m) ? '' : ': beaten'}.`, 'hit');
+    const took = [m.slots[p]]; take(m, p); d.takes.push({ uid, p });
+    if (q != null) { took.push(m.slots[q]); take(m, q); d.takes.push({ uid, p: q }); }
+    if (!takesLeft(d)) d.used = { uid, slots: d.takes.map(t => t.p) };
+    const rest = takesLeft(d) ? ` One more ${d.n} to place.` : '';
+    say(G, `${dieOwner(G, d)}’s ${faceText(d)} takes ${took.length > 1 ? `the ${took[0]} and the ${took[1]}` : `the ${took[0]}`} under ${m.name}${left(m) ? '' : ': beaten'}.${rest}`, 'hit');
     return G;
   }
   function cantWhy(G, d, m) {
@@ -186,7 +193,7 @@
   function guard(G, di) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di]; if (!d) fail('No such die.');
-    if (!d.crew) fail('Agent dice can’t guard.'); if (d.used) fail('That die is already used.');
+    if (!d.crew) fail('Agent dice can’t guard.'); if (d.used || d.takes.length) fail('That die is already used.');
     if (!d.dbl) fail('Only a double can guard.'); if (G.blocks[d.k]) fail(`${nameOf(G.team[d.k])} is already blocking.`);
     G.undo.push(snap(G)); d.used = 'guard'; G.blocks[d.k] = true;
     say(G, `${nameOf(G.team[d.k])} guards with a ${faceText(d)}: blocking this round.`, 'guard');
@@ -198,7 +205,7 @@
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di]; if (!d) fail('No such die.');
     if (G.enrichLeft < 1) fail('No Enrichment Agent turn left this round.');
-    if (!d.crew) fail('Enrichment turns a crew die, not an agent die.'); if (d.used) fail('Undo that die first.'); if (d.turned) fail('That die is already turned.');
+    if (!d.crew) fail('Enrichment turns a crew die, not an agent die.'); if (d.used || d.takes.length) fail('Undo that die first.'); if (d.turned) fail('That die is already turned.');
     if (!(n >= 1 && n <= 6) || n !== Math.floor(n)) fail('Pick a number from 1 to 6.');
     G.undo.push(snap(G)); d.from = d.n; d.n = n; d.turned = true; G.enrichLeft--;
     say(G, `Enrichment Agent turns ${dieOwner(G, d)}’s die from ${d.from} to ${faceText(d)}.`, 'kit');
@@ -233,7 +240,7 @@
     const beaten = G.play.filter(m => !left(m)); G.beaten = beaten.map(m => m.uid);
     if (beaten.some(m => m.boss)) { G.over = true; G.win = true; G.phase = 'over'; say(G, `${G.boss.name} is beaten. You survived the night.`, 'end'); return G; }
     for (const m of beaten) {
-      const hunted = on(G, 'HUN') && m.back > 0 && G.dice.some(d => d.crew && G.team[d.k] === 'HUN' && d.used && d.used.uid === m.uid);
+      const hunted = on(G, 'HUN') && m.back > 0 && G.dice.some(d => d.crew && G.team[d.k] === 'HUN' && (d.takes || []).some(t => t.uid === m.uid));
       if (m.back >= 1) { G.gone.push(m); G.stats.gone++; say(G, `${m.name} is beaten and gone for good${hunted ? ' (the Hunter finished it)' : ' (it already came back once)'}.`, 'beat'); }
       else { G.row.push(m); say(G, `${m.name} is beaten and goes on the persistence row (back on 2–${m.top}).`, 'beat'); }
     }
@@ -297,7 +304,7 @@
     say(G, `Burned the ${KIT_NAME[c.t]}.`, 'burn');
     if (c.t === 'triage') {
       const id = G.team[G.point];
-      for (let i = 0; i < 3; i++) G.dice.push({ i: G.dice.length, k: G.point, crew: true, src: 'burn', ...pipDie(1 + d6(G), id), used: null, turned: false });
+      for (let i = 0; i < 3; i++) G.dice.push({ i: G.dice.length, k: G.point, crew: true, src: 'burn', ...pipDie(1 + d6(G), id), used: null, takes: [], turned: false });
       say(G, `${nameOf(id)} rolls 3 more: ${G.dice.slice(-3).map(faceText).join(', ')}.`, 'roll');
     }
     if (c.t === 'enrich') { G.wildAll = true; say(G, 'Every die matches anything this round.', 'kit'); }
@@ -311,5 +318,5 @@
   }
 
   return { HP, KIT_NAME, pipDie, rng, shuffle, newGame, setPoint, flip, roll, assign, guard, enrichTurn, unassign, endRound, burn, canBurn,
-    discardKit, keepKit, targets, canHit, canGuard, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
+    discardKit, keepKit, targets, canHit, canGuard, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

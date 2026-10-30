@@ -1,56 +1,168 @@
 // Chapter dice web prototype: the page script. Renders the engine state (CDEngine) with the shared paper card
 // markup (CDCards) and adds live state around the cards: the threat dice set under each card (taken ones turned
-// aside), slot highlights for the selected die, and stamps. Nothing is drawn on a card face.
-// Throwaway prototype code, inlined into web/index.html by web/build.js.
+// aside), slot highlights for the selected die, stamps, and the motion and sound of the real game (ui/ui.js): cards
+// flip in, comebacks get a Back stamp, a beaten mob goes down, dice tumble and land, short Web Audio stings.
+// Nothing is drawn on a card face. Throwaway prototype code, inlined into web/index.html by web/build.js.
 (function () {
-  const E = window.CDEngine, A = window.CDCards, D = window.CD_DATA;
-  const app = document.getElementById('app');
+  const E = window.CDEngine, A = window.CDCards, D = window.CD_DATA, ART = window.CD_ART || {};
+  const app = document.getElementById('app'), live = document.getElementById('live');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const qs = new URLSearchParams(location.search || '');
-  const UI = { G: null, sel: null, more: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, seenRow: 0, seenMobs: new Set(),
-    setup: { n: 2, team: ['HUN', 'RES', 'ENG', 'SOA'] }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
+  const UI = { G: null, sel: null, more: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false,
+    setup: { team: ['HUN', 'RES'] }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
   const nm = id => A.cls(id).name;
   const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
   const mmss = ms => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   const dataMob = id => D.mobs.find(m => m.id === id);
   const cardFor = m => m.boss ? A.bossCard(A.boss()) : A.mobCard(dataMob(m.id));
   const cardKey = m => m.boss ? 'boss' : 'mob:' + m.id;
+  const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } };
 
-  // ---- Actions ------------------------------------------------------------------------------------------------
+  // ---- Art helpers (as ui/ui.js): scenes fill their frame; analyst thumbnails crop to the analyst and their screen ----
+  const slice = svg => { const s = String(svg || ''); return /^<svg[^>]*preserveAspectRatio=/.test(s) ? s.replace(/preserveAspectRatio="[^"]*"/, 'preserveAspectRatio="xMidYMid slice"') : s.replace('<svg', '<svg preserveAspectRatio="xMidYMid slice"'); };
+  const crop = (svg, vb) => vb ? slice(svg).replace(/viewBox="[^"]*"/, `viewBox="${vb}"`) : slice(svg);
+  const THUMB = { HUN: '40 14 120 80', RES: '60 6 135 90', ENG: '34 10 120 80', SOA: '45 4 135 90', PAT: '48 14 135 90' };
+  const SQUARE = id => THUMB[id].replace(/ \d+ \d+$/, ' 90 90');
+  const SHORT = { HUN: 'Hunter', RES: 'Resp.', ENG: 'Eng.', SOA: 'Soar.', PAT: 'Fixer' };
+  const STYLE = { HUN: 'Ends persistence', RES: 'Tanks the big hitter', ENG: 'Rolls hot', SOA: 'Runs the automation', PAT: 'Keeps everyone standing' };
+  const ic = p => `<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+  const ICON = { check: ic('<path d="M3 8.5l3.2 3L13 4.5"/>'), shield: ic('<path d="M8 1.8l5 2v4c0 3.2-2.2 5.3-5 6.4-2.8-1.1-5-3.2-5-6.4v-4z"/>') };
+  const SPK = on => ic(`<path d="M2 6h3l4-3v10l-4-3H2z"/>${on ? '<path d="M11.5 5.5a3.5 3.5 0 010 5"/><path d="M13.5 3.5a6.5 6.5 0 010 9"/>' : '<path d="M11 6l4 4M15 6l-4 4"/>'}`);
+
+  // ---- The shift clock (as ui/ui.js): 22:00 to 06:00 by flip index, never real time. Six mobs, the boss at 05:59 ----
+  const FLIPS = A.MOB_IDS.length, BOSS_TIME = '05:59';
+  function clockAt(i, n) {
+    const m = 22 * 60 + Math.floor((Math.max(1, i) - 1) * 480 / Math.max(1, n) / 5) * 5;
+    return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  }
+  const clockNow = () => UI.G.bossOut ? BOSS_TIME : clockAt(UI.G.fight, FLIPS);
+
+  // ---- Sound (as ui/ui.js): synthesised Web Audio stings, no files. Nothing starts before a gesture; no-op in jsdom ----
+  const SND_LS = 'dwellers-chapter-sound-v1';
+  const Sound = (() => {
+    let on = true; try { on = localStorage.getItem(SND_LS) !== '0'; } catch (e) { /* private mode: on for this visit */ }
+    let ctx = null, master = null, sfx = null;
+    const AC = () => { try { return window.AudioContext || window.webkitAudioContext || null; } catch (e) { return null; } };
+    function ensure() {
+      if (ctx) return ctx; const C = AC(); if (!C) return null;
+      try { ctx = new C(); master = ctx.createGain(); master.gain.value = on ? 1 : 0; master.connect(ctx.destination); sfx = ctx.createGain(); sfx.gain.value = .32; sfx.connect(master); } catch (e) { ctx = null; }
+      return ctx;
+    }
+    function noiseBuf(sec) { const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * sec), ctx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
+    function tone(f, t, dur, { type = 'sine', g = .5, to = null, a = .01 } = {}) {
+      const o = ctx.createOscillator(), v = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+      v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(g, t + a); v.gain.exponentialRampToValueAtTime(.0001, t + dur); o.connect(v).connect(sfx); o.start(t); o.stop(t + dur + .05);
+    }
+    function hiss(t, dur, { f = 3000, q = 1.2, g = .5, type = 'bandpass' } = {}) {
+      const s = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), v = ctx.createGain(); s.buffer = noiseBuf(Math.max(.05, dur)); bp.type = type; bp.frequency.value = f; bp.Q.value = q;
+      v.gain.setValueAtTime(g, t); v.gain.exponentialRampToValueAtTime(.0001, t + dur); s.connect(bp).connect(v).connect(sfx); s.start(t); s.stop(t + dur + .02);
+    }
+    const STING = {
+      roll: t => { for (let i = 0; i < 9; i++) hiss(t + i * .055 + Math.random() * .025, .045, { f: 1800 + Math.random() * 2200, q: 3, g: .55 - i * .04 }); },
+      hit: t => { tone(150, t, .16, { g: .7, to: 55 }); hiss(t, .05, { f: 1200, g: .4 }); },
+      double: t => { tone(660, t, .18, { type: 'triangle', g: .3 }); tone(990, t + .07, .3, { type: 'triangle', g: .3 }); tone(1320, t + .14, .4, { g: .18 }); },
+      guard: t => { tone(520, t, .22, { type: 'triangle', g: .25 }); tone(780, t + .05, .3, { g: .14 }); },
+      down: t => { tone(320, t, .42, { type: 'sawtooth', g: .18, to: 70 }); tone(90, t, .3, { g: .6, to: 40 }); hiss(t, .3, { f: 600, q: .7, g: .3, type: 'lowpass' }); },
+      comeback: t => { tone(220, t, 1.1, { type: 'triangle', g: .22, a: .35 }); tone(233, t, 1.1, { type: 'triangle', g: .2, a: .35 }); tone(110, t + .1, 1, { g: .25, a: .3 }); },
+      boss: t => { tone(55, t, 2.2, { type: 'sawtooth', g: .22, a: .6 }); tone(58.3, t, 2.2, { type: 'sawtooth', g: .18, a: .6 }); tone(41, t + .2, 1.8, { g: .5, a: .4 }); hiss(t, 1.4, { f: 300, q: .6, g: .2, type: 'lowpass' }); },
+      win: t => { [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * .16, 1.6 - i * .2, { g: .22, a: .04 })); tone(261.6, t, 2.2, { type: 'triangle', g: .14, a: .5 }); },
+      loss: t => { [392, 311.1, 261.6].forEach((f, i) => tone(f, t + i * .32, .6, { type: 'triangle', g: .26 })); tone(880, t + 1.1, 1.2, { g: .07, a: .02 }); },
+    };
+    function play(name, delay = 0) { if (!on || !ensure() || !STING[name]) return; try { if (ctx.state === 'suspended') ctx.resume(); STING[name](ctx.currentTime + .01 + delay / 1000); } catch (e) { /* audio is best-effort */ } }
+    function unlock() { if (!on || !ensure()) return; try { if (ctx.state === 'suspended') ctx.resume(); } catch (e) { /* best-effort */ } }
+    function toggle() { on = !on; try { localStorage.setItem(SND_LS, on ? '1' : '0'); } catch (e) { /* this visit only */ } if (on) unlock(); if (ctx) try { master.gain.setTargetAtTime(on ? 1 : 0, ctx.currentTime, .05); } catch (e) { /* best-effort */ } return on; }
+    return { play, unlock, toggle, get on() { return on; } };
+  })();
+  ['pointerdown', 'keydown'].forEach(t => document.addEventListener(t, () => Sound.unlock(), { capture: true }));
+  const say = t => { if (!live || !t) return; live.textContent = ''; setTimeout(() => { live.textContent = t; }, 30); };
+
+  // ---- Effects: each action is diffed against the state before it; the flags live for this tick's renders only ----
+  // so a card flips in once, a stamp lands once, a die tumbles once. Presentation only: the engine has resolved.
+  let FX = null;
+  const offKeys = G => new Set([...G.play, ...G.row].flatMap(m => m.off.map((o, p) => o ? m.uid + '-' + p : null)).filter(Boolean));
+  function snap(G) { return G ? { hp: G.hp.slice(), inPlay: new Set(G.play.map(m => m.uid + ':' + m.back)), down: new Set(G.play.filter(m => !E.left(m)).map(m => m.uid)),
+    off: offKeys(G), rows: G.rows.length, phase: G.phase, round: G.round, fight: G.fight, dice: G.dice.length, bossOut: G.bossOut, over: G.over, guards: G.dice.filter(d => d.used === 'guard').length } : null; }
+  function diff(b, G) {
+    const fx = { enter: new Set(), ko: new Set(), struck: new Set(), hurt: new Set(), row: null, roll: false, boss: false, over: false, guard: false };
+    if (!b || !G) return fx;
+    G.play.forEach(m => { if (!b.inPlay.has(m.uid + ':' + m.back)) fx.enter.add(m.uid); if (!E.left(m) && !b.down.has(m.uid)) fx.ko.add(m.uid); });
+    offKeys(G).forEach(k => { if (!b.off.has(k)) fx.struck.add(k); });
+    G.hp.forEach((h, k) => { if (h < b.hp[k]) fx.hurt.add(k); });
+    if (G.rows.length > b.rows) fx.row = G.rows[G.rows.length - 1];
+    fx.roll = G.phase === 'assign' && (b.phase !== 'assign' || G.dice.length > b.dice);
+    fx.boss = G.bossOut && !b.bossOut; fx.over = G.over && !b.over;
+    fx.guard = G.dice.filter(d => d.used === 'guard').length > b.guards;
+    return fx;
+  }
   function act(fn, okMsg) {
+    const before = snap(UI.G);
     try { fn(); UI.msg = okMsg || ''; UI.err = false; }
     catch (e) { if (!e.rule) throw e; UI.msg = e.message; UI.err = true; }
     const G = UI.G;
     if (G && G.over && !UI.end) UI.end = Date.now();
+    const fx = FX = diff(before, G);
+    if (fx.boss) UI.reveal = true;
     render();
+    setTimeout(() => { if (FX === fx) { effects(fx); FX = null; } }, 0);
   }
+  // After the renders of one action: dice tumble, the amber pair tumbles, stings play, HP readouts flash.
+  const ROLL_MS = 560, ROLL_STAGGER = 45, ROW_MS = 660;
+  function tumble(els, ms0, face) {
+    let last = 0;
+    els.forEach((el, n) => {
+      const f = el.querySelector('.f'); if (!f) return; const keep = f.innerHTML, ms = ms0 + n * ROLL_STAGGER; last = Math.max(last, ms);
+      el.classList.add('rolling');
+      const t = setInterval(() => { if (!el.isConnected) return clearInterval(t); f.innerHTML = face(1 + Math.floor(Math.random() * 6)); }, 70);
+      setTimeout(() => { clearInterval(t); if (!el.isConnected) return; f.innerHTML = keep; el.classList.remove('rolling'); el.classList.add('landed'); }, ms);
+    });
+    return last;
+  }
+  function effects(fx) {
+    const G = UI.G; if (!G) return;
+    const motion = !reduced();
+    fx.hurt.forEach(k => { const el = app.querySelector(`[data-hp="${k}"]`); if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } });
+    let wait = 0;
+    if (fx.row) {
+      Sound.play('roll');
+      const amb = [...app.querySelectorAll('.t-rowroll.new .t-amb')], bn = app.querySelector('.t-rowroll.new');
+      if (motion && amb.length) { if (bn) bn.classList.add('rolling'); wait = tumble(amb, ROW_MS - ROLL_STAGGER, n => A.pip(n, 34)); setTimeout(() => { if (bn && bn.isConnected) bn.classList.remove('rolling'); }, wait); }
+      if (fx.row.back.length) Sound.play('comeback', motion ? ROW_MS : 0);
+    }
+    if (fx.roll) {
+      const dice = [...app.querySelectorAll('.t-die:not(.used)')];
+      if (motion && dice.length) { setTimeout(() => tumble(dice.filter(d => d.isConnected), ROLL_MS, n => A.pip(n, 40)), wait); }
+      Sound.play('roll', wait); if (G.dice.some(d => d.dbl)) Sound.play('double', wait + (motion ? ROLL_MS : 0));
+    }
+    if (fx.ko.size) Sound.play('down'); else if (fx.struck.size) Sound.play('hit'); else if (fx.guard) Sound.play('guard');
+    if (fx.boss) Sound.play('boss');
+    if (fx.over) Sound.play(G.win ? 'win' : 'loss', 300);
+    const lines = [];
+    if (fx.row) lines.push(`Row roll ${fx.row.pair[0]} plus ${fx.row.pair[1]}, ${fx.row.roll}: ${fx.row.back.length ? fx.row.back.join(', ') + ' came back' : 'nothing came back'}.`);
+    if (fx.ko.size) lines.push(G.play.filter(m => fx.ko.has(m.uid)).map(m => m.name).join(', ') + ' is down.');
+    if (fx.over) lines.push(G.win ? 'Shift survived.' : 'Shift lost.');
+    say(lines.join(' '));
+  }
+
+  // ---- Actions ------------------------------------------------------------------------------------------------
   function startGame() {
-    const team = UI.setup.team.slice(0, UI.setup.n);
-    UI.G = E.newGame({ team, seed: UI.seed }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.msg = ''; UI.copied = null; UI.seenRow = 0; UI.seenMobs = new Set();
-    render(); focusKey('flip');
+    const team = UI.setup.team.slice();
+    UI.G = E.newGame({ team, seed: UI.seed }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.msg = ''; UI.copied = null; UI.reveal = false;
+    render(); focusKey('flip'); say(`Shift started at 22:00. Survive until 06:00. ${team.length > 1 ? 'Pick who is on point, then flip.' : 'Flip the first mob.'}`);
   }
   // After a die is used, select the next unused die that can still do something.
   function nextDie() {
     const G = UI.G; if (!G || G.phase !== 'assign') { UI.sel = null; return; }
-    const ok = d => { const t = E.targets(G, d.i); return !d.used && (t.hits.length || t.guard); };
+    const ok = d => { const t = E.targets(G, d.i); return !d.used && !(d.takes.length && UI.sel === d.i) && (t.hits.length || t.guard); };
     const after = G.dice.filter(d => d.i > (UI.sel == null ? -1 : UI.sel)).find(ok) || G.dice.find(ok);
     UI.sel = after ? after.i : null;
   }
-  function doAssign(di, uid, p, q) { UI.more = null; act(() => E.assign(UI.G, di, uid, p, q)); if (!UI.err) { nextDie(); render(); } }
+  // A double with a take left stays selected for its second number; any other die moves on to the next one.
+  function doAssign(di, uid, p, q) { UI.more = null; act(() => E.assign(UI.G, di, uid, p, q)); if (!UI.err) { if (!(E.takesLeft(UI.G.dice[di]) && E.targets(UI.G, di).hits.length)) nextDie(); render(); } }
   function doGuard() { UI.more = null; const i = UI.sel; act(() => E.guard(UI.G, i)); if (!UI.err) { nextDie(); render(); } }
-  // Tap a threat die under a card. With a double waiting for its "one more", this is that pick. Otherwise a double's
-  // first match waits for the second pick (or "Just that one"); any other die takes the slot straight away.
+  // Tap a threat die under a card: the selected die takes it (the engine says why not). A double takes two, one tap each.
   function tapSlot(uid, p) {
     const G = UI.G, m = G.play.find(x => x.uid === uid); if (!m || G.phase !== 'assign') return;
-    if (UI.more) {
-      if (UI.more.uid === uid && p === UI.more.p) { UI.more = null; UI.msg = ''; return render(); }
-      if (UI.more.uid !== uid) { UI.msg = 'A double’s one more must come from the same mob.'; UI.err = true; return render(); }
-      return doAssign(UI.more.di, uid, UI.more.p, p);
-    }
     if (UI.sel == null) { UI.msg = 'Pick a die first (tap it, or press 1–9).'; UI.err = true; return render(); }
-    const t = E.targets(G, UI.sel), ok = t.hits.some(h => h.uid === uid && h.p === p);
-    if (!ok) return doAssign(UI.sel, uid, p); // the engine says why not
-    if (G.dice[UI.sel].dbl && E.moreSlots(m, p).length) { UI.more = { di: UI.sel, uid, p }; UI.msg = ''; UI.err = false; return render(); }
     doAssign(UI.sel, uid, p);
   }
 
@@ -69,168 +181,230 @@
   }
 
   // ---- Views --------------------------------------------------------------------------------------------------------
+  const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button>`;
+  const dbls = id => A.DOUBLES[id].map(n => A.pip(n, 18)).join('');
   function vSetup() {
-    const S = UI.setup;
-    return `<main class="t-setup">
-      <h1>Chapter dice</h1>
-      <p class="lede">Detect the Dwellers with standard d6s instead of d20 sums. Each mob card prints the dice to set under it. Roll, and a die takes out one under a mob showing <b>exactly</b> its number. Your doubles take their match and one more, or guard. Same cards as the paper prototype.</p>
-      <p class="t-note"><b>Tuned for 2 players.</b> Everyone starts at ${E.HP} HP. Crews of 3–4 add each card’s + die once per player past 2; solo plays the 2-player dice.</p>
-      <div class="t-field"><p class="t-h">Players</p><div class="t-seg" role="group" aria-label="Players">${[1, 2, 3, 4].map(n => `<button class="t-btn" data-a="count" data-n="${n}" data-k="count${n}" aria-pressed="${S.n === n}">${n}${n === 2 ? ' · tuned' : ''}</button>`).join('')}</div></div>
-      <div class="t-field"><p class="t-h">Analysts</p>${S.team.slice(0, S.n).map((id, k) => `<div class="t-seat" role="group" aria-label="Player ${k + 1}"><span class="who">Player ${k + 1}</span>${A.ANALYST_IDS.map(c => `<button class="t-btn sm" data-a="pick" data-seat="${k}" data-id="${c}" data-k="pick${k}${c}" aria-pressed="${id === c}">${nm(c)}</button>`).join('')}</div>`).join('')}</div>
-      <div class="t-acts"><button class="t-btn pri" data-a="start" data-k="start">Start the shift</button><button class="t-lnk" data-a="cards" data-k="cards">See all 21 cards</button></div>
-      <div class="t-picks">${S.team.slice(0, S.n).map(id => `<div class="t-cslot" data-card="analyst:${id}">${A.analystCard(id)}</div>`).join('')}</div>
-    </main>`;
+    const team = UI.setup.team, n = team.length;
+    const picks = A.ANALYST_IDS.map(id => { const on = team.includes(id);
+      return `<button type="button" class="pick" data-a="pick" data-id="${id}" data-k="pick${id}" aria-pressed="${on}" ${!on && n >= 4 ? 'disabled' : ''}><span class="art">${crop(ART[id], THUMB[id])}</span>
+        <span class="pk-t"><span class="pk-h"><span class="nm">${esc(nm(id))}</span><span class="style">${esc(STYLE[id])}</span></span><span class="dbl"><span class="phud">Doubles</span>${dbls(id)}</span><span class="pk-perk">${esc(A.PERK[id])}</span></span>
+        <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
+    return `<div class="wrap"><div class="intro-grid">
+      <section class="hero"><span class="art">${slice(ART.hero)}</span><p class="meta c">Chapter dice · d6 prototype</p><h1 class="logo">Detect the Dwellers</h1>
+        <p class="lede">The night shift with standard d6s instead of d20 sums. Each mob card prints the dice to set under it. Roll, and a die takes out one under a mob showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards. The shift starts at 22:00; take the boss at 05:59 and make it to 06:00.</p>
+        <p class="t-note"><b>Tuned for 2 players.</b> Everyone starts at ${E.HP} HP. Crews of 3–4 add each card’s + die once per player past 2; solo plays the 2-player dice.</p>
+        <p class="meta">Same cards as the paper prototype. <button class="lnk" type="button" data-a="cards" data-k="cards">See all 21 cards</button></p></section>
+      <section class="setup panel" aria-labelledby="crew-h"><h2 class="sech" id="crew-h">Crew · ${n} of 4</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>
+        <p class="meta">One analyst per player, up to 4. Tap to add or drop.</p>
+        <div class="startbar"><p class="meta">${n === 1 ? 'Solo' : `${n} players`} · ${E.HP} HP each · Survive until 06:00</p>
+          <button class="btn p w big" type="button" data-a="start" data-k="start">Clock in</button></div></section>
+    </div></div>`;
   }
   function vTop() {
-    const G = UI.G;
-    const where = G.phase === 'flip' || G.phase === 'loot' ? (G.feed.length ? `Next: flip ${G.fight + 1}` : 'Next: the boss') : `Fight <b class="num">${G.fight}</b> · round <b class="num">${G.round || 1}</b>`;
-    return `<header class="t-top"><div class="t-brand">Detect the Dwellers<small>Chapter dice · web prototype</small></div>
-      <div class="t-meta">${where} · feed <b class="num">${G.feed.length}</b>${G.bossOut ? '' : ' + boss'}</div>
-      <nav class="t-nav"><button class="t-lnk" data-a="cards" data-k="cards" aria-pressed="${UI.cards}">Cards</button><button class="t-lnk" data-a="log" data-k="log" aria-pressed="${UI.drawer === 'log'}">Log</button><button class="t-lnk" data-a="quit" data-k="quit">New</button></nav></header>`;
-  }
-  function vCrew() {
     const G = UI.G, fighting = G.phase === 'assign' || G.phase === 'roll', inc = fighting ? E.incoming(G) : null;
-    return `<section class="t-crew" aria-label="Crew">${G.team.map((id, k) => {
-      const hp = G.hp[k], pct = hp / G.max * 100, n = inc ? inc.total[k] : 0, after = Math.max(0, hp - n);
-      const st = [k === G.point ? '<span class="pt">On point</span>' : ''];
-      if (inc) { if (G.blocks[k]) st.push('<span class="bl">Blocking</span>'); st.push(n ? `<span class="in">−${n} incoming${n >= hp ? ' · lethal' : ''}</span>` : '<span class="ok">nothing incoming</span>'); }
-      return `<div class="t-who${k === G.point ? ' pt' : ''}" data-who="${k}"><span class="n">${nm(id)}</span><span class="hp num"><b>${hp}</b>/${G.max}</span>
-        <span class="bar" aria-hidden="true"><i class="${pct <= 35 ? 'lo' : ''}" style="transform:scaleX(${pct / 100})"></i>${n ? `<s style="transform:translateX(${after / G.max * 100}%) scaleX(${(hp - after) / G.max})"></s>` : ''}</span>
-        <span class="st">${st.join('')}</span></div>`;
-    }).join('')}</section>`;
+    const label = G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'flip' || G.phase === 'loot' ? (G.feed.length ? `Next: fight ${G.fight + 1} of ${FLIPS}` : 'Next: the boss') : `Fight ${G.fight} of ${FLIPS} · round ${G.round || 1}`;
+    const now = G.bossOut ? FLIPS : G.phase === 'flip' || G.phase === 'loot' ? -1 : G.fight - 1, next = G.phase === 'flip' ? G.fight : -1;
+    const bar = [...Array(FLIPS)].map((_, i) => `<i class="${i < G.fight - (now === i ? 1 : 0) && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === FLIPS ? ' next' : ''}"></i>`;
+    const crew = G.team.map((id, k) => {
+      const hp = G.hp[k], n = inc ? inc.total[k] : 0, after = Math.max(0, hp - n);
+      const incl = inc ? (G.blocks[k] && !n ? `<span class="inc safe">${ICON.shield}<b>Blocking</b></span>` : n ? `<span class="inc">Incoming <b class="num">−${n}</b>${n >= hp ? ' · lethal' : ''}</span>` : '<span class="inc safe">Nothing incoming</span>') : `<span class="inc">${k === G.point ? '<b class="pt">On point</b>' : 'Off point'}</span>`;
+      return `<div class="pc${k === G.point ? ' on' : ''}" data-hp="${k}"><div class="pc-h">${k === G.point ? '<i class="dot" aria-hidden="true"></i>' : ''}<span class="nm">${esc(nm(id))}</span><span class="hpn"><b class="num">${hp}</b><span class="of">/${G.max}</span></span></div>
+        <span class="hpbar${hp / G.max <= .35 ? ' low' : ''}" aria-hidden="true"><i style="transform:scaleX(${after / G.max})"></i>${n ? `<i class="inci" style="transform:translateX(${after / G.max * 100}%) scaleX(${(hp - after) / G.max})"></i>` : ''}</span>${incl}</div>`;
+    }).join('');
+    return `<div class="gtop"><header class="top"><span class="brand">Detect the Dwellers<small>Chapter dice</small></span>
+      <div class="feed"><span class="fline"><time class="clk" data-clock>${clockNow()}</time><span class="meta c">${label}</span></span><span class="feedbar" aria-hidden="true">${bar}</span></div>
+      <nav class="tbtns">${soundBtn()}<button class="btn s" type="button" data-a="cards" data-k="cards" aria-pressed="${UI.cards}">Cards</button><button class="btn s" type="button" data-a="log" data-k="log" aria-pressed="${UI.drawer === 'log'}">Log</button><button class="btn s" type="button" data-a="quit" data-k="quit">New</button></nav></header>
+      <div class="crew" style="--n:${G.n}" aria-label="Crew HP">${crew}</div></div>`;
   }
-  // The amber pair: the two row dice, their sum, and each row mob's number against it.
-  const amber = n => `<span class="t-amb">${A.pip(n, 34)}</span>`;
+  // The amber pair: the two row dice, their sum, and what came back.
+  const amber = n => `<span class="t-amb"><span class="f">${A.pip(n, 34)}</span></span>`;
   function vRowRoll() {
     const G = UI.G, r = G.lastRow;
-    if (!r || r.fight !== G.fight) return `<div class="t-rowroll quiet"><div class="t-pair" aria-hidden="true"><span class="t-amb blank"></span><span class="t-amb blank"></span></div><p><small>Persistence row · 2 amber dice</small>${G.row.length ? `No row roll yet this fight. ${pl(G.row.length, 'mob')} on the row.` : 'The row is empty: nothing to roll.'}</p></div>`;
-    const isNew = r.seq > UI.seenRow; UI.seenRow = r.seq;
-    return `<div class="t-rowroll${isNew ? ' new' : ''}" role="status" data-roll="${r.roll}"><div class="t-pair" aria-hidden="true">${r.pair.map(amber).join('')}<b class="num">=${r.roll}</b></div><p><small>Row roll · ${esc(r.why)}</small>
-      Rolled <b class="num">${r.pair[0]} + ${r.pair[1]} = ${r.roll}</b>: ${r.back.length ? esc(r.back.join(', ')) + (r.back.length > 1 ? ' come back.' : ' comes back.') : 'nothing comes back.'}
-      ${r.strikes.length ? `<span class="hit">${r.strikes.map(s => `${esc(s.name)} hits everyone for ${s.dmg}`).join('; ')}.</span>` : ''}</p></div>`;
+    if (!r || r.fight !== G.fight) return '';
+    const isNew = FX && FX.row === r;
+    return `<div class="pbanner t-rowroll${isNew ? ' new' : ''}${r.back.length ? ' hot' : ''}" data-roll="${r.roll}"><div class="t-pair" aria-hidden="true">${r.pair.map(amber).join('')}<b class="num">=${r.roll}</b></div><p><span class="lead">Row roll · ${esc(r.why)}.</span>
+      ${r.back.length ? `<b>${esc(r.back.join(', '))}</b> ${r.back.length > 1 ? 'come back' : 'comes back'} at full strength.` : 'The row stays quiet.'}
+      ${r.strikes.length ? `<span class="hit">${r.strikes.map(s => `${esc(s.name)} hits everyone for <b class="num">${s.dmg}</b>`).join('; ')}.</span>` : ''}</p></div>`;
+  }
+  function vBossBanner() {
+    const G = UI.G; if (!G.bossOut || G.round > 1) return '';
+    return `<div class="pbanner boss"><time class="clk f">05:59</time><p><span class="lead f">${esc(G.boss.name)} arrives.</span> The feed is empty: this is the last fight. Agent dice can’t hit it, and it hits for +2 until it has lost two dice.</p></div>`;
+  }
+  // Read-aloud: on the flip, whoever is on point reads the new mob's flavour out, one line at a time (CSS only).
+  const lines = t => String(t).split(/(?<=[.!?…])\s+/).filter(Boolean);
+  function vAloud() {
+    const G = UI.G; if (G.phase !== 'roll' || G.round !== 0 || G.bossOut) return '';
+    const m = G.play.find(x => !x.back && !x.boss), f = m && dataMob(m.id).flavor; if (!f) return '';
+    const fresh = FX && FX.enter.has(m.uid) && !reduced();
+    return `<div class="t-aloud"><span class="aloud">${G.n > 1 ? `${esc(nm(G.team[G.point]))}, read it aloud` : 'Read it aloud'} · ${esc(m.name)}</span><p class="${fresh ? 'reveal-ln' : ''}">${lines(f).map((s, i) => `<span class="ln" style="--i:${i}">${esc(s)}</span>`).join(' ')}</p></div>`;
   }
   // The threat dice set under a card: one per slot, taken ones turned aside. Live state only, never on the card.
   function vThreat(m) {
-    const G = UI.G, t = UI.sel != null && G.phase === 'assign' && !UI.more ? E.targets(G, UI.sel) : null;
-    const mine = t ? t.hits.filter(h => h.uid === m.uid) : [], more = UI.more && UI.more.uid === m.uid ? E.moreSlots(m, UI.more.p) : null;
+    const G = UI.G, t = UI.sel != null && G.phase === 'assign' ? E.targets(G, UI.sel) : null;
+    const mine = t ? t.hits.filter(h => h.uid === m.uid) : [], more = null;
     return `<div class="t-threat${m.slots.length > 6 ? ' big' : ''}" role="group" aria-label="Dice under ${esc(m.name)}">${m.slots.map((v, p) => {
-      const off = m.off[p], h = mine.find(x => x.p === p), pend = UI.more && UI.more.uid === m.uid && UI.more.p === p, mo = more && more.includes(p);
-      const c = ['t-td', off ? 'off' : '', h ? (h.near ? 'tgt near' : 'tgt') : '', pend ? 'pend' : '', mo ? 'tgt more' : '', p >= m.printed ? 'xtra' : '', (t || more) && !off && !h && !mo && !pend ? 'dim' : ''].filter(Boolean).join(' ');
+      const off = m.off[p], h = mine.find(x => x.p === p), pend = false, mo = false, just = FX && FX.struck.has(m.uid + '-' + p);
+      const c = ['t-td', off ? 'off' : '', just ? 'just' : '', h ? (h.near ? 'tgt near' : 'tgt') : '', pend ? 'pend' : '', mo ? 'tgt more' : '', p >= m.printed ? 'xtra' : '', (t || more) && !off && !h && !mo && !pend ? 'dim' : ''].filter(Boolean).join(' ');
       const label = `${v}${p >= m.printed ? ' (extra die for this crew)' : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
-      return `<button class="${c}" data-a="slot" data-u="${m.uid}" data-p="${p}" data-k="slot${m.uid}-${p}" aria-label="${esc(label)}" ${off ? 'disabled' : ''}>${A.pip(v, 30)}</button>`;
+      return `<button class="${c}" data-a="slot" data-u="${m.uid}" data-p="${p}" data-k="slot${m.uid}-${p}" aria-label="${esc(label)}" ${off ? 'disabled' : ''}>${A.pip(v, 30)}${just ? '<i class="burst" aria-hidden="true"></i>' : ''}</button>`;
     }).join('')}</div>`;
   }
   function vMob(m) {
     const G = UI.G, down = !E.left(m);
     const dmg = E.dmgOf(G, m), inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null;
-    const isNew = !UI.seenMobs.has(m.uid + ':' + m.back); UI.seenMobs.add(m.uid + ':' + m.back);
+    const enter = FX && FX.enter.has(m.uid), ko = FX && FX.ko.has(m.uid), struck = FX && [...FX.struck].some(k => k.startsWith(m.uid + '-'));
     const lines = [];
-    if (down) lines.push('<span>Beaten. Leaves at the end of the round.</span>');
+    if (down) lines.push(`<span>Beaten. ${m.back ? 'Gone for good' : 'Goes on the row'} at the end of the round.</span>`);
     else {
-      lines.push(`<span>${E.left(m)} of ${m.hits} dice left · hits for <b>${dmg}</b>${dmg !== m.dmg ? ` <span class="hot">(${dmg > m.dmg ? '+' : ''}${dmg - m.dmg})</span>` : ''}</span>`);
-      if (inc) lines.push(inc.to.length ? `<span class="hot">At round end: ${inc.dmg} to ${inc.to.map(k => nm(G.team[k])).join(', ')}</span>` : '<span>At round end: blocked</span>');
+      lines.push(`<span><b class="num">${E.left(m)}</b> of ${m.hits} dice left · hits for <b class="num">${dmg}</b>${dmg !== m.dmg ? ` <span class="hot">(${dmg > m.dmg ? '+' : ''}${dmg - m.dmg})</span>` : ''}</span>`);
+      if (inc) lines.push(inc.to.length ? `<span class="hot">At round end: ${inc.dmg} to ${inc.to.map(k => esc(nm(G.team[k]))).join(', ')}</span>` : '<span class="safe">At round end: blocked</span>');
     }
     if (G.n >= 3) lines.push(`<span>${G.n} players: + die set ${G.n - 2}× (marked +)</span>`);
-    return `<div class="t-slot${down ? ' down' : ''}${isNew ? ' enter' : ''}" data-card="${cardKey(m)}" data-uid="${m.uid}">${cardFor(m)}
-      ${m.back ? '<span class="t-stamp">Came back</span>' : ''}${down ? '<span class="t-stamp beat">Beaten</span>' : ''}
+    const cls = ['t-slot', down ? 'down' : '', ko ? 'ko' : '', enter ? (m.back ? 'fresh' : 'flipin') : '', struck && !ko ? 'struck' : '', m.back && !down ? 'back' : ''].filter(Boolean).join(' ');
+    return `<div class="${cls}" data-card="${cardKey(m)}" data-uid="${m.uid}">${cardFor(m)}
+      ${m.back && !down ? `<span class="t-stamp bstamp${enter ? ' new' : ''}" aria-hidden="true">${m.back > 1 ? `Back ×${m.back}` : 'Came back'}</span>` : ''}${down ? `<span class="t-stamp beat${ko ? ' new' : ''}">${m.back ? 'Gone' : 'Down'}</span>` : ''}
       ${vThreat(m)}<div class="t-under">${lines.join('')}</div></div>`;
+  }
+  // Between fights: the feed face down (the print card back) and who's on point, as analyst cards with portraits.
+  function vFlipDesk() {
+    const G = UI.G, boss = !G.feed.length;
+    const label = boss ? 'Bring on the boss' : 'Flip the next mob';
+    return `<div class="pdesk"><div class="pd-feed"><button class="fdown${boss ? ' boss' : ''}" type="button" data-a="flip" data-k="flipcard" style="--stack:${Math.min(3, G.feed.length)}" aria-label="${label}">
+        <span class="fd-art" aria-hidden="true">${slice(ART.back)}</span><span class="fd-t" aria-hidden="true">${boss ? 'The boss' : 'Detect the<br>Dwellers'}</span>
+        <span class="fd-b" aria-hidden="true"><b>${boss ? '05:59 · last fight' : `${pl(G.feed.length, 'mob')} in the feed`}</b><span>${boss ? 'Bring it on' : 'Flip'}</span></span></button></div>
+      <div class="pd-side">${G.fight ? `<p class="status">${G.fight ? '<b>Fight won.</b> ' : ''}${boss ? 'The feed is empty. The boss is next.' : `${pl(G.feed.length, 'mob')} left in the feed, then the boss.`}</p>` : '<p class="status"><b>22:00. The shift starts.</b> Pick who’s on point, then flip the first mob.</p>'}
+        <div class="pd-point"><h2 class="sech">On point</h2><div class="acards" role="group" aria-label="On point">${G.team.map((id, k) => { const on = G.point === k;
+          return `<button class="acard${on ? ' on' : ''}" type="button" data-a="point" data-n="${k}" data-k="point${k}" aria-pressed="${on}"><i class="tab" aria-hidden="true"></i><span class="scr">${crop(ART[id], THUMB[id])}</span><b class="nm">${esc(nm(id))}</b><span class="phud${on ? ' c' : ''}">${on ? 'On point · 2 dice' : `${G.hp[k]}/${G.max} HP`}</span></button>`; }).join('')}</div>
+        <p class="meta">On point rolls two dice${G.n === 1 ? '' : ' and takes Targeted hits'}.</p></div></div></div>`;
   }
   function vTable() {
     const G = UI.G;
-    let body;
-    if (G.play.length) body = `<div class="t-mobs${G.play.length > 1 ? ' many' : ''}">${G.play.map(vMob).join('')}</div>`;
-    else if (G.phase === 'flip') body = `<p class="t-empty">${G.fight ? 'Fight won. ' : ''}${G.feed.length ? `${pl(G.feed.length, 'mob')} left in the feed, then the boss.` : 'The feed is empty. The boss is next.'}</p>`;
-    else body = '';
-    return `<section class="t-table" aria-label="The fight">${vRowRoll()}${body}</section>`;
+    const head = G.phase === 'flip' || G.phase === 'loot' ? '' : `<div class="fhead"><span class="sech f">${G.bossOut ? 'Boss fight' : `Fight ${G.fight} of ${FLIPS}`} · round ${G.round || 1} · ${esc(nm(G.team[G.point]))} on point</span><span class="sech a">Row · ${G.row.length}</span></div>`;
+    const bans = vBossBanner() + vRowRoll() + vAloud();
+    let body = '';
+    // A lone mob: the card, and beside it the banners and the round in plain words (as the real game's solo table).
+    if (G.play.length === 1) return `<section class="table solo" aria-label="The fight">${head}<div class="solo-b"><div class="inplay">${vMob(G.play[0])}</div><div class="sb">${bans ? `<div class="bans">${bans}</div>` : ''}${vBrief(G.play[0])}</div></div></section>`;
+    if (G.play.length) body = `<div class="inplay many">${G.play.map(vMob).join('')}</div>`;
+    else if (G.phase === 'flip') body = vFlipDesk();
+    else if (G.phase === 'loot') body = `<p class="status pad"><b>Fight won.</b> The tray is over its limit: discard from the kit tray.</p>`;
+    return `<section class="table" aria-label="The fight">${head}${bans ? `<div class="bans">${bans}</div>` : ''}${body}</section>`;
+  }
+  function vBrief(m) {
+    const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null, dm = !m.boss && dataMob(m.id);
+    const rows = [['c', 'To hit', 'A die takes one die under it showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards.'],
+      ['f', m.boss ? 'Boss' : 'Keyword', m.boss ? 'Agent dice can’t hit it. +2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`],
+      ['f', 'Round end', !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`],
+      ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : m.back ? 'Gone for good: it already came back once.' : `It goes on the persistence row, and comes back on a row roll of 2–${m.top}.`]];
+    return `<div class="rbrief"><h2 class="sech">Round ${G.round || 1}</h2><ul>${rows.map(([c, h, t]) => `<li><span class="phud ${c}">${h}</span><span>${t}</span></li>`).join('')}</ul></div>`;
   }
   function vSide() {
     const G = UI.G, r = G.lastRow;
-    // Each row mob's number against the 2d6 sums 2–12: lit cells bring it back; the last roll is marked.
-    const rowHtml = G.row.length ? `<div class="t-rowlist">${G.row.map(m => `<div class="t-rowmob"><span>${esc(m.name)}</span><span class="r num">2–${m.top}</span>
-      <span class="t-track" aria-hidden="true">${Array.from({ length: 11 }, (_, i) => `<i class="${i + 2 <= m.top ? 'on' : ''}${r && r.fight === G.fight && r.roll === i + 2 ? ' roll' : ''}">${i + 2}</i>`).join('')}</span></div>`).join('')}</div>`
-      : '<p class="t-empty">Empty. Beaten mobs land here and come back on the 2 amber dice.</p>';
+    // Each row mob as a small amber card: its scene, its number, and the 2d6 sums 2–12 that bring it back.
+    const rowHtml = G.row.length ? `<div class="t-rowlist">${G.row.map(m => `<div class="rcard"><span class="scr">${slice(ART[m.id])}</span><div class="rc-b"><b class="nm">${esc(m.name)}</b><span class="rng">Back on 2–${m.top}</span>
+      <span class="t-track" aria-hidden="true">${Array.from({ length: 11 }, (_, i) => `<i class="${i + 2 <= m.top ? 'on' : ''}${r && r.fight === G.fight && r.roll === i + 2 ? ' roll' : ''}">${i + 2}</i>`).join('')}</span></div></div>`).join('')}</div>`
+      : '<p class="empty">Empty. Beaten mobs land here and come back on the 2 amber dice.</p>';
     const loot = G.phase === 'loot', drawn = new Set(G.drawn.map(c => c.uid));
-    const kit = G.tray.length ? `<div class="t-kit">${G.tray.map(c => `<div class="t-kslot${loot && drawn.has(c.uid) ? ' drawn' : ''}" data-card="agent:${c.t}" data-kuid="${c.uid}">${A.agentCard(c.t)}
-      <div class="row"><span class="run">${loot ? (drawn.has(c.uid) ? 'New' : '') : 'Running'}</span>${loot ? `<button class="t-btn sm warn" data-a="discard" data-u="${c.uid}" data-k="disc${c.uid}">Discard</button>` : `<button class="t-btn sm" data-a="burn" data-u="${c.uid}" data-k="burn${c.uid}" ${E.canBurn(G, c.t) ? '' : 'disabled'} aria-label="Burn the ${E.KIT_NAME[c.t]}">Burn</button>`}</div></div>`).join('')}</div>`
-      : '<p class="t-empty">No agents. Win a fight to draw more.</p>';
+    const kit = G.tray.length ? `<div class="t-kit">${G.tray.map(c => { const can = !loot && E.canBurn(G, c.t);
+      return `<div class="t-kslot${loot && drawn.has(c.uid) ? ' drawn' : ''}${can ? ' live' : ''}" data-card="agent:${c.t}" data-kuid="${c.uid}">${A.agentCard(c.t)}
+      <div class="row"><span class="run">${loot ? (drawn.has(c.uid) ? 'New' : '') : 'Running'}</span>${loot ? `<button class="btn s warn" data-a="discard" data-u="${c.uid}" data-k="disc${c.uid}">Discard</button>` : `<button class="btn s cy" data-a="burn" data-u="${c.uid}" data-k="burn${c.uid}" ${can ? '' : 'disabled'} aria-label="Burn the ${E.KIT_NAME[c.t]}">Burn</button>`}</div></div>`; }).join('')}</div>`
+      : '<p class="empty">No agents. Win a fight to draw more.</p>';
     return `<aside class="t-side">
-      <div class="t-panel"><p class="t-h"><span>Persistence row</span><span>${G.gone.length ? `${G.gone.length} gone for good` : ''}</span></p>${rowHtml}</div>
-      <div class="t-panel"><p class="t-h"><span>Kit tray</span><span class="num">${G.tray.length}/${G.cap} · deck ${G.kit.length}</span></p>${kit}</div>
-      <div class="t-panel"><p class="t-h"><span>Crew</span><span>${nm(G.team[G.point])} on point</span></p><div class="t-crewcards">${G.team.map((id, k) => `<div class="t-cslot${k === G.point ? ' pt' : ''}" data-card="analyst:${id}">${A.analystCard(id)}${k === G.point ? '<div class="lbl">On point</div>' : ''}</div>`).join('')}
+      <div class="panel pad"><h2 class="sech a"><span>Persistence row</span><span class="cnt">${G.gone.length ? `${G.gone.length} gone for good` : ''}</span></h2>${rowHtml}</div>
+      <div class="panel pad c"><h2 class="sech"><span>Kit tray</span><span class="cnt num">${G.tray.length}/${G.cap} · deck ${G.kit.length}</span></h2>${kit}</div>
+      <div class="panel pad"><h2 class="sech"><span>Crew cards</span><span class="cnt">${esc(nm(G.team[G.point]))} on point</span></h2><div class="t-crewcards">${G.team.map((id, k) => `<div class="t-cslot${k === G.point ? ' pt' : ''}" data-card="analyst:${id}">${A.analystCard(id)}${k === G.point ? '<div class="lbl">On point</div>' : ''}</div>`).join('')}
         <div class="t-cslot" data-card="legend">${A.legend}</div></div></div>
     </aside>`;
   }
-  function dieHtml(d) {
-    const G = UI.G, owner = d.src === 'agent' ? 'Agent' : d.src === 'crew' ? 'Crew' : G.team[d.k] + (d.src === 'burn' ? '+' : '');
-    const usedTo = d.used === 'guard' ? 'Guard' : d.used ? (G.play.find(m => m.uid === d.used.uid) || { name: '?' }).name : '';
-    const label = `${E.faceText(d)}, ${E.dieOwner(G, d)}${d.used ? ', used: ' + usedTo : ''}${d.turned ? ', turned by Enrichment' : ''}`;
-    return `<button class="t-die${d.src === 'agent' || d.src === 'crew' ? ' agent' : ''}${d.dbl ? ' dbl' : ''}${UI.sel === d.i ? ' sel' : ''}${d.used ? ' used' : ''}${UI.fresh ? ' rolled' : ''}" data-a="die" data-i="${d.i}" data-k="die${d.i}" aria-pressed="${UI.sel === d.i}" aria-label="Die ${d.i + 1}: ${esc(label)}" title="${esc(label)}" style="animation-delay:${d.i * 40}ms">
-      <span class="f">${A.pip(d.n, 36)}</span><span class="o">${owner}${d.dbl ? ' · <b>double</b>' : ''}</span>${d.used === 'guard' ? '<span class="badge g">Guard</span>' : d.used ? '<span class="badge g">✓</span>' : d.turned ? '<span class="badge w">EN</span>' : ''}</button>`;
+  function dieHtml(d, n) {
+    const G = UI.G, owner = d.src === 'agent' ? 'Agent' : d.src === 'crew' ? 'Crew' : SHORT[G.team[d.k]] + (d.src === 'burn' ? '+' : '');
+    const half = !d.used && d.takes && d.takes.length, usedTo = d.used === 'guard' ? 'Guard' : d.used ? [...new Set(d.takes.map(x => (G.play.find(m => m.uid === x.uid) || { name: '?' }).name))].join(' and ') : '';
+    const label = `${E.faceText(d)}, ${E.dieOwner(G, d)}${d.used ? ', used: ' + usedTo : half ? ', one take left' : ''}${d.turned ? ', turned by Enrichment' : ''}`;
+    const t = !d.used && G.phase === 'assign' ? E.targets(G, d.i) : null, dead = t && !t.hits.length && !t.guard;
+    const cls = ['t-die', d.src === 'agent' || d.src === 'crew' ? 'agent' : '', d.dbl ? 'dbl' : '', d.used ? 'used' : '', half ? 'half' : '', d.used === 'guard' ? 'grd' : '', dead ? 'dead' : ''].filter(Boolean).join(' ');
+    return `<button class="${cls}" data-a="die" data-i="${d.i}" data-k="die${d.i}" aria-pressed="${UI.sel === d.i}" aria-label="Die ${d.i + 1}: ${esc(label)}" title="${esc(label)}">
+      ${n <= 9 ? `<kbd aria-hidden="true">${d.i + 1}</kbd>` : ''}<span class="f">${A.pip(d.n, 40)}</span><span class="o">${d.used === 'guard' ? 'Guard' : d.used ? 'Used' : half ? '1 left' : d.dbl ? 'Double ×2' : esc(owner)}</span>${d.used === 'guard' || (t && t.guard && d.dbl) ? `<span class="gmark" aria-hidden="true">${ICON.shield}</span>` : ''}${d.turned ? '<span class="badge w">EN</span>' : ''}</button>`;
   }
   function vDock() {
     const G = UI.G; let hint = '', ctl = '';
     if (G.phase === 'flip') {
-      hint = `<b>Pick who’s on point</b>, then ${G.feed.length ? 'flip the next mob' : 'bring on the boss'}. On point rolls twice${G.n === 1 ? '' : ' and takes Targeted hits'}.`;
-      ctl = `<div class="t-acts"><div class="t-pts" role="group" aria-label="On point">${G.team.map((id, k) => `<button class="t-btn sm" data-a="point" data-n="${k}" data-k="point${k}" aria-pressed="${G.point === k}">${nm(id)}</button>`).join('')}</div><span class="sp"></span>
-        <button class="t-btn pri" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the next mob' : 'Bring on the boss'} <span class="num">(F)</span></button></div>`;
+      hint = `<b>Pick who’s on point</b>, then ${G.feed.length ? 'flip the next mob' : 'bring on the boss'}.`;
+      ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the next mob' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
     } else if (G.phase === 'roll') {
       hint = G.round >= 1 ? '<b>New round.</b> Roll the row first, then everyone rolls.' : '<b>Fight!</b> Burn a Containment or Recovery Agent now if you want, then roll.';
       if (G.round >= 1 && !G.row.length) hint = '<b>New round.</b> The row is empty, so just roll the dice.';
-      ctl = `<div class="t-acts"><span class="t-inc">${incText()}</span><span class="sp"></span><button class="t-btn pri" data-a="roll" data-k="roll">${G.round >= 1 && G.row.length ? 'Roll the row, then the dice' : 'Roll the dice'} <span class="num">(R)</span></button></div>`;
+      ctl = `<div class="acts"><span class="inc grow">${incText()}</span><button class="btn p big" data-a="roll" data-k="roll">${G.round >= 1 && G.row.length ? 'Roll the row, then the dice' : 'Roll the dice'} <kbd>R</kbd></button></div>`;
     } else if (G.phase === 'assign') {
-      const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null, mo = UI.more && G.play.find(m => m.uid === UI.more.uid);
-      if (mo) hint = `<b>Double ${d.n} takes the ${mo.slots[UI.more.p]} under ${esc(mo.name)}.</b> Tap any one more die under it, or keep just the one.`;
+      const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null;
+      if (d && !d.used && d.takes.length) hint = `<b>${esc(E.dieOwner(G, d))}: double ${d.n}, one more ${d.n} to place.</b> ${t.hits.length ? 'Tap another matching die, under this mob or another.' : `No ${d.n} left to take.`} Or pick another die.`;
       else if (!d) hint = G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under a mob. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.';
-      else if (d.used) hint = `That die is used. <b>Undo</b> to take it back.`;
-      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? 'A double: tap a matching die under a mob to take it and one more, <b>or Guard</b>.' : 'Tap a glowing die under a mob that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') : 'Nothing it can hit.'}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
+      else if (d.used) hint = 'That die is used. <b>Undo</b> to take it back.';
+      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one mob or two, <b>or Guard</b>.` : 'Tap a glowing die under a mob that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') : 'Nothing it can hit.'}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
-      ctl = `<div class="t-dice" role="group" aria-label="Dice">${G.dice.map(dieHtml).join('')}</div>
-        <div class="t-acts">${mo ? `<button class="t-btn pri" data-a="one" data-k="one">Just that one <span class="num">(J)</span></button><button class="t-btn" data-a="back" data-k="back">Back <span class="num">(Esc)</span></button>` : ''}
-        ${!mo && sel && t.guard ? `<button class="t-btn" data-a="guard" data-k="guard">Guard <span class="num">(G)</span></button>` : ''}
-        ${!mo && sel && t.enrich ? `<span class="t-inc">Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="t-btn sm" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
-        <span class="t-inc">${incText()}</span><span class="sp"></span>
-        <button class="t-btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <span class="num">(U)</span></button>
-        <button class="t-btn pri" data-a="end" data-k="end">End round <span class="num">(E)</span></button></div>`;
+      ctl = `<div class="t-dice" role="group" aria-label="Dice">${G.dice.map(x => dieHtml(x, G.dice.length)).join('')}</div>
+        <div class="acts">
+        ${sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard <kbd>G</kbd></button>` : ''}
+        ${sel && t.enrich ? `<span class="inc">Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
+        <span class="inc grow dk">${incText()}</span>
+        <button class="btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <kbd>U</kbd></button>
+        <button class="btn p" data-a="end" data-k="end">End round <kbd>E</kbd></button></div>`;
     } else if (G.phase === 'loot') {
       hint = `<b>The tray holds ${G.cap}.</b> Discard ${G.tray.length - G.cap} agent${G.tray.length - G.cap === 1 ? '' : 's'} from the kit tray (new ones are ringed).`;
     }
-    UI.fresh = false;
-    return `<div class="t-dock" role="region" aria-label="Controls"><div class="t-dockin"><p class="t-hint" aria-live="polite">${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}</p>${ctl}</div></div>`;
+    return `<div class="dock" role="region" aria-label="Dice tray"><div class="dockin"><p class="status" aria-live="polite">${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}</p>${ctl}</div></div>`;
   }
   function incText() {
     const G = UI.G, inc = E.incoming(G), tot = inc.total.reduce((a, b) => a + b, 0);
-    return tot ? `Incoming at round end: ${G.team.map((id, k) => `${nm(id)} <b>${inc.total[k]}</b>`).join(' · ')}` : 'Nothing hits back this round.';
+    return tot ? `At round end: ${G.team.map((id, k) => `${esc(nm(id))} <b class="num">−${inc.total[k]}</b>`).join(' · ')}` : '<span class="safe">Nothing hits back this round.</span>';
   }
   function vLog() {
     if (UI.drawer !== 'log') return '';
     const L = UI.G.log.slice().reverse();
-    return `<aside class="t-drawer" aria-label="Game log"><h2>Log <button class="t-lnk" data-a="log" data-k="logx">Close</button></h2><ol class="t-log">${L.map(l => `<li class="${l.kind}"><span class="when">${l.fight ? `F${l.fight}${l.round ? '·R' + l.round : ''}` : '—'}</span>${esc(l.text)}</li>`).join('')}</ol></aside>`;
+    return `<aside class="logp" aria-label="Game log"><div class="lh"><h2 class="sech">Log</h2><button class="btn s" data-a="log" data-k="logx">Close <kbd>Esc</kbd></button></div><div class="log">${L.map(l => `<p class="${l.kind}"><span class="t">${l.fight ? `F${l.fight}${l.round ? '·R' + l.round : ''}` : '—'}</span>${esc(l.text)}</p>`).join('')}</div></aside>`;
   }
   function vGallery() {
     if (!UI.cards) return '';
     const all = [...A.mobs().map(m => ['mob:' + m.id, A.mobCard(m)]), ['boss', A.bossCard(A.boss())], ['legend', A.legend], ...A.ANALYST_IDS.map(id => ['analyst:' + id, A.analystCard(id)]), ...A.AGENT_IDS.map(t => ['agent:' + t, A.agentCard(t)])];
-    return `<div class="t-gallery" role="dialog" aria-label="All cards"><div class="in"><p class="t-h"><span>Every card in the prototype · the same markup as the paper PDF</span><button class="t-lnk" data-a="cards" data-k="cardsx">Close</button></p>
+    return `<div class="t-gallery" role="dialog" aria-label="All cards"><div class="in"><div class="lh"><h2 class="sech">Every card in the prototype · the same markup as the paper PDF</h2><button class="btn s" data-a="cards" data-k="cardsx">Close <kbd>Esc</kbd></button></div>
       <div class="grid">${all.map(([k, h]) => `<div class="t-gslot" data-card="${k}">${h}</div>`).join('')}</div></div></div>`;
+  }
+  // The boss reveal (as ui/ui.js): the boss card scans in over the table, with the one thing worth knowing.
+  function vReveal() {
+    const G = UI.G; if (!UI.reveal || G.over) return '';
+    return `<div class="reveal" role="dialog" aria-modal="true" aria-labelledby="rv-h"><div class="rv"><div class="rv-card" data-card="boss">${A.bossCard(A.boss())}</div>
+      <div class="rv-b"><time class="clk f">05:59</time><h2 class="logo" id="rv-h">The boss is here</h2><p class="lede">${esc(G.boss.name)} arrives with one last row roll and no arrival hits. Agent dice can’t hit it; it hits for +2 until it has lost two dice. Spend your doubles.</p>
+      <button class="btn p big" type="button" data-a="unreveal" data-k="unreveal">Face it</button></div></div></div>`;
+  }
+  // Who dropped the crew: the last mob whose hit took someone to 0, from the log.
+  function killer() {
+    const G = UI.G, h = G.log.slice().reverse().find(l => l.kind === 'hurt' && / 0 HP left/.test(l.text)), m = h && /\((.+?) (hits back|arrives)\)/.exec(h.text);
+    return m ? m[1] : null;
   }
   function vEnd() {
     const G = UI.G; if (!G.over) return '';
-    const ms = (UI.end || Date.now()) - UI.start;
-    return `<div class="t-end" role="dialog" aria-label="Shift over"><div class="t-endc">
-      <h2 class="${G.win ? 'win' : 'loss'}">${G.win ? 'Shift survived' : 'Shift lost'}</h2>
-      <p class="sub">${G.win ? `${esc(G.boss.name)} is beaten. Everybody walks out.` : `Fight ${G.fight}${G.bossOut ? ', against the boss' : ''}. Someone hit 0 HP.`}</p>
-      <div class="t-stats">
-        <div><b>${G.stats.rounds}</b><span>Rounds</span></div><div><b>${G.stats.back}</b><span>Comebacks</span></div><div><b>${mmss(ms)}</b><span>Time</span></div>
-        <div><b>${G.fight}</b><span>Fights</span></div><div><b>${G.stats.guards}</b><span>Guards</span></div><div><b>${Math.min(...G.hp)}</b><span>Lowest HP</span></div></div>
-      <div class="t-acts"><button class="t-btn" data-a="copy" data-k="copy">${UI.copied === 'ok' ? 'Copied' : 'Copy result'}</button><button class="t-btn" data-a="log" data-k="log2">Log</button><span class="sp"></span><button class="t-btn pri" data-a="quit" data-k="again">New shift</button></div>
-      ${UI.copied && UI.copied !== 'ok' ? `<textarea class="t-line" rows="4" readonly aria-label="Result line">${esc(UI.copied)}</textarea>` : ''}
-      <p class="t-hint" data-line style="margin-top:10px;font-family:var(--mono);font-size:11px">${esc(resultLine())}</p>
+    const ms = (UI.end || Date.now()) - UI.start, who = killer(), km = who && [...D.mobs].find(m => m.name === who);
+    const artSvg = G.win ? ART.win : km ? ART[km.id] : (who === G.boss.name ? A.SCENE.boss(G.boss.id) : ART.hero);
+    const down = G.hp.findIndex(h => h <= 0);
+    const roster = G.team.map((id, k) => `<li class="${!G.win && k === down ? 'down' : ''}"><span class="art">${crop(ART[id], SQUARE(id))}</span><span><span class="nm">${esc(nm(id))}</span><br><span class="num">${G.hp[k]}/${G.max}</span> <span class="meta">HP</span></span></li>`).join('');
+    return `<div class="t-end" role="dialog" aria-label="Shift over"><div class="end">
+      <article class="endcard ${G.win ? 'win' : 'loss'}"><div class="ec-art"><span class="art">${slice(artSvg)}</span><span class="stamp" aria-hidden="true">${G.win ? 'Contained' : 'Flatlined'}</span></div>
+        <div class="ec-bd"><p class="meta ${G.win ? 'c' : 'f'}">Chapter dice · d6 prototype · ${G.n}p · ${G.max} HP</p>
+          <h2 class="logo" tabindex="-1">${G.win ? 'Shift survived' : 'Shift lost'}</h2>
+          ${G.win ? `<p class="lede"><time class="clk dawn">06:00</time> You made it to dawn. ${esc(G.boss.name)} is beaten. Everybody walks out.</p>`
+            : `<p class="cause"><time class="clk">${clockNow()}</time> The shift fell in ${G.bossOut ? 'the boss fight' : `fight ${G.fight}`}${who ? `: <b>${esc(who)}</b> took the ${esc(nm(G.team[down >= 0 ? down : 0]))} to 0 HP` : ''}.</p>`}
+          <ul class="roster" aria-label="Crew">${roster}</ul>
+          <div class="stats"><div><b>${G.fight}</b><span class="meta">Fights</span></div><div><b>${G.stats.rounds}</b><span class="meta">Rounds</span></div><div><b>${G.stats.back}</b><span class="meta">Comebacks</span></div><div><b>${G.stats.guards}</b><span class="meta">Guards</span></div></div>
+          <div class="dur"><p class="meta">Shift took <b class="num">${mmss(ms)}</b> · lowest HP <b class="num">${Math.min(...G.hp)}</b></p><button class="lnk" type="button" data-a="copy" data-k="copy">${UI.copied === 'ok' ? ICON.check + 'Copied' : 'Copy result'}</button></div>
+          ${UI.copied && UI.copied !== 'ok' ? `<label class="meta copyx">Copy this line<textarea class="t-line" rows="3" readonly>${esc(UI.copied)}</textarea></label>` : ''}
+          <p class="sig" data-line>${esc(resultLine())}</p></div></article>
+      <div class="endbar"><button class="btn p big" type="button" data-a="quit" data-k="again">New shift</button><button class="btn big" type="button" data-a="log" data-k="log2">Log</button></div>
     </div></div>`;
   }
 
   // ---- Render and events ------------------------------------------------------------------------------------------
   function render() {
     const k = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
-    app.innerHTML = UI.G ? vTop() + vCrew() + `<div class="t-main">${vTable()}${vSide()}</div>` + vDock() + vLog() + vGallery() + vEnd() : vSetup() + vGallery();
+    app.innerHTML = UI.G ? `<div class="wrap game">${vTop()}<div class="t-main">${vTable()}${vSide()}</div></div>` + vDock() + vReveal() + vLog() + vGallery() + vEnd() : vSetup() + vGallery();
+    document.body.classList.toggle('ingame', !!UI.G);
     if (k) focusKey(k);
   }
   function focusKey(k) { const el = app.querySelector(`[data-k="${k}"]`); if (el && !el.disabled) el.focus({ preventScroll: true }); }
@@ -239,21 +413,20 @@
     const G = UI.G;
     const b = e.target.closest && e.target.closest('[data-a]'); if (!b || b.disabled) return;
     const a = b.dataset.a;
-    if (a === 'count') { UI.setup.n = +b.dataset.n; return render(); }
-    if (a === 'pick') { const s = UI.setup.team, k = +b.dataset.seat, j = s.indexOf(b.dataset.id); if (j >= 0 && j !== k) s[j] = s[k]; s[k] = b.dataset.id; return render(); }
+    if (a === 'pick') { const s = UI.setup.team, id = b.dataset.id, j = s.indexOf(id); if (j >= 0) { if (s.length > 1) s.splice(j, 1); } else if (s.length < 4) s.push(id); return render(); }
     if (a === 'start') return startGame();
+    if (a === 'snd') { Sound.toggle(); return render(); }
     if (a === 'cards') { UI.cards = !UI.cards; return render(); }
     if (a === 'log') { UI.drawer = UI.drawer === 'log' ? null : 'log'; return render(); }
-    if (a === 'quit') { if (G && !G.over && !confirmQuit()) return; UI.G = null; UI.drawer = null; UI.seed = (UI.seed * 7 + 13) % 1e9; return render(); }
+    if (a === 'quit') { if (G && !G.over && !confirmQuit()) return; UI.G = null; UI.drawer = null; UI.reveal = false; UI.seed = (UI.seed * 7 + 13) % 1e9; return render(); }
     if (a === 'copy') return copyResult();
     if (!G) return;
+    if (a === 'unreveal') { UI.reveal = false; render(); return focusKey('roll'); }
     if (a === 'point') return act(() => E.setPoint(G, +b.dataset.n));
-    if (a === 'flip') { act(() => E.flip(G)); return focusKey('roll'); }
-    if (a === 'roll') { act(() => E.roll(G)); UI.fresh = true; UI.sel = null; UI.more = null; nextDie(); render(); return focusKey('die' + (UI.sel || 0)); }
+    if (a === 'flip') { act(() => E.flip(G)); return focusKey(UI.reveal ? 'unreveal' : 'roll'); }
+    if (a === 'roll') { UI.reveal = false; UI.sel = null; UI.more = null; act(() => E.roll(G)); nextDie(); render(); return focusKey('die' + (UI.sel || 0)); }
     if (a === 'die') { const i = +b.dataset.i; UI.more = null; UI.sel = UI.sel === i ? null : i; UI.msg = ''; return render(); }
     if (a === 'slot') return tapSlot(b.dataset.u, +b.dataset.p);
-    if (a === 'one') return UI.more && doAssign(UI.more.di, UI.more.uid, UI.more.p);
-    if (a === 'back') { UI.more = null; return render(); }
     if (a === 'guard') return doGuard();
     if (a === 'turn') { const i = UI.sel; return act(() => E.enrichTurn(G, i, +b.dataset.n)); }
     if (a === 'undo') { UI.more = null; act(() => E.unassign(G)); const last = G.dice.filter(d => !d.used).map(d => d.i); if (UI.sel == null || (G.dice[UI.sel] && G.dice[UI.sel].used)) UI.sel = last.length ? last[last.length - 1] : null; return render(); }
@@ -265,19 +438,19 @@
   document.addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target || {}).tagName || '')) return;
     const G = UI.G, key = e.key.toLowerCase(), click = k => { const el = app.querySelector(`[data-a="${k}"]`); if (el && !el.disabled) { el.click(); e.preventDefault(); } };
-    if (key === 'escape') { if (UI.cards) UI.cards = false; else if (UI.drawer) UI.drawer = null; else if (UI.more) UI.more = null; else UI.sel = null; return render(); }
+    if (key === 'escape') { if (UI.cards) UI.cards = false; else if (UI.drawer) UI.drawer = null; else if (UI.reveal) UI.reveal = false; else UI.sel = null; return render(); }
     if (!G) return;
     if (key === 'l') return click('log');
+    if (UI.reveal && (key === 'enter' || key === ' ')) return click('unreveal');
     if (G.phase === 'flip' && key === 'f') return click('flip');
     if (G.phase === 'roll' && key === 'r') return click('roll');
     if (G.phase === 'assign') {
-      if (key === 'j') return click('one');
       if (/^[1-9]$/.test(key) && G.dice[+key - 1]) { UI.more = null; UI.sel = +key - 1; UI.msg = ''; render(); return focusKey('die' + UI.sel); }
       if (key === 'g') return click('guard');
       if (key === 'u' || key === 'backspace') return click('undo');
       if (key === 'e') return click('end');
     }
   });
-  window.CDUI = { UI, render, resultLine };
+  window.CDUI = { UI, render, resultLine, clockAt };
   render();
 })();

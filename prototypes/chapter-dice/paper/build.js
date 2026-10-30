@@ -8,7 +8,7 @@ const { fonts } = require('../../../deck/render');
 const { launch, fontsReady } = require('../../../deck/browser');
 const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, mobs: cardMobs, boss, ANALYST_IDS, AGENT_IDS, CARD_CSS } = require('../cards');
 
-const OUT = __dirname, HP = 30; // starting HP for exact numbers (2026-10-30): about 55% at two players in the sim
+const OUT = __dirname, HP = 25; // starting HP for clustered dice and two-of-a-number doubles (2026-10-30): about 53% at two players in the sim
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
@@ -18,7 +18,7 @@ const rules = `<section class="page rules">
 <div class="cols">
 <div>
 <h2>You need</h2>
-<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (2 per player), 3 in a second colour for the solo crew die and agent dice, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the mob cards. Coins for HP.</p>
+<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (2 per player), 3 in a second colour for the solo crew die and agent dice, 2 amber dice for the row, and about <b>14 threat dice</b> to set under the mob cards. Coins for HP.</p>
 <h2>Setup</h2>
 <ol>
 <li>Each player picks an analyst. Start at <b>${HP} HP</b>.</li>
@@ -26,9 +26,9 @@ const rules = `<section class="page rules">
 <li>Shuffle the 8 agent cards: that’s the kit deck. The crew starts with ${D.quickStartAgent} agents (${D.quickStartSolo} solo).</li>
 </ol>
 <h2>Threat dice</h2>
-<p>When a mob arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. Those dice are its hits. <b>3 or 4 players:</b> add the card’s <b>+</b> die once for each player past 2. Solo uses the 2-player dice.</p>
-<p class="ex3"><span>Card</span>${[2, 4, 5].map(n => P(n, 20)).join('')}<b>+</b>${P(3, 16)}<span>per player past 2</span></p>
-<p class="ex3"><span>3 players set</span>${[2, 4, 5, 3].map(n => P(n, 17)).join('')}<span>· 4 players</span>${[2, 4, 5, 3, 3].map(n => P(n, 17)).join('')}</p>
+<p>When a mob arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. Those dice are its hits. Each mob’s numbers bunch round one main number, so a double on that number goes a long way. <b>4 players:</b> add the card’s <b>+</b> die (a 6). Solo to 3 players use the printed dice.</p>
+<p class="ex3"><span>Card</span>${[1, 2, 2, 3].map(n => P(n, 20)).join('')}<b>+</b>${P(6, 16)}<span>per player past 3</span></p>
+<p class="ex3"><span>1–3 players set</span>${[1, 2, 2, 3].map(n => P(n, 17)).join('')}<span>· 4 players</span>${[1, 2, 2, 3, 6].map(n => P(n, 17)).join('')}</p>
 <h2>A flip</h2>
 <ol>
 <li>Pick who’s on point.</li>
@@ -47,7 +47,7 @@ const rules = `<section class="page rules">
 <li><b>Hits back.</b> Every mob with dice left hits everyone who isn’t blocking, for its Damage. A mob with no dice left is beaten.</li>
 </ol>
 <h2>Doubles</h2>
-<p>Your analyst card shows your doubles: ${['HUN', 'RES', 'ENG', 'SOA', 'PAT'].map(id => `${cls(id).name} ${DOUBLES[id].join(', ')}`).join(' · ')}. Every other die (the solo crew die, agent dice): <b>only a 6</b>. A double <b>either</b> takes its match and any one more die from the same mob, <b>or guards</b>: you block this round. Never both. Agent dice can’t guard or hit the boss.</p>
+<p>Your analyst card shows your doubles: ${['HUN', 'RES', 'ENG', 'SOA', 'PAT'].map(id => `${cls(id).name} ${DOUBLES[id].join(', ')}`).join(' · ')}. Every other die (the solo crew die, agent dice): <b>only a 6</b>. A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(2)} takes two ${P(2)}s, under one mob or two. <b>Or</b> it guards: you block this round. Never both. Agent dice can’t guard or hit the boss.</p>
 <h2>After a fight</h2>
 <p>Beaten mobs go on the row, unless they already came back once: then they’re gone for good. Draw ${D.kitPerFight} agent cards (${D.kitSolo} solo) into the tray, which holds ${D.sharedKit}. Run an agent every round, or burn it once for its big effect. A die turned by Enrichment keeps what it was: a double stays a double.</p>
 <h2>Win or lose</h2>

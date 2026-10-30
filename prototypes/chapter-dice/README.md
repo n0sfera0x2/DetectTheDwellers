@@ -1,6 +1,6 @@
 # Prototype: chapter dice (d6s) against the current d20
 
-**Status:** refactored to **exact numbers** on 2026-10-30 (see [Exact numbers](#exact-numbers-2026-10-30)). Mob cards print the dice to set under them; a rolled die takes out a die showing exactly its number. The sim (`SYS=n6`, now the default d6 family), the paper prototype and the web version all play these rules at 30 HP. The earlier symbol system stays reachable in the sim with `SYS=d6`. Next step: a table playtest against today's Quick Shift.
+**Status:** exact numbers with **clustered dice and two-of-a-number doubles** since 2026-10-30 (see [Clustered dice](#clustered-dice-and-two-of-a-number-doubles-2026-10-30)). Mob cards print the dice to set under them, bunched round a main number (1 2 2 3); a rolled die takes out a die showing exactly its number, and a double counts as two dice showing its number. The sim (`SYS=n6`, the default d6 family), the paper prototype and the web version all play these rules at 25 HP. The earlier symbol system stays reachable in the sim with `SYS=d6`. Next step: a table playtest against today's Quick Shift.
 
 ## Hypothesis
 
@@ -72,7 +72,60 @@ Both play the same cut-down shift.
 | Evasive ("natural 12+") | Only a double face hits it |
 | Triage Agent's die | A plain six-face die: one each of D, C, E, D, C, E |
 
-## Exact numbers (2026-10-30)
+## Clustered dice and two-of-a-number doubles (2026-10-30)
+
+Playtest feedback on exact numbers: the dice felt right, the doubles didn't. "If my role doubles on 2s, it should count as two 2s, not a 2 and whatever other number." And mobs should carry repeats, like 1 2 2 2 3, so a double matters.
+
+### The rules now
+
+- **A double counts as two dice showing its number.** A Hunter's double 2 takes two 2s: both under one mob, or one under each of two mobs. **Or** it guards. Never both, and a double that has taken one die can't guard. Hunter and Responder's one-off matches and the Enrichment burn work on each take.
+- **Mob dice bunch round a main number** (`sim.js` `numbersFor`): main, main, the one below, the one above, main. Two dice 2 2, three 1 2 2, four 1 2 2 3, five 1 2 2 2 3. At the edges both neighbours are the inside number (main 1: 1 1 2 2 1).
+
+  | Card | Main | Dice (1–3 players) | + per player past 3 |
+  | --- | --- | --- | --- |
+  | Mailer Daemon | 2 | 2 2 | 6 |
+  | Password Sprayer | 4 | 4 4 | 6 |
+  | OAuth Consent Grifter | 1 | 1 1 | 6 |
+  | Living-off-the-Land Scavenger | 3 | 2 3 3 | 6 |
+  | Exfil Courier | 5 | 4 5 5 | 6 |
+  | Rootkit Implant | 6 | 5 5 6 6 | 6 |
+  | The Lockjaw Syndicate | 3 | 2 2 3 3 3 3 3 4 | 6 |
+
+  The mains spread the six mobs across the faces, so each analyst has mobs their doubles eat: Hunter the 1s and 2s, Responder the 3s and 4s, Engineer the 2s and 4s. The 5s (Exfil Courier) are nobody's double, so it's the slog.
+- **One fewer threat die per mob** than its d20 hits; the boss two fewer than its two-player hits (8).
+- **Bigger crews: a 6 per player past three.** Every card prints "+ ⚅ per player past 3". Solo to 3 players set the printed dice; 4 players add one 6 under every mob. Everyone's dice double on 6, so the big crew's extra die is the easiest one on the card.
+- **HP 25.**
+
+### Why each change (sim, 2026-10-30, `SYS=n6`, 300–400 games per row)
+
+1. **Two-of-a-number alone is weaker** than "match plus any one more": at the old dice the tune-to-50% HP rose from 28 to 46 and a two-player game went from 19 to 30 rounds. The double now needs a second die with its number.
+2. **Clustering on its own barely moved pace** (28.5 vs 27.9 mob rounds a game at equal HP); it moves who's good against what.
+3. **One fewer die per mob** (boss two fewer) brought pace back: 19.4 rounds at two players, the same as before.
+4. **"+1 per player past two" broke big crews** under the new doubles: 3 players 36%, 4 players 19%. Each extra player added a die to every mob in play while adding one die to the roll. Past three, with a 6: 3 players 52%, 4 players 39–46%.
+5. **The repeats-first pattern** (main, main, below, above) beat main, below, above: with one fewer die the three-hit mobs print two dice, and "1 2" has no repeat for a double to eat.
+
+### Results at 25 HP
+
+| Crew | Win | Random placement | Skill gap | Rounds with a real dice choice | Rounds |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 41% | 25% | 16 pts | 19% | 32.4 |
+| 2 | 53% | 31% | 22 pts | 43% | 19.4 |
+| 3 | 52% | | | | 16.1 |
+| 4 | 39% | 26% | 12 pts | 43% | 15.6 |
+
+Solo analysts 39–45% (spread 6). Pairs 42% (Hunter + Engineer) to 61% (Hunter + Fixer). The two-player skill gap is the biggest yet (22 points, was 15). **Open:** solo and 4 players sit 12–14 points under two players; a table test decides whether that needs a lever (solo's crew die, or 4 players' + die).
+
+### Tested and rejected
+
+- **Everyone rolls two dice** (on point three): the bot can't enumerate that many dice at four players, and a two-player game tuned to 20 HP.
+- **The + die as the mob's main number**, past two: 4 players 19%. As a 6, past two: 4 players 21%.
+- **Solo rolls four dice**: 60% solo with the fewest real choices (14%).
+
+### Sim knobs
+
+`MOBLESS` (dice fewer than the d20 hits, default 1), `BOSSLESS` (default 2), `XFROM` (players before the + die, default 3), `ENUM` (allocations the bot enumerates before it goes greedy, default 200000).
+
+## Exact numbers (2026-10-30, history)
 
 The user, after the symbol refactor: *"in a physical game we would actually place the dice under the card, especially when we scale up the dice needed to defeat a mob based on player count size (I don't want the '3 players add.. 4 players add...' printed on the card) it should be number, number, number + number to roll ... a bit more like how Escape the Dark Castle handles it, but I also want the numbers to be more direct as well, not 1-2 detect, 3-4 contain."*
 
@@ -148,7 +201,7 @@ Coins are only for HP now: the threat dice track hits.
 
 - **Printed order.** The card prints its dice low to high, so they're quick to set out. Order has no rule meaning.
 - **Enrichment's turn** keeps what the die was: a double stays a double, a single stays single (the sim's rule; otherwise every turn would be "turn it to a 6").
-- **A double's "one more"** is optional: you may take just the match.
+- **A double's "one more"** is optional: you may take just the match. (Superseded: a double now counts as two dice showing its number.)
 - **Regen** puts back the die it lost most recently.
 - **Containment's burn** takes a repeated number first (it leaves the most different numbers to match), else the highest.
 - **The sim's Triage burn** rolled the old symbol faces in the n6 system, so those three dice could never hit. Fixed: they roll numbers with the on-point analyst's doubles. This moves the 2p tuned HP from 30 to 28 but changes little else (the brackets in the table).
@@ -268,7 +321,7 @@ Convert the real game only if the table prefers it.
 2. **Cards (pages 2–4):** 21 cards, 2.5 × 3.5 in, printed single-sided with dashed cut lines:
    - 6 mobs: Mailer Daemon, Password Sprayer, OAuth Consent Grifter, Living-off-the-Land Scavenger, Exfil Courier and Rootkit Implant, which use 6 different keywords;
    - the Lockjaw Syndicate as the boss;
-   - a dice reference card: exact matching, the double rule (match plus one more, or guard), the 6-only rule for other dice, "+1 die per player past 2" and the row;
+   - a dice reference card: exact matching, the double rule (two dice showing its number, or guard), the 6-only rule for other dice, the 4-player + die and the row;
    - 5 analysts, each with their doubles as pip faces and their perk;
    - 8 agents, two each of Triage, Enrichment, Containment and Recovery.
 
@@ -297,13 +350,25 @@ Add `?seed=123` to the URL to replay a shift.
 
 **Same cards as print.** `cards.js` holds the card markup and card CSS: mobs, the boss (with the bottom dice strip), analysts, agents, the dice reference, the pip faces and each analyst's doubles. `paper/build.js` and `web/build.js` both use it, so a card reads identically on the table and on paper. The web only adds live state around a card: the threat dice set just below it (taken ones turned aside, the crew's extra dice marked +), highlights on the dice the selected die can take, and "Came back" and "Beaten" stamps. Nothing is drawn on a card face; the parity test checks each card on the page against the shared function's output.
 
+**Look and feel (2026-10-30 restyle).** The page wears the d20 game's Ink & Static look: its tokens, fonts, chamfered buttons and panels, and the paper card frames. The cards carry the game's scenes, added in `cards.js` so print and web match: a mob by its id, the boss by its print scene (`art-print.json` `boss_wyrm`), an analyst by class id, an agent by `kit_<type>`, in an art panel of fixed height per card type. `web/build.js` inlines only those scenes plus the hero, the boss's win room and the card back. The motion and sound follow `ui/ui.js`:
+
+- crew pick with analyst portraits; the feed face down between fights, with who's on point as portrait cards;
+- a shift clock from 22:00 by flip index (05:59 for the boss), a feed bar, crew HP readouts that flash on damage;
+- a new mob flips in, a comeback lands a Back stamp, a beaten mob goes down with a Down stamp, a taken threat die bursts and turns aside;
+- the flipped mob's flavour is read aloud line by line; a lone mob sits beside the round in plain words;
+- dice tumble and land (doubles land with a glow), the amber row pair tumbles in its banner, the boss scans in with a reveal;
+- short Web Audio stings (roll, hit, double, guard, down, comeback, boss, win, loss) behind a Sound toggle; no ambience bed;
+- an end screen with the win room or the killer's scene, a Contained or Flatlined stamp, the crew's portraits and Copy result.
+
+`prefers-reduced-motion` turns the motion off. Animations use transform, opacity and filter only.
+
 **What it plays:** exactly the paper rules sheet.
 
-- 1–4 players, each with their own analyst, all at 30 HP. Tuned for 2 players, and the setup screen says so.
-- The six paper mobs are shuffled, with the Lockjaw Syndicate underneath. 3 and 4 players get the card's + die once per player past two.
+- 1–4 players, each with their own analyst, all at 25 HP. Tuned for 2 players, and the setup screen says so.
+- The six paper mobs are shuffled, with the Lockjaw Syndicate underneath. 4 players get the card's + die (a 6).
 - The kit deck is the 8 agents. The crew starts with 2 (1 solo), and the tray holds 5 (6 with the Soarcerer). When a draw overfills the tray, you choose what to discard.
 - **A flip:** pick who's on point, then flip. The row roll shows the amber pair, their sum and what came back; the side panel shows each row mob's number on a 2–12 track. The two highest-Damage comebacks hit everyone on arrival, and the Beacon chains.
-- **A round:** roll the row (from round 2), then roll the dice. Each die shows its pips; doubles are ringed and labelled. Tap a die, then a glowing threat die under a mob showing the same number (dashed rings are the Hunter's or Responder's one-off matches; with the Enrichment burn every die glows). A double then asks for one more: tap any other die under that mob, or "Just that one". Or press Guard instead. You can also turn a die to any number with a running Enrichment Agent, undo the last move, and end the round.
+- **A round:** roll the row (from round 2), then roll the dice. Each die shows its pips; doubles are ringed and labelled. Tap a die, then a glowing threat die under a mob showing the same number (dashed rings are the Hunter's or Responder's one-off matches; with the Enrichment burn every die glows). A double is labelled "Double ×2": it stays selected after its first take ("1 left") so you can tap a second die showing its number, under the same mob or another. Or press Guard instead, before it takes anything. You can also turn a die to any number with a running Enrichment Agent, undo the last move, and end the round.
 - **The crew strip** shows each analyst's incoming damage live as you place dice.
 - **Burns** can be used when the rules allow:
   - Triage and Enrichment after the roll;
@@ -336,7 +401,7 @@ Add `?seed=123` to the URL to replay a shift.
 - Row comebacks in rounds 2+ also hit on arrival, for the two highest-Damage comebacks.
 - Heals go one HP at a time onto whoever is lowest.
 - Containment's burn takes a repeated number first, else the highest.
-- A double's one more is any die still under the same mob, and it's optional.
+- A double counts as two dice showing its number, on one mob or two; its second take is optional.
 - Regen puts back the die lost most recently.
 - "Highest-Damage mob" for the Responder is judged at the start of the round, and a tie counts for every tied mob.
 - Each running Enrichment Agent gives one turn a round. Here the sim allows only one turn in total.

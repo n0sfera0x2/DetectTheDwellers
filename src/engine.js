@@ -37,15 +37,6 @@ function DTD12(D) {
   function hurt(G, k, n, why, src) {
     if (n <= 0 || G.over) return; G.hps[k] = Math.max(0, G.hps[k] - n); G.stats.low = Math.min(G.stats.low ?? 1, G.hps[k] / G.max); log(G, `${nm(G, k)} −${n} HP (${why}).`);
     if (G.hps[k] <= 0) { G.over = true; G.win = false; G.phase = 'over'; G.dropped = k; G.downBy = src || [why]; log(G, `The ${nm(G, k)} flatlined. Shift lost.`); return; }
-    secondWind(G, k);
-  }
-  // Second wind (D.secondWind): the first time anyone drops to `at` HP or below, the crew draws kit, once per shift.
-  // It goes straight into the tray when there's room; otherwise it waits with the after-fight kit.
-  function secondWind(G, k) {
-    const w = D.secondWind; if (!w || G.wind || G.noAgents || G.hps[k] > w.at) return; G.wind = { k, round: G.round };
-    if (D.reshuffleKit && G.kit.length < w.kit && G.discard.length) { G.kit = shuffle([...G.discard, ...G.kit], G.rnd); G.discard = []; }
-    const got = []; for (let i = 0; i < w.kit && G.kit.length; i++) { const c = G.kit.pop(); got.push(c.name); if (D.sharedKit && G.held[0].length < slots(G, 0)) G.held[0].push(c); else G.loot.push(c); }
-    G.stats.wind = 1; log(G, `Second wind: ${nm(G, k)} is down to ${G.hps[k]} HP. The crew draws ${got.join(', ') || 'nothing (the kit deck is empty)'}.`);
   }
   const heal = (G, k, n) => { G.hps[k] = Math.min(G.max, G.hps[k] + n); };
   function spread(G, n) { let h = 0; for (let i = 0; i < n; i++) { const k = G.hps.indexOf(Math.min(...G.hps)); if (G.hps[k] >= G.max) break; heal(G, k, 1); h++; } return h; }

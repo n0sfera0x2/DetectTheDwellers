@@ -2,7 +2,17 @@
 
 A co-op card game for 1–4 players about a SOC night shift in a rain-soaked megacity. The shift runs 22:00 to 06:00. Work through a feed of situations, fight the mobs that crawl out of the network, and survive the boss that comes at 05:59. Make it to dawn and you win together; otherwise the shift is lost.
 
-**You need:** the 72-card deck (with its sheet of 9 markers), 6 crew d20s in one colour, 3 agent d20s in a second colour, 1 amber row d20, and coins: 2 per HP tracker, plus about 20 to mark hits. Components are listed in full under Reference.
+**Card text beats the rulebook.** If a card and these rules disagree, do what the card says.
+
+## What you need
+
+- **72 cards:** 15 mobs, 18 situations (9 of them story cards), 3 bosses, 5 analysts, 16 kit (8 agents × 2), 4 HP trackers, 2 double-sided reference cards, and 9 markers (6 Came back, 1 Next mob, 1 Round, 1 Once per fight).
+- **6 crew d20s** in one colour: one each, plus on point’s second die and room for Triage burns.
+- **3 agent d20s** in a second colour, for running agents. Agent dice can’t hit the boss, and the Engineer gives them +3, so keep them apart.
+- **1 row d20** in amber, for every row roll.
+- **Coins:** 2 per HP tracker, plus about 20 to mark hits and markers.
+
+A four-player round with a Triage burn can need 9–10 dice, plus the row die. The markers are print-only aids: the web game tracks all of this itself.
 
 The rules come in two parts. **Learn the core rules first:** they play First Shift and Quick Shift. **Full Shift adds the advanced modules** once the core feels easy. The full illustrated rulebook lives in Claude Docs; this file is the canonical rules text for the repo. When they disagree, fix whichever is wrong.
 
@@ -17,6 +27,42 @@ The rules come in two parts. **Learn the core rules first:** they play First Shi
 5. **Lay out the persistence row mat** and the markers. The row starts empty.
 
 Your first game? Use the First Shift setup instead (Reference).
+
+### The table
+
+```
+   ┌──────────┐  ┌──────────┐      ┌─────────────────────────────┐
+   │   FEED   │  │  KIT     │      │  PERSISTENCE ROW            │
+   │ face down│  │  DECK    │      │  beaten mobs wait here      │
+   │ boss at  │  │          │      │  ┌────┐ ┌────┐ ┌────┐       │
+   │ bottom   │  │ discard ►│      │  │mob │ │mob │ │ …  │       │
+   └──────────┘  └──────────┘      └──┴────┴─┴────┴─┴────┴───────┘
+
+         ┌────────┐ ┌────────┐       ← the fight: mobs in play,
+         │  mob   │ │  mob   │         coins on them for hits
+         └────────┘ └────────┘
+
+   CREW TRAY (5 agents)  ┌───┐┌───┐┌───┐┌───┐┌───┐   markers:
+                         └───┘└───┘└───┘└───┘└───┘   Next mob · Round
+                                                      Once per fight
+   each analyst: analyst card + HP tracker (2 coins) + crew dice
+```
+
+### Reading a mob card
+
+```
+ ┌─────────────────────────────────┐
+ │  [ art ]                        │
+ │ IDENTITY          BACK 1–10  ◄──┼── its row range: comes back on 1–10
+ │ MAILER DAEMON                   │
+ │ ┌ DEFENSE 12 ┐ ┌ DAMAGE 1 ┐ ◄───┼── beat 12 to hit; it hits for 1
+ │ HITS 1P 1  2P 3  3P 5  4P 6 ◄───┼── hits to beat it, by crew size
+ │ ┌ BEACON. When it enters … ┐ ◄──┼── its one keyword
+ │ flavour line, read aloud    ◄───┼── no rules here
+ └─────────────────────────────────┘
+```
+
+Situation cards say what they do and whether it's a choice, an event or one attempt (a challenge). Story cards add a **With Recon** line (Full Shift only).
 
 ### A round
 
@@ -64,20 +110,19 @@ Every mob has one keyword.
 
 | Keyword | Rule |
 | --- | --- |
-| Piercing | Blocks don’t stop it. |
-| Targeted | Only the analyst on point takes its damage, doubled. |
-| Stalker | It only hits the analyst with the lowest HP. |
-| Evasive | Only a natural 12 or higher can hit it. |
-| Regen | Heals 1 hit at the end of each round. |
 | Beacon | When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too. |
-| Fileless | Agents can’t hit it. |
 | Escalating | +1 damage every round it stays up. Track it on the Round marker. |
+| Evasive | Only a natural 12 or higher can hit it. |
+| Fileless | Agents can’t hit it. |
+| Piercing | Blocks don’t stop it. |
+| Regen | Heals 1 hit at the end of each round. |
+| Stalker | It only hits the analyst with the lowest HP. |
+| Targeted | Only the analyst on point takes its damage, doubled. |
 
 ### Winning and losing
 
 Beat the boss and you’ve made it to dawn: the shift is won. If any analyst hits 0 HP, the shift is lost for everyone. Healing never takes you above your starting HP.
 
-**Second wind.** The first time anyone drops to 10 HP or less, the crew draws one kit card. Once per shift: mark it on the Once per fight marker and don’t clear it.
 
 ## Advanced modules: Full Shift
 
@@ -114,11 +159,11 @@ The same at every crew size.
 
 | Mode | HP |
 | --- | --- |
-| Full Shift, Recruit | 54 |
-| Full Shift, Analyst | 40 |
-| Full Shift, Veteran | 32 |
-| Quick Shift | 32 |
-| First Shift | 23 |
+| Full Shift, Recruit | 58 |
+| Full Shift, Analyst | 43 |
+| Full Shift, Veteran | 35 |
+| Quick Shift | 36 |
+| First Shift | 25 |
 
 When damage takes you below the tens coin, drop it a step and move the ones coin up: at 42, taking 5 leaves 37 (tens on 30, ones on 7).
 
@@ -156,7 +201,7 @@ Eight types, two copies each.
 | Decoy | Once per fight, after the roll: the analyst on point takes no damage this round. | After the roll: everyone blocks this round. |
 | Recon | Peek at the next situation before picking who’s on point. A mob you peeked: everyone gets +5 against it all fight. A story card: you get its With Recon line (you get that even without peeking). | Look at the next 3 situations and pull one from the feed for good. It’s discarded, not buried. |
 
-A mob "came back from the row" once a row roll has returned it, for the rest of the shift: that’s what the Came back marker shows. Mark a used Decoy on the Once per fight marker, and Second wind on its once-per-shift spot.
+A mob "came back from the row" once a row roll has returned it, for the rest of the shift: that’s what the Came back marker shows. Mark a used Decoy on the Once per fight marker.
 
 ### Analysts
 
@@ -172,24 +217,38 @@ The agent link works for the whole crew’s agents, so a crew builds its own age
 
 ### First Shift (your first game)
 
-Core rules, a fixed feed that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck. Start at 23 HP each, with no agents, and play normally, with one scripted moment: **on flip 2, don’t roll for the row. The MFA Banshee comes back**, hits everyone for 1 on the way in (it’s 1 Damage), and you fight it after Patch Tuesday. The First Shift reference card has the stack.
+Core rules, a fixed feed that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck. Start at 25 HP each, with no agents, and play normally, with one scripted moment: **on flip 2, don’t roll for the row. The MFA Banshee comes back**, hits everyone for 1 on the way in (it’s 1 Damage), and you fight it after Patch Tuesday. The First Shift reference card has the stack.
 
 ### Quick Shift (booth mode)
 
-Core rules: 6 situations, no story cards, a random boss with no row trigger, 32 HP each, and the crew starts with two agents. About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
+Core rules: 6 situations, no story cards, a random boss with no row trigger, 36 HP each, and the crew starts with two agents. About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
 
 ### The shift clock
 
 The feed is the night, 22:00 to 06:00, spread evenly over the flips: in a Full Shift, about 48 minutes apart, rounded down to 5 minutes (22:00, 22:45, 23:35…). The web game shows the time on each flip. The boss is always 05:59. The time belongs to the flip, not the card, so no card prints one.
 
-### Components
+## FAQ
 
-- **72 cards:** 15 mobs, 18 situations (9 of them story cards), 3 bosses, 5 analysts, 16 kit (8 agents × 2), 4 HP trackers, 2 double-sided reference cards, and 9 markers (6 Came back, 1 Next mob, 1 Round, 1 Once per fight with a once-per-shift Second wind spot).
-- **6 crew d20s** in one colour: one each, plus on point’s second die and room for Triage burns.
-- **3 agent d20s** in a second colour, for running agents. Agent dice can’t hit the boss, and the Engineer gives them +3, so keep them apart.
-- **1 row d20** in amber, for every row roll.
-- **Coins:** 2 per HP tracker, plus about 20 to mark hits and markers.
+**A card says something different from these rules.** Do what the card says.
 
-A four-player round with a Triage burn can need 9–10 dice, plus the row die. The markers are print-only aids: the web game tracks all of this itself.
+**Does a natural 18–20 always hit?** Yes, whatever the Defense, and it's two hits. A natural 1 always misses. Evasive mobs still need a natural 12 or higher, so an 18–20 hits them too.
+
+**Can an agent die block?** No. An agent die showing 18–20 hits twice, but only crew dice block, by a double or a guard. Agent dice can't guard.
+
+**I rolled a double and a 15. Can the 15 guard too?** It can't add anything: you're already blocking. Put it on a mob.
+
+**Does blocking stop everything?** No. Piercing mobs ignore blocks, and a block doesn't stop comebacks hitting on the way in.
+
+**Who takes damage when someone's off-shift?** Not them. Mobs hit everyone still in the fight; a Stalker hits the lowest HP among them.
+
+**The row is empty. Do I still roll the row die?** No. Roll it only when something is on the row.
+
+**Two comebacks have the same Damage and only one more can strike.** Pick one. Either way, only two strike.
+
+**The kit tray is full and we won a fight.** Draw anyway, then discard down to five (six with the Soarcerer). Discards go to the discard pile and come back when the kit deck reshuffles.
+
+**A mob I finish this round: does it still hit back?** No. Only mobs still standing at the end of the round hit back.
+
+**Can healing go above starting HP?** No.
 
 Every card’s exact text is in [CARDS.md](CARDS.md).

@@ -502,7 +502,7 @@ test('the end screen shows how long the shift took, stores it, and copies a one-
   const errors = []; w.addEventListener('error', e => errors.push(e.message));
   w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); Clock.t0 -= 14 * 60000; const before = snap(); G.over = true; G.win = true; finish(before);`);
   assert.match(d.querySelector('[data-dur]').textContent, /Shift took 14 min/);
-  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v26')); assert.strictEqual(Math.round(saved[0].min), 14);
+  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v27')); assert.strictEqual(Math.round(saved[0].min), 14);
   const line = w.eval('resultLine()');
   assert.match(line, /Quick Shift \(core\)/); assert.match(line, /Hunter \(1p\)/); assert.match(line, /14 min/); assert.match(line, /rounds?/); assert.match(line, /agents:/); assert.match(line, /Win: /);
   d.querySelector('[data-a=copy]').click();
@@ -540,18 +540,6 @@ test('the fight explainer and the double tip teach Guard', () => {
   w.eval(`G.play[0].ability = null; render();`);
   const tips = w.eval('TIPS'); assert.match(tips.double, /guard/); assert.match(tips.guard, /14\+/); assert.match(tips.end, /guard/);
   const rb = d.querySelector('.rbrief'); if (rb) assert.match(rb.textContent, /guard with any die showing 14\+/i);
-  assert.deepStrictEqual(errors, []);
-});
-
-test('Second wind: the first drop to 10 HP or below draws kit, with a banner and a spoken line, once per shift', () => {
-  const { w, d, errors } = rigged();
-  w.eval(`G.hps = [12, G.max]; G.held[0] = []; G.blocks = G.team.map(() => false); G.play[0].dmg = 3; G.play[0].ability = null; G.dice.forEach(x => { x.used = true; }); UI.sel = null; render(); act('end');`);
-  assert.strictEqual(w.eval('G.hps[0]'), 9); assert.ok(w.eval('G.wind'), 'engine never fired second wind');
-  const ban = d.querySelector('.pbanner.wind'); assert.ok(ban, 'no Second wind banner'); assert.match(ban.textContent, /Second wind/); assert.match(ban.textContent, /down to 9 HP/); assert.match(ban.textContent, /in the kit now/);
-  assert.strictEqual(w.eval('G.held[0].length'), 1, 'the card should go straight into the tray');
-  assert.match(w.eval('said'), /Second wind: .* down to 9 HP\. The crew draws/);
-  w.eval(`G.hps[0] = 5; G.dice.forEach(x => { x.used = true; }); act('roll'); G.dice.forEach(x => { x.used = true; }); act('end');`);
-  assert.strictEqual(w.eval('G.held[0].length'), 1, 'second wind fired twice'); assert.ok(!d.querySelector('.pbanner.wind'), 'banner outlived its round');
   assert.deepStrictEqual(errors, []);
 });
 

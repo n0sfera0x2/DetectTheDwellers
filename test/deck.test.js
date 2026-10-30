@@ -160,6 +160,38 @@ test('text, numbers, icons and chips sit inside the 1/8 in safe zone (all 72 fro
   } finally { await browser.close(); }
 });
 
+// Print readability floor: 10 CSS px = 7.5 pt at 96 px/in. Every line of text on every face (fronts, the two
+// reference backs and the card back), labels and mob flavour included, renders at 10 px or more. Art is skipped.
+const MIN_PX = 10;
+test('no text on any card face renders under 10 px (7.5 pt), all 72 fronts and backs', { skip: NO_CHROME }, async () => {
+  build();
+  const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});
+  try {
+    const page = await browser.newPage({ viewport: { width: 816, height: 1056 } });
+    const problems = []; let cards = 0;
+    for (let s = 1; s <= SHEETS; s++) for (const side of ['fronts', 'backs']) {
+      await page.goto('file://' + path.join(__dirname, '..', 'dist', 'deck', `sheet-${s}-${side}.html`));
+      await page.evaluate(() => document.fonts.ready);
+      const r = await page.evaluate(min => {
+        const out = [], list = [...document.querySelectorAll('.cards > .card')];
+        list.forEach((card, i) => {
+          const tw = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+          for (let n; (n = tw.nextNode());) {
+            if (!n.textContent.trim() || n.parentElement.closest('svg')) continue;
+            const px = parseFloat(getComputedStyle(n.parentElement).fontSize);
+            if (px < min) out.push(`card ${i + 1}: "${n.textContent.trim().slice(0, 40)}" is ${px}px`);
+          }
+        });
+        return { n: list.length, out };
+      }, MIN_PX);
+      cards += r.n;
+      problems.push(...r.out.map(p => `sheet-${s}-${side} ${p}`));
+    }
+    assert.strictEqual(cards, 2 * CARDS);
+    assert.deepStrictEqual(problems, []);
+  } finally { await browser.close(); }
+});
+
 // Every element and line of text, as a box relative to the card's trim edge.
 function layoutOf() {
   const card = document.querySelector('.card'), c = card.getBoundingClientRect(), r = v => Math.round(v * 100) / 100;
@@ -274,14 +306,15 @@ test('analyst cards print the perk numbers from data; bosses mark their row trig
 });
 
 
-test('pass 11 on print: no Pack mark anywhere, Guard on the fight card, Second wind on the marker, the First Shift comeback', () => {
+test('pass 11 on print: no Pack mark anywhere, Guard on the fight card, no Second wind on the marker, the First Shift comeback', () => {
   const D = require('../data/cards.json'), C = require('../deck/cards');
   const flat = s => s.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, '\'').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
   for (const m of D.mobs) assert.ok(!/>Pack</.test(C.mob(m)), `${m.name} still carries a PACK chip`);
   assert.ok(!/Pack/.test(flat(C.glossary())), 'the Mob keywords card still mentions Pack');
   assert.ok(flat(C.fight()).includes(`Guard A crew die showing ${D.guard.min}+ can guard instead of hitting: you block this round.`));
   const once = flat(C.oncePerFight());
-  assert.ok(once.includes('Once per shift') && once.includes('Don’t clear') && once.includes(`Second wind The first time anyone drops to ${D.secondWind.at} HP or less`));
+  assert.ok(!/Second wind|Once per shift|Don’t clear/.test(once), 'the Once per fight marker still carries the cut Second wind spot');
+  assert.ok(once.includes('Decoy used') && once.includes('Operator risen'));
   const fs1 = flat(C.firstshift()), first = D.mobs.find(m => m.id === D.intro.deck[0]).name.replace(/^MFA /, '');
   assert.ok(fs1.includes(`Flip ${D.intro.comeback} Don’t roll for the row. The ${first} comes back`) && fs1.includes(`Start at ${D.hp.intro[1]} HP each`));
 });

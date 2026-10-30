@@ -31,15 +31,17 @@ function scene(svg) {
 // The card: paper ground, a cut-corner frame (drawn as two clipped layers so the diagonals show) in the card's accent, and a solid accent tab top left.
 const shell = (inner, accent = FL, line = FLT) => `<div class="card" style="width: 240px; height: 336px; box-sizing: border-box; overflow: hidden; position: relative; background: ${PAPER}; color: ${PINK}"><div style="position: absolute; inset: 5px; background: ${line}; clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));"><div style="position: absolute; inset: 1px; background: ${PAPER}; clip-path: polygon(0 0, calc(100% - 15.6px) 0, 100% 15.6px, 100% 100%, 15.6px 100%, 0 calc(100% - 15.6px));"></div></div><div style="position: absolute; left: 5px; top: 5px; width: 30px; height: 4px; background: ${accent}"></div><div style="position: relative; height: 336px; box-sizing: border-box; padding: 13px 15px 16px; display: flex; flex-direction: column; gap: 5px">${inner}</div></div>`;
 // The art panel is a dark console screen set into the card, one fixed height per card type so a sheet of
-// mobs lines up; any spare height goes above the flavour line, never into the art.
+// mobs lines up; any spare height goes above the flavour line, never into the art. No text on a front prints
+// under 10 px (7.5 pt): labels and flavour at 10, rules footers at 10.5 (test/deck.test.js checks it).
 const art = (svg, h = 104) => `<div style="width: 210px; height: ${h}px; flex: none; overflow: hidden; background: ${BG}; color: ${INK}; border: 3px solid ${BG}; outline: 1px solid ${RULE}; box-sizing: border-box">${scene(svg)}</div>`;
-const hud = (t, c = AMT, size = 9.5) => `<span style="font-family: ${MONO}; font-weight: 600; font-size: ${size}px; line-height: ${size + 3}px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(t)}</span>`;
+const hud = (t, c = AMT, size = 10) => `<span style="font-family: ${MONO}; font-weight: 600; font-size: ${size}px; line-height: ${size + 3}px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(t)}</span>`;
 // A solid accent label with ink text: the bright accents stay bright and the text stays readable.
-const tag = (t, fill) => `<span style="align-self: flex-start; font-family: ${MONO}; font-weight: 600; font-size: 9.5px; line-height: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: ${PINK}; background: ${fill}; padding: 0 5px">${e(t)}</span>`;
+const tag = (t, fill) => `<span style="align-self: flex-start; font-family: ${MONO}; font-weight: 600; font-size: 10px; line-height: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: ${PINK}; background: ${fill}; padding: 0 5px">${e(t)}</span>`;
 const nm = (t, size = 18, c = PINK) => `<div style="font-family: ${CHK}; font-weight: 700; font-size: ${size}px; line-height: ${size + 2}px; text-transform: uppercase; letter-spacing: 0.01em; color: ${c}">${e(t)}</div>`;
 const tx = (t, size, c = PINK, w = 500) => `<div style="font-family: ${CHK}; font-size: ${size}px; line-height: ${lh(size)}px; font-weight: ${w}; color: ${c}">${e(t)}</div>`;
-const stat = (label, v, c = PINK, raw = false) => `<div style="flex: 1; min-width: 0; background: #FFFFFF; border: 1px solid ${RULE}; padding: 2px 5px; line-height: 12px">${hud(label, PMUT, 9.5)}<div style="font-family: ${MONO}; font-weight: 600; font-size: 18px; line-height: 21px; font-variant-numeric: tabular-nums; color: ${c}">${raw ? v : e(v)}</div></div>`;
-const foot = (t, c = PMUT) => `<div style="margin-top: auto; border-top: 1px solid ${RULE}; padding-top: 4px">${tx(t, 9.5, c, 500)}</div>`;
+const stat = (label, v, c = PINK, raw = false) => `<div style="flex: 1; min-width: 0; background: #FFFFFF; border: 1px solid ${RULE}; padding: 2px 5px; line-height: 12px">${hud(label, PMUT)}<div style="font-family: ${MONO}; font-weight: 600; font-size: 18px; line-height: 21px; font-variant-numeric: tabular-nums; color: ${c}">${raw ? v : e(v)}</div></div>`;
+// Rules footers print at 10.5 px; mob flavour passes 10, the print floor (7.5 pt).
+const foot = (t, c = PMUT, size = 10.5) => `<div style="margin-top: auto; border-top: 1px solid ${RULE}; padding-top: 4px">${tx(t, size, c, 500)}</div>`;
 // Keyword and boss-ability boxes: a full thin flare frame on a flare tint. Line-height is explicit so
 // the 10.5px text doesn't inherit the browser's default leading.
 const chip = inner => `<div style="border: 1px solid ${FL}; padding: 3px 6px; background: #FCE6DC; display: flex; gap: 6px; align-items: flex-start; line-height: 13px">${inner}</div>`;
@@ -58,7 +60,7 @@ const mobHits = (h, n) => Math.max(1, h + D.mobAdd[n]);
 const hitstrip = hitsAt => `<div style="display: flex; align-items: baseline; justify-content: space-between; background: #FFFFFF; border: 1px solid ${RULE}; padding: 0 5px; line-height: 15px">${hud('Hits', PMUT)}${CREW.map(n => `<span style="display: inline-flex; align-items: baseline; gap: 3px">${hud(`${n}p`, PMUT)}<span style="font-family: ${MONO}; font-weight: 600; font-size: 13px; line-height: 15px; font-variant-numeric: tabular-nums; color: ${PINK}">${hitsAt(n)}</span></span>`).join('')}</div>`;
 function mob(m) {
   const tags = tag(m.domain, FL);
-  return shell(`${art(ART[m.id], 94)}${row(tags, hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(n => mobHits(m.hits, n))}\n${kwchip(m)}${foot(m.flavor)}`);
+  return shell(`${art(ART[m.id], 80)}${row(tags, hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(n => mobHits(m.hits, n))}\n${kwchip(m)}${foot(m.flavor, PMUT, 10)}`);
 }
 function sit(s) {
   const kind = { challenge: 'one attempt', choice: 'choose one', event: 'event' }[s.type];
@@ -89,7 +91,7 @@ const bossHits = (b, n) => b.hitsBase + D.bossAdd[n];
 function bossAbility(b) {
   const cut = b.abilityText.lastIndexOf('. ', b.abilityText.length - 2);
   const core = b.abilityText.slice(0, cut + 1), adv = b.abilityText.slice(cut + 2);
-  const advLine = `<div style="line-height: 13px"><span style="font-family: ${MONO}; font-weight: 600; font-size: 9.5px; line-height: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: ${AMT}">Full Shift:</span> <span style="font-family: ${CHK}; font-weight: 500; font-size: 10.5px; line-height: 13px; color: ${PINK}">${e(adv)}</span></div>`;
+  const advLine = `<div style="line-height: 13px"><span style="font-family: ${MONO}; font-weight: 600; font-size: 10px; line-height: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: ${AMT}">Full Shift:</span> <span style="font-family: ${CHK}; font-weight: 500; font-size: 10.5px; line-height: 13px; color: ${PINK}">${e(adv)}</span></div>`;
   return `<div style="border: 1px solid ${FL}; padding: 3px 6px; background: #FCE6DC; display: flex; flex-direction: column; gap: 1px; line-height: 13px">${chipText(b.abilityName, core)}${advLine}</div>`;
 }
 function boss(b) {
@@ -126,10 +128,10 @@ function tracker() {
 }
 function rowmat() {
   const slots = `<div style="height: 40px; border: 1px dashed ${AMT}; display: flex; align-items: center; justify-content: center">${hud('mob', AMT)}</div>`.repeat(6);
-  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, make the Row roll: one d20. Any mob whose range matches comes back at full hits. The two with the highest Damage hit everyone as they arrive. Tuck a Came back card under each comeback.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Core rules: deal ${D.deal.quick} situations, no story cards; the crew starts with ${D.quickStartAgent} agents (Quick Shift). Full Shift adds the advanced modules: deal ${D.deal.full}, ${D.storyDeal.full} of them story cards, and boss row triggers. Boss face down underneath; it comes at 05:59.`, 10, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
+  return shell(`${tag('Persistence row', AM)}${nm('Roll every flip', 18, AMT)}${tx('Beaten mobs sit here, every time. Every flip, make the Row roll: one d20. Any mob whose range matches comes back at full hits. The two with the highest Damage hit everyone as they arrive. Tuck a Came back card under each comeback.', 11, PINK, 500)}<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px">${slots}</div>\n${tx(`Core rules: deal ${D.deal.quick} situations, no story cards; the crew starts with ${D.quickStartAgent} agents (Quick Shift). Full Shift adds the advanced modules: deal ${D.deal.full}, ${D.storyDeal.full} of them story cards, and boss row triggers. Boss face down underneath; it comes at 05:59.`, 10.5, PMUT, 500).replace('<div style="', '<div style="margin-top: auto; ')}`, AM, AMT);
 }
 // Reference rows: a mono run-in label, then the rule, so each row spends its width on words.
-const runin = (label, t, c = FLT, size = 10) => `<div style="font-family: ${CHK}; font-weight: 500; font-size: ${size}px; line-height: ${lh(size)}px; color: ${PINK}"><span style="font-family: ${MONO}; font-weight: 600; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(label)}</span> ${e(t)}</div>`;
+const runin = (label, t, c = FLT, size = 10) => `<div style="font-family: ${CHK}; font-weight: 500; font-size: ${size}px; line-height: ${lh(size)}px; color: ${PINK}"><span style="font-family: ${MONO}; font-weight: 600; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(label)}</span> ${e(t)}</div>`;
 const refrow = inner => `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 2px">${inner}</div>`;
 function fight() {
   const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Story', 'Full Shift. Recon Agent in the tray? Use the Recon line.', CYT], ['Off-shift', `One analyst may skip their roll: no damage, +1 HP. The Fixer heals ${D.perks.PAT.rest}, split.`],
@@ -171,14 +173,12 @@ function nextMob() {
 }
 function roundTrack() {
   const r = D.bosses.find(b => b.id === 'wyrm').name;
-  return shell(`${row(tag('Marker', CY), hud('One coin', CYT))}${nm('Round', 18)}${tx('Every fight starts on 1. Move the coin up at the start of each new round.', 10.5, PINK, 500)}${coinCells([1, 2, 3, 4], AMT)}${coinCells([5, 6, 7, 8], AMT)}${refrow(runin('Escalating', '+1 Damage for every round the mob has stayed up.'))}${refrow(runin('Full Shift', `${r}: at the end of every round it’s still up, roll for the row.`, AMT))}${foot('The web game tracks this for you.')}`, CY, CYT);
+  return shell(`${row(tag('Marker', CY), hud('One coin', CYT))}${nm('Round', 18)}${tx('Every fight starts on 1. Move the coin up at the start of each new round.', 10.5, PINK, 500)}${coinCells([1, 2, 3, 4], AMT)}${coinCells([5, 6, 7, 8], AMT)}${refrow(runin('Escalating', '+1 Damage for every round the mob has stayed up.', FLT, 10.5))}${refrow(runin('Full Shift', `${r}: at the end of every round it’s still up, roll for the row.`, AMT, 10.5))}${foot('The web game tracks this for you.')}`, CY, CYT);
 }
 function oncePerFight() {
   const spot = (label, c, t) => `<div style="display: flex; gap: 8px; align-items: center; border-top: 1px solid ${RULE}; padding-top: 5px"><div style="flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1.5px dashed ${c}; background: #FFFFFF"></div><div style="display: flex; flex-direction: column; gap: 1px">${hud(label, c)}${tx(t, 10.5, PINK, 500)}</div></div>`;
   const op = D.bosses.find(b => b.id === 'apt').name;
-  // Second wind is once per shift, so its spot sits apart under an amber "Don't clear" rule and keeps its coin all shift.
-  const sw = D.secondWind, wind = sw ? `<div style="display: flex; flex-direction: column; gap: 2px; border-top: 1.5px dashed ${AMT}; padding-top: 3px; margin-top: 2px">${row(hud('Once per shift', AMT), hud('Don’t clear', AMT))}${spot('Second wind', AMT, `The first time anyone drops to ${sw.at} HP or less, the crew draws ${sw.kit === 1 ? 'a kit card' : WORD[sw.kit] + ' kit cards'}.`)}</div>` : '';
-  return shell(`${row(tag('Marker', CY), hud('Clear after each fight', CYT))}${nm('Once per fight', 18)}${tx('Put a coin on a spot when it happens. It can’t happen again this fight.', 10.5, PINK, 500)}${spot('Decoy used', CYT, 'A running Decoy Agent saved whoever’s on point this fight.')}${spot('Operator risen', FLT, `${op} came back with 2 hits left. Beat it again and it’s done.`)}${wind}${foot('The web game tracks this for you.')}`, CY, CYT);
+  return shell(`${row(tag('Marker', CY), hud('Clear after each fight', CYT))}${nm('Once per fight', 18)}${tx('Put a coin on a spot when it happens. It can’t happen again this fight.', 10.5, PINK, 500)}${spot('Decoy used', CYT, 'A running Decoy Agent saved whoever’s on point this fight.')}${spot('Operator risen', FLT, `${op} came back with 2 hits left. Beat it again and it’s done.`)}${foot('The web game tracks this for you.')}`, CY, CYT);
 }
 
 // One back for every card. The back scene (the d20 glowing on a console at 2 AM) fills the card but is
@@ -189,7 +189,7 @@ const FADE = 'transparent, #000 22px, #000 calc(100% - 22px), transparent';
 function back() {
   return `<div class="card" style="width: 240px; height: 336px; box-sizing: border-box; overflow: hidden; position: relative; background: ${BG}"><div style="position: absolute; inset: 0; mask-image: linear-gradient(to right, ${FADE}), linear-gradient(to bottom, ${FADE}); mask-composite: intersect">${scene(PRINT_ART.back)}</div>`
     + `<div style="position: absolute; left: 24px; right: 24px; top: 30px; text-align: center; font-family: ${CHK}; font-weight: 700; font-size: 26px; line-height: 27px; letter-spacing: 0.02em; text-transform: uppercase; color: ${INK}">Detect the<br>Dwellers</div>`
-    + `<div style="position: absolute; left: 24px; right: 24px; bottom: 42px; text-align: center">${hud('SOC night shift · 02:14', CY)}</div><div style="position: absolute; left: 24px; right: 24px; bottom: 24px; text-align: center">${hud('An original game by Binary Defense', MUT, 8.5)}</div></div>`;
+    + `<div style="position: absolute; left: 24px; right: 24px; bottom: 56px; text-align: center">${hud('SOC night shift · 02:14', CY)}</div><div style="position: absolute; left: 24px; right: 24px; bottom: 24px; text-align: center; line-height: 13px">${hud('An original game', MUT)}<br>${hud('by Binary Defense', MUT)}</div></div>`;
 }
 
 // The 72 cards in print order, each as [front, back]. The nine markers fill the last sheet.

@@ -225,16 +225,6 @@ test('a mob flip takes only the top card: no mob pulls another from deeper in th
   assert.ok(D.mobs.every(m => !('pack' in m)) && !('pack' in D));
 });
 
-test('second wind: the first drop to 10 HP or below draws a kit card once per shift', () => {
-  const G = E.newGame(['ENG'], 'quick', { rnd: rng(6) }); G.held[0] = []; G.loot = [];
-  const kit = G.kit.length; G.hps[0] = 14; G.phase = 'combat';
-  G.play = [{ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 992, hits: 5, left: 5, back: 0, up: 0 }]; G.rolled = true; G.dice = []; G.blocks = [false];
-  E.endRound(G);
-  assert.ok(G.hps[0] <= 10); assert.strictEqual(G.held[0].length, 1); assert.strictEqual(G.kit.length, kit - 1); assert.ok(G.wind);
-  G.hps[0] = 9; G.rolled = true; G.dice = []; G.blocks = [false]; E.endRound(G);
-  assert.strictEqual(G.held[0].length, 1, 'only once per shift');
-});
-
 test('First Shift: the second flip brings the Banshee back without a roll', () => {
   for (let s = 1; s <= 10; s++) {
     const G = E.newGame(['HUN'], 'intro', { rnd: rng(s) });

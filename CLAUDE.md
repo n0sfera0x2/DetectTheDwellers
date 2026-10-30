@@ -24,7 +24,7 @@ Detect the Dwellers: a co-op d20 card game (1–4 players) set on a cyberpunk SO
 | `deck/render.js` | One card face at trim + 1/8 in bleed, for the exporters (`scripts/export-cards.js`, `scripts/build-pdf.js`, output in `exports/`) and the print preview (`deck/preview.js`). |
 | `sim/bot.js` | The bot, seeded RNG, representative crews. `sweep.js`, `stats.js`, `check.js` run it. |
 | `test/` | `node:test` suites: engine invariants, deck snapshot, headless UI play-throughs (jsdom). |
-| `docs/` | `RULES.md` (rules text), `CARDS.md` (generated), `DESIGN.md` (decisions and targets). |
+| `docs/` | `RULES.md` (rules text), `CARDS.md` (generated), `DESIGN.md` (decisions and targets), `PLAYTEST.md` (the human playtest kit). |
 
 ## Commands
 
@@ -38,6 +38,7 @@ npm run cards          # regenerate docs/CARDS.md
 npm run golden         # re-snapshot print cards after an intentional card change
 npm run export:cards   # exports/: 825 × 1125 singles (300 dpi, bleed), manifest.csv, upload zip
 npm run export:pdf     # exports/detect-the-dwellers-pnp.pdf: the eight duplex sheets, 16 Letter pages
+npm run proof:cmyk     # exports/cmyk_proof/: the singles through CMYK and back, plus a palette ΔE report (macOS sips)
 npm run serve          # serve dist/ on localhost:8080
 ```
 
@@ -60,7 +61,7 @@ A rule or card change usually touches several places. Work through them in order
 - **One starting HP per difficulty, at every player count.** Fix crew-size spread through scaling, not HP tables.
 - **Every mob has exactly one keyword** from the eight in `data/cards.json`.
 - **The engine stays deterministic given `opt.rnd`.** Tests and sims rely on seeded games.
-- **Persisted UI state is versioned** (`dwellers-board-v26` / `dwellers-v26` in `ui/ui.js`). Bump both when the score shape or rules change enough to make old scores meaningless.
+- **Persisted UI state is versioned** (`dwellers-board-v27` / `dwellers-v27` in `ui/ui.js`). Bump both when the score shape or rules change enough to make old scores meaningless.
 
 ## Writing style
 

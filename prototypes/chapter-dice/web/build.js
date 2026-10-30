@@ -1,5 +1,5 @@
 // Builds the chapter dice web prototype: ONE self-contained page, web/index.html, that runs from file://.
-// Inlines the game data it needs, the symbol rows (sim.js), the shared card markup (../cards.js), the engine
+// Inlines the game data it needs, the mob dice (sim.js numbersFor), the shared card markup (../cards.js), the engine
 // (engine.js), the page script (ui.js) and the fonts (deck/render.js). Usage: node prototypes/chapter-dice/web/build.js
 const fs = require('fs'), path = require('path');
 const D = require('../../../data/cards.json');
@@ -11,8 +11,8 @@ const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8');
 const keys = ['mobAdd', 'bossAdd', 'quickStartAgent', 'quickStartSolo', 'sharedKit', 'kitPerFight', 'kitSolo', 'containCut', 'recoverHeal', 'recoverBurn', 'perks', 'soloDice'];
 const data = { classes: D.classes.map(c => ({ id: c.id, name: c.name })), mobs: D.mobs.filter(m => MOB_IDS.includes(m.id)), bosses: D.bosses.filter(b => b.id === BOSS_ID) };
 keys.forEach(k => { data[k] = D[k]; });
-// symbolsFor and its MIX table, lifted from the sim so the page's symbol rows are the sim's and the paper's.
-const sim = read('../sim.js'), mix = sim.match(/^const MIX = .*$/m)[0], sf = sim.match(/^function symbolsFor\(.*$/m)[0];
+// numbersFor, lifted from the sim so the page's mob dice are the sim's and the paper's.
+const sim = read('../sim.js'), nf = sim.match(/^function numbersFor\([\s\S]*?\n}\n/m)[0];
 const safe = s => s.replace(/<\/script/gi, '<\\/script');
 
 const html = `<!doctype html>
@@ -29,9 +29,7 @@ ${read('ui.css')}</style>
 <body>
 <div id="app"></div>
 <script>window.CD_DATA = ${safe(JSON.stringify(data))};
-${mix}
-${sf}
-window.CD_SYMBOLS = symbolsFor;</script>
+${nf}window.CD_NUMBERS = numbersFor;</script>
 <script>${safe(read('../cards.js'))}</script>
 <script>${safe(read('engine.js'))}</script>
 <script>${safe(read('ui.js'))}</script>

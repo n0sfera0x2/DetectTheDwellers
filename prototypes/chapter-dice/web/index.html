@@ -11,13 +11,13 @@
 .card{border:1px dashed #999;background:#F6F2EC;padding:12px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
 .tag{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#5A4B43}
 .nm{font-weight:700;font-size:17px;line-height:1.1;text-transform:uppercase}.dmg{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;color:#5A4B43}.dmg b{font-size:20px;color:#1A1418}
-.syms{display:flex;flex-wrap:wrap;gap:3px;background:#fff;border:1px solid #D8CEC3;padding:6px}.add{font-size:10.5px;color:#5A4B43}
-.kw{font-size:12px;line-height:1.35;background:#FCE6DC;border:1px solid #FF5A2A;padding:5px 7px}.fl{font-size:10.5px;line-height:1.35;color:#5A4B43;margin-top:auto;border-top:1px solid #D8CEC3;padding-top:5px}
-.key{display:flex;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:#5A4B43;border-top:1px solid #D8CEC3;border-bottom:1px solid #D8CEC3;padding:3px 0}.key span{display:inline-flex;align-items:center;gap:3px}
-.dbls{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.dface{background:#fff;border:1px solid #D8CEC3;height:40px;display:flex;align-items:center;justify-content:center}
-.df{display:inline-flex;align-items:center;gap:4px}.dfs{display:inline-flex;flex-direction:column;line-height:0;gap:1px}
-.note{font-size:11px;line-height:1.35;color:#5A4B43}.note svg{vertical-align:-2px}
-.keyref{display:flex;flex-direction:column;gap:4px}.keyref div{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid #D8CEC3;padding:4px 6px}.keyref span{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:12px}
+.kw{font-size:12px;line-height:1.35;background:#FCE6DC;border:1px solid #FF5A2A;padding:5px 7px}.fl{font-size:10.5px;line-height:1.35;color:#5A4B43;border-top:1px solid #D8CEC3;padding-top:5px}
+.dice{margin:auto -12px -12px;padding:7px 10px 9px;background:#fff;border-top:2px solid #1A1418;display:flex;flex-direction:column;align-items:center;gap:5px}
+.dice .set{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.boss .dice .set{max-width:180px}
+.dice .plus{display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#5A4B43}.dice .plus b{font-size:14px;color:#1A1418}
+.dbls{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.dface{background:#fff;border:1px solid #D8CEC3;height:42px;display:flex;align-items:center;justify-content:center}
+.ex{display:flex;align-items:center;gap:5px;font-size:11px;color:#5A4B43;background:#fff;border:1px solid #D8CEC3;padding:5px 7px}
+.note{font-size:11px;line-height:1.35;color:#5A4B43}.note svg{vertical-align:-2px}.note b{color:#1A1418}
 .mode{font-size:12px;line-height:1.35}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;color:#005F73}.small{font-size:11px;font-weight:700}
 /* Chapter dice web prototype: the dark table. Tokens follow ui/head.html (Ink & Static). Card faces use the shared
    paper card CSS (../cards.js CARD_CSS); this file only places them and adds live state around them. */
@@ -98,7 +98,6 @@ button:disabled{cursor:not-allowed;opacity:.45}
 /* Paper cards inherit dark ink from the printed page's body; give them the same ink on the dark table. */
 .card{color:#1A1418}
 .t-slot .card{width:240px;height:336px;zoom:var(--z);border:0;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.4);transition:box-shadow .2s var(--ease),filter .3s}
-.t-slot.tgt .card{box-shadow:0 0 0 2px var(--am),0 10px 30px rgba(0,0,0,.55)}
 .t-slot.down .card{filter:grayscale(.85) brightness(.7)}
 .t-slot.enter{animation:deal .45s var(--ease)}
 @keyframes deal{0%{transform:translateY(-14px) rotate(-1.5deg);opacity:0}100%{transform:none;opacity:1}}
@@ -107,15 +106,22 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .t-under{font-family:var(--mono);font-size:12px;color:var(--mut);width:calc(240px * var(--z));display:flex;flex-direction:column;gap:5px}
 .t-under b{color:var(--ink)}
 .t-under .hot{color:#FF9478}
-.t-tg{display:flex;flex-wrap:wrap;gap:5px}
-.t-tg .t-btn{display:inline-flex;align-items:center;gap:6px}
-.t-tg .t-btn svg{color:inherit}
-/* Live state over a card's symbols: coins over removed symbols, a ring on symbols in play for 3–4 players, targets. */
-.card svg.x-off{color:transparent!important;background:radial-gradient(circle at 38% 32%,#FFE2B0 0,#F0A04B 45%,#A8601E 100%);border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(80,40,10,.55),0 1px 1px rgba(0,0,0,.3)}
-.card svg.x-live{outline:1.5px solid #C46A1E;outline-offset:1px;border-radius:2px}
-.card svg.x-tgt{cursor:pointer;filter:drop-shadow(0 0 2px #FF9B54) drop-shadow(0 0 4px rgba(255,155,84,.8));animation:pulse 1.4s ease-in-out infinite}
-.card svg.x-dim{opacity:.35}
-@keyframes pulse{50%{transform:scale(1.12)}}
+/* The threat dice set under a card: live state, not part of the card face. Taken dice turn aside. */
+.t-threat{width:calc(240px * var(--z));display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:-2px;padding:8px 6px 2px}
+.t-td{position:relative;padding:0;border:0;background:none;width:34px;height:34px;line-height:0;border-radius:7px;transition:transform .18s var(--ease),opacity .18s,box-shadow .15s,filter .15s}
+.t-td .pip{width:34px;height:34px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.45))}
+.t-td .pip rect{fill:#E9E1D8;stroke:#1A1012}
+.t-td.xtra::after{content:"+";position:absolute;top:-7px;right:-6px;font:700 11px/14px var(--mono);width:14px;height:14px;border-radius:50%;background:var(--am);color:#1A1012;text-align:center}
+.t-td.off{transform:translateY(5px) rotate(-24deg) scale(.82);opacity:.32;cursor:default}
+.t-td.off .pip rect{fill:#7A6F69}
+.t-td.tgt{box-shadow:0 0 0 2px var(--am),0 0 12px rgba(255,155,84,.7);animation:pulse 1.4s ease-in-out infinite}
+.t-td.tgt.near{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--am);animation:none;outline:2px dashed var(--am);outline-offset:4px}
+.t-td.tgt.more{box-shadow:0 0 0 2px var(--cy),0 0 12px rgba(56,225,255,.6)}
+.t-td.pend{transform:translateY(5px) rotate(-14deg) scale(.9);box-shadow:0 0 0 2px var(--cy);opacity:.7}
+.t-td.dim{opacity:.55}
+.t-td.tgt:hover{transform:translateY(-2px)}
+.t-threat.big .t-td,.t-threat.big .t-td .pip{width:30px;height:30px}
+@keyframes pulse{50%{transform:translateY(-2px)}}
 
 /* ---- Side: persistence row, kit tray, crew cards ---- */
 .t-rowlist{display:flex;flex-direction:column;gap:6px}
@@ -143,11 +149,13 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .t-hint b{color:var(--ink)}
 .t-hint .err{color:#FF9478}
 .t-dice{display:flex;flex-wrap:wrap;gap:8px}
-.t-die{position:relative;width:66px;height:70px;padding:5px 0 0;border:1px solid var(--rule2);background:var(--s2);border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .12s var(--ease),border-color .15s,box-shadow .15s}
-.t-die .f{width:56px;height:40px;background:#F6F2EC;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:3px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
-.t-die .f .s{display:inline-flex;flex-direction:column;line-height:0;gap:1px}
-.t-die .o{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);white-space:nowrap}
-.t-die.agent .f{background:#DDE9EA}
+.t-die{position:relative;min-width:66px;height:70px;padding:5px 4px 0;border:1px solid var(--rule2);background:var(--s2);border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .12s var(--ease),border-color .15s,box-shadow .15s}
+.t-die .f{line-height:0;display:flex;align-items:center;justify-content:center}
+.t-die .f .pip{filter:drop-shadow(0 2px 0 rgba(0,0,0,.4))}
+.t-die.agent .f .pip rect{fill:#BFE3EA}
+.t-die.dbl .f .pip rect{stroke:var(--am);stroke-width:1.6}
+.t-die .o b{color:var(--am);font-weight:600}
+.t-die .o{font-family:var(--mono);font-size:10px;padding:0 2px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);white-space:nowrap}
 .t-die.sel{border-color:var(--am);box-shadow:0 0 0 2px var(--am);transform:translateY(-3px)}
 .t-die.used{opacity:.5}
 .t-die.used .o{color:var(--ink)}
@@ -156,6 +164,7 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .t-die.rolled{animation:tumble .45s var(--ease) both}
 @keyframes tumble{0%{transform:rotate(-25deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
 .t-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.t-turn{display:flex;flex-wrap:wrap;gap:4px}.t-turn .t-btn{padding:4px 7px;line-height:0}
 .t-acts .sp{flex:1 1 auto}
 .t-pts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .t-pts .t-btn[aria-pressed="true"]{border-color:var(--am);background:rgba(255,155,84,.16);color:var(--am)}
@@ -213,8 +222,10 @@ button:disabled{cursor:not-allowed;opacity:.45}
   .t-main{padding:10px 12px 280px;gap:12px}
   .t-mobs{gap:10px}
   .t-mobs.many .t-slot{--z:.71}
-  .t-die{width:60px;height:64px}
-  .t-die .f{width:50px;height:36px}
+  .t-die{min-width:58px;height:64px}
+  .t-die .f .pip{width:30px;height:30px}
+  .t-under{font-size:11px}
+  .t-mobs.many .t-td,.t-mobs.many .t-td .pip{width:28px;height:28px}
   .t-dock{padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
   .t-kit{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
   .t-kslot{--z:.45}
@@ -227,89 +238,87 @@ button:disabled{cursor:not-allowed;opacity:.45}
 <body>
 <div id="app"></div>
 <script>window.CD_DATA = {"classes":[{"id":"HUN","name":"Hunter"},{"id":"RES","name":"Responder"},{"id":"ENG","name":"Engineer"},{"id":"SOA","name":"Soarcerer"},{"id":"PAT","name":"Fixer"}],"mobs":[{"id":"mailer","name":"Mailer Daemon","flavor":"MAILER-DAEMON says your message bounced. Click here to retry. You never sent one.","routine":true,"def":12,"hits":3,"dmg":1,"persist":[1,13],"ability":"beacon","abilityName":"Beacon","abilityText":"When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too.","domain":"Identity","kw":"beacon"},{"id":"spray","name":"Password Sprayer","flavor":"Summer2026! tries every account in the tower, one a minute. It only needs one to work.","routine":true,"def":12,"hits":3,"dmg":1,"persist":[1,13],"ability":"noblock","abilityName":"Piercing","abilityText":"Blocks don't stop it.","domain":"Identity","kw":"piercing"},{"id":"druid","name":"Living-off-the-Land Scavenger","flavor":"Rundll32, mshta, certutil: every tool it runs is yours. It lives off what already grows here.","routine":true,"def":13,"hits":4,"dmg":3,"persist":[1,11],"ability":"hardened","abilityName":"Evasive","abilityText":"Only a natural 12 or higher can hit it.","domain":"Endpoint","kw":"evasive"},{"id":"imp","name":"OAuth Consent Grifter","flavor":"A friendly pop-up asks if this app may read all your mail. Someone’s thumb is already on Accept.","routine":false,"def":14,"hits":3,"dmg":3,"persist":[1,9],"ability":"onpoint","abilityName":"Targeted","abilityText":"Only the analyst on point takes its damage, doubled.","domain":"Cloud","kw":"targeted"},{"id":"mimic","name":"Rootkit Implant","flavor":"You count the svchost.exe processes twice. One looks exactly right, and it has teeth.","routine":false,"def":14,"hits":5,"dmg":4,"persist":[1,8],"ability":"regen","abilityName":"Regen","abilityText":"Heals 1 hit at the end of each round.","domain":"Endpoint","kw":"regen"},{"id":"wyrmling","name":"Exfil Courier","flavor":"rclone.exe is moving 40 GB to a cloud bucket you’ve never seen. It’s still small. For now.","routine":false,"def":15,"hits":4,"dmg":4,"persist":[1,8],"ability":"ramp","abilityName":"Escalating","abilityText":"+1 damage every round it stays up.","domain":"Network","kw":"escalating"}],"bosses":[{"id":"wyrm","name":"The Lockjaw Syndicate","def":16,"dmg":9,"abilityName":"Double extortion","abilityText":"+2 damage until it has taken two hits. At the end of every round it’s still up, roll for the row.","domain":"Endpoint","hitsBase":7}],"mobAdd":{"1":0,"2":0,"3":2,"4":3},"bossAdd":{"1":3,"2":3,"3":4,"4":6},"quickStartAgent":2,"quickStartSolo":1,"sharedKit":5,"kitPerFight":2,"kitSolo":1,"containCut":2,"recoverHeal":4,"recoverBurn":6,"perks":{"HUN":{"back":3,"gone":1},"RES":{"top":3,"boss":1,"contain":1},"ENG":{"dbl":17,"agentPlus":3},"SOA":{"slot":1,"draw":1},"PAT":{"rest":3,"fight":5,"recover":3}},"soloDice":3};
-const MIX = { Identity: 'DCE', Endpoint: 'ECD', Network: 'CDE', Cloud: 'DEC' };
-function symbolsFor(domain, n) { const [a, b, c] = MIX[domain] || 'DCE', pat = [a, a, b, c, b, a, c, a, b, c, a, b, c]; return pat.slice(0, n); }
-window.CD_SYMBOLS = symbolsFor;</script>
+function numbersFor(id, n) {
+  let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const out = [], cnt = [0, 0, 0, 0, 0, 0, 0];
+  while (out.length < n) { h = (h * 1103515245 + 12345) >>> 0; const v = 1 + (h >>> 16) % 6; if (cnt[v] < 2) { cnt[v]++; out.push(v); } }
+  return out;
+}
+window.CD_NUMBERS = numbersFor;</script>
 <script>// Shared card markup for the chapter dice prototype. The paper build (paper/build.js) prints these cards and the
 // web build (web/build.js) puts the very same markup on the table, so a card reads identically in both.
 // Works in Node (require) and in the browser (inlined by web/build.js with a data object as D).
 // Throwaway prototype code: nothing outside prototypes/ may import this.
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../data/cards.json'), require('./sim').symbolsFor);
-  else root.CDCards = factory(root.CD_DATA, root.CD_SYMBOLS);
-})(typeof self !== 'undefined' ? self : this, function (D, symbolsFor) {
-  const C = { bg: '#F6F2EC', ink: '#1A1418', mut: '#5A4B43', rule: '#D8CEC3', D: '#005F73', C: '#8A4510', E: '#A8360F', fl: '#FF5A2A' };
-  const NAME = { D: 'Detect', C: 'Contain', E: 'Eradicate' };
-  // The three response symbols: an eye, a shield, a bolt. Distinct shapes first, colour second.
-  const PATH = {
-    D: '<path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="2.3" fill="currentColor"/>',
-    C: '<path d="M8 1.3l5.6 2.1v4.3c0 3.5-2.4 5.9-5.6 7-3.2-1.1-5.6-3.5-5.6-7V3.4z" fill="currentColor"/>',
-    E: '<path d="M9.6 1L3 9.2h4.6L6.4 15 13 6.8H8.4z" fill="currentColor"/>',
-  };
-  const icon = (s, px) => `<svg viewBox="0 0 16 16" width="${px}" height="${px}" style="color:${C[s]};display:inline-block;vertical-align:middle">${PATH[s]}</svg>`;
-  // Standard pip d6s. One key for every die: 1–2 Detect, 3–4 Contain, 5–6 Eradicate. What differs per analyst is
-  // which numbers are doubles for them; every other die (the solo crew die, the Triage agent die) doubles on a 6.
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../data/cards.json'), require('./sim').numbersFor);
+  else root.CDCards = factory(root.CD_DATA, root.CD_NUMBERS);
+})(typeof self !== 'undefined' ? self : this, function (D, numbersFor) {
+  const C = { bg: '#F6F2EC', ink: '#1A1418', mut: '#5A4B43', rule: '#D8CEC3', cy: '#005F73', fl: '#FF5A2A', ex: '#A8360F' };
+  // Exact numbers (2026-10-30). Every die is a standard pip d6 and reads as its number. A mob card prints the dice to
+  // set under it; a rolled die takes out a die showing exactly its number. Which numbers are doubles depends on the
+  // analyst; every other die (the solo crew die, the Triage agent die) doubles only on a 6.
   // Same numbers as sim.js DOUBLES (web/spec.js checks they agree).
-  const KEY = ['D', 'D', 'C', 'C', 'E', 'E'];
-  const KEY_RANGE = { D: '1–2', C: '3–4', E: '5–6' };
   const DOUBLES = { HUN: [1, 2, 6], RES: [3, 4, 6], ENG: [2, 4, 6], SOA: [1, 6], PAT: [3, 6], CREW: [6], AGENT: [6] };
-  const symOf = n => KEY[n - 1];
   const isDouble = (id, n) => (DOUBLES[id] || DOUBLES.CREW).includes(n);
   // The persistence row on 2d6: a row mob comes back if the sum is at most its number. The data's d20 ranges map by
   // tier (top 12+ → 8, 10–11 → 7, 8–9 → 6, 7 or less → 5). Same as sim.js rowTop.
   const rowTop = N => N >= 12 ? 8 : N >= 10 ? 7 : N >= 8 ? 6 : 5;
   const cls = id => D.classes.find(c => c.id === id);
+  // The dice printed on a mob or boss card: the base dice (sim.js numbersFor, printed low to high so they're quick
+  // to set out) and the one extra number a crew adds per player past two. Base = printed hits for a mob, the boss's
+  // two-player hits for a boss. Solo plays the two-player dice.
+  const diceFor = (m, boss) => {
+    const base = boss ? m.hitsBase + D.bossAdd[2] : m.hits;
+    return { base: numbersFor(m.id, base).slice().sort((a, b) => a - b), extra: numbersFor(m.id + '+', 1)[0] };
+  };
+  // The dice a crew of n sets under the card: the base dice, then the extra number once per player past two.
+  const slotsFor = (m, boss, n) => { const d = diceFor(m, boss); return [...d.base, ...Array(Math.max(0, n - 2)).fill(d.extra)]; };
   // A real die face: rounded square with pips. Positions on a 16-unit face.
   const PIPS = { 1: [[8, 8]], 2: [[4.6, 4.6], [11.4, 11.4]], 3: [[4.6, 4.6], [8, 8], [11.4, 11.4]], 4: [[4.6, 4.6], [11.4, 4.6], [4.6, 11.4], [11.4, 11.4]],
     5: [[4.6, 4.6], [11.4, 4.6], [8, 8], [4.6, 11.4], [11.4, 11.4]], 6: [[4.6, 4.2], [11.4, 4.2], [4.6, 8], [11.4, 8], [4.6, 11.8], [11.4, 11.8]] };
   const pip = (n, px) => `<svg class="pip" viewBox="0 0 16 16" width="${px}" height="${px}" style="display:inline-block;vertical-align:middle" role="img" aria-label="${n}"><rect x=".7" y=".7" width="14.6" height="14.6" rx="3.2" fill="#fff" stroke="${C.ink}" stroke-width="1.1"/>${PIPS[n].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.45" fill="${C.ink}"/>`).join('')}</svg>`;
-  // A rolled number as it reads: the pip face, then its symbol (twice for a double).
-  const dieFace = (n, dbl, px) => `<span class="df">${pip(n, px)}<span class="dfs">${icon(symOf(n), px * 0.62)}${dbl ? icon(symOf(n), px * 0.62) : ''}</span></span>`;
-  // A symbol-only face [symbol, count], for a die an Enrichment Agent turned to another symbol.
-  const face = ([s, n], px) => n === 2 ? `<span style="display:inline-flex;flex-direction:column;align-items:center;line-height:0">${icon(s, px * 0.62)}${icon(s, px * 0.62)}</span>` : icon(s, px);
 
   // ---- Cards (2.5 × 3.5 in) ----------------------------------------------------------------------------------
-  const row = (syms, px = 20) => syms.map(s => icon(s, px)).join('');
-  const extra = (domain, hits, k) => symbolsFor(domain, hits + k).slice(hits);
   const kw = { beacon: 'Beacon', noblock: 'Piercing', onpoint: 'Targeted', hardened: 'Evasive', regen: 'Regen', ramp: 'Escalating' };
-  const kwText = { beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it.', regen: 'Gets one symbol back at the end of each round.', ramp: '+1 Damage every round it stays up.' };
-  // The key, printed on every mob so a table can read it without the rules.
-  const keyStrip = `<div class="key">${['D', 'C', 'E'].map(x => `<span>${icon(x, 12)}${KEY_RANGE[x]}</span>`).join('')}</div>`;
+  const kwText = { beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it.', regen: 'At the end of each round, put back one die it lost.', ramp: '+1 Damage every round it stays up.' };
+  // The dice strip along the bottom edge: the dice to set under the card, then the one extra number per player past
+  // two. On the table the physical dice sit just below it.
+  const strip = (d, px) => `<div class="dice"><div class="set">${d.base.map(n => pip(n, px)).join('')}</div>
+  <div class="plus"><b>+</b>${pip(d.extra, 18)}<span>per player past 2</span></div></div>`;
   function mobCard(m) {
-    const syms = symbolsFor(m.domain, m.hits);
     return `<div class="card"><div class="tag">${m.domain} · back on 2–${rowTop(m.persist[1])}</div><div class="nm">${m.name}</div>
-  <div class="dmg">Damage <b>${m.dmg}</b></div><div class="syms">${row(syms, 22)}</div>
-  <div class="add">3 players add ${row(extra(m.domain, m.hits, D.mobAdd[3]), 13)} · 4 players add ${row(extra(m.domain, m.hits, D.mobAdd[4]), 13)}</div>${keyStrip}
-  <div class="kw"><b>${kw[m.ability]}.</b> ${kwText[m.ability]}</div><div class="fl">${m.flavor}</div></div>`;
+  <div class="dmg">Damage <b>${m.dmg}</b></div><div class="kw"><b>${kw[m.ability]}.</b> ${kwText[m.ability]}</div><div class="fl">${m.flavor}</div>
+  ${strip(diceFor(m), 28)}</div>`;
   }
   function bossCard(b) {
-    const base = b.hitsBase + D.bossAdd[2], syms = symbolsFor('Identity', base);
     return `<div class="card boss"><div class="tag">Boss · arrives at 05:59</div><div class="nm">${b.name}</div><div class="dmg">Damage <b>${b.dmg}</b></div>
-  <div class="syms">${row(syms, 18)}</div><div class="add">3 players add ${row(extra('Identity', base, D.bossAdd[3] - D.bossAdd[2]), 13)} · 4 players add ${row(extra('Identity', base, D.bossAdd[4] - D.bossAdd[2]), 13)}</div>${keyStrip}
-  <div class="kw"><b>${b.abilityName}.</b> +2 Damage until it has lost two symbols. Agent dice can’t hit it.</div></div>`;
+  <div class="kw"><b>${b.abilityName}.</b> +2 Damage until it has lost two dice. Agent dice can’t hit it.</div>
+  ${strip(diceFor(b, true), 30)}</div>`;
   }
   const PERK = {
-    HUN: 'Any number you roll is wild against a mob that came back from the row. A comeback you finish is gone for good.',
-    RES: 'Your Contain numbers (3–4) are wild against the highest-Damage mob, boss included.',
-    ENG: 'Every even number is a double for you: hit twice or guard, more often.',
+    HUN: 'Against a mob that came back from the row, your dice also match one higher or one lower. A comeback you finish is gone for good.',
+    RES: 'Against the highest-Damage mob (boss included), your dice also match one higher or one lower.',
+    ENG: 'Every even number is a double for you.',
     SOA: `The tray holds one more agent (${D.sharedKit + 1}). Every won fight draws one more agent card.`,
     PAT: `After every fight, heal ${D.perks.PAT.fight} HP split across the crew. Recovery Agents heal ${D.perks.PAT.recover} more.`,
   };
   const analystCard = id => `<div class="card"><div class="tag">Analyst · standard d6</div><div class="nm">${cls(id).name}</div>
-  <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${dieFace(n, true, 26)}</div>`).join('')}</div>
-  <div class="note">Any other number takes one symbol.</div><div class="kw">${PERK[id]}</div></div>`;
+  <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 30)}</div>`).join('')}</div>
+  <div class="note">A double takes its match and any one more die from the same mob, or guards.</div><div class="kw">${PERK[id]}</div></div>`;
   const AGENT = {
     triage: ['Triage Agent', 'Rolls an agent die every round.', 'On point rolls 3 more crew dice this round.'],
-    enrich: ['Enrichment Agent', 'Once a round, turn one crew die to any symbol.', 'Every die is wild this round.'],
-    contain: ['Containment Agent', `The highest-Damage mob deals ${D.containCut} less, never below 1.`, 'Remove one symbol from every mob (the boss keeps at least one).'],
+    enrich: ['Enrichment Agent', 'Once a round, turn one crew die to any number.', 'Every die matches anything this round.'],
+    contain: ['Containment Agent', `The highest-Damage mob deals ${D.containCut} less, never below 1.`, 'Remove one die from every mob (the boss keeps at least one).'],
     recover: ['Recovery Agent', `After every fight, heal ${D.recoverHeal} HP split across the crew.`, `Heal ${D.recoverBurn} HP split across the crew.`],
   };
   const agentCard = t => `<div class="card agent"><div class="tag">Agent</div><div class="nm">${AGENT[t][0]}</div>
   <div class="mode"><b>Run it</b> ${AGENT[t][1]}</div><div class="mode"><b>Or burn it</b> ${AGENT[t][2]}</div></div>`;
   const legend = `<div class="card"><div class="tag">Reference · every die</div><div class="nm">Dice</div>
-  <div class="keyref">${['D', 'C', 'E'].map(x => { const ns = [1, 2, 3, 4, 5, 6].filter(n => symOf(n) === x); return `<div>${ns.map(n => pip(n, 22)).join('')}<span>${icon(x, 18)}<b>${NAME[x]}</b></span></div>`; }).join('')}</div>
-  <div class="note">Your analyst card shows your doubles. Other dice (crew die, agent dice): only a ${pip(6, 13)} is a double.</div>
-  <div class="kw">A double: two of that symbol from one mob, <b>or</b> guard. Never both.</div>
+  <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>under a mob</span></div>
+  <div class="note">A die takes out one die under a mob showing <b>exactly</b> its number.</div>
+  <div class="kw">A double: its match <b>and</b> any one more die from the same mob, <b>or</b> guard. Never both.</div>
+  <div class="note">Your analyst card shows your doubles. Other dice (crew die, agent dice): only a ${pip(6, 14)} is a double.</div>
+  <div class="note">3–4 players: add the card’s + die once per player past 2.</div>
   <div class="note">Row: roll 2 amber dice; a row mob comes back if the sum is at most its number.</div></div>`;
 
   // The prototype's card set: six mobs, the Lockjaw Syndicate, five analysts, four agent types (two each).
@@ -322,32 +331,31 @@ window.CD_SYMBOLS = symbolsFor;</script>
   const CARD_CSS = `.card{border:1px dashed #999;background:${C.bg};padding:12px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
 .tag{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:${C.mut}}
 .nm{font-weight:700;font-size:17px;line-height:1.1;text-transform:uppercase}.dmg{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;color:${C.mut}}.dmg b{font-size:20px;color:${C.ink}}
-.syms{display:flex;flex-wrap:wrap;gap:3px;background:#fff;border:1px solid ${C.rule};padding:6px}.add{font-size:10.5px;color:${C.mut}}
-.kw{font-size:12px;line-height:1.35;background:#FCE6DC;border:1px solid ${C.fl};padding:5px 7px}.fl{font-size:10.5px;line-height:1.35;color:${C.mut};margin-top:auto;border-top:1px solid ${C.rule};padding-top:5px}
-.key{display:flex;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:${C.mut};border-top:1px solid ${C.rule};border-bottom:1px solid ${C.rule};padding:3px 0}.key span{display:inline-flex;align-items:center;gap:3px}
-.dbls{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.dface{background:#fff;border:1px solid ${C.rule};height:40px;display:flex;align-items:center;justify-content:center}
-.df{display:inline-flex;align-items:center;gap:4px}.dfs{display:inline-flex;flex-direction:column;line-height:0;gap:1px}
-.note{font-size:11px;line-height:1.35;color:${C.mut}}.note svg{vertical-align:-2px}
-.keyref{display:flex;flex-direction:column;gap:4px}.keyref div{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid ${C.rule};padding:4px 6px}.keyref span{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:12px}
-.mode{font-size:12px;line-height:1.35}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;color:${C.D}}.small{font-size:11px;font-weight:700}`;
+.kw{font-size:12px;line-height:1.35;background:#FCE6DC;border:1px solid ${C.fl};padding:5px 7px}.fl{font-size:10.5px;line-height:1.35;color:${C.mut};border-top:1px solid ${C.rule};padding-top:5px}
+.dice{margin:auto -12px -12px;padding:7px 10px 9px;background:#fff;border-top:2px solid ${C.ink};display:flex;flex-direction:column;align-items:center;gap:5px}
+.dice .set{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.boss .dice .set{max-width:180px}
+.dice .plus{display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:${C.mut}}.dice .plus b{font-size:14px;color:${C.ink}}
+.dbls{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.dface{background:#fff;border:1px solid ${C.rule};height:42px;display:flex;align-items:center;justify-content:center}
+.ex{display:flex;align-items:center;gap:5px;font-size:11px;color:${C.mut};background:#fff;border:1px solid ${C.rule};padding:5px 7px}
+.note{font-size:11px;line-height:1.35;color:${C.mut}}.note svg{vertical-align:-2px}.note b{color:${C.ink}}
+.mode{font-size:12px;line-height:1.35}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;color:${C.cy}}.small{font-size:11px;font-weight:700}`;
 
-  return { C, NAME, PATH, icon, KEY, KEY_RANGE, DOUBLES, symOf, isDouble, rowTop, pip, dieFace, cls, face, row, extra, kw, kwText, keyStrip, mobCard, bossCard, PERK, analystCard, AGENT, agentCard, legend,
+  return { C, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, agentCard, legend,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS };
 });
 </script>
 <script>// Chapter dice web prototype: the rules engine. DOM-free and deterministic given a seeded rng (opt.rnd or opt.seed).
 // Plays exactly the paper rules sheet (../paper/build.js): the human assigns dice, the engine checks and resolves.
-// Numbers come from data/cards.json and ../cards.js (the d6 key, each analyst's doubles, the 2d6 row). Every die is a
-// standard pip d6: a die is { n: 1–6, face: [symbol, 1 or 2] }. Throwaway prototype code.
+// Exact numbers (2026-10-30): every die is a standard pip d6, { n: 1–6, dbl }. A mob's hits are the threat dice set
+// under its card (../cards.js slotsFor); a rolled die takes out one showing exactly its number. Throwaway prototype code.
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../../data/cards.json'), require('../sim').symbolsFor, require('../cards'));
-  else root.CDEngine = factory(root.CD_DATA, root.CD_SYMBOLS, root.CDCards);
-})(typeof self !== 'undefined' ? self : this, function (D, symbolsFor, CARDS) {
-  const HP = 23; // the sim's tuned starting HP for two players (standard d6, 2026-10-30)
-  // A rolled pip die. own: the analyst's id (their doubles); otherwise 'CREW' or 'AGENT' (only a 6 is a double).
-  const pipDie = (n, who) => ({ n, face: [CARDS.symOf(n), CARDS.isDouble(who, n) ? 2 : 1] });
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../../data/cards.json'), require('../cards'));
+  else root.CDEngine = factory(root.CD_DATA, root.CDCards);
+})(typeof self !== 'undefined' ? self : this, function (D, CARDS) {
+  const HP = 30; // starting HP for exact numbers (2026-10-30): about 55% at two players in the sim
+  // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
+  const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   const KIT_NAME = { triage: 'Triage Agent', enrich: 'Enrichment Agent', contain: 'Containment Agent', recover: 'Recovery Agent' };
-  const SYM_NAME = { D: 'Detect', C: 'Contain', E: 'Eradicate' };
 
   function rng(seed) { let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   const shuffle = (a, r) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -360,15 +368,14 @@ window.CD_SYMBOLS = symbolsFor;</script>
     if (n < 1 || n > 4) throw new Error('1–4 players');
     const r = opt.rnd || rng(opt.seed == null ? 1 : opt.seed);
     let uid = 0;
-    const mkMob = m => { const hits = Math.max(1, m.hits + (D.mobAdd[n] || 0));
-      return { uid: 'm' + (++uid), id: m.id, name: m.name, boss: false, dmg: m.dmg, kw: m.ability, persist: m.persist.slice(), domain: m.domain,
-        top: CARDS.rowTop(m.persist[1]), printed: m.hits, hits, row: symbolsFor(m.domain, hits), off: Array(hits).fill(false), offStack: [], back: 0, up: 0 }; };
-    const b = CARDS.boss(), bh = b.hitsBase + D.bossAdd[n];
-    const boss = { uid: 'boss', id: b.id, name: b.name, boss: true, dmg: b.dmg, kw: 'wyrm', persist: null, domain: 'Identity',
-      printed: b.hitsBase + D.bossAdd[2], hits: bh, row: symbolsFor('Identity', bh), off: Array(bh).fill(false), offStack: [], back: 0, up: 0 };
+    // slots: the threat dice under the card for this crew (base dice, then the + die once per player past two).
+    const mk = (m, boss) => { const d = CARDS.diceFor(m, boss), slots = CARDS.slotsFor(m, boss, n);
+      return { uid: boss ? 'boss' : 'm' + (++uid), id: m.id, name: m.name, boss, dmg: m.dmg, kw: boss ? 'wyrm' : m.ability, persist: boss ? null : m.persist.slice(),
+        domain: boss ? null : m.domain, top: boss ? null : CARDS.rowTop(m.persist[1]), printed: d.base.length, extra: d.extra, hits: slots.length, slots,
+        off: Array(slots.length).fill(false), offStack: [], back: 0, up: 0 }; };
     const hp = opt.hp || HP;
     const G = { n, team: team.slice(), hp: team.map(() => hp), max: hp, r,
-      feed: shuffle(CARDS.mobs().map(mkMob), r), boss, bossOut: false, row: [], play: [], gone: [],
+      feed: shuffle(CARDS.mobs().map(m => mk(m, false)), r), boss: mk(CARDS.boss(), true), bossOut: false, row: [], play: [], gone: [],
       kit: shuffle(CARDS.AGENT_IDS.flatMap(t => [t, t]).map((t, i) => ({ uid: 'k' + (i + 1), t })), r), discard: [], tray: [],
       cap: D.sharedKit + (team.includes('SOA') ? D.perks.SOA.slot : 0),
       point: 0, phase: 'flip', fight: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
@@ -382,12 +389,12 @@ window.CD_SYMBOLS = symbolsFor;</script>
 
   // ---- Helpers ----------------------------------------------------------------------------------------------
   const left = m => m.off.filter(x => !x).length;
-  const remaining = m => m.row.filter((s, i) => !m.off[i]);
+  const remaining = m => m.slots.filter((s, i) => !m.off[i]);
   const running = (G, t) => G.tray.filter(c => c.t === t).length;
   const on = (G, id) => G.team.includes(id);
-  // Damage right now: Lockjaw +2 until it has lost two symbols; Escalating +1 per round it stayed up.
+  // Damage right now: Lockjaw +2 until it has lost two dice; Escalating +1 per round it stayed up.
   const dmgOf = (G, m) => m.boss ? m.dmg + (left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0);
-  // The highest-Damage mob(s), judged on the Damage at the start of the round so a wild can't flicker mid-assignment.
+  // The highest-Damage mob(s), judged on the Damage at the start of the round so a match can't flicker mid-assignment.
   const isTop = (G, m) => { const d = x => G.roundDmg[x.uid] != null ? G.roundDmg[x.uid] : dmgOf(G, x); const up = G.play.filter(x => left(x) || x === m); return up.length && d(m) >= Math.max(...up.map(d)); };
   const d6 = G => Math.floor(G.r() * 6);
   const findMob = (G, uid) => G.play.find(m => m.uid === uid);
@@ -414,8 +421,8 @@ window.CD_SYMBOLS = symbolsFor;</script>
   }
 
   // ---- The persistence row ------------------------------------------------------------------------------------
-  // Roll the 2 amber dice: every row mob whose number is at least the sum comes back with all its symbols. With strike, the two highest-Damage
-  // comebacks hit everyone on arrival. Returns the comebacks (not yet in play: enter() puts them there).
+  // Roll the 2 amber dice: every row mob whose number is at least the sum comes back with all its dice. With strike,
+  // the two highest-Damage comebacks hit everyone on arrival. Returns the comebacks (enter() puts them in play).
   function rollRow(G, strike, why) {
     if (!G.row.length) return [];
     const pair = [1 + d6(G), 1 + d6(G)], roll = pair[0] + pair[1], back = G.row.filter(m => roll <= m.top);
@@ -472,73 +479,75 @@ window.CD_SYMBOLS = symbolsFor;</script>
     say(G, `Round ${G.round}: rolled ${dice.map(faceText).join(', ')}.`, 'roll');
     return G;
   }
-  const faceText = d => `${d.n != null ? d.n + ' ' : ''}${d.face[1] === 2 ? 'double ' : ''}${SYM_NAME[d.face[0]]}${d.turned ? ' (turned)' : ''}${d.crew ? '' : ' (agent)'}`;
+  const faceText = d => `${d.n}${d.dbl ? ' (double)' : ''}${d.turned ? ' (turned)' : ''}${d.crew ? '' : ' (agent)'}`;
 
-  // What one die can do to one mob: { syms: symbols you may pick, max: how many it removes, wild } or null.
+  // Does this die's Hunter/Responder perk let it match one higher or one lower on this mob?
+  const nearOK = (G, d, m) => { const id = d.crew ? G.team[d.k] : null; return (id === 'HUN' && m.back > 0) || (id === 'RES' && isTop(G, m)); };
+  // What one die can do to one mob: { slots: indices it may take first, near: the ±1 ones, wild, dbl } or null.
   function canHit(G, d, m) {
     if (!d || !m || d.used || !left(m)) return null;
     if (!d.crew && m.boss) return null;                           // agent dice can't hit the boss
-    const [s, c] = d.face, id = d.crew ? G.team[d.k] : null;
-    if (m.kw === 'hardened' && c < 2) return null;                // Evasive: only a double hits it
-    const wild = G.wildAll || (id === 'HUN' && m.back > 0) || (id === 'RES' && s === 'C' && isTop(G, m));
-    const rem = remaining(m), syms = wild ? [...new Set(rem)] : rem.includes(s) ? [s] : [];
-    if (!syms.length) return null;
-    return { syms, wild, max: Math.min(c, wild ? rem.length : rem.filter(x => x === s).length) };
+    if (m.kw === 'hardened' && !d.dbl) return null;               // Evasive: only a double hits it
+    const free = m.slots.map((v, i) => i).filter(i => !m.off[i]);
+    if (G.wildAll) return { slots: free, near: [], wild: true, dbl: d.dbl };
+    const exact = free.filter(i => m.slots[i] === d.n), near = nearOK(G, d, m) ? free.filter(i => Math.abs(m.slots[i] - d.n) === 1) : [];
+    if (!exact.length && !near.length) return null;
+    return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
-  const canGuard = (G, d) => !!d && d.crew && !d.used && d.face[1] === 2 && !G.blocks[d.k];
-  // Every legal use of a die, for the UI's target buttons and for tests.
+  const canGuard = (G, d) => !!d && d.crew && !d.used && d.dbl && !G.blocks[d.k];
+  // Every legal use of a die, for the UI's slot highlights and for tests.
   function targets(G, di) {
     const d = G.dice[di]; if (!d || G.phase !== 'assign') return { hits: [], guard: false, enrich: false };
-    const hits = []; for (const m of G.play) { const o = canHit(G, d, m); if (o) o.syms.forEach(s => hits.push({ uid: m.uid, sym: s, n: o.max, wild: o.wild })); }
+    const hits = []; for (const m of G.play) { const o = canHit(G, d, m); if (o) o.slots.forEach(p => hits.push({ uid: m.uid, p, n: m.slots[p], near: o.near.includes(p), wild: o.wild, dbl: o.dbl })); }
     return { hits, guard: canGuard(G, d), enrich: G.enrichLeft > 0 && d.crew && !d.used && !d.turned };
   }
+  // After a double takes slot p on a mob: the slots it may take as its "one more" (any die still under that mob).
+  const moreSlots = (m, p) => m.slots.map((v, i) => i).filter(i => i !== p && !m.off[i]);
   const snap = G => ({ dice: clone(G.dice), blocks: G.blocks.slice(), enrichLeft: G.enrichLeft, mobs: G.play.map(m => ({ uid: m.uid, off: m.off.slice(), offStack: m.offStack.slice() })) });
-  function removeSym(m, s) { const i = m.row.findIndex((x, j) => !m.off[j] && x === s); if (i < 0) return false; m.off[i] = true; m.offStack.push(i); return true; }
+  const take = (m, p) => { m.off[p] = true; m.offStack.push(p); };
 
-  // A face removes one matching symbol; a double removes two of that symbol from the same mob.
-  function assign(G, di, uid, sym) {
+  // A die takes slot p (a die showing its number, or ±1 with a perk, or anything when wild). A double may also take
+  // slot q: any one more die from the same mob. Omit p to take the first legal slot.
+  function assign(G, di, uid, p, q) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di], m = findMob(G, uid); if (!d) fail('No such die.'); if (!m) fail('That mob isn’t in the fight.');
     if (d.used) fail('That die is already used. Undo it first.');
     const o = canHit(G, d, m); if (!o) fail(cantWhy(G, d, m));
-    sym = sym || (o.syms.includes(d.face[0]) ? d.face[0] : o.syms[0]);
-    if (!o.syms.includes(sym)) fail(`That die can’t take a ${SYM_NAME[sym]} off ${m.name}.`);
+    if (p == null) p = o.slots[0];
+    if (!o.slots.includes(p)) fail(m.off[p] ? 'That die is already taken.' : `A ${d.n} can’t take the ${m.slots[p]} under ${m.name}.`);
+    if (q != null) { if (!d.dbl) fail('Only a double takes one more.'); if (!moreSlots(m, p).includes(q)) fail('Pick another die still under the same mob.'); }
     G.undo.push(snap(G));
-    const took = [];
-    for (let j = 0; j < o.max; j++) {
-      const rem = remaining(m), pick = j === 0 ? sym : rem.includes(sym) ? sym : o.wild ? (rem.includes(d.face[0]) ? d.face[0] : rem[0]) : null;
-      if (!pick || !removeSym(m, pick)) break; took.push(pick);
-    }
-    d.used = { uid, syms: took };
-    say(G, `${dieOwner(G, d)}’s ${faceText(d)} takes ${took.map(s => SYM_NAME[s]).join(' + ')} off ${m.name}${left(m) ? '' : ': beaten'}.`, 'hit');
+    take(m, p); const took = [m.slots[p]]; if (q != null) { take(m, q); took.push(m.slots[q]); }
+    d.used = { uid, slots: q != null ? [p, q] : [p] };
+    say(G, `${dieOwner(G, d)}’s ${faceText(d)} takes ${took.length > 1 ? `the ${took[0]} and the ${took[1]}` : `the ${took[0]}`} under ${m.name}${left(m) ? '' : ': beaten'}.`, 'hit');
     return G;
   }
   function cantWhy(G, d, m) {
     if (!left(m)) return `${m.name} is already beaten.`;
     if (!d.crew && m.boss) return 'Agent dice can’t hit the boss.';
-    if (m.kw === 'hardened' && d.face[1] < 2) return `${m.name} is Evasive: only a double hits it.`;
-    return `No ${SYM_NAME[d.face[0]]} left on ${m.name} for that die.`;
+    if (m.kw === 'hardened' && !d.dbl) return `${m.name} is Evasive: only a double hits it.`;
+    return `No ${d.n} left under ${m.name} for that die.`;
   }
   const dieOwner = (G, d) => d.crew ? nameOf(G.team[d.k]) + (d.src === 'crew' ? ' (crew die)' : '') : 'Triage Agent';
   function guard(G, di) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di]; if (!d) fail('No such die.');
     if (!d.crew) fail('Agent dice can’t guard.'); if (d.used) fail('That die is already used.');
-    if (d.face[1] !== 2) fail('Only a double can guard.'); if (G.blocks[d.k]) fail(`${nameOf(G.team[d.k])} is already blocking.`);
+    if (!d.dbl) fail('Only a double can guard.'); if (G.blocks[d.k]) fail(`${nameOf(G.team[d.k])} is already blocking.`);
     G.undo.push(snap(G)); d.used = 'guard'; G.blocks[d.k] = true;
     say(G, `${nameOf(G.team[d.k])} guards with a ${faceText(d)}: blocking this round.`, 'guard');
     return G;
   }
-  // Running Enrichment Agent: once a round (per running card), turn one crew die to any symbol. A double stays a
-  // double (the sim's rule); the die keeps its number for the record.
-  function enrichTurn(G, di, sym) {
+  // Running Enrichment Agent: once a round (per running card), turn one crew die to any number. The die keeps what it
+  // was: a double stays a double, a single stays single (the sim's rule, and it stops "always turn to 6").
+  function enrichTurn(G, di, n) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di]; if (!d) fail('No such die.');
     if (G.enrichLeft < 1) fail('No Enrichment Agent turn left this round.');
     if (!d.crew) fail('Enrichment turns a crew die, not an agent die.'); if (d.used) fail('Undo that die first.'); if (d.turned) fail('That die is already turned.');
-    if (!SYM_NAME[sym]) fail('Pick Detect, Contain or Eradicate.');
-    G.undo.push(snap(G)); d.from = d.face.slice(); d.face = [sym, d.face[1]]; d.turned = true; G.enrichLeft--;
-    say(G, `Enrichment Agent turns ${dieOwner(G, d)}’s die to ${faceText(d)}.`, 'kit');
+    if (!(n >= 1 && n <= 6) || n !== Math.floor(n)) fail('Pick a number from 1 to 6.');
+    G.undo.push(snap(G)); d.from = d.n; d.n = n; d.turned = true; G.enrichLeft--;
+    say(G, `Enrichment Agent turns ${dieOwner(G, d)}’s die from ${d.from} to ${faceText(d)}.`, 'kit');
     return G;
   }
   function unassign(G) {
@@ -581,7 +590,8 @@ window.CD_SYMBOLS = symbolsFor;</script>
     if (G.over) return G;
     for (const m of G.play) {
       m.up++;
-      if (m.kw === 'regen' && m.offStack.length) { m.off[m.offStack.pop()] = false; say(G, `${m.name} regenerates a symbol.`, 'mob'); }
+      // Regen: put back the die it lost most recently.
+      if (m.kw === 'regen' && m.offStack.length) { const p = m.offStack.pop(); m.off[p] = false; say(G, `${m.name} regenerates: its ${m.slots[p]} goes back under the card.`, 'mob'); }
       if (m.kw === 'ramp') say(G, `${m.name} escalates: Damage ${dmgOf(G, m)} now.`, 'mob');
     }
     if (G.play.length) { G.phase = 'roll'; return G; }
@@ -611,7 +621,15 @@ window.CD_SYMBOLS = symbolsFor;</script>
     G.tray.filter(c => !uids.includes(c.uid)).forEach(c => discardKit(G, c.uid));
     return G;
   }
-  const takeLoot = keepKit;
+
+  // Containment burn: which die comes off a mob. A repeated number first (it leaves the most different numbers to
+  // match), else the highest. Returns a slot index, or -1.
+  function containPick(m) {
+    const free = m.slots.map((v, i) => i).filter(i => !m.off[i]); if (!free.length) return -1;
+    const seen = {}; free.forEach(i => { seen[m.slots[i]] = (seen[m.slots[i]] || 0) + 1; });
+    const dup = free.filter(i => seen[m.slots[i]] > 1);
+    return (dup.length ? dup : free).reduce((a, b) => m.slots[b] >= m.slots[a] ? b : a);
+  }
 
   // ---- Burns ------------------------------------------------------------------------------------------------------
   const BURN_PHASES = { triage: ['assign'], enrich: ['assign'], contain: ['roll', 'assign'], recover: ['flip', 'roll', 'assign'] };
@@ -628,29 +646,30 @@ window.CD_SYMBOLS = symbolsFor;</script>
       for (let i = 0; i < 3; i++) G.dice.push({ i: G.dice.length, k: G.point, crew: true, src: 'burn', ...pipDie(1 + d6(G), id), used: null, turned: false });
       say(G, `${nameOf(id)} rolls 3 more: ${G.dice.slice(-3).map(faceText).join(', ')}.`, 'roll');
     }
-    if (c.t === 'enrich') { G.wildAll = true; say(G, 'Every die is wild this round.', 'kit'); }
+    if (c.t === 'enrich') { G.wildAll = true; say(G, 'Every die matches anything this round.', 'kit'); }
     if (c.t === 'contain') {
-      for (const m of G.play) { if (!left(m) || (m.boss && left(m) <= 1)) continue; const i = m.off.lastIndexOf(false); m.off[i] = true; m.offStack.push(i); }
-      say(G, 'One symbol off every mob.', 'kit');
+      for (const m of G.play) { if (!left(m) || (m.boss && left(m) <= 1)) continue; take(m, containPick(m)); }
+      say(G, 'One die off every mob.', 'kit');
       if (G.phase === 'roll' && G.play.every(m => !left(m))) endRound(G);
     }
     if (c.t === 'recover') spread(G, D.recoverBurn, 'Recovery burn');
     return G;
   }
 
-  return { HP, KIT_NAME, SYM_NAME, pipDie, rng, shuffle, newGame, setPoint, flip, roll, assign, guard, enrichTurn, unassign, endRound, burn, canBurn,
-    discardKit, keepKit, takeLoot, targets, canHit, canGuard, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
+  return { HP, KIT_NAME, pipDie, rng, shuffle, newGame, setPoint, flip, roll, assign, guard, enrichTurn, unassign, endRound, burn, canBurn,
+    discardKit, keepKit, targets, canHit, canGuard, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });
 </script>
 <script>// Chapter dice web prototype: the page script. Renders the engine state (CDEngine) with the shared paper card
-// markup (CDCards) and adds live state around the cards: coins over removed symbols, stamps, target rings.
+// markup (CDCards) and adds live state around the cards: the threat dice set under each card (taken ones turned
+// aside), slot highlights for the selected die, and stamps. Nothing is drawn on a card face.
 // Throwaway prototype code, inlined into web/index.html by web/build.js.
 (function () {
   const E = window.CDEngine, A = window.CDCards, D = window.CD_DATA;
   const app = document.getElementById('app');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const qs = new URLSearchParams(location.search || '');
-  const UI = { G: null, sel: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, seenRow: 0, seenMobs: new Set(),
+  const UI = { G: null, sel: null, more: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, seenRow: 0, seenMobs: new Set(),
     setup: { n: 2, team: ['HUN', 'RES', 'ENG', 'SOA'] }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
   const nm = id => A.cls(id).name;
   const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -658,7 +677,6 @@ window.CD_SYMBOLS = symbolsFor;</script>
   const dataMob = id => D.mobs.find(m => m.id === id);
   const cardFor = m => m.boss ? A.bossCard(A.boss()) : A.mobCard(dataMob(m.id));
   const cardKey = m => m.boss ? 'boss' : 'mob:' + m.id;
-  const KICON = { D: A.icon('D', 16), C: A.icon('C', 16), E: A.icon('E', 16) };
 
   // ---- Actions ------------------------------------------------------------------------------------------------
   function act(fn, okMsg) {
@@ -670,7 +688,7 @@ window.CD_SYMBOLS = symbolsFor;</script>
   }
   function startGame() {
     const team = UI.setup.team.slice(0, UI.setup.n);
-    UI.G = E.newGame({ team, seed: UI.seed }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.msg = ''; UI.copied = null; UI.seenRow = 0; UI.seenMobs = new Set();
+    UI.G = E.newGame({ team, seed: UI.seed }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.msg = ''; UI.copied = null; UI.seenRow = 0; UI.seenMobs = new Set();
     render(); focusKey('flip');
   }
   // After a die is used, select the next unused die that can still do something.
@@ -680,8 +698,23 @@ window.CD_SYMBOLS = symbolsFor;</script>
     const after = G.dice.filter(d => d.i > (UI.sel == null ? -1 : UI.sel)).find(ok) || G.dice.find(ok);
     UI.sel = after ? after.i : null;
   }
-  function doAssign(uid, sym) { const i = UI.sel; act(() => E.assign(UI.G, i, uid, sym)); if (!UI.err) { nextDie(); render(); } }
-  function doGuard() { const i = UI.sel; act(() => E.guard(UI.G, i)); if (!UI.err) { nextDie(); render(); } }
+  function doAssign(di, uid, p, q) { UI.more = null; act(() => E.assign(UI.G, di, uid, p, q)); if (!UI.err) { nextDie(); render(); } }
+  function doGuard() { UI.more = null; const i = UI.sel; act(() => E.guard(UI.G, i)); if (!UI.err) { nextDie(); render(); } }
+  // Tap a threat die under a card. With a double waiting for its "one more", this is that pick. Otherwise a double's
+  // first match waits for the second pick (or "Just that one"); any other die takes the slot straight away.
+  function tapSlot(uid, p) {
+    const G = UI.G, m = G.play.find(x => x.uid === uid); if (!m || G.phase !== 'assign') return;
+    if (UI.more) {
+      if (UI.more.uid === uid && p === UI.more.p) { UI.more = null; UI.msg = ''; return render(); }
+      if (UI.more.uid !== uid) { UI.msg = 'A double’s one more must come from the same mob.'; UI.err = true; return render(); }
+      return doAssign(UI.more.di, uid, UI.more.p, p);
+    }
+    if (UI.sel == null) { UI.msg = 'Pick a die first (tap it, or press 1–9).'; UI.err = true; return render(); }
+    const t = E.targets(G, UI.sel), ok = t.hits.some(h => h.uid === uid && h.p === p);
+    if (!ok) return doAssign(UI.sel, uid, p); // the engine says why not
+    if (G.dice[UI.sel].dbl && E.moreSlots(m, p).length) { UI.more = { di: UI.sel, uid, p }; UI.msg = ''; UI.err = false; return render(); }
+    doAssign(UI.sel, uid, p);
+  }
 
   // ---- Copy result -----------------------------------------------------------------------------------------------
   function resultLine() {
@@ -702,8 +735,8 @@ window.CD_SYMBOLS = symbolsFor;</script>
     const S = UI.setup;
     return `<main class="t-setup">
       <h1>Chapter dice</h1>
-      <p class="lede">Detect the Dwellers with standard d6s instead of d20 sums. Every die reads ${A.icon('D', 15)} 1–2 Detect, ${A.icon('C', 15)} 3–4 Contain, ${A.icon('E', 15)} 5–6 Eradicate. Match a die to a symbol on a mob to take it off. Your doubles take two, or guard. Same cards as the paper prototype.</p>
-      <p class="t-note"><b>Only 2 players is tuned.</b> Solo, 3 and 4 players play the printed rules with untuned numbers (${E.HP} HP for everyone).</p>
+      <p class="lede">Detect the Dwellers with standard d6s instead of d20 sums. Each mob card prints the dice to set under it. Roll, and a die takes out one under a mob showing <b>exactly</b> its number. Your doubles take their match and one more, or guard. Same cards as the paper prototype.</p>
+      <p class="t-note"><b>Tuned for 2 players.</b> Everyone starts at ${E.HP} HP. Crews of 3–4 add each card’s + die once per player past 2; solo plays the 2-player dice.</p>
       <div class="t-field"><p class="t-h">Players</p><div class="t-seg" role="group" aria-label="Players">${[1, 2, 3, 4].map(n => `<button class="t-btn" data-a="count" data-n="${n}" data-k="count${n}" aria-pressed="${S.n === n}">${n}${n === 2 ? ' · tuned' : ''}</button>`).join('')}</div></div>
       <div class="t-field"><p class="t-h">Analysts</p>${S.team.slice(0, S.n).map((id, k) => `<div class="t-seat" role="group" aria-label="Player ${k + 1}"><span class="who">Player ${k + 1}</span>${A.ANALYST_IDS.map(c => `<button class="t-btn sm" data-a="pick" data-seat="${k}" data-id="${c}" data-k="pick${k}${c}" aria-pressed="${id === c}">${nm(c)}</button>`).join('')}</div>`).join('')}</div>
       <div class="t-acts"><button class="t-btn pri" data-a="start" data-k="start">Start the shift</button><button class="t-lnk" data-a="cards" data-k="cards">See all 21 cards</button></div>
@@ -738,22 +771,31 @@ window.CD_SYMBOLS = symbolsFor;</script>
       Rolled <b class="num">${r.pair[0]} + ${r.pair[1]} = ${r.roll}</b>: ${r.back.length ? esc(r.back.join(', ')) + (r.back.length > 1 ? ' come back.' : ' comes back.') : 'nothing comes back.'}
       ${r.strikes.length ? `<span class="hit">${r.strikes.map(s => `${esc(s.name)} hits everyone for ${s.dmg}`).join('; ')}.</span>` : ''}</p></div>`;
   }
+  // The threat dice set under a card: one per slot, taken ones turned aside. Live state only, never on the card.
+  function vThreat(m) {
+    const G = UI.G, t = UI.sel != null && G.phase === 'assign' && !UI.more ? E.targets(G, UI.sel) : null;
+    const mine = t ? t.hits.filter(h => h.uid === m.uid) : [], more = UI.more && UI.more.uid === m.uid ? E.moreSlots(m, UI.more.p) : null;
+    return `<div class="t-threat${m.slots.length > 6 ? ' big' : ''}" role="group" aria-label="Dice under ${esc(m.name)}">${m.slots.map((v, p) => {
+      const off = m.off[p], h = mine.find(x => x.p === p), pend = UI.more && UI.more.uid === m.uid && UI.more.p === p, mo = more && more.includes(p);
+      const c = ['t-td', off ? 'off' : '', h ? (h.near ? 'tgt near' : 'tgt') : '', pend ? 'pend' : '', mo ? 'tgt more' : '', p >= m.printed ? 'xtra' : '', (t || more) && !off && !h && !mo && !pend ? 'dim' : ''].filter(Boolean).join(' ');
+      const label = `${v}${p >= m.printed ? ' (extra die for this crew)' : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
+      return `<button class="${c}" data-a="slot" data-u="${m.uid}" data-p="${p}" data-k="slot${m.uid}-${p}" aria-label="${esc(label)}" ${off ? 'disabled' : ''}>${A.pip(v, 30)}</button>`;
+    }).join('')}</div>`;
+  }
   function vMob(m) {
-    const G = UI.G, t = UI.sel != null && G.phase === 'assign' ? E.targets(G, UI.sel) : null;
-    const mine = t ? t.hits.filter(h => h.uid === m.uid) : [], down = !E.left(m);
+    const G = UI.G, down = !E.left(m);
     const dmg = E.dmgOf(G, m), inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null;
     const isNew = !UI.seenMobs.has(m.uid + ':' + m.back); UI.seenMobs.add(m.uid + ':' + m.back);
     const lines = [];
     if (down) lines.push('<span>Beaten. Leaves at the end of the round.</span>');
     else {
-      lines.push(`<span>${E.left(m)} of ${m.hits} symbols left · hits for <b>${dmg}</b>${dmg !== m.dmg ? ` <span class="hot">(${dmg > m.dmg ? '+' : ''}${dmg - m.dmg})</span>` : ''}</span>`);
+      lines.push(`<span>${E.left(m)} of ${m.hits} dice left · hits for <b>${dmg}</b>${dmg !== m.dmg ? ` <span class="hot">(${dmg > m.dmg ? '+' : ''}${dmg - m.dmg})</span>` : ''}</span>`);
       if (inc) lines.push(inc.to.length ? `<span class="hot">At round end: ${inc.dmg} to ${inc.to.map(k => nm(G.team[k])).join(', ')}</span>` : '<span>At round end: blocked</span>');
     }
-    if (G.n >= 3) lines.push(`<span>${G.n} players: ${m.hits - m.printed} extra symbols (ringed)</span>`);
-    const tg = mine.length ? `<div class="t-tg">${mine.map(h => `<button class="t-btn sm" data-a="hit" data-u="${m.uid}" data-s="${h.sym}" data-k="hit${m.uid}${h.sym}" aria-label="Take ${h.n > 1 ? h.n + ' ' : ''}${E.SYM_NAME[h.sym]} off ${esc(m.name)}">${KICON[h.sym]}${E.SYM_NAME[h.sym]}${h.n > 1 ? ' ×' + h.n : ''}${h.wild ? ' (wild)' : ''}</button>`).join('')}</div>` : '';
-    return `<div class="t-slot${mine.length ? ' tgt' : ''}${down ? ' down' : ''}${isNew ? ' enter' : ''}" data-card="${cardKey(m)}" data-uid="${m.uid}">${cardFor(m)}
+    if (G.n >= 3) lines.push(`<span>${G.n} players: + die set ${G.n - 2}× (marked +)</span>`);
+    return `<div class="t-slot${down ? ' down' : ''}${isNew ? ' enter' : ''}" data-card="${cardKey(m)}" data-uid="${m.uid}">${cardFor(m)}
       ${m.back ? '<span class="t-stamp">Came back</span>' : ''}${down ? '<span class="t-stamp beat">Beaten</span>' : ''}
-      <div class="t-under">${lines.join('')}${tg}</div></div>`;
+      ${vThreat(m)}<div class="t-under">${lines.join('')}</div></div>`;
   }
   function vTable() {
     const G = UI.G;
@@ -784,9 +826,8 @@ window.CD_SYMBOLS = symbolsFor;</script>
     const G = UI.G, owner = d.src === 'agent' ? 'Agent' : d.src === 'crew' ? 'Crew' : G.team[d.k] + (d.src === 'burn' ? '+' : '');
     const usedTo = d.used === 'guard' ? 'Guard' : d.used ? (G.play.find(m => m.uid === d.used.uid) || { name: '?' }).name : '';
     const label = `${E.faceText(d)}, ${E.dieOwner(G, d)}${d.used ? ', used: ' + usedTo : ''}${d.turned ? ', turned by Enrichment' : ''}`;
-    const big = d.face[1] === 2, sym = A.icon(d.face[0], 15);
-    return `<button class="t-die${d.src === 'agent' || d.src === 'crew' ? ' agent' : ''}${UI.sel === d.i ? ' sel' : ''}${d.used ? ' used' : ''}${UI.fresh ? ' rolled' : ''}" data-a="die" data-i="${d.i}" data-k="die${d.i}" aria-pressed="${UI.sel === d.i}" aria-label="Die ${d.i + 1}: ${esc(label)}" title="${esc(label)}" style="animation-delay:${d.i * 40}ms">
-      <span class="f">${A.pip(d.n, 26)}<span class="s">${sym}${big ? sym : ''}</span></span><span class="o">${owner}</span>${d.used === 'guard' ? '<span class="badge g">Guard</span>' : d.used ? '<span class="badge g">✓</span>' : d.turned ? '<span class="badge w">EN</span>' : ''}</button>`;
+    return `<button class="t-die${d.src === 'agent' || d.src === 'crew' ? ' agent' : ''}${d.dbl ? ' dbl' : ''}${UI.sel === d.i ? ' sel' : ''}${d.used ? ' used' : ''}${UI.fresh ? ' rolled' : ''}" data-a="die" data-i="${d.i}" data-k="die${d.i}" aria-pressed="${UI.sel === d.i}" aria-label="Die ${d.i + 1}: ${esc(label)}" title="${esc(label)}" style="animation-delay:${d.i * 40}ms">
+      <span class="f">${A.pip(d.n, 36)}</span><span class="o">${owner}${d.dbl ? ' · <b>double</b>' : ''}</span>${d.used === 'guard' ? '<span class="badge g">Guard</span>' : d.used ? '<span class="badge g">✓</span>' : d.turned ? '<span class="badge w">EN</span>' : ''}</button>`;
   }
   function vDock() {
     const G = UI.G; let hint = '', ctl = '';
@@ -799,14 +840,16 @@ window.CD_SYMBOLS = symbolsFor;</script>
       if (G.round >= 1 && !G.row.length) hint = '<b>New round.</b> The row is empty, so just roll the dice.';
       ctl = `<div class="t-acts"><span class="t-inc">${incText()}</span><span class="sp"></span><button class="t-btn pri" data-a="roll" data-k="roll">${G.round >= 1 && G.row.length ? 'Roll the row, then the dice' : 'Roll the dice'} <span class="num">(R)</span></button></div>`;
     } else if (G.phase === 'assign') {
-      const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null;
-      if (!d) hint = G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a glowing symbol on a mob (or Guard, with a double). Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.';
+      const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null, mo = UI.more && G.play.find(m => m.uid === UI.more.uid);
+      if (mo) hint = `<b>Double ${d.n} takes the ${mo.slots[UI.more.p]} under ${esc(mo.name)}.</b> Tap any one more die under it, or keep just the one.`;
+      else if (!d) hint = G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under a mob. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.';
       else if (d.used) hint = `That die is used. <b>Undo</b> to take it back.`;
-      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? 'Tap a glowing symbol on a mob, or a target button.' : 'Nothing it can hit.'}${G.wildAll ? ' Every die is wild this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
+      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? 'A double: tap a matching die under a mob to take it and one more, <b>or Guard</b>.' : 'Tap a glowing die under a mob that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') : 'Nothing it can hit.'}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
       ctl = `<div class="t-dice" role="group" aria-label="Dice">${G.dice.map(dieHtml).join('')}</div>
-        <div class="t-acts">${sel && t.guard ? `<button class="t-btn" data-a="guard" data-k="guard">Guard <span class="num">(G)</span></button>` : ''}
-        ${sel && t.enrich ? `<span class="t-inc">Enrichment: turn to</span>${['D', 'C', 'E'].filter(s => s !== d.face[0]).map(s => `<button class="t-btn sm" data-a="turn" data-s="${s}" data-k="turn${s}" aria-label="Turn this die to ${E.SYM_NAME[s]}">${KICON[s]}${E.SYM_NAME[s]}</button>`).join('')}` : ''}
+        <div class="t-acts">${mo ? `<button class="t-btn pri" data-a="one" data-k="one">Just that one <span class="num">(J)</span></button><button class="t-btn" data-a="back" data-k="back">Back <span class="num">(Esc)</span></button>` : ''}
+        ${!mo && sel && t.guard ? `<button class="t-btn" data-a="guard" data-k="guard">Guard <span class="num">(G)</span></button>` : ''}
+        ${!mo && sel && t.enrich ? `<span class="t-inc">Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="t-btn sm" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
         <span class="t-inc">${incText()}</span><span class="sp"></span>
         <button class="t-btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <span class="num">(U)</span></button>
         <button class="t-btn pri" data-a="end" data-k="end">End round <span class="num">(E)</span></button></div>`;
@@ -846,49 +889,16 @@ window.CD_SYMBOLS = symbolsFor;</script>
     </div></div>`;
   }
 
-  // ---- Live state over the cards: coins, rings, targets. Only classes on the card's own symbols change. ----------
-  function decorate() {
-    const G = UI.G; if (!G) return;
-    const t = UI.sel != null && G.phase === 'assign' ? E.targets(G, UI.sel) : null;
-    app.querySelectorAll('.t-slot[data-uid]').forEach(slot => {
-      const m = G.play.find(x => x.uid === slot.dataset.uid); if (!m) return;
-      const legal = t ? new Set(t.hits.filter(h => h.uid === m.uid).map(h => h.sym)) : null;
-      for (let p = 0; p < m.hits; p++) {
-        const el = svgAt(slot, m, p); if (!el) continue;
-        if (m.off[p]) el.classList.add('x-off');
-        else { if (p >= m.printed) el.classList.add('x-live'); if (legal) el.classList.add(legal.has(m.row[p]) ? 'x-tgt' : 'x-dim'); }
-      }
-    });
-  }
-  // Symbol p of a mob's row on its card: the printed row first, then the "3/4 players add" icons for this crew size.
-  const addOffset = m => UI.G.n === 4 ? (m.boss ? D.bossAdd[3] - D.bossAdd[2] : D.mobAdd[3]) : 0;
-  function svgAt(slot, m, p) {
-    if (p < m.printed) return slot.querySelectorAll('.card .syms svg')[p];
-    return slot.querySelectorAll('.card .add svg')[addOffset(m) + p - m.printed];
-  }
-  function posOf(slot, m, svg) {
-    const base = [...slot.querySelectorAll('.card .syms svg')].indexOf(svg); if (base >= 0) return base;
-    const j = [...slot.querySelectorAll('.card .add svg')].indexOf(svg); if (j < 0) return -1;
-    const p = m.printed + j - addOffset(m); return p >= m.printed && p < m.hits ? p : -1;
-  }
-
   // ---- Render and events ------------------------------------------------------------------------------------------
   function render() {
     const k = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
     app.innerHTML = UI.G ? vTop() + vCrew() + `<div class="t-main">${vTable()}${vSide()}</div>` + vDock() + vLog() + vGallery() + vEnd() : vSetup() + vGallery();
-    decorate();
     if (k) focusKey(k);
   }
   function focusKey(k) { const el = app.querySelector(`[data-k="${k}"]`); if (el && !el.disabled) el.focus({ preventScroll: true }); }
 
   app.addEventListener('click', e => {
     const G = UI.G;
-    const svg = e.target.closest && e.target.closest('.t-slot[data-uid] .card svg');
-    if (svg && G && G.phase === 'assign' && UI.sel != null) {
-      const slot = svg.closest('.t-slot'), m = G.play.find(x => x.uid === slot.dataset.uid), p = posOf(slot, m, svg);
-      if (p >= 0 && !m.off[p]) return doAssign(m.uid, m.row[p]);
-      if (p >= 0) { UI.msg = 'That symbol is already off.'; UI.err = true; return render(); }
-    }
     const b = e.target.closest && e.target.closest('[data-a]'); if (!b || b.disabled) return;
     const a = b.dataset.a;
     if (a === 'count') { UI.setup.n = +b.dataset.n; return render(); }
@@ -901,13 +911,15 @@ window.CD_SYMBOLS = symbolsFor;</script>
     if (!G) return;
     if (a === 'point') return act(() => E.setPoint(G, +b.dataset.n));
     if (a === 'flip') { act(() => E.flip(G)); return focusKey('roll'); }
-    if (a === 'roll') { act(() => E.roll(G)); UI.fresh = true; UI.sel = null; nextDie(); render(); return focusKey('die' + (UI.sel || 0)); }
-    if (a === 'die') { const i = +b.dataset.i; UI.sel = UI.sel === i ? null : i; UI.msg = ''; return render(); }
-    if (a === 'hit') return doAssign(b.dataset.u, b.dataset.s);
+    if (a === 'roll') { act(() => E.roll(G)); UI.fresh = true; UI.sel = null; UI.more = null; nextDie(); render(); return focusKey('die' + (UI.sel || 0)); }
+    if (a === 'die') { const i = +b.dataset.i; UI.more = null; UI.sel = UI.sel === i ? null : i; UI.msg = ''; return render(); }
+    if (a === 'slot') return tapSlot(b.dataset.u, +b.dataset.p);
+    if (a === 'one') return UI.more && doAssign(UI.more.di, UI.more.uid, UI.more.p);
+    if (a === 'back') { UI.more = null; return render(); }
     if (a === 'guard') return doGuard();
-    if (a === 'turn') { const i = UI.sel; return act(() => E.enrichTurn(G, i, b.dataset.s)); }
-    if (a === 'undo') { act(() => E.unassign(G)); const last = G.dice.filter(d => !d.used).map(d => d.i); if (UI.sel == null || (G.dice[UI.sel] && G.dice[UI.sel].used)) UI.sel = last.length ? last[last.length - 1] : null; return render(); }
-    if (a === 'end') { UI.sel = null; act(() => E.endRound(G)); return focusKey(G.phase === 'roll' ? 'roll' : 'flip'); }
+    if (a === 'turn') { const i = UI.sel; return act(() => E.enrichTurn(G, i, +b.dataset.n)); }
+    if (a === 'undo') { UI.more = null; act(() => E.unassign(G)); const last = G.dice.filter(d => !d.used).map(d => d.i); if (UI.sel == null || (G.dice[UI.sel] && G.dice[UI.sel].used)) UI.sel = last.length ? last[last.length - 1] : null; return render(); }
+    if (a === 'end') { UI.sel = null; UI.more = null; act(() => E.endRound(G)); return focusKey(G.phase === 'roll' ? 'roll' : 'flip'); }
     if (a === 'burn') { act(() => E.burn(G, b.dataset.u)); if (G.phase === 'assign' && UI.sel == null) { nextDie(); render(); } return; }
     if (a === 'discard') { act(() => E.discardKit(G, b.dataset.u)); return; }
   });
@@ -915,13 +927,14 @@ window.CD_SYMBOLS = symbolsFor;</script>
   document.addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target || {}).tagName || '')) return;
     const G = UI.G, key = e.key.toLowerCase(), click = k => { const el = app.querySelector(`[data-a="${k}"]`); if (el && !el.disabled) { el.click(); e.preventDefault(); } };
-    if (key === 'escape') { if (UI.cards) UI.cards = false; else if (UI.drawer) UI.drawer = null; else UI.sel = null; return render(); }
+    if (key === 'escape') { if (UI.cards) UI.cards = false; else if (UI.drawer) UI.drawer = null; else if (UI.more) UI.more = null; else UI.sel = null; return render(); }
     if (!G) return;
     if (key === 'l') return click('log');
     if (G.phase === 'flip' && key === 'f') return click('flip');
     if (G.phase === 'roll' && key === 'r') return click('roll');
     if (G.phase === 'assign') {
-      if (/^[1-9]$/.test(key) && G.dice[+key - 1]) { UI.sel = +key - 1; UI.msg = ''; render(); return focusKey('die' + UI.sel); }
+      if (key === 'j') return click('one');
+      if (/^[1-9]$/.test(key) && G.dice[+key - 1]) { UI.more = null; UI.sel = +key - 1; UI.msg = ''; render(); return focusKey('die' + UI.sel); }
       if (key === 'g') return click('guard');
       if (key === 'u' || key === 'backspace') return click('undo');
       if (key === 'e') return click('end');

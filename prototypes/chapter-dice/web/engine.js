@@ -1,16 +1,15 @@
 // Chapter dice web prototype: the rules engine. DOM-free and deterministic given a seeded rng (opt.rnd or opt.seed).
 // Plays exactly the paper rules sheet (../paper/build.js): the human assigns dice, the engine checks and resolves.
-// Numbers come from data/cards.json and ../cards.js (the d6 key, each analyst's doubles, the 2d6 row). Every die is a
-// standard pip d6: a die is { n: 1–6, face: [symbol, 1 or 2] }. Throwaway prototype code.
+// Exact numbers (2026-10-30): every die is a standard pip d6, { n: 1–6, dbl }. A mob's hits are the threat dice set
+// under its card (../cards.js slotsFor); a rolled die takes out one showing exactly its number. Throwaway prototype code.
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../../data/cards.json'), require('../sim').symbolsFor, require('../cards'));
-  else root.CDEngine = factory(root.CD_DATA, root.CD_SYMBOLS, root.CDCards);
-})(typeof self !== 'undefined' ? self : this, function (D, symbolsFor, CARDS) {
-  const HP = 23; // the sim's tuned starting HP for two players (standard d6, 2026-10-30)
-  // A rolled pip die. own: the analyst's id (their doubles); otherwise 'CREW' or 'AGENT' (only a 6 is a double).
-  const pipDie = (n, who) => ({ n, face: [CARDS.symOf(n), CARDS.isDouble(who, n) ? 2 : 1] });
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../../data/cards.json'), require('../cards'));
+  else root.CDEngine = factory(root.CD_DATA, root.CDCards);
+})(typeof self !== 'undefined' ? self : this, function (D, CARDS) {
+  const HP = 30; // starting HP for exact numbers (2026-10-30): about 55% at two players in the sim
+  // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
+  const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   const KIT_NAME = { triage: 'Triage Agent', enrich: 'Enrichment Agent', contain: 'Containment Agent', recover: 'Recovery Agent' };
-  const SYM_NAME = { D: 'Detect', C: 'Contain', E: 'Eradicate' };
 
   function rng(seed) { let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   const shuffle = (a, r) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -23,15 +22,14 @@
     if (n < 1 || n > 4) throw new Error('1–4 players');
     const r = opt.rnd || rng(opt.seed == null ? 1 : opt.seed);
     let uid = 0;
-    const mkMob = m => { const hits = Math.max(1, m.hits + (D.mobAdd[n] || 0));
-      return { uid: 'm' + (++uid), id: m.id, name: m.name, boss: false, dmg: m.dmg, kw: m.ability, persist: m.persist.slice(), domain: m.domain,
-        top: CARDS.rowTop(m.persist[1]), printed: m.hits, hits, row: symbolsFor(m.domain, hits), off: Array(hits).fill(false), offStack: [], back: 0, up: 0 }; };
-    const b = CARDS.boss(), bh = b.hitsBase + D.bossAdd[n];
-    const boss = { uid: 'boss', id: b.id, name: b.name, boss: true, dmg: b.dmg, kw: 'wyrm', persist: null, domain: 'Identity',
-      printed: b.hitsBase + D.bossAdd[2], hits: bh, row: symbolsFor('Identity', bh), off: Array(bh).fill(false), offStack: [], back: 0, up: 0 };
+    // slots: the threat dice under the card for this crew (base dice, then the + die once per player past two).
+    const mk = (m, boss) => { const d = CARDS.diceFor(m, boss), slots = CARDS.slotsFor(m, boss, n);
+      return { uid: boss ? 'boss' : 'm' + (++uid), id: m.id, name: m.name, boss, dmg: m.dmg, kw: boss ? 'wyrm' : m.ability, persist: boss ? null : m.persist.slice(),
+        domain: boss ? null : m.domain, top: boss ? null : CARDS.rowTop(m.persist[1]), printed: d.base.length, extra: d.extra, hits: slots.length, slots,
+        off: Array(slots.length).fill(false), offStack: [], back: 0, up: 0 }; };
     const hp = opt.hp || HP;
     const G = { n, team: team.slice(), hp: team.map(() => hp), max: hp, r,
-      feed: shuffle(CARDS.mobs().map(mkMob), r), boss, bossOut: false, row: [], play: [], gone: [],
+      feed: shuffle(CARDS.mobs().map(m => mk(m, false)), r), boss: mk(CARDS.boss(), true), bossOut: false, row: [], play: [], gone: [],
       kit: shuffle(CARDS.AGENT_IDS.flatMap(t => [t, t]).map((t, i) => ({ uid: 'k' + (i + 1), t })), r), discard: [], tray: [],
       cap: D.sharedKit + (team.includes('SOA') ? D.perks.SOA.slot : 0),
       point: 0, phase: 'flip', fight: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
@@ -45,12 +43,12 @@
 
   // ---- Helpers ----------------------------------------------------------------------------------------------
   const left = m => m.off.filter(x => !x).length;
-  const remaining = m => m.row.filter((s, i) => !m.off[i]);
+  const remaining = m => m.slots.filter((s, i) => !m.off[i]);
   const running = (G, t) => G.tray.filter(c => c.t === t).length;
   const on = (G, id) => G.team.includes(id);
-  // Damage right now: Lockjaw +2 until it has lost two symbols; Escalating +1 per round it stayed up.
+  // Damage right now: Lockjaw +2 until it has lost two dice; Escalating +1 per round it stayed up.
   const dmgOf = (G, m) => m.boss ? m.dmg + (left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0);
-  // The highest-Damage mob(s), judged on the Damage at the start of the round so a wild can't flicker mid-assignment.
+  // The highest-Damage mob(s), judged on the Damage at the start of the round so a match can't flicker mid-assignment.
   const isTop = (G, m) => { const d = x => G.roundDmg[x.uid] != null ? G.roundDmg[x.uid] : dmgOf(G, x); const up = G.play.filter(x => left(x) || x === m); return up.length && d(m) >= Math.max(...up.map(d)); };
   const d6 = G => Math.floor(G.r() * 6);
   const findMob = (G, uid) => G.play.find(m => m.uid === uid);
@@ -77,8 +75,8 @@
   }
 
   // ---- The persistence row ------------------------------------------------------------------------------------
-  // Roll the 2 amber dice: every row mob whose number is at least the sum comes back with all its symbols. With strike, the two highest-Damage
-  // comebacks hit everyone on arrival. Returns the comebacks (not yet in play: enter() puts them there).
+  // Roll the 2 amber dice: every row mob whose number is at least the sum comes back with all its dice. With strike,
+  // the two highest-Damage comebacks hit everyone on arrival. Returns the comebacks (enter() puts them in play).
   function rollRow(G, strike, why) {
     if (!G.row.length) return [];
     const pair = [1 + d6(G), 1 + d6(G)], roll = pair[0] + pair[1], back = G.row.filter(m => roll <= m.top);
@@ -135,73 +133,75 @@
     say(G, `Round ${G.round}: rolled ${dice.map(faceText).join(', ')}.`, 'roll');
     return G;
   }
-  const faceText = d => `${d.n != null ? d.n + ' ' : ''}${d.face[1] === 2 ? 'double ' : ''}${SYM_NAME[d.face[0]]}${d.turned ? ' (turned)' : ''}${d.crew ? '' : ' (agent)'}`;
+  const faceText = d => `${d.n}${d.dbl ? ' (double)' : ''}${d.turned ? ' (turned)' : ''}${d.crew ? '' : ' (agent)'}`;
 
-  // What one die can do to one mob: { syms: symbols you may pick, max: how many it removes, wild } or null.
+  // Does this die's Hunter/Responder perk let it match one higher or one lower on this mob?
+  const nearOK = (G, d, m) => { const id = d.crew ? G.team[d.k] : null; return (id === 'HUN' && m.back > 0) || (id === 'RES' && isTop(G, m)); };
+  // What one die can do to one mob: { slots: indices it may take first, near: the ±1 ones, wild, dbl } or null.
   function canHit(G, d, m) {
     if (!d || !m || d.used || !left(m)) return null;
     if (!d.crew && m.boss) return null;                           // agent dice can't hit the boss
-    const [s, c] = d.face, id = d.crew ? G.team[d.k] : null;
-    if (m.kw === 'hardened' && c < 2) return null;                // Evasive: only a double hits it
-    const wild = G.wildAll || (id === 'HUN' && m.back > 0) || (id === 'RES' && s === 'C' && isTop(G, m));
-    const rem = remaining(m), syms = wild ? [...new Set(rem)] : rem.includes(s) ? [s] : [];
-    if (!syms.length) return null;
-    return { syms, wild, max: Math.min(c, wild ? rem.length : rem.filter(x => x === s).length) };
+    if (m.kw === 'hardened' && !d.dbl) return null;               // Evasive: only a double hits it
+    const free = m.slots.map((v, i) => i).filter(i => !m.off[i]);
+    if (G.wildAll) return { slots: free, near: [], wild: true, dbl: d.dbl };
+    const exact = free.filter(i => m.slots[i] === d.n), near = nearOK(G, d, m) ? free.filter(i => Math.abs(m.slots[i] - d.n) === 1) : [];
+    if (!exact.length && !near.length) return null;
+    return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
-  const canGuard = (G, d) => !!d && d.crew && !d.used && d.face[1] === 2 && !G.blocks[d.k];
-  // Every legal use of a die, for the UI's target buttons and for tests.
+  const canGuard = (G, d) => !!d && d.crew && !d.used && d.dbl && !G.blocks[d.k];
+  // Every legal use of a die, for the UI's slot highlights and for tests.
   function targets(G, di) {
     const d = G.dice[di]; if (!d || G.phase !== 'assign') return { hits: [], guard: false, enrich: false };
-    const hits = []; for (const m of G.play) { const o = canHit(G, d, m); if (o) o.syms.forEach(s => hits.push({ uid: m.uid, sym: s, n: o.max, wild: o.wild })); }
+    const hits = []; for (const m of G.play) { const o = canHit(G, d, m); if (o) o.slots.forEach(p => hits.push({ uid: m.uid, p, n: m.slots[p], near: o.near.includes(p), wild: o.wild, dbl: o.dbl })); }
     return { hits, guard: canGuard(G, d), enrich: G.enrichLeft > 0 && d.crew && !d.used && !d.turned };
   }
+  // After a double takes slot p on a mob: the slots it may take as its "one more" (any die still under that mob).
+  const moreSlots = (m, p) => m.slots.map((v, i) => i).filter(i => i !== p && !m.off[i]);
   const snap = G => ({ dice: clone(G.dice), blocks: G.blocks.slice(), enrichLeft: G.enrichLeft, mobs: G.play.map(m => ({ uid: m.uid, off: m.off.slice(), offStack: m.offStack.slice() })) });
-  function removeSym(m, s) { const i = m.row.findIndex((x, j) => !m.off[j] && x === s); if (i < 0) return false; m.off[i] = true; m.offStack.push(i); return true; }
+  const take = (m, p) => { m.off[p] = true; m.offStack.push(p); };
 
-  // A face removes one matching symbol; a double removes two of that symbol from the same mob.
-  function assign(G, di, uid, sym) {
+  // A die takes slot p (a die showing its number, or ±1 with a perk, or anything when wild). A double may also take
+  // slot q: any one more die from the same mob. Omit p to take the first legal slot.
+  function assign(G, di, uid, p, q) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di], m = findMob(G, uid); if (!d) fail('No such die.'); if (!m) fail('That mob isn’t in the fight.');
     if (d.used) fail('That die is already used. Undo it first.');
     const o = canHit(G, d, m); if (!o) fail(cantWhy(G, d, m));
-    sym = sym || (o.syms.includes(d.face[0]) ? d.face[0] : o.syms[0]);
-    if (!o.syms.includes(sym)) fail(`That die can’t take a ${SYM_NAME[sym]} off ${m.name}.`);
+    if (p == null) p = o.slots[0];
+    if (!o.slots.includes(p)) fail(m.off[p] ? 'That die is already taken.' : `A ${d.n} can’t take the ${m.slots[p]} under ${m.name}.`);
+    if (q != null) { if (!d.dbl) fail('Only a double takes one more.'); if (!moreSlots(m, p).includes(q)) fail('Pick another die still under the same mob.'); }
     G.undo.push(snap(G));
-    const took = [];
-    for (let j = 0; j < o.max; j++) {
-      const rem = remaining(m), pick = j === 0 ? sym : rem.includes(sym) ? sym : o.wild ? (rem.includes(d.face[0]) ? d.face[0] : rem[0]) : null;
-      if (!pick || !removeSym(m, pick)) break; took.push(pick);
-    }
-    d.used = { uid, syms: took };
-    say(G, `${dieOwner(G, d)}’s ${faceText(d)} takes ${took.map(s => SYM_NAME[s]).join(' + ')} off ${m.name}${left(m) ? '' : ': beaten'}.`, 'hit');
+    take(m, p); const took = [m.slots[p]]; if (q != null) { take(m, q); took.push(m.slots[q]); }
+    d.used = { uid, slots: q != null ? [p, q] : [p] };
+    say(G, `${dieOwner(G, d)}’s ${faceText(d)} takes ${took.length > 1 ? `the ${took[0]} and the ${took[1]}` : `the ${took[0]}`} under ${m.name}${left(m) ? '' : ': beaten'}.`, 'hit');
     return G;
   }
   function cantWhy(G, d, m) {
     if (!left(m)) return `${m.name} is already beaten.`;
     if (!d.crew && m.boss) return 'Agent dice can’t hit the boss.';
-    if (m.kw === 'hardened' && d.face[1] < 2) return `${m.name} is Evasive: only a double hits it.`;
-    return `No ${SYM_NAME[d.face[0]]} left on ${m.name} for that die.`;
+    if (m.kw === 'hardened' && !d.dbl) return `${m.name} is Evasive: only a double hits it.`;
+    return `No ${d.n} left under ${m.name} for that die.`;
   }
   const dieOwner = (G, d) => d.crew ? nameOf(G.team[d.k]) + (d.src === 'crew' ? ' (crew die)' : '') : 'Triage Agent';
   function guard(G, di) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di]; if (!d) fail('No such die.');
     if (!d.crew) fail('Agent dice can’t guard.'); if (d.used) fail('That die is already used.');
-    if (d.face[1] !== 2) fail('Only a double can guard.'); if (G.blocks[d.k]) fail(`${nameOf(G.team[d.k])} is already blocking.`);
+    if (!d.dbl) fail('Only a double can guard.'); if (G.blocks[d.k]) fail(`${nameOf(G.team[d.k])} is already blocking.`);
     G.undo.push(snap(G)); d.used = 'guard'; G.blocks[d.k] = true;
     say(G, `${nameOf(G.team[d.k])} guards with a ${faceText(d)}: blocking this round.`, 'guard');
     return G;
   }
-  // Running Enrichment Agent: once a round (per running card), turn one crew die to any symbol. A double stays a
-  // double (the sim's rule); the die keeps its number for the record.
-  function enrichTurn(G, di, sym) {
+  // Running Enrichment Agent: once a round (per running card), turn one crew die to any number. The die keeps what it
+  // was: a double stays a double, a single stays single (the sim's rule, and it stops "always turn to 6").
+  function enrichTurn(G, di, n) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di]; if (!d) fail('No such die.');
     if (G.enrichLeft < 1) fail('No Enrichment Agent turn left this round.');
     if (!d.crew) fail('Enrichment turns a crew die, not an agent die.'); if (d.used) fail('Undo that die first.'); if (d.turned) fail('That die is already turned.');
-    if (!SYM_NAME[sym]) fail('Pick Detect, Contain or Eradicate.');
-    G.undo.push(snap(G)); d.from = d.face.slice(); d.face = [sym, d.face[1]]; d.turned = true; G.enrichLeft--;
-    say(G, `Enrichment Agent turns ${dieOwner(G, d)}’s die to ${faceText(d)}.`, 'kit');
+    if (!(n >= 1 && n <= 6) || n !== Math.floor(n)) fail('Pick a number from 1 to 6.');
+    G.undo.push(snap(G)); d.from = d.n; d.n = n; d.turned = true; G.enrichLeft--;
+    say(G, `Enrichment Agent turns ${dieOwner(G, d)}’s die from ${d.from} to ${faceText(d)}.`, 'kit');
     return G;
   }
   function unassign(G) {
@@ -244,7 +244,8 @@
     if (G.over) return G;
     for (const m of G.play) {
       m.up++;
-      if (m.kw === 'regen' && m.offStack.length) { m.off[m.offStack.pop()] = false; say(G, `${m.name} regenerates a symbol.`, 'mob'); }
+      // Regen: put back the die it lost most recently.
+      if (m.kw === 'regen' && m.offStack.length) { const p = m.offStack.pop(); m.off[p] = false; say(G, `${m.name} regenerates: its ${m.slots[p]} goes back under the card.`, 'mob'); }
       if (m.kw === 'ramp') say(G, `${m.name} escalates: Damage ${dmgOf(G, m)} now.`, 'mob');
     }
     if (G.play.length) { G.phase = 'roll'; return G; }
@@ -274,7 +275,15 @@
     G.tray.filter(c => !uids.includes(c.uid)).forEach(c => discardKit(G, c.uid));
     return G;
   }
-  const takeLoot = keepKit;
+
+  // Containment burn: which die comes off a mob. A repeated number first (it leaves the most different numbers to
+  // match), else the highest. Returns a slot index, or -1.
+  function containPick(m) {
+    const free = m.slots.map((v, i) => i).filter(i => !m.off[i]); if (!free.length) return -1;
+    const seen = {}; free.forEach(i => { seen[m.slots[i]] = (seen[m.slots[i]] || 0) + 1; });
+    const dup = free.filter(i => seen[m.slots[i]] > 1);
+    return (dup.length ? dup : free).reduce((a, b) => m.slots[b] >= m.slots[a] ? b : a);
+  }
 
   // ---- Burns ------------------------------------------------------------------------------------------------------
   const BURN_PHASES = { triage: ['assign'], enrich: ['assign'], contain: ['roll', 'assign'], recover: ['flip', 'roll', 'assign'] };
@@ -291,16 +300,16 @@
       for (let i = 0; i < 3; i++) G.dice.push({ i: G.dice.length, k: G.point, crew: true, src: 'burn', ...pipDie(1 + d6(G), id), used: null, turned: false });
       say(G, `${nameOf(id)} rolls 3 more: ${G.dice.slice(-3).map(faceText).join(', ')}.`, 'roll');
     }
-    if (c.t === 'enrich') { G.wildAll = true; say(G, 'Every die is wild this round.', 'kit'); }
+    if (c.t === 'enrich') { G.wildAll = true; say(G, 'Every die matches anything this round.', 'kit'); }
     if (c.t === 'contain') {
-      for (const m of G.play) { if (!left(m) || (m.boss && left(m) <= 1)) continue; const i = m.off.lastIndexOf(false); m.off[i] = true; m.offStack.push(i); }
-      say(G, 'One symbol off every mob.', 'kit');
+      for (const m of G.play) { if (!left(m) || (m.boss && left(m) <= 1)) continue; take(m, containPick(m)); }
+      say(G, 'One die off every mob.', 'kit');
       if (G.phase === 'roll' && G.play.every(m => !left(m))) endRound(G);
     }
     if (c.t === 'recover') spread(G, D.recoverBurn, 'Recovery burn');
     return G;
   }
 
-  return { HP, KIT_NAME, SYM_NAME, pipDie, rng, shuffle, newGame, setPoint, flip, roll, assign, guard, enrichTurn, unassign, endRound, burn, canBurn,
-    discardKit, keepKit, takeLoot, targets, canHit, canGuard, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
+  return { HP, KIT_NAME, pipDie, rng, shuffle, newGame, setPoint, flip, roll, assign, guard, enrichTurn, unassign, endRound, burn, canBurn,
+    discardKit, keepKit, targets, canHit, canGuard, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

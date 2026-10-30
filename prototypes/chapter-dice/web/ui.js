@@ -1,12 +1,13 @@
 // Chapter dice web prototype: the page script. Renders the engine state (CDEngine) with the shared paper card
-// markup (CDCards) and adds live state around the cards: coins over removed symbols, stamps, target rings.
+// markup (CDCards) and adds live state around the cards: the threat dice set under each card (taken ones turned
+// aside), slot highlights for the selected die, and stamps. Nothing is drawn on a card face.
 // Throwaway prototype code, inlined into web/index.html by web/build.js.
 (function () {
   const E = window.CDEngine, A = window.CDCards, D = window.CD_DATA;
   const app = document.getElementById('app');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const qs = new URLSearchParams(location.search || '');
-  const UI = { G: null, sel: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, seenRow: 0, seenMobs: new Set(),
+  const UI = { G: null, sel: null, more: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, seenRow: 0, seenMobs: new Set(),
     setup: { n: 2, team: ['HUN', 'RES', 'ENG', 'SOA'] }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
   const nm = id => A.cls(id).name;
   const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -14,7 +15,6 @@
   const dataMob = id => D.mobs.find(m => m.id === id);
   const cardFor = m => m.boss ? A.bossCard(A.boss()) : A.mobCard(dataMob(m.id));
   const cardKey = m => m.boss ? 'boss' : 'mob:' + m.id;
-  const KICON = { D: A.icon('D', 16), C: A.icon('C', 16), E: A.icon('E', 16) };
 
   // ---- Actions ------------------------------------------------------------------------------------------------
   function act(fn, okMsg) {
@@ -26,7 +26,7 @@
   }
   function startGame() {
     const team = UI.setup.team.slice(0, UI.setup.n);
-    UI.G = E.newGame({ team, seed: UI.seed }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.msg = ''; UI.copied = null; UI.seenRow = 0; UI.seenMobs = new Set();
+    UI.G = E.newGame({ team, seed: UI.seed }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.msg = ''; UI.copied = null; UI.seenRow = 0; UI.seenMobs = new Set();
     render(); focusKey('flip');
   }
   // After a die is used, select the next unused die that can still do something.
@@ -36,8 +36,23 @@
     const after = G.dice.filter(d => d.i > (UI.sel == null ? -1 : UI.sel)).find(ok) || G.dice.find(ok);
     UI.sel = after ? after.i : null;
   }
-  function doAssign(uid, sym) { const i = UI.sel; act(() => E.assign(UI.G, i, uid, sym)); if (!UI.err) { nextDie(); render(); } }
-  function doGuard() { const i = UI.sel; act(() => E.guard(UI.G, i)); if (!UI.err) { nextDie(); render(); } }
+  function doAssign(di, uid, p, q) { UI.more = null; act(() => E.assign(UI.G, di, uid, p, q)); if (!UI.err) { nextDie(); render(); } }
+  function doGuard() { UI.more = null; const i = UI.sel; act(() => E.guard(UI.G, i)); if (!UI.err) { nextDie(); render(); } }
+  // Tap a threat die under a card. With a double waiting for its "one more", this is that pick. Otherwise a double's
+  // first match waits for the second pick (or "Just that one"); any other die takes the slot straight away.
+  function tapSlot(uid, p) {
+    const G = UI.G, m = G.play.find(x => x.uid === uid); if (!m || G.phase !== 'assign') return;
+    if (UI.more) {
+      if (UI.more.uid === uid && p === UI.more.p) { UI.more = null; UI.msg = ''; return render(); }
+      if (UI.more.uid !== uid) { UI.msg = 'A double’s one more must come from the same mob.'; UI.err = true; return render(); }
+      return doAssign(UI.more.di, uid, UI.more.p, p);
+    }
+    if (UI.sel == null) { UI.msg = 'Pick a die first (tap it, or press 1–9).'; UI.err = true; return render(); }
+    const t = E.targets(G, UI.sel), ok = t.hits.some(h => h.uid === uid && h.p === p);
+    if (!ok) return doAssign(UI.sel, uid, p); // the engine says why not
+    if (G.dice[UI.sel].dbl && E.moreSlots(m, p).length) { UI.more = { di: UI.sel, uid, p }; UI.msg = ''; UI.err = false; return render(); }
+    doAssign(UI.sel, uid, p);
+  }
 
   // ---- Copy result -----------------------------------------------------------------------------------------------
   function resultLine() {
@@ -58,8 +73,8 @@
     const S = UI.setup;
     return `<main class="t-setup">
       <h1>Chapter dice</h1>
-      <p class="lede">Detect the Dwellers with standard d6s instead of d20 sums. Every die reads ${A.icon('D', 15)} 1–2 Detect, ${A.icon('C', 15)} 3–4 Contain, ${A.icon('E', 15)} 5–6 Eradicate. Match a die to a symbol on a mob to take it off. Your doubles take two, or guard. Same cards as the paper prototype.</p>
-      <p class="t-note"><b>Only 2 players is tuned.</b> Solo, 3 and 4 players play the printed rules with untuned numbers (${E.HP} HP for everyone).</p>
+      <p class="lede">Detect the Dwellers with standard d6s instead of d20 sums. Each mob card prints the dice to set under it. Roll, and a die takes out one under a mob showing <b>exactly</b> its number. Your doubles take their match and one more, or guard. Same cards as the paper prototype.</p>
+      <p class="t-note"><b>Tuned for 2 players.</b> Everyone starts at ${E.HP} HP. Crews of 3–4 add each card’s + die once per player past 2; solo plays the 2-player dice.</p>
       <div class="t-field"><p class="t-h">Players</p><div class="t-seg" role="group" aria-label="Players">${[1, 2, 3, 4].map(n => `<button class="t-btn" data-a="count" data-n="${n}" data-k="count${n}" aria-pressed="${S.n === n}">${n}${n === 2 ? ' · tuned' : ''}</button>`).join('')}</div></div>
       <div class="t-field"><p class="t-h">Analysts</p>${S.team.slice(0, S.n).map((id, k) => `<div class="t-seat" role="group" aria-label="Player ${k + 1}"><span class="who">Player ${k + 1}</span>${A.ANALYST_IDS.map(c => `<button class="t-btn sm" data-a="pick" data-seat="${k}" data-id="${c}" data-k="pick${k}${c}" aria-pressed="${id === c}">${nm(c)}</button>`).join('')}</div>`).join('')}</div>
       <div class="t-acts"><button class="t-btn pri" data-a="start" data-k="start">Start the shift</button><button class="t-lnk" data-a="cards" data-k="cards">See all 21 cards</button></div>
@@ -94,22 +109,31 @@
       Rolled <b class="num">${r.pair[0]} + ${r.pair[1]} = ${r.roll}</b>: ${r.back.length ? esc(r.back.join(', ')) + (r.back.length > 1 ? ' come back.' : ' comes back.') : 'nothing comes back.'}
       ${r.strikes.length ? `<span class="hit">${r.strikes.map(s => `${esc(s.name)} hits everyone for ${s.dmg}`).join('; ')}.</span>` : ''}</p></div>`;
   }
+  // The threat dice set under a card: one per slot, taken ones turned aside. Live state only, never on the card.
+  function vThreat(m) {
+    const G = UI.G, t = UI.sel != null && G.phase === 'assign' && !UI.more ? E.targets(G, UI.sel) : null;
+    const mine = t ? t.hits.filter(h => h.uid === m.uid) : [], more = UI.more && UI.more.uid === m.uid ? E.moreSlots(m, UI.more.p) : null;
+    return `<div class="t-threat${m.slots.length > 6 ? ' big' : ''}" role="group" aria-label="Dice under ${esc(m.name)}">${m.slots.map((v, p) => {
+      const off = m.off[p], h = mine.find(x => x.p === p), pend = UI.more && UI.more.uid === m.uid && UI.more.p === p, mo = more && more.includes(p);
+      const c = ['t-td', off ? 'off' : '', h ? (h.near ? 'tgt near' : 'tgt') : '', pend ? 'pend' : '', mo ? 'tgt more' : '', p >= m.printed ? 'xtra' : '', (t || more) && !off && !h && !mo && !pend ? 'dim' : ''].filter(Boolean).join(' ');
+      const label = `${v}${p >= m.printed ? ' (extra die for this crew)' : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
+      return `<button class="${c}" data-a="slot" data-u="${m.uid}" data-p="${p}" data-k="slot${m.uid}-${p}" aria-label="${esc(label)}" ${off ? 'disabled' : ''}>${A.pip(v, 30)}</button>`;
+    }).join('')}</div>`;
+  }
   function vMob(m) {
-    const G = UI.G, t = UI.sel != null && G.phase === 'assign' ? E.targets(G, UI.sel) : null;
-    const mine = t ? t.hits.filter(h => h.uid === m.uid) : [], down = !E.left(m);
+    const G = UI.G, down = !E.left(m);
     const dmg = E.dmgOf(G, m), inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null;
     const isNew = !UI.seenMobs.has(m.uid + ':' + m.back); UI.seenMobs.add(m.uid + ':' + m.back);
     const lines = [];
     if (down) lines.push('<span>Beaten. Leaves at the end of the round.</span>');
     else {
-      lines.push(`<span>${E.left(m)} of ${m.hits} symbols left · hits for <b>${dmg}</b>${dmg !== m.dmg ? ` <span class="hot">(${dmg > m.dmg ? '+' : ''}${dmg - m.dmg})</span>` : ''}</span>`);
+      lines.push(`<span>${E.left(m)} of ${m.hits} dice left · hits for <b>${dmg}</b>${dmg !== m.dmg ? ` <span class="hot">(${dmg > m.dmg ? '+' : ''}${dmg - m.dmg})</span>` : ''}</span>`);
       if (inc) lines.push(inc.to.length ? `<span class="hot">At round end: ${inc.dmg} to ${inc.to.map(k => nm(G.team[k])).join(', ')}</span>` : '<span>At round end: blocked</span>');
     }
-    if (G.n >= 3) lines.push(`<span>${G.n} players: ${m.hits - m.printed} extra symbols (ringed)</span>`);
-    const tg = mine.length ? `<div class="t-tg">${mine.map(h => `<button class="t-btn sm" data-a="hit" data-u="${m.uid}" data-s="${h.sym}" data-k="hit${m.uid}${h.sym}" aria-label="Take ${h.n > 1 ? h.n + ' ' : ''}${E.SYM_NAME[h.sym]} off ${esc(m.name)}">${KICON[h.sym]}${E.SYM_NAME[h.sym]}${h.n > 1 ? ' ×' + h.n : ''}${h.wild ? ' (wild)' : ''}</button>`).join('')}</div>` : '';
-    return `<div class="t-slot${mine.length ? ' tgt' : ''}${down ? ' down' : ''}${isNew ? ' enter' : ''}" data-card="${cardKey(m)}" data-uid="${m.uid}">${cardFor(m)}
+    if (G.n >= 3) lines.push(`<span>${G.n} players: + die set ${G.n - 2}× (marked +)</span>`);
+    return `<div class="t-slot${down ? ' down' : ''}${isNew ? ' enter' : ''}" data-card="${cardKey(m)}" data-uid="${m.uid}">${cardFor(m)}
       ${m.back ? '<span class="t-stamp">Came back</span>' : ''}${down ? '<span class="t-stamp beat">Beaten</span>' : ''}
-      <div class="t-under">${lines.join('')}${tg}</div></div>`;
+      ${vThreat(m)}<div class="t-under">${lines.join('')}</div></div>`;
   }
   function vTable() {
     const G = UI.G;
@@ -140,9 +164,8 @@
     const G = UI.G, owner = d.src === 'agent' ? 'Agent' : d.src === 'crew' ? 'Crew' : G.team[d.k] + (d.src === 'burn' ? '+' : '');
     const usedTo = d.used === 'guard' ? 'Guard' : d.used ? (G.play.find(m => m.uid === d.used.uid) || { name: '?' }).name : '';
     const label = `${E.faceText(d)}, ${E.dieOwner(G, d)}${d.used ? ', used: ' + usedTo : ''}${d.turned ? ', turned by Enrichment' : ''}`;
-    const big = d.face[1] === 2, sym = A.icon(d.face[0], 15);
-    return `<button class="t-die${d.src === 'agent' || d.src === 'crew' ? ' agent' : ''}${UI.sel === d.i ? ' sel' : ''}${d.used ? ' used' : ''}${UI.fresh ? ' rolled' : ''}" data-a="die" data-i="${d.i}" data-k="die${d.i}" aria-pressed="${UI.sel === d.i}" aria-label="Die ${d.i + 1}: ${esc(label)}" title="${esc(label)}" style="animation-delay:${d.i * 40}ms">
-      <span class="f">${A.pip(d.n, 26)}<span class="s">${sym}${big ? sym : ''}</span></span><span class="o">${owner}</span>${d.used === 'guard' ? '<span class="badge g">Guard</span>' : d.used ? '<span class="badge g">✓</span>' : d.turned ? '<span class="badge w">EN</span>' : ''}</button>`;
+    return `<button class="t-die${d.src === 'agent' || d.src === 'crew' ? ' agent' : ''}${d.dbl ? ' dbl' : ''}${UI.sel === d.i ? ' sel' : ''}${d.used ? ' used' : ''}${UI.fresh ? ' rolled' : ''}" data-a="die" data-i="${d.i}" data-k="die${d.i}" aria-pressed="${UI.sel === d.i}" aria-label="Die ${d.i + 1}: ${esc(label)}" title="${esc(label)}" style="animation-delay:${d.i * 40}ms">
+      <span class="f">${A.pip(d.n, 36)}</span><span class="o">${owner}${d.dbl ? ' · <b>double</b>' : ''}</span>${d.used === 'guard' ? '<span class="badge g">Guard</span>' : d.used ? '<span class="badge g">✓</span>' : d.turned ? '<span class="badge w">EN</span>' : ''}</button>`;
   }
   function vDock() {
     const G = UI.G; let hint = '', ctl = '';
@@ -155,14 +178,16 @@
       if (G.round >= 1 && !G.row.length) hint = '<b>New round.</b> The row is empty, so just roll the dice.';
       ctl = `<div class="t-acts"><span class="t-inc">${incText()}</span><span class="sp"></span><button class="t-btn pri" data-a="roll" data-k="roll">${G.round >= 1 && G.row.length ? 'Roll the row, then the dice' : 'Roll the dice'} <span class="num">(R)</span></button></div>`;
     } else if (G.phase === 'assign') {
-      const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null;
-      if (!d) hint = G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a glowing symbol on a mob (or Guard, with a double). Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.';
+      const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null, mo = UI.more && G.play.find(m => m.uid === UI.more.uid);
+      if (mo) hint = `<b>Double ${d.n} takes the ${mo.slots[UI.more.p]} under ${esc(mo.name)}.</b> Tap any one more die under it, or keep just the one.`;
+      else if (!d) hint = G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under a mob. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.';
       else if (d.used) hint = `That die is used. <b>Undo</b> to take it back.`;
-      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? 'Tap a glowing symbol on a mob, or a target button.' : 'Nothing it can hit.'}${G.wildAll ? ' Every die is wild this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
+      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? 'A double: tap a matching die under a mob to take it and one more, <b>or Guard</b>.' : 'Tap a glowing die under a mob that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') : 'Nothing it can hit.'}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
       ctl = `<div class="t-dice" role="group" aria-label="Dice">${G.dice.map(dieHtml).join('')}</div>
-        <div class="t-acts">${sel && t.guard ? `<button class="t-btn" data-a="guard" data-k="guard">Guard <span class="num">(G)</span></button>` : ''}
-        ${sel && t.enrich ? `<span class="t-inc">Enrichment: turn to</span>${['D', 'C', 'E'].filter(s => s !== d.face[0]).map(s => `<button class="t-btn sm" data-a="turn" data-s="${s}" data-k="turn${s}" aria-label="Turn this die to ${E.SYM_NAME[s]}">${KICON[s]}${E.SYM_NAME[s]}</button>`).join('')}` : ''}
+        <div class="t-acts">${mo ? `<button class="t-btn pri" data-a="one" data-k="one">Just that one <span class="num">(J)</span></button><button class="t-btn" data-a="back" data-k="back">Back <span class="num">(Esc)</span></button>` : ''}
+        ${!mo && sel && t.guard ? `<button class="t-btn" data-a="guard" data-k="guard">Guard <span class="num">(G)</span></button>` : ''}
+        ${!mo && sel && t.enrich ? `<span class="t-inc">Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="t-btn sm" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
         <span class="t-inc">${incText()}</span><span class="sp"></span>
         <button class="t-btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <span class="num">(U)</span></button>
         <button class="t-btn pri" data-a="end" data-k="end">End round <span class="num">(E)</span></button></div>`;
@@ -202,49 +227,16 @@
     </div></div>`;
   }
 
-  // ---- Live state over the cards: coins, rings, targets. Only classes on the card's own symbols change. ----------
-  function decorate() {
-    const G = UI.G; if (!G) return;
-    const t = UI.sel != null && G.phase === 'assign' ? E.targets(G, UI.sel) : null;
-    app.querySelectorAll('.t-slot[data-uid]').forEach(slot => {
-      const m = G.play.find(x => x.uid === slot.dataset.uid); if (!m) return;
-      const legal = t ? new Set(t.hits.filter(h => h.uid === m.uid).map(h => h.sym)) : null;
-      for (let p = 0; p < m.hits; p++) {
-        const el = svgAt(slot, m, p); if (!el) continue;
-        if (m.off[p]) el.classList.add('x-off');
-        else { if (p >= m.printed) el.classList.add('x-live'); if (legal) el.classList.add(legal.has(m.row[p]) ? 'x-tgt' : 'x-dim'); }
-      }
-    });
-  }
-  // Symbol p of a mob's row on its card: the printed row first, then the "3/4 players add" icons for this crew size.
-  const addOffset = m => UI.G.n === 4 ? (m.boss ? D.bossAdd[3] - D.bossAdd[2] : D.mobAdd[3]) : 0;
-  function svgAt(slot, m, p) {
-    if (p < m.printed) return slot.querySelectorAll('.card .syms svg')[p];
-    return slot.querySelectorAll('.card .add svg')[addOffset(m) + p - m.printed];
-  }
-  function posOf(slot, m, svg) {
-    const base = [...slot.querySelectorAll('.card .syms svg')].indexOf(svg); if (base >= 0) return base;
-    const j = [...slot.querySelectorAll('.card .add svg')].indexOf(svg); if (j < 0) return -1;
-    const p = m.printed + j - addOffset(m); return p >= m.printed && p < m.hits ? p : -1;
-  }
-
   // ---- Render and events ------------------------------------------------------------------------------------------
   function render() {
     const k = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
     app.innerHTML = UI.G ? vTop() + vCrew() + `<div class="t-main">${vTable()}${vSide()}</div>` + vDock() + vLog() + vGallery() + vEnd() : vSetup() + vGallery();
-    decorate();
     if (k) focusKey(k);
   }
   function focusKey(k) { const el = app.querySelector(`[data-k="${k}"]`); if (el && !el.disabled) el.focus({ preventScroll: true }); }
 
   app.addEventListener('click', e => {
     const G = UI.G;
-    const svg = e.target.closest && e.target.closest('.t-slot[data-uid] .card svg');
-    if (svg && G && G.phase === 'assign' && UI.sel != null) {
-      const slot = svg.closest('.t-slot'), m = G.play.find(x => x.uid === slot.dataset.uid), p = posOf(slot, m, svg);
-      if (p >= 0 && !m.off[p]) return doAssign(m.uid, m.row[p]);
-      if (p >= 0) { UI.msg = 'That symbol is already off.'; UI.err = true; return render(); }
-    }
     const b = e.target.closest && e.target.closest('[data-a]'); if (!b || b.disabled) return;
     const a = b.dataset.a;
     if (a === 'count') { UI.setup.n = +b.dataset.n; return render(); }
@@ -257,13 +249,15 @@
     if (!G) return;
     if (a === 'point') return act(() => E.setPoint(G, +b.dataset.n));
     if (a === 'flip') { act(() => E.flip(G)); return focusKey('roll'); }
-    if (a === 'roll') { act(() => E.roll(G)); UI.fresh = true; UI.sel = null; nextDie(); render(); return focusKey('die' + (UI.sel || 0)); }
-    if (a === 'die') { const i = +b.dataset.i; UI.sel = UI.sel === i ? null : i; UI.msg = ''; return render(); }
-    if (a === 'hit') return doAssign(b.dataset.u, b.dataset.s);
+    if (a === 'roll') { act(() => E.roll(G)); UI.fresh = true; UI.sel = null; UI.more = null; nextDie(); render(); return focusKey('die' + (UI.sel || 0)); }
+    if (a === 'die') { const i = +b.dataset.i; UI.more = null; UI.sel = UI.sel === i ? null : i; UI.msg = ''; return render(); }
+    if (a === 'slot') return tapSlot(b.dataset.u, +b.dataset.p);
+    if (a === 'one') return UI.more && doAssign(UI.more.di, UI.more.uid, UI.more.p);
+    if (a === 'back') { UI.more = null; return render(); }
     if (a === 'guard') return doGuard();
-    if (a === 'turn') { const i = UI.sel; return act(() => E.enrichTurn(G, i, b.dataset.s)); }
-    if (a === 'undo') { act(() => E.unassign(G)); const last = G.dice.filter(d => !d.used).map(d => d.i); if (UI.sel == null || (G.dice[UI.sel] && G.dice[UI.sel].used)) UI.sel = last.length ? last[last.length - 1] : null; return render(); }
-    if (a === 'end') { UI.sel = null; act(() => E.endRound(G)); return focusKey(G.phase === 'roll' ? 'roll' : 'flip'); }
+    if (a === 'turn') { const i = UI.sel; return act(() => E.enrichTurn(G, i, +b.dataset.n)); }
+    if (a === 'undo') { UI.more = null; act(() => E.unassign(G)); const last = G.dice.filter(d => !d.used).map(d => d.i); if (UI.sel == null || (G.dice[UI.sel] && G.dice[UI.sel].used)) UI.sel = last.length ? last[last.length - 1] : null; return render(); }
+    if (a === 'end') { UI.sel = null; UI.more = null; act(() => E.endRound(G)); return focusKey(G.phase === 'roll' ? 'roll' : 'flip'); }
     if (a === 'burn') { act(() => E.burn(G, b.dataset.u)); if (G.phase === 'assign' && UI.sel == null) { nextDie(); render(); } return; }
     if (a === 'discard') { act(() => E.discardKit(G, b.dataset.u)); return; }
   });
@@ -271,13 +265,14 @@
   document.addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target || {}).tagName || '')) return;
     const G = UI.G, key = e.key.toLowerCase(), click = k => { const el = app.querySelector(`[data-a="${k}"]`); if (el && !el.disabled) { el.click(); e.preventDefault(); } };
-    if (key === 'escape') { if (UI.cards) UI.cards = false; else if (UI.drawer) UI.drawer = null; else UI.sel = null; return render(); }
+    if (key === 'escape') { if (UI.cards) UI.cards = false; else if (UI.drawer) UI.drawer = null; else if (UI.more) UI.more = null; else UI.sel = null; return render(); }
     if (!G) return;
     if (key === 'l') return click('log');
     if (G.phase === 'flip' && key === 'f') return click('flip');
     if (G.phase === 'roll' && key === 'r') return click('roll');
     if (G.phase === 'assign') {
-      if (/^[1-9]$/.test(key) && G.dice[+key - 1]) { UI.sel = +key - 1; UI.msg = ''; render(); return focusKey('die' + UI.sel); }
+      if (key === 'j') return click('one');
+      if (/^[1-9]$/.test(key) && G.dice[+key - 1]) { UI.more = null; UI.sel = +key - 1; UI.msg = ''; render(); return focusKey('die' + UI.sel); }
       if (key === 'g') return click('guard');
       if (key === 'u' || key === 'backspace') return click('undo');
       if (key === 'e') return click('end');

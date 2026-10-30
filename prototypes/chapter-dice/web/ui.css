@@ -77,7 +77,6 @@ button:disabled{cursor:not-allowed;opacity:.45}
 /* Paper cards inherit dark ink from the printed page's body; give them the same ink on the dark table. */
 .card{color:#1A1418}
 .t-slot .card{width:240px;height:336px;zoom:var(--z);border:0;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.4);transition:box-shadow .2s var(--ease),filter .3s}
-.t-slot.tgt .card{box-shadow:0 0 0 2px var(--am),0 10px 30px rgba(0,0,0,.55)}
 .t-slot.down .card{filter:grayscale(.85) brightness(.7)}
 .t-slot.enter{animation:deal .45s var(--ease)}
 @keyframes deal{0%{transform:translateY(-14px) rotate(-1.5deg);opacity:0}100%{transform:none;opacity:1}}
@@ -86,15 +85,22 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .t-under{font-family:var(--mono);font-size:12px;color:var(--mut);width:calc(240px * var(--z));display:flex;flex-direction:column;gap:5px}
 .t-under b{color:var(--ink)}
 .t-under .hot{color:#FF9478}
-.t-tg{display:flex;flex-wrap:wrap;gap:5px}
-.t-tg .t-btn{display:inline-flex;align-items:center;gap:6px}
-.t-tg .t-btn svg{color:inherit}
-/* Live state over a card's symbols: coins over removed symbols, a ring on symbols in play for 3–4 players, targets. */
-.card svg.x-off{color:transparent!important;background:radial-gradient(circle at 38% 32%,#FFE2B0 0,#F0A04B 45%,#A8601E 100%);border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(80,40,10,.55),0 1px 1px rgba(0,0,0,.3)}
-.card svg.x-live{outline:1.5px solid #C46A1E;outline-offset:1px;border-radius:2px}
-.card svg.x-tgt{cursor:pointer;filter:drop-shadow(0 0 2px #FF9B54) drop-shadow(0 0 4px rgba(255,155,84,.8));animation:pulse 1.4s ease-in-out infinite}
-.card svg.x-dim{opacity:.35}
-@keyframes pulse{50%{transform:scale(1.12)}}
+/* The threat dice set under a card: live state, not part of the card face. Taken dice turn aside. */
+.t-threat{width:calc(240px * var(--z));display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:-2px;padding:8px 6px 2px}
+.t-td{position:relative;padding:0;border:0;background:none;width:34px;height:34px;line-height:0;border-radius:7px;transition:transform .18s var(--ease),opacity .18s,box-shadow .15s,filter .15s}
+.t-td .pip{width:34px;height:34px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.45))}
+.t-td .pip rect{fill:#E9E1D8;stroke:#1A1012}
+.t-td.xtra::after{content:"+";position:absolute;top:-7px;right:-6px;font:700 11px/14px var(--mono);width:14px;height:14px;border-radius:50%;background:var(--am);color:#1A1012;text-align:center}
+.t-td.off{transform:translateY(5px) rotate(-24deg) scale(.82);opacity:.32;cursor:default}
+.t-td.off .pip rect{fill:#7A6F69}
+.t-td.tgt{box-shadow:0 0 0 2px var(--am),0 0 12px rgba(255,155,84,.7);animation:pulse 1.4s ease-in-out infinite}
+.t-td.tgt.near{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--am);animation:none;outline:2px dashed var(--am);outline-offset:4px}
+.t-td.tgt.more{box-shadow:0 0 0 2px var(--cy),0 0 12px rgba(56,225,255,.6)}
+.t-td.pend{transform:translateY(5px) rotate(-14deg) scale(.9);box-shadow:0 0 0 2px var(--cy);opacity:.7}
+.t-td.dim{opacity:.55}
+.t-td.tgt:hover{transform:translateY(-2px)}
+.t-threat.big .t-td,.t-threat.big .t-td .pip{width:30px;height:30px}
+@keyframes pulse{50%{transform:translateY(-2px)}}
 
 /* ---- Side: persistence row, kit tray, crew cards ---- */
 .t-rowlist{display:flex;flex-direction:column;gap:6px}
@@ -122,11 +128,13 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .t-hint b{color:var(--ink)}
 .t-hint .err{color:#FF9478}
 .t-dice{display:flex;flex-wrap:wrap;gap:8px}
-.t-die{position:relative;width:66px;height:70px;padding:5px 0 0;border:1px solid var(--rule2);background:var(--s2);border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .12s var(--ease),border-color .15s,box-shadow .15s}
-.t-die .f{width:56px;height:40px;background:#F6F2EC;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:3px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
-.t-die .f .s{display:inline-flex;flex-direction:column;line-height:0;gap:1px}
-.t-die .o{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);white-space:nowrap}
-.t-die.agent .f{background:#DDE9EA}
+.t-die{position:relative;min-width:66px;height:70px;padding:5px 4px 0;border:1px solid var(--rule2);background:var(--s2);border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .12s var(--ease),border-color .15s,box-shadow .15s}
+.t-die .f{line-height:0;display:flex;align-items:center;justify-content:center}
+.t-die .f .pip{filter:drop-shadow(0 2px 0 rgba(0,0,0,.4))}
+.t-die.agent .f .pip rect{fill:#BFE3EA}
+.t-die.dbl .f .pip rect{stroke:var(--am);stroke-width:1.6}
+.t-die .o b{color:var(--am);font-weight:600}
+.t-die .o{font-family:var(--mono);font-size:10px;padding:0 2px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);white-space:nowrap}
 .t-die.sel{border-color:var(--am);box-shadow:0 0 0 2px var(--am);transform:translateY(-3px)}
 .t-die.used{opacity:.5}
 .t-die.used .o{color:var(--ink)}
@@ -135,6 +143,7 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .t-die.rolled{animation:tumble .45s var(--ease) both}
 @keyframes tumble{0%{transform:rotate(-25deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
 .t-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.t-turn{display:flex;flex-wrap:wrap;gap:4px}.t-turn .t-btn{padding:4px 7px;line-height:0}
 .t-acts .sp{flex:1 1 auto}
 .t-pts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .t-pts .t-btn[aria-pressed="true"]{border-color:var(--am);background:rgba(255,155,84,.16);color:var(--am)}
@@ -192,8 +201,10 @@ button:disabled{cursor:not-allowed;opacity:.45}
   .t-main{padding:10px 12px 280px;gap:12px}
   .t-mobs{gap:10px}
   .t-mobs.many .t-slot{--z:.71}
-  .t-die{width:60px;height:64px}
-  .t-die .f{width:50px;height:36px}
+  .t-die{min-width:58px;height:64px}
+  .t-die .f .pip{width:30px;height:30px}
+  .t-under{font-size:11px}
+  .t-mobs.many .t-td,.t-mobs.many .t-td .pip{width:28px;height:28px}
   .t-dock{padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
   .t-kit{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
   .t-kslot{--z:.45}

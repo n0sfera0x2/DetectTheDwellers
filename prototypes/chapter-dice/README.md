@@ -1,6 +1,6 @@
-# Prototype: chapter dice (d6 symbols) against the current d20
+# Prototype: chapter dice (d6s) against the current d20
 
-**Status:** refactored to **standard pip d6s** on 2026-10-30 (see [Standard d6 refactor](#standard-d6-refactor-2026-10-30)). The sim, the paper prototype and the web version all play the standard-d6 rules at 23 HP. The custom symbol dice stay reachable in the sim with `DICE=custom`. Next step: a table playtest against today's Quick Shift.
+**Status:** refactored to **exact numbers** on 2026-10-30 (see [Exact numbers](#exact-numbers-2026-10-30)). Mob cards print the dice to set under them; a rolled die takes out a die showing exactly its number. The sim (`SYS=n6`, now the default d6 family), the paper prototype and the web version all play these rules at 30 HP. The earlier symbol system stays reachable in the sim with `SYS=d6`. Next step: a table playtest against today's Quick Shift.
 
 ## Hypothesis
 
@@ -16,17 +16,22 @@ In the d6 version:
 ## How to run
 
 ```bash
-node prototypes/chapter-dice/sim.js                    # d20 baseline and standard d6, 600 games per case
-SYS=d6 node prototypes/chapter-dice/sim.js             # standard d6 only (~40 s)
-SYS=d6 DICE=custom node prototypes/chapter-dice/sim.js # the earlier custom symbol dice, d20 row (the "tuned" column)
+node prototypes/chapter-dice/sim.js                    # d20 baseline and exact numbers (n6), 600 games per case
+SYS=n6 N=500 HP=30 node prototypes/chapter-dice/sim.js # exact numbers at the shipped HP (~15 s)
+SYS=n6 N=500 node prototypes/chapter-dice/sim.js       # exact numbers, HP tuned to ~50% at 2p
+SYS=d6 node prototypes/chapter-dice/sim.js             # the earlier symbol d6 system (1–2 Detect, 3–4 Contain, 5–6 Eradicate)
+SYS=d6 DICE=custom node prototypes/chapter-dice/sim.js # the custom symbol dice before that, d20 row
 ```
 
 Env knobs:
 
 | Knob | Does |
 | --- | --- |
-| `SYS` | `d20`, `d6` or both (default `d20,d6`) |
+| `SYS` | `d20`, `n6`, `d6`, comma-separated (default `d20,n6`) |
 | `N` | games per case (default 600) |
+| `HP` | starting HP; skips the tune-to-50% search |
+| `N6DICE` | n6: dice per analyst each round (default 1; on point +1) |
+| `N6SOLO` | n6: dice a solo player rolls (default 3: two own plus the crew die) |
 | `DICE=custom` | the custom symbol dice instead of pip d6s; also switches the d6 row back to the d20 |
 | `DOUBLES_JSON` | override the double numbers, e.g. `{"HUN":[1,2,6],"CREW":[6],"AGENT":[6]}` (pip dice only) |
 | `DICE_JSON` | override whole dice as `[symbol, count]` faces, e.g. `{"HUN":[["D",2],…]}` |
@@ -67,7 +72,97 @@ Both play the same cut-down shift.
 | Evasive ("natural 12+") | Only a double face hits it |
 | Triage Agent's die | A plain six-face die: one each of D, C, E, D, C, E |
 
-## Standard d6 refactor (2026-10-30)
+## Exact numbers (2026-10-30)
+
+The user, after the symbol refactor: *"in a physical game we would actually place the dice under the card, especially when we scale up the dice needed to defeat a mob based on player count size (I don't want the '3 players add.. 4 players add...' printed on the card) it should be number, number, number + number to roll ... a bit more like how Escape the Dark Castle handles it, but I also want the numbers to be more direct as well, not 1-2 detect, 3-4 contain."*
+
+So the symbols are gone. Every die is a plain pip d6 and reads as its number.
+
+### The design
+
+- **Mob and boss cards** print, along the bottom edge, the dice to set under the card as pip faces, then **"+ ⚂ per player past 2"**: one extra number. On the table the threat dice sit just below that strip. The numbers come from `sim.js` `numbersFor(id, base)`, printed low to high: base is the mob's printed hits, or the boss's `hitsBase + bossAdd[2]`; the extra number is `numbersFor(id + '+', 1)[0]`. Solo sets the two-player dice; 3 players add the extra die once, 4 players twice. The card keeps name, domain, "back on 2–N", Damage, keyword and flavour.
+
+  | Card | Dice | + per player past 2 |
+  | --- | --- | --- |
+  | Mailer Daemon | 1 2 3 | 5 |
+  | Password Sprayer | 2 4 5 | 3 |
+  | OAuth Consent Grifter | 1 2 4 | 5 |
+  | Living-off-the-Land Scavenger | 1 3 5 5 | 3 |
+  | Exfil Courier | 1 3 3 4 | 2 |
+  | Rootkit Implant | 1 2 3 5 5 | 4 |
+  | The Lockjaw Syndicate (boss) | 1 1 2 2 3 3 4 4 6 6 | 3 |
+
+- **Hitting:** a rolled die takes out one threat die showing **exactly** its number. Turn the taken die aside.
+- **Doubles** (unchanged numbers): Hunter 1, 2, 6; Responder 3, 4, 6; Engineer 2, 4, 6; Soarcerer 1, 6; Fixer 3, 6. Every other die (the solo crew die, the Triage agent die) doubles only on a 6. A double **either** takes its exact match **and any one more die from the same mob**, **or** guards. Never both. Agent dice can't guard or hit the boss.
+- **Perks:** Hunter: against a comeback, your dice also match one higher or one lower; comebacks you finish are gone for good. Responder: the same against the highest-Damage mob, boss included. Engineer: every even number is a double. Soarcerer and Fixer unchanged.
+- **Rolling:** one die each, two on point. Solo: two own dice plus the crew die. Each running Triage Agent rolls an agent die.
+- **Agents:** Triage run rolls an agent die; burn: on point rolls 3 more crew dice. Enrichment run: once a round, turn one crew die to any number; burn: every die matches anything this round. Containment run: the highest-Damage mob deals 2 less (min 1); burn: one die off every mob (the boss keeps at least one). Recovery unchanged.
+- **Keywords:** Evasive: only a double can hit it. Regen: at the end of each round, put back one die it lost. Lockjaw: +2 Damage until it has lost two dice; agent dice can't hit it. Escalating, Piercing, Targeted and Beacon unchanged.
+- **Row:** the 2d6 amber pair, unchanged tiers.
+- **HP 30** each.
+
+### Results
+
+Bot sims, C posture, 500 games per case, 2026-10-30. `SYS=n6 N=500 HP=30 node sim.js` reproduces the exact-numbers column below; the coordinator's first run (before the Triage-burn fix, see the next section) is in brackets where it differs.
+
+| Measure | d20 (today) | Symbol d6 (previous) | **Exact numbers** |
+| --- | --- | --- | --- |
+| Rounds with a real dice choice (1p / 2p / 4p) | 46 / 49 / 57% | 37 / 65 / 73% | **29 / 54 / 61%** (28 / 52 / 60) |
+| Skill gap, smart minus random (1p / 2p / 4p) | 16–28 pts | 25 / 27 / 18 pts | **23 / 30 / 27 pts** (24 / 36 / 29) |
+| Rounds per shift (1p / 2p / 4p) | 25 / 22 / 22 | 24 / 15 / 14 | **31 / 19 / 17** (32 / 20 / 18) |
+| Win at the system's HP (1p / 2p / 4p) | | 51 / 53 / 26% | **49 / 55 / 47%** (47 / 55 / 49) |
+| Solo win-rate spread across analysts | 14 pts | 14 pts | **4 pts** (6) |
+| Analyst pairs, lowest to highest | 33–63% | 42–65% | **42–63%** (41–61) |
+| Comebacks per shift (1p / 2p / 4p) | | 4.4 / 5.2 / 5.0 | **4.2 / 5.1 / 4.9** |
+
+What it means, honestly:
+
+1. **Slower than symbols.** 19 rounds a shift at 2 players against 15, about today's d20 pace. An exact number is a narrower target than a symbol that covers two faces.
+2. **Fewer real choices than symbols, more than the d20 at 2–4 players** (54 vs 49% at 2p, 61 vs 57% at 4p).
+3. **Skill matters more.** Smart play beats random by 23–30 points.
+4. **The most even of the three.** Crew sizes now win within 8 points of each other at one HP: "+1 die per player past two" works where the old symbol tables left 4 players at 26%. Solo analysts spread 4–6 points.
+5. **Solo is still the weak spot:** 29% choice, 31 rounds a shift.
+6. **HP:** at 30 HP two players win 55%. The tune-to-50% search lands on 28 HP (51%). 30 is the decided value; drop it to 28 if the table finds it soft.
+
+### Tested and rejected
+
+- **Two dice per analyst** (`N6DICE=2`): faster, 13.6 rounds at 2 players, but four-player rounds blow past the bot's exhaustive search (it falls back to greedy placement), so its numbers can't be trusted, and it's more dice to read every round.
+- **Solo with four dice** (`N6SOLO=4`): 43 rounds a shift and 18% choice.
+
+### Components
+
+Standard d6s in four colours. Nothing custom.
+
+| Dice | Count | For |
+| --- | --- | --- |
+| Crew colour | 2 per player (8) | your roll; on point rolls two |
+| Second colour | 3 | the solo crew die and Triage agent dice |
+| Amber | 2 | the persistence row |
+| Threat dice | about 16 | set under the mob cards |
+
+Coins are only for HP now: the threat dice track hits.
+
+**Why 16 threat dice.** The biggest card is the boss: 10 dice at 2 players, 12 at 4. The boss arrives with one last row roll, and a mob coming back with it adds 3–5 dice at 2 players. So 15 covers the boss plus the biggest comeback at 2 players, and 16 leaves one spare. A normal fight is a 3–5 die mob plus a comeback or two: 6–14 dice. At 4 players, or when several mobs come back at once, 20 covers it (boss 12 plus a 7-die Rootkit Implant would be 19).
+
+### Rulings made in the refactor
+
+- **Printed order.** The card prints its dice low to high, so they're quick to set out. Order has no rule meaning.
+- **Enrichment's turn** keeps what the die was: a double stays a double, a single stays single (the sim's rule; otherwise every turn would be "turn it to a 6").
+- **A double's "one more"** is optional: you may take just the match.
+- **Regen** puts back the die it lost most recently.
+- **Containment's burn** takes a repeated number first (it leaves the most different numbers to match), else the highest.
+- **The sim's Triage burn** rolled the old symbol faces in the n6 system, so those three dice could never hit. Fixed: they roll numbers with the on-point analyst's doubles. This moves the 2p tuned HP from 30 to 28 but changes little else (the brackets in the table).
+
+### What changed in the files
+
+- `sim.js`: `n6` is the default d6-family system (`SYS=d20,n6`); `SYS=d6` keeps the symbol system. New `HP` knob; `N6DICE` and `N6SOLO` documented. Triage burn fixed for n6.
+- `cards.js`: no symbols, no key, no "players add". Mob and boss cards carry the bottom dice strip (`diceFor`, `slotsFor`); analyst cards show "Your doubles" as pip faces and the perk; the dice reference card shows the exact-match rule, doubles, the 6-only rule, "+1 die per player past 2" and the row.
+- `paper/build.js`: the rules sheet rewritten for exact numbers; You need lists the four dice colours and the threat dice; HP 30. Still 4 pages, no overflow.
+- `web/`: exact numbers throughout (see the web section).
+
+## Standard d6 refactor (2026-10-30, history)
+
+Superseded by [Exact numbers](#exact-numbers-2026-10-30). Kept as the record of the symbol system.
 
 Custom symbol dice mean seven sticker sets or a custom die run. **"d6s will be easier to source, especially in a physical release."** So every die is now a normal pip d6.
 
@@ -169,21 +264,22 @@ Convert the real game only if the table prefers it.
 
 `node prototypes/chapter-dice/paper/build.js` writes `paper/chapter-dice-paper.pdf`: four Letter pages, printed at 100%. (Before the standard-d6 refactor it had a fifth page of dice stickers.)
 
-1. **Rules:** a one-page rules sheet, written for 2 players.
+1. **Rules:** a one-page rules sheet, written for 2 players (exact numbers since 2026-10-30).
 2. **Cards (pages 2–4):** 21 cards, 2.5 × 3.5 in, printed single-sided with dashed cut lines:
    - 6 mobs: Mailer Daemon, Password Sprayer, OAuth Consent Grifter, Living-off-the-Land Scavenger, Exfil Courier and Rootkit Implant, which use 6 different keywords;
    - the Lockjaw Syndicate as the boss;
-   - a dice reference card: the key, the 6-only rule for other dice, the double-or-guard rule and the row;
-   - 5 analysts, each with their doubles and perk;
+   - a dice reference card: exact matching, the double rule (match plus one more, or guard), the 6-only rule for other dice, "+1 die per player past 2" and the row;
+   - 5 analysts, each with their doubles as pip faces and their perk;
    - 8 agents, two each of Triage, Enrichment, Containment and Recovery.
 
 **Starting values:**
 
-- **HP:** 23, the sim's tuned value at two players.
+- **HP:** 30 (about 55% at two players in the sim).
+- **Mob dice:** printed along each card's bottom edge, from `sim.js` `numbersFor`.
 - **Comeback ranges:** the v29 d20 ranges, mapped by tier to 2d6 "back on 2–N".
 - **Starting agents:** 2, or 1 solo.
 
-**Physical extras:** standard d6s in three colours (crew, crew/agent, 2 amber) and coins.
+**Physical extras:** standard d6s in four colours (crew, crew/agent, 2 amber, about 16 threat dice) and coins for HP.
 
 **Test plan:** play it with 2 players using the cold-read script in `docs/PLAYTEST.md`. Then the same group plays today's Quick Shift, and you compare teach time, play time, W and R tags, and which one the table would play again.
 
@@ -199,15 +295,15 @@ node --test prototypes/chapter-dice/web/spec.js        # engine rules, jsdom cli
 
 Add `?seed=123` to the URL to replay a shift.
 
-**Same cards as print.** `cards.js` holds the card markup and card CSS: mobs, the boss, analysts, agents, the dice reference, the icons, the pip faces, the d6 key and each analyst's doubles. `paper/build.js` and `web/build.js` both use it, so a card reads identically on the table and on paper. The web only adds live state around a card: coins over removed symbols, a ring on the extra symbols for 3–4 players, a glow on the symbols the selected die can take, and "Came back" and "Beaten" stamps. The parity test strips that state and checks each card on the page against the shared function's output.
+**Same cards as print.** `cards.js` holds the card markup and card CSS: mobs, the boss (with the bottom dice strip), analysts, agents, the dice reference, the pip faces and each analyst's doubles. `paper/build.js` and `web/build.js` both use it, so a card reads identically on the table and on paper. The web only adds live state around a card: the threat dice set just below it (taken ones turned aside, the crew's extra dice marked +), highlights on the dice the selected die can take, and "Came back" and "Beaten" stamps. Nothing is drawn on a card face; the parity test checks each card on the page against the shared function's output.
 
 **What it plays:** exactly the paper rules sheet.
 
-- 1–4 players, each with their own analyst, all at 23 HP. Only 2 players is tuned, and the setup screen says so.
-- The six paper mobs are shuffled, with the Lockjaw Syndicate underneath. 3 and 4 players get the extra symbols printed on the cards.
+- 1–4 players, each with their own analyst, all at 30 HP. Tuned for 2 players, and the setup screen says so.
+- The six paper mobs are shuffled, with the Lockjaw Syndicate underneath. 3 and 4 players get the card's + die once per player past two.
 - The kit deck is the 8 agents. The crew starts with 2 (1 solo), and the tray holds 5 (6 with the Soarcerer). When a draw overfills the tray, you choose what to discard.
 - **A flip:** pick who's on point, then flip. The row roll shows the amber pair, their sum and what came back; the side panel shows each row mob's number on a 2–12 track. The two highest-Damage comebacks hit everyone on arrival, and the Beacon chains.
-- **A round:** roll the row (from round 2), then roll the dice. Each die shows its pips and its symbol (twice for a double). Tap a die, then tap a glowing symbol on a mob, or use the target buttons. A double takes two or guards. You can also turn a die with a running Enrichment Agent, undo the last move, and end the round.
+- **A round:** roll the row (from round 2), then roll the dice. Each die shows its pips; doubles are ringed and labelled. Tap a die, then a glowing threat die under a mob showing the same number (dashed rings are the Hunter's or Responder's one-off matches; with the Enrichment burn every die glows). A double then asks for one more: tap any other die under that mob, or "Just that one". Or press Guard instead. You can also turn a die to any number with a running Enrichment Agent, undo the last move, and end the round.
 - **The crew strip** shows each analyst's incoming damage live as you place dice.
 - **Burns** can be used when the rules allow:
   - Triage and Enrichment after the roll;
@@ -223,22 +319,24 @@ Add `?seed=123` to the URL to replay a shift.
 | R | Roll |
 | 1–9 | Pick a die |
 | G | Guard |
+| J | A double takes just its match |
 | U or Backspace | Undo |
 | E | End round |
 | L | Log |
-| Esc | Deselect or close |
+| Esc | Back out of a double's second pick, deselect, or close |
 
 **Files:**
 
-- `web/engine.js`: the rules engine. DOM-free and seeded. Exports `newGame`, `setPoint`, `flip`, `roll`, `assign`, `guard`, `enrichTurn`, `unassign`, `endRound`, `burn`, `discardKit`, `keepKit`, `targets` and `incoming`.
+- `web/engine.js`: the rules engine. DOM-free and seeded. Exports `newGame`, `setPoint`, `flip`, `roll`, `assign(G, die, mob, slot, oneMore)`, `guard`, `enrichTurn(G, die, number)`, `unassign`, `endRound`, `burn`, `discardKit`, `keepKit`, `targets`, `moreSlots` and `incoming`.
 - `web/ui.js` and `web/ui.css`: the page.
-- `web/build.js`: inlines the data, sim.js's `symbolsFor`, `cards.js`, the engine, the page and the fonts.
+- `web/build.js`: inlines the data, sim.js's `numbersFor`, `cards.js`, the engine, the page and the fonts.
 
 **Rulings where the paper sheet is silent** (the sim's choice unless noted):
 
 - Row comebacks in rounds 2+ also hit on arrival, for the two highest-Damage comebacks.
 - Heals go one HP at a time onto whoever is lowest.
-- Containment's burn takes the last symbol still showing on each mob.
-- A wild double takes the symbol you tapped, then another one, preferring the same symbol.
+- Containment's burn takes a repeated number first, else the highest.
+- A double's one more is any die still under the same mob, and it's optional.
+- Regen puts back the die lost most recently.
 - "Highest-Damage mob" for the Responder is judged at the start of the round, and a tie counts for every tied mob.
 - Each running Enrichment Agent gives one turn a round. Here the sim allows only one turn in total.

@@ -14,7 +14,8 @@ An original game by Binary Defense.
 npm install
 npm run build      # playable page + print deck into dist/
 npm test           # engine, print deck, headless UI, balance gate
-npm run serve      # play at http://localhost:8080
+npm run serve      # play the chapter dice (d6) prototype at http://localhost:8080
+npm run serve:classic  # play the d20 game at http://localhost:8080
 npm run export:cards   # 300 dpi singles with bleed + manifest + zip, in exports/
 npm run export:pdf     # print-and-play PDF, in exports/
 npm run proof:cmyk     # CMYK soft proof of the exports (macOS), in exports/cmyk_proof/

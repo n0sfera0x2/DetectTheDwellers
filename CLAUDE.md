@@ -39,7 +39,8 @@ npm run golden         # re-snapshot print cards after an intentional card chang
 npm run export:cards   # exports/: 825 × 1125 singles (300 dpi, bleed), manifest.csv, upload zip
 npm run export:pdf     # exports/detect-the-dwellers-pnp.pdf: the eight duplex sheets, 16 Letter pages
 npm run proof:cmyk     # exports/cmyk_proof/: the singles through CMYK and back, plus a palette ΔE report (macOS sips)
-npm run serve          # serve dist/ on localhost:8080
+npm run serve          # build and serve the chapter dice (d6) prototype on localhost:8080
+npm run serve:classic  # serve dist/ (the d20 game) on localhost:8080
 ```
 
 ## Making a change

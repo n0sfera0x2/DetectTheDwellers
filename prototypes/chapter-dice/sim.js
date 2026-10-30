@@ -1,9 +1,10 @@
 // Chapter dice prototype: the same cut-down shift played two ways, to decide whether a d6 symbol system
 // (Escape the Dark Castle's chapter dice) beats the current d20 + bonus ≥ Defense system.
 //   d20: today's rules. Hit = d20 + bonus ≥ Defense; 18–20 is two hits and blocks; a 14+ crew die can guard.
-//   d6:  each analyst rolls their own d6 of response symbols (Detect, Contain, Eradicate). A mob's hits are a row
-//        of symbols. A matching face removes one; a double face removes two of that symbol OR guards (blocks).
-// Shared: the real mobs, bosses, keywords, damage, persistence row (d20 ranges), crew-size scaling, kit economy,
+//   d6:  standard pip d6s read as response symbols: 1–2 Detect, 3–4 Contain, 5–6 Eradicate. A mob's hits are a row
+//        of symbols. A matching face removes one; a double removes two of that symbol OR guards (blocks). Which
+//        numbers are doubles depends on the analyst. The persistence row rolls 2d6 (DICE=custom: the old symbol dice).
+// Shared: the real mobs, bosses, keywords, damage, persistence row ranges, crew-size scaling, kit economy,
 // one bot brain that scores every legal dice allocation the same way in both systems.
 // Throwaway: nothing in src/, data/ or ui/ reads this. Usage: node prototypes/chapter-dice/sim.js
 const D = require('../../data/cards.json');
@@ -12,17 +13,39 @@ const SYM = ['D', 'C', 'E']; // Detect, Contain, Eradicate
 // A mob's symbol row: its main response first. Domain sets the mix (identity is found, network is cut off...).
 const MIX = { Identity: 'DCE', Endpoint: 'ECD', Network: 'CDE', Cloud: 'DEC' };
 function symbolsFor(domain, n) { const [a, b, c] = MIX[domain] || 'DCE', pat = [a, a, b, c, b, a, c, a, b, c, a, b, c]; return pat.slice(0, n); }
-// Analyst dice: six faces, [symbol, count]. Two doubles each (three for the Engineer, whose identity is doubles).
-const DICE = {
-  HUN: [['D', 2], ['D', 1], ['D', 1], ['C', 1], ['E', 1], ['E', 2]],
-  RES: [['C', 2], ['C', 1], ['C', 1], ['D', 1], ['E', 1], ['D', 2]],
+// Two ways to make the dice. Default (the standard-d6 refactor, 2026-10-30): every die is a normal pip d6 that
+// reads 1–2 Detect, 3–4 Contain, 5–6 Eradicate. What differs per analyst is which numbers are doubles for them.
+// DICE=custom: the earlier custom symbol dice (tuned faces: Hunter and Responder with a third double), with the d20 row.
+const KEY = ['D', 'D', 'C', 'C', 'E', 'E'];
+const pipDie = dbl => KEY.map((s, i) => [s, dbl.includes(i + 1) ? 2 : 1]);
+// Doubles by analyst. Every other die (the solo crew die, the Triage agent die) doubles only on a 6.
+const DOUBLES = { HUN: [1, 2, 6], RES: [3, 4, 6], ENG: [2, 4, 6], SOA: [1, 6], PAT: [3, 6], CREW: [6], AGENT: [6] };
+const CUSTOM = process.env.DICE === 'custom';
+const CUSTOM_DICE = {
+  HUN: [['D', 2], ['D', 2], ['D', 1], ['C', 1], ['E', 1], ['E', 2]],
+  RES: [['C', 2], ['C', 2], ['C', 1], ['D', 1], ['E', 1], ['D', 2]],
   ENG: [['E', 2], ['E', 2], ['E', 1], ['D', 1], ['C', 1], ['C', 2]],
   SOA: [['D', 1], ['C', 1], ['E', 1], ['D', 2], ['C', 2], ['E', 1]],
   PAT: [['C', 1], ['D', 1], ['E', 1], ['C', 2], ['D', 1], ['E', 2]],
 };
+// DOUBLES_JSON overrides the double numbers (pip dice only): {"HUN":[1,2,6],...,"CREW":[6],"AGENT":[6]}.
+if (process.env.DOUBLES_JSON) Object.assign(DOUBLES, JSON.parse(process.env.DOUBLES_JSON));
+const DICE = {};
+for (const id of ['HUN', 'RES', 'ENG', 'SOA', 'PAT']) DICE[id] = CUSTOM ? CUSTOM_DICE[id] : pipDie(DOUBLES[id]);
+// DICE_JSON overrides whole dice as [symbol, count] faces (mostly for the custom dice).
 if (process.env.DICE_JSON) Object.assign(DICE, JSON.parse(process.env.DICE_JSON));
-const CREW_DIE = [['D', 1], ['C', 1], ['E', 1], ['D', 2], ['C', 2], ['E', 2]];
-const AGENT_DIE = [['D', 1], ['C', 1], ['E', 1], ['D', 1], ['C', 1], ['E', 1]];
+const CREW_DIE = CUSTOM ? [['D', 1], ['C', 1], ['E', 1], ['D', 2], ['C', 2], ['E', 2]] : pipDie(DOUBLES.CREW);
+const AGENT_DIE = CUSTOM ? [['D', 1], ['C', 1], ['E', 1], ['D', 1], ['C', 1], ['E', 1]] : pipDie(DOUBLES.AGENT);
+// Solo: two of your own dice plus the crew die (SOLO=mixed, the default). SOLO=own rolls three of your own dice.
+const SOLO = process.env.SOLO || 'mixed';
+// The row. The d20 system always rolls the d20. The d6 system rolls 2d6 (amber pair) by default, or the d20 with
+// DICE=custom or ROW=d20. On 2d6 a row mob comes back if the sum is at most its number, 2–rowTop(d20 top).
+const ROW = process.env.ROW || (CUSTOM ? 'd20' : '2d6');
+// ROWMAP=tier (default) keeps four tiers apart: d20 top 12+ → 2–8, 10–11 → 2–7, 8–9 → 2–6, 7 or less → 2–5.
+// ROWMAP=near picks the k whose 2d6 odds are closest to N/20 (rejected: it collapses every mob to 2–6 or 2–7).
+const P2 = k => { let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if (a + b <= k) c++; return c / 36; };
+const rowTopNear = N => { let best = 2; for (let k = 2; k <= 12; k++) if (Math.abs(P2(k) - N / 20) < Math.abs(P2(best) - N / 20)) best = k; return best; };
+const rowTop = N => process.env.ROWMAP === 'near' ? rowTopNear(N) : (N >= 12 ? 8 : N >= 10 ? 7 : N >= 8 ? 6 : 5);
 const KIT = ['triage', 'enrich', 'contain', 'recover'];
 
 function rng(seed) { let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -48,7 +71,7 @@ function hurt(G, k, n) { if (n <= 0 || G.over) return; G.hp[k] = Math.max(0, G.h
 
 // Row roll: anything in range comes back at full hits; the two highest-Damage comebacks strike on arrival.
 function rollRow(G, strike) {
-  if (!G.row.length) return []; const r = d20(G), back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]);
+  if (!G.row.length) return []; const two = G.sys === 'd6' && ROW === '2d6', r = two ? 2 + d6(G) + d6(G) : d20(G), back = G.row.filter(m => two ? r <= rowTop(m.persist[1]) : r >= m.persist[0] && r <= m.persist[1]);
   G.row = G.row.filter(m => !back.includes(m)); back.forEach(m => { m.left = m.hits; m.need = G.sys === 'd6' ? symbolsFor(m.domain, m.hits) : null; m.back++; m.up = 0; });
   G.stats.back += back.length;
   if (strike) for (const m of back.slice().sort((a, b) => b.dmg - a.dmg).slice(0, 2)) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m)));
@@ -60,7 +83,7 @@ function enter(G, m) { G.play.push(m); if (m.kw === 'beacon') for (const b of ro
 function roll(G) {
   const dice = [];
   G.team.forEach((id, k) => { const nd = G.n === 1 ? D.soloDice : k === G.point ? 2 : 1;
-    for (let i = 0; i < nd; i++) dice.push(G.sys === 'd20' ? { k, crew: true, r: d20(G) } : { k, crew: true, f: (process.env.SOLO === 'mixed' && G.n === 1 && i === nd - 1 ? CREW_DIE : DICE[id])[d6(G)] }); });
+    for (let i = 0; i < nd; i++) dice.push(G.sys === 'd20' ? { k, crew: true, r: d20(G) } : { k, crew: true, f: (SOLO === 'mixed' && G.n === 1 && i === nd - 1 ? CREW_DIE : DICE[id])[d6(G)] }); });
   for (let i = 0; i < active(G, 'triage'); i++) dice.push(G.sys === 'd20' ? { k: G.point, crew: false, r: d20(G) } : { k: G.point, crew: false, f: AGENT_DIE[d6(G)] });
   return dice;
 }
@@ -159,6 +182,8 @@ function fight(G, mobs) {
     if (G.tray.includes('contain') && (G.play.length >= 3 || boss && G.play.length >= 2)) burn(G, 'contain');
     if (G.tray.includes('recover') && Math.min(...G.hp) <= G.max * 0.4) burn(G, 'recover');
     let dice = roll(G);
+    // SOLO_REROLL=1: playing solo, once a round reroll one crew die that can't hit anything.
+    if (process.env.SOLO_REROLL && G.n === 1 && G.sys === 'd6') { const i = dice.findIndex(d => d.crew && G.play.every(m => !options(G, d, m))); if (i >= 0) dice[i] = { ...dice[i], f: (G.r() < 1 / 3 ? CREW_DIE : DICE[G.team[0]])[d6(G)] }; }
     if (boss && G.tray.includes('triage')) { burn(G, 'triage'); for (let i = 0; i < 3; i++) dice.push(G.sys === 'd20' ? { k: G.point, crew: true, r: d20(G) } : { k: G.point, crew: true, f: DICE[G.team[G.point]][d6(G)] }); }
     let wildAll = false; if (boss && G.tray.includes('enrich')) { burn(G, 'enrich'); wildAll = true; }
     if (G.over || !G.play.length) break;
@@ -201,7 +226,7 @@ function play(sys, team, opt) {
   return G;
 }
 
-module.exports = { play, rng, DICE, symbolsFor };
+module.exports = { play, rng, DICE, symbolsFor, pipDie, rowTop, KEY, DOUBLES };
 
 if (require.main === module) {
   const N = +(process.env.N || 600), TEAMS = { 1: [['HUN'], ['RES'], ['ENG'], ['SOA'], ['PAT']], 2: [['HUN', 'RES'], ['ENG', 'SOA'], ['RES', 'PAT'], ['HUN', 'PAT'], ['SOA', 'PAT'], ['HUN', 'ENG']], 4: [['HUN', 'RES', 'ENG', 'SOA'], ['HUN', 'RES', 'SOA', 'PAT'], ['RES', 'ENG', 'SOA', 'PAT'], ['HUN', 'RES', 'ENG', 'PAT']] };

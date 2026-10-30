@@ -36,7 +36,16 @@ function DTD12(D) {
   // src: the mob names behind this damage, kept so the end screen can say what took the analyst down.
   function hurt(G, k, n, why, src) {
     if (n <= 0 || G.over) return; G.hps[k] = Math.max(0, G.hps[k] - n); G.stats.low = Math.min(G.stats.low ?? 1, G.hps[k] / G.max); log(G, `${nm(G, k)} −${n} HP (${why}).`);
-    if (G.hps[k] <= 0) { G.over = true; G.win = false; G.phase = 'over'; G.dropped = k; G.downBy = src || [why]; log(G, `The ${nm(G, k)} flatlined. Shift lost.`); }
+    if (G.hps[k] <= 0) { G.over = true; G.win = false; G.phase = 'over'; G.dropped = k; G.downBy = src || [why]; log(G, `The ${nm(G, k)} flatlined. Shift lost.`); return; }
+    secondWind(G, k);
+  }
+  // Second wind (D.secondWind): the first time anyone drops to `at` HP or below, the crew draws kit, once per shift.
+  // It goes straight into the tray when there's room; otherwise it waits with the after-fight kit.
+  function secondWind(G, k) {
+    const w = D.secondWind; if (!w || G.wind || G.noAgents || G.hps[k] > w.at) return; G.wind = { k, round: G.round };
+    if (D.reshuffleKit && G.kit.length < w.kit && G.discard.length) { G.kit = shuffle([...G.discard, ...G.kit], G.rnd); G.discard = []; }
+    const got = []; for (let i = 0; i < w.kit && G.kit.length; i++) { const c = G.kit.pop(); got.push(c.name); if (D.sharedKit && G.held[0].length < slots(G, 0)) G.held[0].push(c); else G.loot.push(c); }
+    G.stats.wind = 1; log(G, `Second wind: ${nm(G, k)} is down to ${G.hps[k]} HP. The crew draws ${got.join(', ') || 'nothing (the kit deck is empty)'}.`);
   }
   const heal = (G, k, n) => { G.hps[k] = Math.min(G.max, G.hps[k] + n); };
   function spread(G, n) { let h = 0; for (let i = 0; i < n; i++) { const k = G.hps.indexOf(Math.min(...G.hps)); if (G.hps[k] >= G.max) break; heal(G, k, 1); h++; } return h; }
@@ -50,9 +59,10 @@ function DTD12(D) {
   }
   // Only the strikeCap highest-Damage comebacks of one roll hit on the way in; the rest just rejoin the fight.
   function strikers(G, back) { if (!D.returnStrike) return []; const cap = D.strikeCap || back.length; return back.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a)).slice(0, cap); }
-  function rollRow(G) {
+  // fixed: a set row result instead of a roll (First Shift's scripted comeback).
+  function rollRow(G, fixed) {
     if (!G.row.length) { G.persist = null; return []; }
-    const r = rowDie(G), back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]);
+    const r = fixed || rowDie(G), back = G.row.filter(m => r >= m.persist[0] && r <= m.persist[1]);
     G.persist = { r, back: back.map(m => m.name), round: 0, pre: true }; G.plog.push({ sit: G.sit, r, back: back.map(m => m.name) });
     if (back.some(m => m.ability === 'spread')) { const extra = G.row.find(m => !back.includes(m)); if (extra) back.push(extra); }
     G.row = G.row.filter(m => !back.includes(m)); G.stats.back += back.length; if (!G.bossIn) G.stats.midBack = (G.stats.midBack || 0) + back.length; G.stats.maxBack = Math.max(G.stats.maxBack, back.length);
@@ -71,9 +81,13 @@ function DTD12(D) {
       log(G, `${G.boss.name} is here${back.length ? `, with ${back.length} from the persistence row` : ''}.`); const p = G.persist; startCombat(G, [G.boss, ...back]); G.persist = p; return true;
     }
     const c = G.deck.pop(); G.sit++;
-    const back = rollRow(G); const p = G.persist;
+    // Pack: a pack mob brings the next mob in the feed with it. D.pack 'next' looks at the top card only;
+    // otherwise flip past situations to the first mob and put them back on top in the same order.
+    let pal = null;
+    if (c.kind === 'mob' && c.pack && D.pack && G.mode !== 'intro') { const i = D.pack === 'next' ? (G.deck.length && G.deck[G.deck.length - 1].kind === 'mob' ? G.deck.length - 1 : -1) : G.deck.map(x => x.kind).lastIndexOf('mob'); if (i >= 0) { pal = G.deck.splice(i, 1)[0]; G.sit++; } }
+    const back = rollRow(G, G.mode === 'intro' && D.intro && D.intro.comeback === G.sit ? 1 : null); const p = G.persist;
     if (G.over) return true;
-    if (c.kind === 'mob') { if (G.nextMob) { c.mod = G.nextMob; c.def += c.mod.def; c.dmg += c.mod.dmg; G.nextMob = null; } log(G, `Situation ${G.sit}: ${c.name}. ${nm(G, G.point)} is on point.`); c.scouted = true; startCombat(G, [c, ...back]); G.persist = p; }
+    if (c.kind === 'mob') { if (G.nextMob) { c.mod = G.nextMob; c.def += c.mod.def; c.dmg += c.mod.dmg; G.nextMob = null; } log(G, `Situation ${G.sit}: ${c.name}. ${nm(G, G.point)} is on point.`); c.scouted = true; if (pal) { pal.scouted = true; log(G, `Pack: ${pal.name} comes in with it.`); } startCombat(G, [c, ...(pal ? [pal] : []), ...back]); G.persist = p; }
     else { G.cur = c; G.phase = 'sit'; G.pendingBack = back; log(G, `Situation ${G.sit}: ${c.name}.${back.length ? ' Deal with it, then fight what came back.' : ''}`); }
     return true;
   }
@@ -130,14 +144,13 @@ function DTD12(D) {
     if (G.adv && G.round > 1 && G.play.some(m => m.kind === 'boss' && m.id === 'wyrm')) { log(G, 'Double extortion: the Lockjaw Syndicate rolls for the row.'); persistRoll(G, 'boss'); }
   }
   function setRest(G, k) { if (G.phase !== 'combat' || G.rolled || G.team.length < 2) return false; G.rest = G.rest === k ? -1 : k; return true; }
-  const has = (G, k, kind) => G.held[k].some(c => c.kind === kind);
   function bonusFor(G, k, m) {
     const id = G.team[k]; let b = 0;
     if (m && id === 'HUN' && m.back > 0) b = P('HUN', 'back', 5);
     if (m && id === 'RES' && G.play.length && (P('RES', 'boss', 1) || m.kind !== 'boss') && dmgOf(G, m) >= Math.max(...G.play.filter(x => P('RES', 'boss', 1) || x.kind !== 'boss').map(x => dmgOf(G, x)))) b = P('RES', 'top', 5);
     if (m) b += active(G, 'enrich').length * (D.enrichBonus || 2) + (G.boost || 0);
     if (m && m.scouted && active(G, 'recon').length) b += D.reconBonus || 5;
-    return b + (has(G, k, 'forensic') ? 2 : 0);
+    return b;
   }
   // The share of a crew die's bonus that comes from agents (Enrichment run and burn, Recon), for the automation report.
   const agentBonus = (G, m) => active(G, 'enrich').length * (D.enrichBonus || 2) + (G.boost || 0) + (m.scouted && active(G, 'recon').length ? D.reconBonus || 5 : 0);
@@ -172,10 +185,17 @@ function DTD12(D) {
     if (G.adv && n === 2 && m.kind === 'boss' && m.id === 'apt' && !G.over && G.row.length) { G.undo = []; log(G, 'Living off your network: the double stirs the row.'); persistRoll(G, 'boss'); }
     return true;
   }
+  // Guard: a crew die showing D.guard.min or more can block for its roller instead of hitting.
+  function guard(G, i) {
+    const d = G.dice[i], g = D.guard; if (!g || G.over || G.phase !== 'combat' || !d || d.used || d.kind !== 'crew' || d.r < g.min || G.blocks[d.k]) return false;
+    d.used = true; d.guard = true; G.blocks[d.k] = true; G.stats.guards = (G.stats.guards || 0) + 1; log(G, `${nm(G, d.k)} guards with a ${d.r}: blocks this round.`);
+    (G.undo = G.undo || []).push({ i, guard: true, logAt: G.log.length }); return true;
+  }
   // Takes back the last die put on a mob this round, as long as that hit didn't beat it and nothing has touched the mob since.
-  const canUndo = G => { const u = G.undo && G.undo[G.undo.length - 1]; return !!u && !G.over && G.phase === 'combat' && G.play.includes(u.m) && u.m.left === u.left && G.dice[u.i] && G.dice[u.i].used; };
+  const canUndo = G => { const u = G.undo && G.undo[G.undo.length - 1]; return !!u && !G.over && G.phase === 'combat' && (u.guard || (G.play.includes(u.m) && u.m.left === u.left)) && G.dice[u.i] && G.dice[u.i].used; };
   function unassign(G) {
     if (!canUndo(G)) return false; const u = G.undo.pop(), d = G.dice[u.i];
+    if (u.guard) { d.used = false; d.guard = false; G.blocks[d.k] = G.dice.some(x => x.k === d.k && x.kind === 'crew' && (x.dbl || x.guard)); G.stats.guards--; if (G.log.length === u.logAt) G.log.pop(); return true; }
     d.used = false; u.m.left = u.was; if (d.kind === 'crew') G.stats.crewUsed--; G.stats[d.kind === 'agent' ? 'agentHits' : 'crewHits'] -= u.n; if (u.auto) G.stats.auto[u.auto] -= u.n;
     if (G.log.length === u.logAt) G.log.pop(); return true;
   }
@@ -191,15 +211,6 @@ function DTD12(D) {
   }
   function endCombat(G) { G.lastRound = { ended: true }; G.dice.forEach(d => { d.used = true; }); log(G, 'The fight is over.'); const rc = carried(G, 'recover'), rh = (D.recoverHeal || 3) + (on(G, 'PAT') ? P('PAT', 'recover', 0) : 0);
     if (on(G, 'PAT') && P('PAT', 'fight', 0)) { const h = spread(G, P('PAT', 'fight', 0)); if (h) log(G, `The Fixer patches the crew after the fight: ${h} HP.`); } if (rc) { G.stats.auto.healed += spread(G, rh * rc); log(G, `Recovery Agent${rc > 1 ? 's' : ''}: ${rh * rc} HP across the crew.`); } drawLoot(G, kitWin(G) + (on(G, 'SOA') ? P('SOA', 'draw', 0) : 0)); G.phase = G.loot.length ? 'loot' : 'point'; }
-  function useItem(G, k, idx, target) {
-    const c = G.held[k][idx]; if (!c || G.over || ['agent', 'forensic'].includes(c.kind)) return false;
-    if (c.kind === 'jump') { if (G.hps[k] >= G.max) return false; heal(G, k, D.jumpHeal ?? 4); }
-    else if (c.kind === 'fw') { if (G.phase !== 'combat' || G.blocks[k]) return false; G.blocks[k] = true; }
-    else if (c.kind === 'zd') { const m = G.row.find(x => x.uid === target) || G.row[0]; if (!m) return false; G.row = G.row.filter(x => x !== m); log(G, `${m.name} patched out of the persistence row.`); }
-    else if (c.kind === 'iso') { if (G.phase !== 'combat' || !G.play.length) return false; for (const m of G.play.slice()) { m.left = Math.max(0, m.left - 1); if (m.left <= 0) beaten(G, m); if (G.over) break; } }
-    else return false;
-    G.held[k].splice(idx, 1); log(G, `${nm(G, k)} used ${c.name}.`); return true;
-  }
   function burn(G, k, idx, target) {
     const c = G.held[k][idx]; if (!c || G.over || c.kind !== 'agent') return false; G.undo = [];
     const inFight = G.phase === 'combat';
@@ -251,6 +262,6 @@ function DTD12(D) {
     for (const m of G.play) { m.up++; if (m.ability === 'regen' && m.left < m.hits) m.left++; }
     beginRound(G); return true;
   }
-  return { huntable, kitWin, mobHits, slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, useItem, takeLoot, trade, endRound, incoming, incomingBy, unassign, canUndo, dmgOf, cls, alive };
+  return { huntable, kitWin, mobHits, slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, takeLoot, trade, endRound, incoming, incomingBy, guard, unassign, canUndo, dmgOf, cls, alive };
 }
 if (typeof module !== 'undefined') module.exports = DTD12;

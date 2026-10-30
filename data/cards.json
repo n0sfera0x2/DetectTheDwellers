@@ -22,7 +22,8 @@
    "abilityName": "Beacon",
    "abilityText": "When it enters play or comes back, roll for the persistence row. Anything that roll brings back rolls for the row too.",
    "domain": "Identity",
-   "kw": "beacon"
+   "kw": "beacon",
+   "pack": true
   },
   {
    "id": "macro",
@@ -40,7 +41,8 @@
    "abilityName": "Targeted",
    "abilityText": "Only the analyst on point takes its damage, doubled.",
    "domain": "Endpoint",
-   "kw": "targeted"
+   "kw": "targeted",
+   "pack": true
   },
   {
    "id": "spray",
@@ -58,7 +60,8 @@
    "abilityName": "Piercing",
    "abilityText": "Blocks don't stop it.",
    "domain": "Identity",
-   "kw": "piercing"
+   "kw": "piercing",
+   "pack": true
   },
   {
    "id": "banshee",
@@ -76,7 +79,8 @@
    "abilityName": "Stalker",
    "abilityText": "It only hits the analyst with the lowest HP.",
    "domain": "Identity",
-   "kw": "stalker"
+   "kw": "stalker",
+   "pack": true
   },
   {
    "id": "vibe",
@@ -94,7 +98,8 @@
    "abilityName": "Escalating",
    "abilityText": "+1 damage every round it stays up.",
    "domain": "Cloud",
-   "kw": "escalating"
+   "kw": "escalating",
+   "pack": true
   },
   {
    "id": "wraith",
@@ -811,10 +816,10 @@
    "4": 37
   },
   "intro": {
-   "1": 29,
-   "2": 29,
-   "3": 29,
-   "4": 29
+   "1": 23,
+   "2": 23,
+   "3": 23,
+   "4": 23
   }
  },
  "modes": {
@@ -870,7 +875,7 @@
   "1": -2,
   "2": 0,
   "3": 2,
-  "4": 4
+  "4": 3
  },
  "soloDice": 2,
  "keywords": {
@@ -931,14 +936,15 @@
   ],
   "tips": {
    "1": "Everyone rolls at once. Put each die on a mob it beats: d20 + bonus, at least its Defense. Anything still standing hits back. Stalker: the Banshee only goes after whoever is lowest.",
-   "2": "Some situations are choices. The Banshee is in the persistence row now, so every flip rolls for it too.",
+   "2": "The Banshee came back. Beaten mobs wait in the persistence row, and every flip rolls for them. It hit everyone for 1 on the way in. The card comes first, then you fight it again.",
    "3": "Targeted: only whoever is on point takes the Gremlin's damage, and it's doubled. Pick on point with that in mind.",
    "4": "A challenge: the analyst on point gets one roll. Bonuses count.",
    "5": "Beacon: the Drone rolls for the persistence row the moment it shows up, and anything it calls back rolls again. Comebacks return at full strength and hit everyone on the way in.",
    "6": "A breather before the boss. Heal up and check your kit.",
    "loot": "Kit drop. Every kit card is an agent: keep it running, or burn it once for a big one-shot effect.",
    "boss": "The boss. Its hits grow with your crew, and agents can't touch it. Burn what you've got."
-  }
+  },
+  "comeback": 2
  },
  "perks": {
   "HUN": {
@@ -975,5 +981,13 @@
   "full": true,
   "quick": false,
   "intro": false
+ },
+ "guard": {
+  "min": 14
+ },
+ "pack": true,
+ "secondWind": {
+  "at": 10,
+  "kit": 1
  }
 }

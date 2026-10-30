@@ -1,6 +1,6 @@
 const test = require('node:test'), assert = require('node:assert');
 const D = require('../data/cards.json');
-const { E, play, rng, TEAMS } = require('../sim/bot');
+const { E, play, step, rng, TEAMS } = require('../sim/bot');
 
 test('card counts add up to the 63-card deck', () => {
   assert.strictEqual(D.mobs.length, 15); assert.strictEqual(D.situations.length, 18); assert.strictEqual(D.situations.filter(s => s.story).length, 9);
@@ -201,4 +201,47 @@ test('core modes deal no story cards and skip boss row triggers; Full Shift has 
     return G.plog.slice(before).filter(x => x.why === 'boss').length;
   };
   assert.strictEqual(lock(false), 0); assert.ok(lock(true) >= 1);
+});
+
+test('guard: a crew die showing 14+ blocks for its roller instead of hitting, and can be taken back', () => {
+  const G = E.newGame(['HUN', 'RES'], 'quick', { rnd: rng(3) });
+  G.phase = 'combat'; G.rolled = true; G.blocks = [false, false];
+  G.play = [{ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 991, hits: 5, left: 5, back: 0, up: 0, ability: 'none' }];
+  G.dice = [{ kind: 'crew', k: 0, r: 13, dbl: false, used: false }, { kind: 'crew', k: 1, r: 15, dbl: false, used: false }, { kind: 'agent', k: 0, r: 19, card: { type: 'triage' }, used: false }];
+  assert.strictEqual(E.guard(G, 0), false, 'a 13 can’t guard');
+  assert.strictEqual(E.guard(G, 2), false, 'agent dice never guard');
+  assert.strictEqual(E.guard(G, 1), true); assert.deepStrictEqual(G.blocks, [false, true]);
+  assert.deepStrictEqual(E.incoming(G), [D.mobs.find(m => m.id === 'ogre').dmg, 0]);
+  assert.ok(E.canUndo(G)); E.unassign(G); assert.deepStrictEqual(G.blocks, [false, false]); assert.strictEqual(G.dice[1].used, false);
+});
+
+test('pack: a 1-Damage mob brings the next mob in the feed, and the situations it passes stay on top in order', () => {
+  const G = E.newGame(['HUN', 'RES'], 'quick', { rnd: rng(4) });
+  const mob = id => ({ ...D.mobs.find(m => m.id === id), kind: 'mob', uid: ++G.uid, left: 3, back: 0, up: 0 });
+  const sit = id => ({ ...D.situations.find(s => s.id === id), kind: 'sit', uid: ++G.uid });
+  const ogre = mob('ogre'), coffee = sit('coffee'), intel = sit('intel'), spray = mob('spray');
+  G.row = []; G.deck = [ogre, intel, coffee, spray];
+  E.flip(G);
+  assert.deepStrictEqual(G.play.map(m => m.id), ['spray', 'ogre']);
+  assert.deepStrictEqual(G.deck.map(c => c.id), ['intel', 'coffee']);
+  assert.strictEqual(G.sit, 2, 'both mobs count as flips for the shift clock');
+});
+
+test('second wind: the first drop to 10 HP or below draws a kit card once per shift', () => {
+  const G = E.newGame(['ENG'], 'quick', { rnd: rng(6) }); G.held[0] = []; G.loot = [];
+  const kit = G.kit.length; G.hps[0] = 14; G.phase = 'combat';
+  G.play = [{ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 992, hits: 5, left: 5, back: 0, up: 0 }]; G.rolled = true; G.dice = []; G.blocks = [false];
+  E.endRound(G);
+  assert.ok(G.hps[0] <= 10); assert.strictEqual(G.held[0].length, 1); assert.strictEqual(G.kit.length, kit - 1); assert.ok(G.wind);
+  G.hps[0] = 9; G.rolled = true; G.dice = []; G.blocks = [false]; E.endRound(G);
+  assert.strictEqual(G.held[0].length, 1, 'only once per shift');
+});
+
+test('First Shift: the second flip brings the Banshee back without a roll', () => {
+  for (let s = 1; s <= 10; s++) {
+    const G = E.newGame(['HUN'], 'intro', { rnd: rng(s) });
+    let k = 0; while (G.sit < 2 && !G.over && k++ < 500) step(G);
+    if (G.over) continue;
+    assert.ok(G.plog.some(p => p.sit === 2 && p.back.includes('MFA Banshee')), `seed ${s}`);
+  }
 });

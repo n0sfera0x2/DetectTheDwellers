@@ -273,3 +273,16 @@ test('analyst cards print the perk numbers from data; bosses mark their row trig
   for (const s of D.situations.filter(x => x.story)) assert.ok(flat(story(s)).includes('Advanced · Full Shift'), `${s.name} should carry the Advanced tag`);
 });
 
+
+test('pass 11 on print: Pack chips on the pack mobs only, Guard on the fight card, Second wind on the marker, the First Shift comeback', () => {
+  const D = require('../data/cards.json'), C = require('../deck/cards');
+  const flat = s => s.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, '\'').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
+  for (const m of D.mobs) assert.strictEqual(/>Pack</.test(C.mob(m)), !!m.pack, `${m.name} ${m.pack ? 'should' : 'should not'} carry the PACK chip`);
+  assert.strictEqual(D.mobs.filter(m => m.pack).length, 5);
+  assert.ok(flat(C.glossary()).includes('Pack Keep flipping to the next mob'), 'the Mob keywords card should state the Pack rule');
+  assert.ok(flat(C.fight()).includes(`Guard A crew die showing ${D.guard.min}+ can guard instead of hitting: you block this round.`));
+  const once = flat(C.oncePerFight());
+  assert.ok(once.includes('Once per shift') && once.includes('Don’t clear') && once.includes(`Second wind The first time anyone drops to ${D.secondWind.at} HP or less`));
+  const fs1 = flat(C.firstshift()), first = D.mobs.find(m => m.id === D.intro.deck[0]).name.replace(/^MFA /, '');
+  assert.ok(fs1.includes(`Flip ${D.intro.comeback} Don’t roll for the row. The ${first} comes back`) && fs1.includes(`Start at ${D.hp.intro[1]} HP each`));
+});

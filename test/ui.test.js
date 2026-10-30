@@ -144,12 +144,13 @@ test('between fights, the face-down feed card flips the next situation (tap or F
   const card = d.querySelector('.pdesk .fdown[data-a=flip]'); assert.ok(card, 'no face-down feed card');
   assert.match(card.getAttribute('aria-label'), /Flip situation 1 of/); assert.ok(d.querySelector('.status'), 'no status line');
   assert.ok(!d.querySelector('.pd-point'), 'a solo analyst has no on-point choice');
-  card.click(); assert.strictEqual(w.eval('G.sit'), 1); assert.ok(!d.querySelector('.fdown'));
+  // A Pack mob flipped first brings the next mob with it, so the clock moves two.
+  card.click(); assert.strictEqual(w.eval('G.sit'), w.eval(`G.log.some(l => /^Pack:/.test(l.t)) ? 2 : 1`)); assert.ok(!d.querySelector('.fdown'));
   // Back between fights with a crew: analyst cards pick who's on point, and F flips.
   w.eval(`UI.pick = ['HUN', 'RES']; start();`);
   d.querySelector('.acard[data-a=point][data-v="1"]').click(); assert.strictEqual(w.eval('G.point'), 1);
   assert.strictEqual(d.querySelector('.acard[data-v="1"]').getAttribute('aria-pressed'), 'true');
-  key(w, 'f'); assert.strictEqual(w.eval('G.sit'), 1);
+  key(w, 'f'); assert.strictEqual(w.eval('G.sit'), w.eval(`G.log.some(l => /^Pack:/.test(l.t)) ? 2 : 1`));
   assert.deepStrictEqual(errors, []);
 });
 
@@ -502,7 +503,7 @@ test('the end screen shows how long the shift took, stores it, and copies a one-
   const errors = []; w.addEventListener('error', e => errors.push(e.message));
   w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); Clock.t0 -= 14 * 60000; const before = snap(); G.over = true; G.win = true; finish(before);`);
   assert.match(d.querySelector('[data-dur]').textContent, /Shift took 14 min/);
-  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v24')); assert.strictEqual(Math.round(saved[0].min), 14);
+  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v25')); assert.strictEqual(Math.round(saved[0].min), 14);
   const line = w.eval('resultLine()');
   assert.match(line, /Quick Shift \(core\)/); assert.match(line, /Hunter \(1p\)/); assert.match(line, /14 min/); assert.match(line, /rounds?/); assert.match(line, /agents:/); assert.match(line, /Win: /);
   d.querySelector('[data-a=copy]').click();
@@ -515,4 +516,70 @@ test('the built page names its embedded fonts and the SIL Open Font License', ()
   for (const t of ['Chakra Petch', 'IBM Plex Mono', 'SIL Open Font License 1.1']) assert.ok(note.includes(t), `the font notice lacks ${t}`);
   assert.match(top, /Copyright 2018 The Chakra Petch Project Authors/); assert.match(top, /Copyright 2017 IBM Corp\./);
   assert.match(html, /^<!doctype html>/i, 'the notice must not push the doctype down');
+});
+
+test('a 14+ die can guard instead of hitting: button or G key, a distinct die, the blocking badge, and Undo takes it back', () => {
+  const { w, d, errors } = rigged();
+  w.eval(`G.play[0].ability = null; G.blocks = G.team.map(() => false); G.dice[0].r = 15; UI.sel = 0; render();`);
+  const k = w.eval('G.dice[0].k'), b = d.querySelector('[data-a=guard]');
+  assert.ok(b, 'no Guard button for a picked 15'); assert.match(b.textContent, /Guard with the 15/);
+  b.click();
+  assert.strictEqual(w.eval('G.dice[0].guard'), true); assert.strictEqual(w.eval(`G.blocks[${k}]`), true); assert.strictEqual(w.eval('G.play[0].left'), 3, 'a guard must not hit');
+  const die = d.querySelector('[data-a=die][data-v="0"]'); assert.ok(die.classList.contains('grd'), 'guarded die not marked'); assert.match(die.getAttribute('aria-label'), /guarding/);
+  assert.match(d.querySelector('.dock').textContent, /blocking/); assert.match(d.querySelector(`[data-hp="${k}"]`).textContent, /blocking/);
+  key(w, 'u');
+  assert.strictEqual(w.eval('G.dice[0].guard'), false); assert.strictEqual(w.eval(`G.blocks[${k}]`), false); assert.strictEqual(w.eval('UI.sel'), 0, 'undo should leave the die picked');
+  key(w, 'g'); assert.strictEqual(w.eval('G.dice[0].guard'), true, 'the G key should guard with the picked die');
+  // A 13 can't guard, and neither can a die whose roller already blocks.
+  w.eval(`G.dice[1].r = 13; UI.sel = 1; render();`); assert.ok(!d.querySelector('[data-a=guard]'), 'a 13 offered Guard');
+  w.eval(`G.dice[1].r = 16; G.dice[1].k = ${k}; render();`); assert.ok(!d.querySelector('[data-a=guard]'), 'Guard offered to an analyst already blocking');
+  assert.deepStrictEqual(errors, []);
+});
+
+test('the fight explainer and the double tip teach Guard', () => {
+  const { w, d, errors } = rigged();
+  w.eval(`G.play[0].ability = null; render();`);
+  const tips = w.eval('TIPS'); assert.match(tips.double, /guard/); assert.match(tips.guard, /14\+/); assert.match(tips.end, /guard/);
+  const rb = d.querySelector('.rbrief'); if (rb) assert.match(rb.textContent, /guard with any die showing 14\+/i);
+  assert.deepStrictEqual(errors, []);
+});
+
+test('Second wind: the first drop to 10 HP or below draws kit, with a banner and a spoken line, once per shift', () => {
+  const { w, d, errors } = rigged();
+  w.eval(`G.hps = [12, G.max]; G.held[0] = []; G.blocks = G.team.map(() => false); G.play[0].dmg = 3; G.play[0].ability = null; G.dice.forEach(x => { x.used = true; }); UI.sel = null; render(); act('end');`);
+  assert.strictEqual(w.eval('G.hps[0]'), 9); assert.ok(w.eval('G.wind'), 'engine never fired second wind');
+  const ban = d.querySelector('.pbanner.wind'); assert.ok(ban, 'no Second wind banner'); assert.match(ban.textContent, /Second wind/); assert.match(ban.textContent, /down to 9 HP/); assert.match(ban.textContent, /in the kit now/);
+  assert.strictEqual(w.eval('G.held[0].length'), 1, 'the card should go straight into the tray');
+  assert.match(w.eval('said'), /Second wind: .* down to 9 HP\. The crew draws/);
+  w.eval(`G.hps[0] = 5; G.dice.forEach(x => { x.used = true; }); act('roll'); G.dice.forEach(x => { x.used = true; }); act('end');`);
+  assert.strictEqual(w.eval('G.held[0].length'), 1, 'second wind fired twice'); assert.ok(!d.querySelector('.pbanner.wind'), 'banner outlived its round');
+  assert.deepStrictEqual(errors, []);
+});
+
+test('a Pack mob brings the next mob past a situation into its fight, with a banner and the Pack mark', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); G.row = [];
+    const mob = (m, uid) => ({ ...m, kind: 'mob', uid, left: m.hits, back: 0, up: 0 });
+    const pk = D.mobs.find(m => m.pack), other = D.mobs.find(m => !m.pack && m.ability !== 'beacon'), sit = D.situations.find(s => !s.story);
+    G.deck = [mob(other, 992), { ...sit, kind: 'sit', uid: 993 }, mob(pk, 991)]; act('flip');`);
+  assert.strictEqual(w.eval('G.play.map(m => m.uid).join()'), '991,992'); assert.strictEqual(w.eval('G.deck[G.deck.length - 1].uid'), 993, 'the passed situation should go back on top');
+  const ban = d.querySelector('.pbanner.pack'); assert.ok(ban, 'no Pack banner'); assert.match(ban.textContent, new RegExp(w.eval('G.play[1].name')));
+  assert.ok(d.querySelector('[data-mob="991"] .ptag.pk'), 'pack mob card has no Pack mark'); assert.ok(!d.querySelector('[data-mob="992"] .ptag.pk'), 'a non-pack mob shows the Pack mark');
+  assert.match(w.eval('said'), /Pack: .* comes in with it/);
+  w.eval(`act('roll'); render();`); assert.ok(d.querySelector('.pbanner.pack'), 'the Pack banner should stay for round 1');
+  assert.deepStrictEqual(errors, []);
+});
+
+test('First Shift: the second flip brings the Banshee back, and the tip says so', () => {
+  const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+  const errors = []; w.addEventListener('error', e => errors.push(e.message));
+  w.eval(`UI.mode = 'intro'; UI.pick = ['HUN']; start(); act('flip');
+    for (let n = 0; n < 20 && G.phase === 'combat'; n++) { act('roll'); G.dice.forEach(x => { x.r = 20; x.dbl = true; }); for (let i = 0; i < G.dice.length && G.phase === 'combat'; i++) if (G.play[0] && E.beats(G, G.dice[i], G.play[0])) { UI.sel = i; act('hit', String(G.play[0].uid)); } if (G.phase === 'combat') act('end'); act('end'); }
+    while (G.phase === 'loot') act('take', '0'); act('flip');`);
+  assert.strictEqual(w.eval('G.sit'), 2); assert.strictEqual(w.eval('G.plog[G.plog.length - 1].r'), 1, 'flip 2 should use the scripted row result');
+  const banshee = w.eval(`D.mobs.find(m => m.id === 'banshee').name`);
+  assert.match(d.querySelector('.pbanner').textContent, new RegExp(banshee));
+  const tip = d.querySelector('.tip').textContent; assert.match(tip, /back/i); assert.match(tip, /Banshee/);
+  assert.deepStrictEqual(errors, []);
 });

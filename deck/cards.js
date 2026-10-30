@@ -56,8 +56,12 @@ const mobHits = (h, n) => Math.max(1, h + D.mobAdd[n]);
 // One strip, read left to right: the crew-size column the table plays with. No hit boxes on mobs: one row of
 // boxes can only match one crew size, and would read as wrong at the other three. Track hits with coins.
 const hitstrip = hitsAt => `<div style="display: flex; align-items: baseline; justify-content: space-between; background: #FFFFFF; border: 1px solid ${RULE}; padding: 0 5px; line-height: 15px">${hud('Hits', PMUT)}${CREW.map(n => `<span style="display: inline-flex; align-items: baseline; gap: 3px">${hud(`${n}p`, PMUT)}<span style="font-family: ${MONO}; font-weight: 600; font-size: 13px; line-height: 15px; font-variant-numeric: tabular-nums; color: ${PINK}">${hitsAt(n)}</span></span>`).join('')}</div>`;
+// Pack is a mark, not a keyword: an outlined chip beside the domain tag, so it can't be mistaken for the keyword box.
+// The rule itself is on the Mob keywords reference card.
+const packTag = (more = '') => `<span style="align-self: flex-start; font-family: ${MONO}; font-weight: 600; font-size: 9.5px; line-height: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: ${FLT}; background: #FFFFFF; box-shadow: inset 0 0 0 1px ${FLT}; padding: 0 5px${more}">Pack</span>`;
 function mob(m) {
-  return shell(`${art(ART[m.id], 94)}${row(tag(m.domain, FL), hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(n => mobHits(m.hits, n))}\n${kwchip(m)}${foot(m.flavor)}`);
+  const tags = m.pack && D.pack ? tag(m.domain, FL) + packTag('; margin: 0 auto 0 4px') : tag(m.domain, FL);
+  return shell(`${art(ART[m.id], 94)}${row(tags, hud(`back ${m.persist[0]}–${m.persist[1]}`, AMT))}${nm(m.name, 14.5)}<div style="display: flex; gap: 4px">${stat('Defense', m.def, FLT)}${stat('Damage', m.dmg)}</div>${hitstrip(n => mobHits(m.hits, n))}\n${kwchip(m)}${foot(m.flavor)}`);
 }
 function sit(s) {
   const kind = { challenge: 'one attempt', choice: 'choose one', event: 'event' }[s.type];
@@ -131,20 +135,26 @@ function rowmat() {
 const runin = (label, t, c = FLT, size = 10) => `<div style="font-family: ${CHK}; font-weight: 500; font-size: ${size}px; line-height: ${lh(size)}px; color: ${PINK}"><span style="font-family: ${MONO}; font-weight: 600; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: ${c}">${e(label)}</span> ${e(t)}</div>`;
 const refrow = inner => `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 2px">${inner}</div>`;
 function fight() {
-  const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Story', 'Full Shift. Recon Agent in the tray? Use the Recon line.', CYT], ['Hits', 'Mobs and bosses print hits for 1–4 analysts. Use your crew size.'], ['Off-shift', `One analyst may skip their roll: no damage, +1 HP. The Fixer heals ${D.perks.PAT.rest}, split.`],
-    ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', `Double: two hits, and you block this round. Engineer: ${D.perks.ENG.dbl}–20.`], ['Hits back', 'Mobs still up hit everyone who didn’t block.'], ['Won', `Draw ${WORD[D.kitPerFight]} kit cards (solo: ${WORD[D.kitSolo]}). Kit deck empty? Shuffle the burned agents in.`, AMT]];
+  const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Story', 'Full Shift. Recon Agent in the tray? Use the Recon line.', CYT], ['Off-shift', `One analyst may skip their roll: no damage, +1 HP. The Fixer heals ${D.perks.PAT.rest}, split.`],
+    ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', `Double: two hits, and you block this round. Engineer: ${D.perks.ENG.dbl}–20.`], ['Guard', `A crew die showing ${D.guard.min}+ can guard instead of hitting: you block this round.`], ['Hits back', 'Mobs still up hit everyone who didn’t block.'], ['Won', `Draw ${WORD[D.kitPerFight]} kit cards (solo: ${WORD[D.kitSolo]}). Kit deck empty? Shuffle the burned agents in.`, AMT]];
   return shell(`${tag('Reference', CY)}${nm('A fight', 18)}${rows.map(([a, b, c]) => refrow(runin(a, b, c))).join('')}`, CY, CYT);
 }
+// The eight keywords, then the Pack mark under its own rule: it's printed beside a mob's domain, not in its keyword box.
 function glossary() {
-  const rows = Object.entries(D.keywords).map(([k, v]) => refrow(`${kwicon(k, 14)}${runin(v.name, v.text)}`)).join('');
-  return shell(`${tag('Reference', CY)}${nm('Mob keywords', 16)}${rows}`, CY, CYT);
+  const rows = Object.entries(D.keywords).map(([k, v]) => refrow(`${kwicon(k, 14)}${runin(v.name, v.text, FLT, 9.5)}`)).join('');
+  const pack = D.pack ? `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1.5px solid ${FLT}; padding-top: 3px">${packTag()}${tx('Keep flipping to the next mob: it joins this fight. Put the situations you passed back on top, in order.', 9.5, PINK, 500)}</div>` : '';
+  return shell(`${tag('Reference', CY)}${nm('Mob keywords', 16)}<div style="display: flex; flex-direction: column; gap: 3px">${rows}</div>${pack}`, CY, CYT);
 }
 function firstshift() {
   const names = Object.fromEntries([...D.mobs, ...D.situations].map(x => [x.id, x.name]));
-  const order = D.intro.deck.map((c, i) => `<div style="display: flex; gap: 6px; align-items: baseline; border-top: 1px solid ${RULE}; padding-top: 2px">${hud(String(i + 1), CYT)}${tx(names[c], 11, PINK, 700)}</div>`).join('');
+  const order = D.intro.deck.map((c, i) => `<div style="display: flex; gap: 6px; align-items: baseline; border-top: 1px solid ${RULE}; padding-top: 2px">${hud(String(i + 1), CYT)}${tx(names[c], 11, PINK, 700)}${D.intro.comeback === i + 1 ? `<span style="margin-left: auto; line-height: 13px">${hud(`+ ${names[D.intro.deck[0]].replace(/^MFA /, '')} back`, AMT)}</span>` : ''}</div>`).join('');
   const b = D.bosses.find(x => x.id === D.intro.boss).name;
   const kitNames = D.intro.kit.map(t => D.kit.find(k => k.type === t).name.replace(' Agent', ''));
-  return shell(`${tag('Your first game', CY)}${nm('First Shift', 18)}${tx('Pull these six and stack them face down, 1 on top:', 10, PMUT, 500)}${order}\n${tx(`Boss underneath: ${b}. Put the ${kitNames.join(' and ')} Agents on top of the kit deck. Start at ${D.hp.intro[1]} HP each.`, 10, PINK, 500)}${foot('Then play normally. It teaches one idea per card.')}`, CY, CYT);
+  // The scripted comeback (D.intro.comeback): on that flip the row isn't rolled, the first card's mob comes back.
+  const cb = D.intro.comeback, first = names[D.intro.deck[0]], sitName = names[D.intro.deck[cb - 1]];
+  const short = first.replace(/^MFA /, '');
+  const comeback = cb ? `<div style="background: #FFFFFF; border: 1px solid ${AMT}; padding: 2px 6px 3px">${runin(`Flip ${cb}`, `Don’t roll for the row. The ${short} comes back, hits everyone for 1, and you fight it after ${sitName}.`, AMT)}</div>` : '';
+  return shell(`${tag('Your first game', CY)}${nm('First Shift', 18)}${tx('Stack these six face down, 1 on top:', 10, PMUT, 500)}${order}\n${tx(`Boss underneath: ${b}. Put the ${kitNames.join(' and ')} Agents on top of the kit deck. Start at ${D.hp.intro[1]} HP each.`, 10, PINK, 500)}${comeback}${foot('Then play normally: one new idea per card.')}`, CY, CYT);
 }
 // Marker cards: print-only aids for state the web build tracks itself. Same paper shell as every front.
 // Came back (6 copies, amber): tucked under a comeback so only its top band shows above the mob card. The
@@ -170,7 +180,9 @@ function roundTrack() {
 function oncePerFight() {
   const spot = (label, c, t) => `<div style="display: flex; gap: 8px; align-items: center; border-top: 1px solid ${RULE}; padding-top: 5px"><div style="flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1.5px dashed ${c}; background: #FFFFFF"></div><div style="display: flex; flex-direction: column; gap: 1px">${hud(label, c)}${tx(t, 10.5, PINK, 500)}</div></div>`;
   const op = D.bosses.find(b => b.id === 'apt').name;
-  return shell(`${row(tag('Marker', CY), hud('Clear after each fight', CYT))}${nm('Once per fight', 18)}${tx('Put a coin on a spot when it happens. It can’t happen again this fight.', 10.5, PINK, 500)}${spot('Decoy used', CYT, 'A running Decoy Agent saved whoever’s on point this fight.')}${spot('Operator risen', FLT, `${op} came back with 2 hits left. Beat it again and it’s done.`)}${foot('The web game tracks this for you.')}`, CY, CYT);
+  // Second wind is once per shift, so its spot sits apart under an amber "Don't clear" rule and keeps its coin all shift.
+  const sw = D.secondWind, wind = sw ? `<div style="display: flex; flex-direction: column; gap: 2px; border-top: 1.5px dashed ${AMT}; padding-top: 3px; margin-top: 2px">${row(hud('Once per shift', AMT), hud('Don’t clear', AMT))}${spot('Second wind', AMT, `The first time anyone drops to ${sw.at} HP or less, the crew draws ${sw.kit === 1 ? 'a kit card' : WORD[sw.kit] + ' kit cards'}.`)}</div>` : '';
+  return shell(`${row(tag('Marker', CY), hud('Clear after each fight', CYT))}${nm('Once per fight', 18)}${tx('Put a coin on a spot when it happens. It can’t happen again this fight.', 10.5, PINK, 500)}${spot('Decoy used', CYT, 'A running Decoy Agent saved whoever’s on point this fight.')}${spot('Operator risen', FLT, `${op} came back with 2 hits left. Beat it again and it’s done.`)}${wind}${foot('The web game tracks this for you.')}`, CY, CYT);
 }
 
 // One back for every card. The back scene (the d20 glowing on a console at 2 AM) fills the card but is

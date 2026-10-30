@@ -23,6 +23,7 @@ Your first game? Use the First Shift setup instead (Reference).
 1. **Pick who’s on point.** They roll an extra die this round and take the kit draw.
 2. **Flip the top card of the feed and roll the row die** together (once anything is in the row). On point reads the card aloud, flavour line first.
 3. **Resolve it.** A situation does what it says. A mob starts a fight, joined by anything that came back from the row. Resolve a situation before any fight.
+   - **Pack.** A PACK mob brings a friend: keep flipping until you hit another mob, and it joins this fight. Put the situations you passed back on top, in order. No mob left? It comes alone. (Not in First Shift.)
 4. **Repeat** until the feed is empty. Then the boss arrives at 05:59, with one last row roll.
 
 ### A fight
@@ -31,6 +32,7 @@ Your first game? Use the First Shift setup instead (Reference).
 - **Roll.** Everyone rolls a crew die; on point rolls two. Running agents roll agent dice.
 - **Assign.** Put each die on a mob it beats: d20 + bonus ≥ the mob’s Defense is one hit.
 - **Doubles.** A natural 18–20 is two hits, and you block this round.
+- **Guard.** A crew die showing 14+ can guard instead of hitting: you block this round, like a double. Agent dice can’t guard.
 - **Hits back.** Every mob still standing hits everyone who didn’t block, for its Damage. A mob you finish this round doesn’t hit back.
 - **Won.** When the last mob falls, on point draws two kit cards for the crew. Playing solo, you draw one.
 
@@ -59,7 +61,7 @@ Each analyst has a **perk** (what you do) and an **agent link** (what one kind o
 
 ### Mob keywords
 
-Every mob has one keyword.
+Every mob has one keyword. PACK is a separate mark, not a keyword.
 
 | Keyword | Rule |
 | --- | --- |
@@ -75,6 +77,8 @@ Every mob has one keyword.
 ### Winning and losing
 
 Beat the boss and you’ve made it to dawn: the shift is won. If any analyst hits 0 HP, the shift is lost for everyone. Healing never takes you above your starting HP.
+
+**Second wind.** The first time anyone drops to 10 HP or less, the crew draws one kit card. Once per shift: mark it on the Once per fight marker and don’t clear it.
 
 ## Advanced modules: Full Shift
 
@@ -115,7 +119,7 @@ The same at every crew size.
 | Full Shift, Analyst | 48 |
 | Full Shift, Veteran | 38 |
 | Quick Shift | 37 |
-| First Shift | 29 |
+| First Shift | 23 |
 
 When damage takes you below the tens coin, drop it a step and move the ones coin up: at 42, taking 5 leaves 37 (tens on 30, ones on 7).
 
@@ -125,7 +129,7 @@ Mob cards and boss cards print all four numbers. The data stores the 2-player mo
 
 | Analysts | 1 | 2 | 3 | 4 |
 | --- | --- | --- | --- | --- |
-| Mob hits | printed − 2 | printed | printed + 2 | printed + 4 |
+| Mob hits | printed − 2 | printed | printed + 2 | printed + 3 |
 | Boss hits | base | base + 3 | base + 4 | base + 6 |
 
 ### Bosses
@@ -153,7 +157,7 @@ Eight types, two copies each.
 | Decoy | Once per fight, after the roll: the analyst on point takes no damage this round. | After the roll: everyone blocks this round. |
 | Recon | Peek at the next situation before picking who’s on point. A mob you peeked: everyone gets +5 against it all fight. A story card: you get its With Recon line (you get that even without peeking). | Look at the next 3 situations and pull one from the feed for good. It’s discarded, not buried. |
 
-A mob "came back from the row" once a row roll has returned it, for the rest of the shift: that’s what the Came back marker shows. Mark a used Decoy on the Once per fight marker.
+A mob "came back from the row" once a row roll has returned it, for the rest of the shift: that’s what the Came back marker shows. Mark a used Decoy on the Once per fight marker, and Second wind on its once-per-shift spot.
 
 ### Analysts
 
@@ -169,7 +173,7 @@ The agent link works for the whole crew’s agents, so a crew builds its own age
 
 ### First Shift (your first game)
 
-Core rules, a fixed feed that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck. Start at 29 HP each, with no agents, and play normally. The First Shift reference card has the stack.
+Core rules, a fixed feed that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck. Start at 23 HP each, with no agents, and play normally, with one scripted moment: **on flip 2, don’t roll for the row. The MFA Banshee comes back**, hits everyone for 1 on the way in (it’s 1 Damage), and you fight it after Patch Tuesday. Pack mobs don’t pack in First Shift. The First Shift reference card has the stack.
 
 ### Quick Shift (booth mode)
 
@@ -181,7 +185,7 @@ The feed is the night, 22:00 to 06:00, spread evenly over the flips: in a Full S
 
 ### Components
 
-- **72 cards:** 15 mobs, 18 situations (9 of them story cards), 3 bosses, 5 analysts, 16 kit (8 agents × 2), 4 HP trackers, 2 double-sided reference cards, and 9 markers (6 Came back, 1 Next mob, 1 Round, 1 Once per fight).
+- **72 cards:** 15 mobs, 18 situations (9 of them story cards), 3 bosses, 5 analysts, 16 kit (8 agents × 2), 4 HP trackers, 2 double-sided reference cards, and 9 markers (6 Came back, 1 Next mob, 1 Round, 1 Once per fight with a once-per-shift Second wind spot).
 - **6 crew d20s** in one colour: one each, plus on point’s second die and room for Triage burns.
 - **3 agent d20s** in a second colour, for running agents. Agent dice can’t hit the boss, and the Engineer gives them +3, so keep them apart.
 - **1 row d20** in amber, for every row roll.

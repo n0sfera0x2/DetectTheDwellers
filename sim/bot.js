@@ -29,6 +29,7 @@ function step(G) {
     if (!G.rolled) {
       if (G.team.length > 1) { const lo = G.hps.indexOf(Math.min(...G.hps)); if (G.hps[lo] <= G.max * 0.35) E.setRest(G, lo); }
       burns(G, 'pre'); E.rollAll(G); if (G.over) return; burns(G, 'roll');
+      guards(G, 'danger');
       for (let pass = 0; pass < 40 && !G.over && G.phase === 'combat'; pass++) {
         const pri = m => (m.kind === 'boss' ? 30 : 0) + (m.left <= 2 ? 15 : 0) + E.dmgOf(G, m) * 8 + (m.ability === 'regen' ? 6 : 0) - m.left;
         let best = null;
@@ -42,11 +43,26 @@ function step(G) {
         if (!best) break; E.assign(G, best.i, best.uid);
       }
       if (G.phase !== 'combat' || G.over) return;
+      guards(G, 'spare');
       burns(G, 'post');
       if (!G.decoyUsed && E.active(G, 'decoy').length && E.incoming(G)[G.point] >= 3) E.decoy(G);
     }
     return E.endRound(G);
   }
+}
+
+// When to guard (D.guard): 'danger' before assigning, if this round's hits would take a big bite out of
+// whoever rolled (D.botGuard of max HP, or a lethal hit), spend that analyst's lowest eligible die to block;
+// 'spare' after assigning, any unused eligible die guards for free.
+function guards(G, when) {
+  if (!D.guard || D.botGuard === 'off') return;
+  const inc = E.incoming(G);
+  G.team.forEach((_, k) => {
+    if (G.blocks[k] || !inc[k]) return;
+    const mine = G.dice.map((d, i) => [d, i]).filter(([d]) => !d.used && d.kind === 'crew' && d.k === k && d.r >= D.guard.min && !d.dbl).sort((a, b) => a[0].r - b[0].r);
+    if (!mine.length) return;
+    if (when === 'spare' || inc[k] >= G.hps[k] || inc[k] >= G.max * (D.botGuard ?? 0.35)) E.guard(G, mine[0][1]);
+  });
 }
 
 // When to burn a kit card instead of keeping it running.

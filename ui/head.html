@@ -171,7 +171,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 @keyframes tumble{from{transform:rotate(-320deg) scale(.55)}to{transform:none}}@keyframes land{0%{transform:scale(1.2)}100%{transform:none}}
 .pbanner{display:flex;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--rule2);background:var(--s1)}.pbanner p{font-size:16px;line-height:1.45;max-width:70ch}.pbanner p b{font-weight:700}
 .pbanner .d20{width:48px;height:48px;font-size:21px}
-.table>.pbanner{margin:10px 14px 0;padding:6px 12px}.table>.pbanner .d20{width:40px;height:40px;font-size:18px}.table>.pbanner p{font-size:15px}.pbanner.hot{border-color:var(--am);background:#1A120C}.pbanner.hot p b{color:var(--am)}
+.table>.bans{display:flex;flex-direction:column;gap:6px;margin:10px 14px 0}.table .bans>.pbanner{padding:6px 12px}.table .bans>.pbanner .d20{width:40px;height:40px;font-size:18px}.table .bans>.pbanner p{font-size:15px}.pbanner.hot{border-color:var(--am);background:#1A120C}.pbanner.hot p b{color:var(--am)}
 
 /* The desk: one portrait card (situation, kit drop) with its actions beside it; the night desk shows around them. */
 .desk{display:grid;grid-template-columns:var(--cw) minmax(0,520px);gap:18px 32px;align-items:start;justify-content:center}
@@ -278,6 +278,12 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .mob.ko.gonek .scr::after{content:"Gone for good";border-color:var(--am);color:var(--am);white-space:nowrap;font-size:22px}
 .pbanner.gone{border-color:var(--am);background:#1A120C}.pbanner.gone p b{color:var(--am)}
 .gstamp{flex:none;padding:3px 9px;border:2px solid var(--am);color:var(--am);font-family:var(--disp);font-weight:700;font-size:14px;line-height:1.1;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-4deg)}
+/* Pack and Second wind: a stamp beside the line, like Gone for good. Pack is cyan-on-dark at the table, a hollow chip on the card */
+.kstamp{flex:none;padding:3px 9px;border:2px solid currentColor;font-family:var(--disp);font-weight:700;font-size:14px;line-height:1.1;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-4deg);white-space:nowrap}
+.pbanner.pack{border-color:var(--fl);background:#1C0E09}.pbanner.pack .kstamp,.pbanner.pack p b{color:var(--fl)}
+.pbanner.wind{border-color:var(--cy);background:#0E2129}.pbanner.wind .kstamp,.pbanner.wind p b{color:var(--cy)}
+.ptag.pk{background:transparent;color:var(--flt);box-shadow:inset 0 0 0 1.5px var(--flt);cursor:help}
+.status .wind-l{color:var(--ink)}.status .wind-l b{color:var(--cy)}
 .status .gone-l{color:var(--am)}.status .resh-l{color:var(--cy)}.status .fix-l b{color:var(--cy)}
 .endbar .btn .sub{font-weight:500;font-size:13px;opacity:.8;margin-left:4px}
 .mob.ko .scr::after{content:"Down";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-8deg);padding:4px 14px;border:3px solid var(--cy);color:var(--cy);font-family:var(--disp);font-weight:700;font-size:28px;letter-spacing:.12em;text-transform:uppercase;background:rgba(7,6,10,.8)}
@@ -316,6 +322,12 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .die.nat{--bd:var(--ink)}.die.nat b{color:var(--am)}.die.nat span{color:var(--ink)}
 /* Spent and no-target dice stay legible: shape at least 3:1, text at least 4.5:1 */
 .die.used{--bd:#776D72;--fill:var(--s1);cursor:default}.die.used b,.die.used span{color:var(--off)}.die.used b{text-decoration:line-through;text-decoration-thickness:2px}
+/* Guard: a 14+ die that can block wears a small shield; a guarded die is a cyan shield, not a struck-out number */
+.die .gmark{position:absolute;top:-3px;right:0;width:15px;height:15px;display:flex;align-items:center;justify-content:center;background:var(--s2);color:var(--cy)}.die .gmark .ic{width:11px;height:11px}
+.die.used.grd{--bd:var(--cy);--fill:#0E2129}.die.used.grd b{color:var(--cy);text-decoration:none}.die.used.grd span{color:var(--cy)}.die.grd .gmark{background:var(--cy);color:#04141a}
+.die[aria-pressed="true"] .gmark{background:var(--ink);color:#04141a}
+.grdb{white-space:nowrap}.grdb .ic{width:14px;height:14px}.grdb .gs{display:none}
+@media (max-width:640px){.grdb .gw{display:none}.grdb .gs{display:inline}}
 .die.dead{--bd:#776D72}.die.dead b{color:var(--ink)}.die.dead span{color:var(--mut)}
 /* A picked die reads dark on cyan, even when it has no target */
 .die[aria-pressed="true"]{--fill:var(--cy);--bd:var(--ink);--tx:#04141a}.die[aria-pressed="true"] b,.die[aria-pressed="true"] span,.die[aria-pressed="true"] b em{color:#04141a}
@@ -333,7 +345,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
      numbers, then the dice tray. The pair centres on the desk, so neither side of the board sits empty. */
   .table.solo{display:grid;grid-template-columns:minmax(16px,1fr) var(--cw) minmax(0,440px) minmax(16px,1fr);grid-template-rows:auto auto auto 1fr;grid-template-areas:"h h h h" ". c b ." ". c r ." ". c d .";align-items:start}
   .table.solo>.fhead{grid-area:h}.table.solo>.inplay{grid-area:c;padding:14px 0 16px;justify-content:flex-start}
-  .table.solo>.pbanner{grid-area:b;margin:14px 0 0 28px}
+  .table.solo>.bans{grid-area:b;margin:14px 0 0 28px}
   .rbrief{grid-area:r;display:flex;flex-direction:column;gap:8px;margin:14px 0 0 28px}
   .rbrief ul{list-style:none;margin:0;padding:0}
   .rbrief li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:baseline;padding:10px 0;border-top:1px solid var(--rule);font-size:16px;line-height:1.45;color:var(--ink);text-wrap:pretty}

@@ -126,7 +126,8 @@
       const nd = G.n === 1 ? D.soloDice : k === G.point ? 2 : 1;
       for (let i = 0; i < nd; i++) { const crewDie = G.n === 1 && i === nd - 1; dice.push({ k, crew: true, src: crewDie ? 'crew' : 'own', ...pipDie(1 + d6(G), crewDie ? 'CREW' : id) }); }
     });
-    for (let i = 0; i < running(G, 'triage'); i++) dice.push({ k: G.point, crew: false, src: 'agent', ...pipDie(1 + d6(G), 'AGENT') });
+    // Each running Triage Agent rolls its own die; kuid ties the die to its card (it sits under that card on the mat).
+    for (const c of G.tray.filter(c => c.t === 'triage')) dice.push({ k: G.point, crew: false, src: 'agent', kuid: c.uid, ...pipDie(1 + d6(G), 'AGENT') });
     dice.forEach((d, i) => { d.i = i; d.used = null; d.takes = []; d.turned = false; });
     G.dice = dice; G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = [];
     G.roundDmg = {}; G.play.forEach(m => { G.roundDmg[m.uid] = dmgOf(G, m); });

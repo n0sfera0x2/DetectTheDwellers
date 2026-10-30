@@ -283,11 +283,25 @@
     const bans = vBossBanner() + vRowRoll() + vAloud();
     let body = '';
     // A lone mob: the card, and beside it the banners and the round in plain words (as the real game's solo table).
-    if (G.play.length === 1) return `<section class="table solo" aria-label="The fight">${head}<div class="solo-b"><div class="inplay">${vMob(G.play[0])}</div><div class="sb">${bans ? `<div class="bans">${bans}</div>` : ''}${vBrief(G.play[0])}</div></div></section>`;
+    if (G.play.length === 1) return `<section class="table solo" aria-label="The fight">${head}<div class="solo-b"><div class="inplay">${vMob(G.play[0])}</div><div class="sb">${bans ? `<div class="bans">${bans}</div>` : ''}${vBrief(G.play[0])}</div></div>${vAgents()}</section>`;
     if (G.play.length) body = `<div class="inplay many">${G.play.map(vMob).join('')}</div>`;
     else if (G.phase === 'flip') body = vFlipDesk();
-    else if (G.phase === 'loot') body = `<p class="status pad"><b>Fight won.</b> The tray is over its limit: discard from the kit tray.</p>`;
-    return `<section class="table" aria-label="The fight">${head}${bans ? `<div class="bans">${bans}</div>` : ''}${body}</section>`;
+    else if (G.phase === 'loot') body = `<p class="status pad"><b>Fight won.</b> The tray is over its limit: discard from the agents below.</p>`;
+    return `<section class="table" aria-label="The fight">${head}${bans ? `<div class="bans">${bans}</div>` : ''}${body}${vAgents()}</section>`;
+  }
+  // The agents on the mat, below the mobs: each kit card full size, and under a running Triage Agent the die it
+  // rolled this round (or a dashed spot where it will land), as the physical die sits under the physical card.
+  function vAgents() {
+    const G = UI.G, loot = G.phase === 'loot', drawn = new Set(G.drawn.map(c => c.uid));
+    // With any Triage on the mat, every card keeps the die row's height so the Burn buttons line up.
+    const anyT = G.tray.some(c => c.t === 'triage');
+    const under = c => { if (c.t !== 'triage') return anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''; const ds = G.dice.filter(d => d.kuid === c.uid);
+      return `<div class="t-adice" role="group" aria-label="${esc(E.KIT_NAME[c.t])} die">${ds.length ? ds.map(d => dieHtml(d, G.dice.length)).join('') : '<span class="t-die ph" aria-hidden="true"><span class="o">Rolls 1</span></span>'}</div>`; };
+    const kit = G.tray.length ? `<div class="t-kit">${G.tray.map(c => { const can = !loot && E.canBurn(G, c.t);
+      return `<div class="t-kslot${loot && drawn.has(c.uid) ? ' drawn' : ''}${can ? ' live' : ''}" data-card="agent:${c.t}" data-kuid="${c.uid}">${A.agentCard(c.t)}${under(c)}
+      <div class="row"><span class="run">${loot ? (drawn.has(c.uid) ? 'New' : '') : 'Running'}</span>${loot ? `<button class="btn s warn" data-a="discard" data-u="${c.uid}" data-k="disc${c.uid}">Discard</button>` : `<button class="btn s cy" data-a="burn" data-u="${c.uid}" data-k="burn${c.uid}" ${can ? '' : 'disabled'} aria-label="Burn the ${E.KIT_NAME[c.t]}">Burn</button>`}</div></div>`; }).join('')}</div>`
+      : '<p class="empty">No agents. Win a fight to draw more.</p>';
+    return `<div class="t-agents"><h2 class="sech"><span>Agents</span><span class="cnt num">${G.tray.length}/${G.cap} in the tray · deck ${G.kit.length}</span></h2>${kit}</div>`;
   }
   function vBrief(m) {
     const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null, dm = !m.boss && dataMob(m.id);
@@ -303,14 +317,8 @@
     const rowHtml = G.row.length ? `<div class="t-rowlist">${G.row.map(m => `<div class="rcard"><span class="scr">${slice(ART[m.id])}</span><div class="rc-b"><b class="nm">${esc(m.name)}</b><span class="rng">Back on 2–${m.top}</span>
       <span class="t-track" aria-hidden="true">${Array.from({ length: 11 }, (_, i) => `<i class="${i + 2 <= m.top ? 'on' : ''}${r && r.fight === G.fight && r.roll === i + 2 ? ' roll' : ''}">${i + 2}</i>`).join('')}</span></div></div>`).join('')}</div>`
       : '<p class="empty">Empty. Beaten mobs land here and come back on the 2 amber dice.</p>';
-    const loot = G.phase === 'loot', drawn = new Set(G.drawn.map(c => c.uid));
-    const kit = G.tray.length ? `<div class="t-kit">${G.tray.map(c => { const can = !loot && E.canBurn(G, c.t);
-      return `<div class="t-kslot${loot && drawn.has(c.uid) ? ' drawn' : ''}${can ? ' live' : ''}" data-card="agent:${c.t}" data-kuid="${c.uid}">${A.agentCard(c.t)}
-      <div class="row"><span class="run">${loot ? (drawn.has(c.uid) ? 'New' : '') : 'Running'}</span>${loot ? `<button class="btn s warn" data-a="discard" data-u="${c.uid}" data-k="disc${c.uid}">Discard</button>` : `<button class="btn s cy" data-a="burn" data-u="${c.uid}" data-k="burn${c.uid}" ${can ? '' : 'disabled'} aria-label="Burn the ${E.KIT_NAME[c.t]}">Burn</button>`}</div></div>`; }).join('')}</div>`
-      : '<p class="empty">No agents. Win a fight to draw more.</p>';
     return `<aside class="t-side">
       <div class="panel pad"><h2 class="sech a"><span>Persistence row</span><span class="cnt">${G.gone.length ? `${G.gone.length} gone for good` : ''}</span></h2>${rowHtml}</div>
-      <div class="panel pad c"><h2 class="sech"><span>Kit tray</span><span class="cnt num">${G.tray.length}/${G.cap} · deck ${G.kit.length}</span></h2>${kit}</div>
       <div class="panel pad"><h2 class="sech"><span>Crew cards</span><span class="cnt">${esc(nm(G.team[G.point]))} on point</span></h2><div class="t-crewcards">${G.team.map((id, k) => `<div class="t-cslot${k === G.point ? ' pt' : ''}" data-card="analyst:${id}">${A.analystCard(id)}${k === G.point ? '<div class="lbl">On point</div>' : ''}</div>`).join('')}
         <div class="t-cslot" data-card="legend">${A.legend}</div></div></div>
     </aside>`;
@@ -340,7 +348,8 @@
       else if (d.used) hint = 'That die is used. <b>Undo</b> to take it back.';
       else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one mob or two, <b>or Guard</b>.` : 'Tap a glowing die under a mob that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') : 'Nothing it can hit.'}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
-      ctl = `<div class="t-dice" role="group" aria-label="Dice">${G.dice.map(x => dieHtml(x, G.dice.length)).join('')}</div>
+      const ag = G.dice.filter(x => x.kuid).length;
+      ctl = `<div class="t-dice" role="group" aria-label="Crew dice">${G.dice.filter(x => !x.kuid).map(x => dieHtml(x, G.dice.length)).join('')}${ag ? `<span class="t-agnote">+ ${ag} agent ${ag === 1 ? 'die' : 'dice'} under ${ag === 1 ? 'its card' : 'their cards'}</span>` : ''}</div>
         <div class="acts">
         ${sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard <kbd>G</kbd></button>` : ''}
         ${sel && t.enrich ? `<span class="inc">Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
@@ -348,7 +357,7 @@
         <button class="btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <kbd>U</kbd></button>
         <button class="btn p" data-a="end" data-k="end">End round <kbd>E</kbd></button></div>`;
     } else if (G.phase === 'loot') {
-      hint = `<b>The tray holds ${G.cap}.</b> Discard ${G.tray.length - G.cap} agent${G.tray.length - G.cap === 1 ? '' : 's'} from the kit tray (new ones are ringed).`;
+      hint = `<b>The tray holds ${G.cap}.</b> Discard ${G.tray.length - G.cap} agent${G.tray.length - G.cap === 1 ? '' : 's'} from the agents on the mat (new ones are ringed).`;
     }
     return `<div class="dock" role="region" aria-label="Dice tray"><div class="dockin"><p class="status" aria-live="polite">${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}</p>${ctl}</div></div>`;
   }

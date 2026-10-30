@@ -370,3 +370,18 @@ test('page: a double stays selected for its second take; undo takes one back; ke
   d.querySelector(`.t-slot[data-uid="${m.uid}"] .t-td.tgt`).click(); assert.equal(G.dice[0].takes.length, 2); assert.ok(G.dice[0].used);
   d.dispatchEvent(new w.KeyboardEvent('keydown', { key: '2', bubbles: true })); assert.equal(w.CDUI.UI.sel, 1);
 });
+
+test('page: agents sit on the mat; a Triage Agent’s die lands under its own card, not in the dice tray', { skip: !JSDOM && 'jsdom not installed' }, () => {
+  const w = load(8), d = w.document, click = s => d.querySelector(s).click();
+  click('[data-a="start"]');
+  const G = w.CDUI.UI.G; G.tray = [{ uid: 'k1', t: 'triage' }, { uid: 'k2', t: 'recover' }, { uid: 'k3', t: 'triage' }]; w.CDUI.render();
+  assert.ok(d.querySelector('.table .t-agents [data-kuid="k1"]'), 'agents are on the play mat'); assert.ok(!d.querySelector('.t-side .t-kslot'), 'not in the side panel');
+  assert.equal(d.querySelectorAll('.t-agents .t-die.ph').length, 2, 'a spot under each Triage card before the roll');
+  click('[data-a="flip"]'); if (G.phase === 'roll') click('[data-a="roll"]'); assert.equal(G.phase, 'assign');
+  const ag = G.dice.filter(x => !x.crew); assert.equal(ag.map(x => x.kuid).join(), 'k1,k3');
+  for (const x of ag) assert.ok(d.querySelector(`[data-kuid="${x.kuid}"] .t-adice [data-k="die${x.i}"]`), 'under its card');
+  assert.equal(d.querySelectorAll('.dock .t-die').length, G.dice.length - ag.length, 'the tray holds only crew dice');
+  assert.equal(d.querySelectorAll('[data-kuid="k2"] .t-die').length, 0, 'only Triage rolls');
+  // Picking the agent die under its card works like any die.
+  d.querySelector(`[data-k="die${ag[0].i}"]`).click(); assert.equal(w.CDUI.UI.sel, ag[0].i);
+});

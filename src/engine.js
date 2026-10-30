@@ -101,6 +101,8 @@ function DTD12(D) {
     }
     G.lastSit = res; G.cur = null; if (!G.over) { if (G.pendingBack.length) { const b = G.pendingBack; G.pendingBack = []; const p = G.persist; startCombat(G, b); G.persist = p; } else G.phase = G.loot.length ? 'loot' : 'point'; } return res;
   }
+  // Kit cards a won fight draws: a solo analyst draws fewer (D.kitSolo).
+  function kitWin(G) { return G.team.length === 1 && D.kitSolo != null ? D.kitSolo : (D.kitPerFight || 1); }
   function drawLoot(G, n) {
     // An empty kit deck is rebuilt from the burned agents (D.reshuffleKit), so late fights still pay.
     if (D.reshuffleKit && G.kit.length < n && G.discard.length) { G.kit = shuffle([...G.discard, ...G.kit], G.rnd); G.discard = []; G.stats.reshuffles = (G.stats.reshuffles || 0) + 1; log(G, 'The kit deck is empty: the burned agents are shuffled into a new one.'); }
@@ -188,7 +190,7 @@ function DTD12(D) {
     if (!G.play.length) endCombat(G);
   }
   function endCombat(G) { G.lastRound = { ended: true }; G.dice.forEach(d => { d.used = true; }); log(G, 'The fight is over.'); const rc = carried(G, 'recover'), rh = (D.recoverHeal || 3) + (on(G, 'PAT') ? P('PAT', 'recover', 0) : 0);
-    if (on(G, 'PAT') && P('PAT', 'fight', 0)) { const h = spread(G, P('PAT', 'fight', 0)); if (h) log(G, `The Fixer patches the crew after the fight: ${h} HP.`); } if (rc) { G.stats.auto.healed += spread(G, rh * rc); log(G, `Recovery Agent${rc > 1 ? 's' : ''}: ${rh * rc} HP across the crew.`); } drawLoot(G, (D.kitPerFight || 1) + (on(G, 'SOA') ? P('SOA', 'draw', 0) : 0)); G.phase = G.loot.length ? 'loot' : 'point'; }
+    if (on(G, 'PAT') && P('PAT', 'fight', 0)) { const h = spread(G, P('PAT', 'fight', 0)); if (h) log(G, `The Fixer patches the crew after the fight: ${h} HP.`); } if (rc) { G.stats.auto.healed += spread(G, rh * rc); log(G, `Recovery Agent${rc > 1 ? 's' : ''}: ${rh * rc} HP across the crew.`); } drawLoot(G, kitWin(G) + (on(G, 'SOA') ? P('SOA', 'draw', 0) : 0)); G.phase = G.loot.length ? 'loot' : 'point'; }
   function useItem(G, k, idx, target) {
     const c = G.held[k][idx]; if (!c || G.over || ['agent', 'forensic'].includes(c.kind)) return false;
     if (c.kind === 'jump') { if (G.hps[k] >= G.max) return false; heal(G, k, D.jumpHeal ?? 4); }
@@ -249,6 +251,6 @@ function DTD12(D) {
     for (const m of G.play) { m.up++; if (m.ability === 'regen' && m.left < m.hits) m.left++; }
     beginRound(G); return true;
   }
-  return { huntable, mobHits, slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, useItem, takeLoot, trade, endRound, incoming, incomingBy, unassign, canUndo, dmgOf, cls, alive };
+  return { huntable, kitWin, mobHits, slots, setMark, decoy, peek, burn, active, carried, newGame, setPoint, flip, resolveSit, setRest, rollAll, assign, beats, total, bonusDie, useItem, takeLoot, trade, endRound, incoming, incomingBy, unassign, canUndo, dmgOf, cls, alive };
 }
 if (typeof module !== 'undefined') module.exports = DTD12;

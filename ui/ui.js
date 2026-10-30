@@ -6,7 +6,9 @@ const E = DTD12(D);
 const AART = { triage: 'Network', hunt: 'Identity', contain: 'Endpoint', enrich: 'Cloud', patch: 'Endpoint', recover: 'Identity', decoy: 'Network', recon: 'Cloud' };
 const TNAME = { triage: 'Triage', hunt: 'Hunt' };
 // Agent and perk numbers, read from data so the screen never drifts from the rules. The engine falls back the same way.
-const SPEC = D.specBonus || 5, RECON = D.reconBonus || 5, HUNT = D.huntBonus || 7, BURN_HEAL = D.recoverBurn || 6, CAP = D.strikeCap || 2, PER_FIGHT = D.kitPerFight || 1;
+const SPEC = D.specBonus || 5, RECON = D.reconBonus || 5, HUNT = D.huntBonus || 7, BURN_HEAL = D.recoverBurn || 6, CAP = D.strikeCap || 2;
+// Kit cards a won fight draws for this crew: one solo, two otherwise, plus the Soarcerer's extra.
+const perFight = () => E.kitWin(G) + (onCrew('SOA') ? PK('SOA', 'draw', 0) : 0);
 // Analyst perks, from D.perks with the engine's own defaults, so no screen states an old number.
 const PK = (id, k, d) => (D.perks && D.perks[id] && D.perks[id][k] != null ? D.perks[id][k] : d);
 const ENG_DBL = PK('ENG', 'dbl', 16), HUN_BACK = PK('HUN', 'back', 5), RES_TOP = PK('RES', 'top', 5), PAT_REST = PK('PAT', 'rest', 3), REST_HEAL = D.restHeal ?? 1;
@@ -45,15 +47,15 @@ const lastMode = (() => { try { const m = localStorage.getItem(MODE_LS); return 
 function rememberMode(m) { try { localStorage.setItem(MODE_LS, m); } catch (e) { /* private mode: First Shift again next visit */ } }
 const UI = { screen: 'intro', mode: lastMode, diff: 'Analyst', pick: ['HUN'], friends: false, team: '', sel: null, aim: null, board: [], savedAt: null, seen: new Set(), dice: new Set(),
   reveal: false, ko: [], confirmEnd: false, quitAsk: false, kitOpen: new Set(), order: [], dmg: {}, logOpen: false, left: [], bossHp: null, after: null, bossRow: null, pulled: 0, gone: null, patched: null };
-let G = null, DB = null; const LS = 'dwellers-board-v23', TIPS_LS = 'dwellers-tips-v1', KEYS_LS = 'dwellers-keys-v1';
+let G = null, DB = null; const LS = 'dwellers-board-v24', TIPS_LS = 'dwellers-tips-v1', KEYS_LS = 'dwellers-keys-v1';
 // The shortcut legend hides for good once a player has used any shortcut.
 let keysUsed = (() => { try { return localStorage.getItem(KEYS_LS) === '1'; } catch (e) { return false; } })();
 function markKeys() { if (keysUsed) return; keysUsed = true; try { localStorage.setItem(KEYS_LS, '1'); } catch (e) { /* private mode: hidden for this visit */ } }
 function loadLocal() { try { UI.board = JSON.parse(localStorage.getItem(LS) || '[]'); } catch (e) { UI.board = []; } }
 function saveLocal(x) { try { const b = JSON.parse(localStorage.getItem(LS) || '[]'); b.push(x); b.sort((a, c) => c.score - a.score); localStorage.setItem(LS, JSON.stringify(b.slice(0, 30))); UI.board = b.slice(0, 30); } catch (e) { UI.board = [x]; } }
 loadLocal();
-(async () => { try { if (window.claude && typeof window.claude.use === 'function') { DB = await window.claude.use('db'); if (DB) DB.collection('dwellers-v23').orderBy('score', 'desc').limit(30).onSnapshot(s => { UI.board = s.docs.map(d => d.data()).filter(Boolean); if (UI.screen !== 'game') render(); }, () => { DB = null; loadLocal(); }); } } catch (e) { DB = null; } })();
-function saveScore(x) { if (DB) DB.collection('dwellers-v23').add(x).catch(() => { DB = null; saveLocal(x); }); else saveLocal(x); }
+(async () => { try { if (window.claude && typeof window.claude.use === 'function') { DB = await window.claude.use('db'); if (DB) DB.collection('dwellers-v24').orderBy('score', 'desc').limit(30).onSnapshot(s => { UI.board = s.docs.map(d => d.data()).filter(Boolean); if (UI.screen !== 'game') render(); }, () => { DB = null; loadLocal(); }); } } catch (e) { DB = null; } })();
+function saveScore(x) { if (DB) DB.collection('dwellers-v24').add(x).catch(() => { DB = null; saveLocal(x); }); else saveLocal(x); }
 
 // Tips for Full and Quick Shift: shown the first time each moment comes up, until dismissed.
 const tipsSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(TIPS_LS) || '[]')); } catch (e) { return new Set(); } })();
@@ -566,7 +568,7 @@ function kitTray() {
     const can = canBurn(c), aiming = UI.aim && UI.aim.i === i, open = UI.kitOpen.has(c.type);
     return `<li class="kchip ${can ? 'live' : ''} ${can && boss ? 'urge' : ''}"><button type="button" class="kname" data-a="kitx" data-v="${c.type}" data-k="kx${c.type}" aria-expanded="${open}" ${open ? `aria-controls="kd-${c.type}"` : ''}><span class="art kart">${slice(kitArt(c.type))}</span><b>${many ? `${esc(c.name.replace(/ Agent$/, ''))}<span class="sr"> Agent</span>` : esc(c.name)}</b>${n > 1 ? `<span class="x"><span class="sr">, </span>×${n}<span class="sr"> copies</span></span>` : ''}${ICON.chev}</button>${can || aiming ? `<button class="btn s ${aiming ? '' : boss ? 'p' : 'cy'}" type="button" data-a="burn" data-v="${i}" data-k="b${c.type}">${aiming ? 'Cancel' : 'Burn it'}</button>` : ''}</li>`; }).join('');
   const cards = groups.filter(g => UI.kitOpen.has(g.c.type)).map(({ c }) => kitCard(c, 'kd-' + c.type)).join('');
-  return `<section class="kit ${many ? 'many' : ''}" aria-labelledby="kit-h"><div class="kitbar"><h2 class="sech" id="kit-h">Crew kit · ${G.held[0].length}/${cap}</h2>${autoTally()}${chips ? `<ul class="kchips">${chips}</ul>` : `<p class="meta">${G.discard.some(c => c.kind === 'agent' && !UI.left.includes(c)) ? `Kit spent. Win a fight to draw ${PER_FIGHT > 1 ? numw(PER_FIGHT) + ' more' : 'another'}.` : `No agents yet. Every fight you win draws ${numw(PER_FIGHT)}, and agents are how a crew sees dawn.`}</p>`}</div>
+  return `<section class="kit ${many ? 'many' : ''}" aria-labelledby="kit-h"><div class="kitbar"><h2 class="sech" id="kit-h">Crew kit · ${G.held[0].length}/${cap}</h2>${autoTally()}${chips ? `<ul class="kchips">${chips}</ul>` : `<p class="meta">${G.discard.some(c => c.kind === 'agent' && !UI.left.includes(c)) ? `Kit spent. Win a fight to draw ${perFight() > 1 ? numw(perFight()) + ' more' : 'another'}.` : `No agents yet. Every fight you win draws ${numw(perFight())}, and agents are how a crew sees dawn.`}</p>`}</div>
     ${UI.aim ? aimTargets() : ''}${aiOnUI() ? '<p class="meta f">The Rogue AI has shut your agents down. You can still burn them.</p>' : ''}${cards ? `<div class="kdetail">${cards}</div>` : ''}</section>`;
 }
 // What the crew's agents have done this shift, as the engine counts it (G.stats.auto). Only non-zero lines show.
@@ -589,7 +591,7 @@ function autoReport() {
   const L = autoLines({ ...G.stats.auto, pulled: UI.pulled }), win = G.win;
   const clause = x => `<span data-auto="${x.k}">${esc(x.text).replace(String(x.n), `<b class="num">${x.n}</b>`)}</span>`;
   const said = L.length ? `Your agents ${L.length < 2 ? clause(L[0]) : L.slice(0, -1).map(clause).join(', ') + ' and ' + clause(L[L.length - 1])}.` : 'No agents ran this shift.';
-  const lesson = !L.length ? `Every fight you win draws ${numw(PER_FIGHT)}. Keep them running and they roll, shield and heal for you every round.`
+  const lesson = !L.length ? `Every fight you win draws ${numw(perFight())}. Keep them running and they roll, shield and heal for you every round.`
     : win ? 'All that while the crew rolled. That’s automation on the night shift.'
     : 'That’s what agents do every round. Win the early fights, fill the tray and keep them running: more agents, more of that.';
   return `<section class="paper cy autorep" aria-labelledby="au-h" data-autorep><i class="tab" aria-hidden="true"></i><div class="mh"><h2 class="ptag cy" id="au-h">Automation report</h2><span class="phud c">AI agents</span></div>

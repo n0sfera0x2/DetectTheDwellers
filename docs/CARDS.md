@@ -74,9 +74,9 @@ Hits by crew size (1p / 2p / 3p / 4p). Agents can't hit the boss.
 
 | Boss | Domain | Def | Hits | Dmg | Ability |
 | --- | --- | --- | --- | --- | --- |
-| The Lockjaw Syndicate | Endpoint | 16 | 8 / 10 / 11 / 13 | 9 | Double extortion: +2 damage until it has taken two hits. At the end of every round it’s still up, roll for the row. |
-| The Persistent Operator | Identity | 15 | 8 / 10 / 11 / 13 | 9 | Living off your network: The first time you beat it, it comes back with 2 hits left. Every double that hits it rolls for the row. |
-| The Rogue AI | Cloud | 17 | 7 / 9 / 10 / 12 | 9 | Hostile takeover: Agents can’t roll while it’s in play. Burning one rolls for the row. |
+| The Lockjaw Syndicate | Endpoint | 16 | 7 / 10 / 11 / 13 | 9 | Double extortion: +2 damage until it has taken two hits. At the end of every round it’s still up, roll for the row. |
+| The Persistent Operator | Identity | 15 | 7 / 10 / 11 / 13 | 9 | Living off your network: The first time you beat it, it comes back with 2 hits left. Every double that hits it rolls for the row. |
+| The Rogue AI | Cloud | 17 | 6 / 9 / 10 / 12 | 9 | Hostile takeover: Agents can’t roll while it’s in play. Burning one rolls for the row. |
 
 ## Analysts
 

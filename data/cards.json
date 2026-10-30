@@ -860,13 +860,14 @@
  "pointDie": true,
  "sharedKit": 5,
  "kitPerFight": 2,
+ "kitSolo": 1,
  "triageBonus": 4,
  "enrichBonus": 3,
  "containCut": 2,
  "recoverHeal": 4,
  "recoverBurn": 6,
  "mobAdd": {
-  "1": -1,
+  "1": -2,
   "2": 0,
   "3": 2,
   "4": 4
@@ -964,7 +965,7 @@
   }
  },
  "bossAdd": {
-  "1": 1,
+  "1": 0,
   "2": 3,
   "3": 4,
   "4": 6

@@ -502,7 +502,7 @@ test('the end screen shows how long the shift took, stores it, and copies a one-
   const errors = []; w.addEventListener('error', e => errors.push(e.message));
   w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); Clock.t0 -= 14 * 60000; const before = snap(); G.over = true; G.win = true; finish(before);`);
   assert.match(d.querySelector('[data-dur]').textContent, /Shift took 14 min/);
-  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v23')); assert.strictEqual(Math.round(saved[0].min), 14);
+  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v24')); assert.strictEqual(Math.round(saved[0].min), 14);
   const line = w.eval('resultLine()');
   assert.match(line, /Quick Shift \(core\)/); assert.match(line, /Hunter \(1p\)/); assert.match(line, /14 min/); assert.match(line, /rounds?/); assert.match(line, /agents:/); assert.match(line, /Win: /);
   d.querySelector('[data-a=copy]').click();

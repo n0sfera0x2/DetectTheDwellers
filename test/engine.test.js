@@ -174,6 +174,19 @@ test('an empty kit deck is rebuilt from burned agents', () => {
   assert.strictEqual(G.loot.length + G.kit.length, before);
 });
 
+test('a solo analyst draws one kit card per won fight; a crew draws two', () => {
+  const draw = team => {
+    const G = E.newGame(team, 'quick', { rnd: rng(5) });
+    G.phase = 'combat'; G.loot = []; G.rolled = true;
+    G.play = [{ ...D.mobs.find(m => m.id === 'spray'), kind: 'mob', uid: 990, hits: 1, left: 1, back: 0, up: 0 }];
+    G.dice = [{ kind: 'crew', k: 0, r: 20, dbl: true, used: false }]; E.assign(G, 0, 990);
+    return G.loot.length;
+  };
+  assert.strictEqual(draw(['ENG']), D.kitSolo);
+  assert.strictEqual(draw(['ENG', 'HUN']), D.kitPerFight);
+  assert.strictEqual(draw(['SOA']), D.kitSolo + D.perks.SOA.draw);
+});
+
 test('core modes deal no story cards and skip boss row triggers; Full Shift has both', () => {
   for (let i = 0; i < 20; i++) {
     const Q = E.newGame(['HUN', 'RES'], 'quick', { hp: 40, rnd: rng(i) });

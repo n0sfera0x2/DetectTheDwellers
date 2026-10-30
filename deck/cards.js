@@ -103,7 +103,7 @@ const MOVE = {
   HUN: `Work the row. Hit comebacks first: your +${PK.HUN.back} lands them, and every one you finish stays gone, so the row runs dry.`,
   RES: `Stand in front of the worst of it. Your +${PK.RES.top} lands on the biggest hitter, boss included. Keep Containment running.`,
   ENG: `Roll volume. One die in ${Math.round(20 / (21 - PK.ENG.dbl))} is a double, so take point and roll two. Triage and Hunt Agents roll at +${PK.ENG.agentPlus} for you.`,
-  SOA: `Run the tray. The crew holds ${WORD[D.sharedKit + PK.SOA.slot]} agents and draws ${WORD[D.kitPerFight + PK.SOA.draw]} kit cards a win. Keep them running; burn a spare when a fight turns.`,
+  SOA: `Run the tray. The crew holds ${WORD[D.sharedKit + PK.SOA.slot]} agents and draws ${WORD[D.kitPerFight + PK.SOA.draw]} kit cards a win (${WORD[D.kitSolo + PK.SOA.draw]} solo). Keep them running; burn a spare when a fight turns.`,
   PAT: `Keep the crew standing. You heal ${PK.PAT.fight} after every fight, each Recovery Agent heals ${D.recoverHeal + PK.PAT.recover}, and your off-shift helps everyone.`,
 };
 function analyst(c) {
@@ -132,7 +132,7 @@ const runin = (label, t, c = FLT, size = 10) => `<div style="font-family: ${CHK}
 const refrow = inner => `<div style="display: flex; gap: 6px; align-items: flex-start; border-top: 1px solid ${RULE}; padding-top: 2px">${inner}</div>`;
 function fight() {
   const rows = [['On point', 'Pick before each flip. They read the card aloud, roll 2 dice, take the kit draw.'], ['Story', 'Full Shift. Recon Agent in the tray? Use the Recon line.', CYT], ['Hits', 'Mobs and bosses print hits for 1–4 analysts. Use your crew size.'], ['Off-shift', `One analyst may skip their roll: no damage, +1 HP. The Fixer heals ${D.perks.PAT.rest}, split.`],
-    ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', `Double: two hits, and you block this round. Engineer: ${D.perks.ENG.dbl}–20.`], ['Hits back', 'Mobs still up hit everyone who didn’t block.'], ['Won', `Draw ${WORD[D.kitPerFight]} kit cards (Soarcerer: ${WORD[D.kitPerFight + D.perks.SOA.draw]}). Kit deck empty? Shuffle the burned agents in.`, AMT]];
+    ['Roll', 'Everyone rolls, agents too. Put each die on a mob it beats: d20 + bonus ≥ Defense.'], ['18–20', `Double: two hits, and you block this round. Engineer: ${D.perks.ENG.dbl}–20.`], ['Hits back', 'Mobs still up hit everyone who didn’t block.'], ['Won', `Draw ${WORD[D.kitPerFight]} kit cards (solo: ${WORD[D.kitSolo]}). Kit deck empty? Shuffle the burned agents in.`, AMT]];
   return shell(`${tag('Reference', CY)}${nm('A fight', 18)}${rows.map(([a, b, c]) => refrow(runin(a, b, c))).join('')}`, CY, CYT);
 }
 function glossary() {

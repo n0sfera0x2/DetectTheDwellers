@@ -32,7 +32,7 @@ Your first game? Use the First Shift setup instead (Reference).
 - **Assign.** Put each die on a mob it beats: d20 + bonus ≥ the mob’s Defense is one hit.
 - **Doubles.** A natural 18–20 is two hits, and you block this round.
 - **Hits back.** Every mob still standing hits everyone who didn’t block, for its Damage. A mob you finish this round doesn’t hit back.
-- **Won.** When the last mob falls, on point draws two kit cards for the crew.
+- **Won.** When the last mob falls, on point draws two kit cards for the crew. Playing solo, you draw one.
 
 Mobs and bosses print their hits for 1, 2, 3 and 4 analysts. Use the number for your crew size.
 
@@ -51,7 +51,7 @@ Every kit card is an AI agent with two modes:
 - **Run it:** keep it in the crew tray, and it works every round or every fight.
 - **Burn it:** a one-shot effect, then discard it.
 
-A won fight draws two kit cards. The crew tray holds five; when it’s full, discard one to make room. **Kit deck empty?** Shuffle the discard pile (burned and dropped agents) into a new kit deck and keep drawing. Agent dice can’t hit a boss. Agent table: Reference.
+A won fight draws two kit cards (one if you play solo). The crew tray holds five; when it’s full, discard one to make room. **Kit deck empty?** Shuffle the discard pile (burned and dropped agents) into a new kit deck and keep drawing. Agent dice can’t hit a boss. Agent table: Reference.
 
 ### Analysts
 
@@ -125,8 +125,8 @@ Mob cards and boss cards print all four numbers. The data stores the 2-player mo
 
 | Analysts | 1 | 2 | 3 | 4 |
 | --- | --- | --- | --- | --- |
-| Mob hits | printed − 1 | printed | printed + 2 | printed + 4 |
-| Boss hits | base + 1 | base + 3 | base + 4 | base + 6 |
+| Mob hits | printed − 2 | printed | printed + 2 | printed + 4 |
+| Boss hits | base | base + 3 | base + 4 | base + 6 |
 
 ### Bosses
 
@@ -134,9 +134,9 @@ The boss arrives with one more row roll, and nothing hits on the way in. Agent d
 
 | Boss | Defense | Damage | Hits 1p / 2p / 3p / 4p | Ability (core) | Full Shift trigger |
 | --- | --- | --- | --- | --- | --- |
-| The Lockjaw Syndicate | 16 | 9 | 8 / 10 / 11 / 13 | +2 damage until it has taken two hits. | At the end of every round it’s still up, roll for the row. |
-| The Persistent Operator | 15 | 9 | 8 / 10 / 11 / 13 | The first time you beat it, it comes back with 2 hits left. | Every double that hits it rolls for the row. |
-| The Rogue AI | 17 | 9 | 7 / 9 / 10 / 12 | Agents can’t roll while it’s in play. | Burning one rolls for the row. |
+| The Lockjaw Syndicate | 16 | 9 | 7 / 10 / 11 / 13 | +2 damage until it has taken two hits. | At the end of every round it’s still up, roll for the row. |
+| The Persistent Operator | 15 | 9 | 7 / 10 / 11 / 13 | The first time you beat it, it comes back with 2 hits left. | Every double that hits it rolls for the row. |
+| The Rogue AI | 17 | 9 | 6 / 9 / 10 / 12 | Agents can’t roll while it’s in play. | Burning one rolls for the row. |
 
 ### Agents
 
@@ -164,7 +164,7 @@ The agent link works for the whole crew’s agents, so a crew builds its own age
 | Hunter | +3 against mobs that came back from the row. Any comeback you finish is gone for good: it doesn’t go back to the row. | Hunt Agents hunt with you: a comeback they finish (dice or burn) is gone for good too. |
 | Responder | +3 against the highest-damage mob in play, boss included. | Containment Agents cut 1 more damage. |
 | Engineer | Your doubles are 17–20, not 18–20. | Agent dice (Triage and Hunt) roll +3. |
-| Soarcerer | The crew tray holds one more agent (six). | Every won fight draws one more kit card (three). |
+| Soarcerer | The crew tray holds one more agent (six). | Every won fight draws one more kit card (three; two solo). |
 | Fixer | After every fight, heal 5 HP split across the crew. Off-shift, heal 3 split instead of 1 for yourself. | Recovery Agents heal 3 more after each fight. |
 
 ### First Shift (your first game)

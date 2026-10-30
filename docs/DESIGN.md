@@ -14,15 +14,17 @@ Tuned with `sim/` against a careful bot, never yet against enough humans.
 
 | Mode | Target win rate | Shipped |
 | --- | --- | --- |
-| Full Shift, Recruit | 60–70% | 58 HP |
-| Full Shift, Analyst | ~50% | 43 HP |
-| Full Shift, Veteran | 35–40% | 35 HP |
-| Quick Shift | ~60% (booth-friendly) | 36 HP |
-| First Shift | ~70% | 25 HP |
+| Full Shift, Recruit | 60–70% | 62 HP |
+| Full Shift, Analyst | ~50% | 47 HP |
+| Full Shift, Veteran | 35–40% | 39 HP |
+| Quick Shift | ~60% (booth-friendly) | 39 HP |
+| First Shift | ~70% | 26 HP |
 
-Other things worth holding: every player count within about 10 points of each other; roughly 5–6 comebacks per Full Shift; a real share of losses before the boss (the row has to matter), but no more than about 40–45%, so the boss stays the climax; winners usually ending at a quarter to a third of their HP. `npm run balance` enforces loose bands in CI.
+Other things worth holding: every player count within about 10 points of each other; roughly 6–7 comebacks per Full Shift (v28); a real share of losses before the boss (the row has to matter), but no more than about 40–45%, so the boss stays the climax; winners usually ending at a quarter to a third of their HP. `npm run balance` enforces loose bands in CI.
 
 ## Decisions worth remembering
+
+- **Wider comeback ranges: every mob's range +3 (rules v28, 2026-10-30).** After a playthrough the user asked for higher persistence row odds: more comebacks, with difficulty held where it was. Every range still starts at 1; the top went up by 3. Nuisances went from 1–9/1–10 to 1–12/1–13, the heaviest from 1–4/1–5 to 1–7/1–8. Bot sims (1,200 games per cell, before the HP retune): Full Shift comebacks per game went 5.5 → 6.4 at two players, 4.8 → 5.4 at four and 6.6 → 8.4 solo; Quick Shift 2.2 → 3.0 at two players. Losses before the boss went 22% → 31% at two players. A beaten mob still comes back only once (twice for Sticky), so wider ranges add pressure without endless loops. HP went up to hold the targets: Recruit 58 → 62, Analyst 43 → 47, Veteran 35 → 39, Quick Shift 36 → 39, First Shift 25 → 26. Balance gate (600 games per cell, 1/2/3/4 players): Recruit 61/64/64/69, Analyst 48/51/46/48, Veteran 39/40/41/41, Quick Shift 63/58/61/60, First Shift 75/71/68/69. Crew sizes are within 8 points in every mode.
 
 - **Production audit (rules v27, 2026-10-30).** The user supplied a generic card-game audit plan (core mechanics, card graphic design, rulebook structure, design pillars, a phased roadmap). Five actions came out of it:
   - **Print text floor: 10 px (7.5 pt) for every text run on all 72 fronts and backs**, measured on rendered faces. Before, 583 runs were under 7.5 pt: stat labels, mob flavour, a few rules lines, and the card back. A deck test now enforces the floor. To fit, the mob art panel went 94 → 80 px on all 15 mobs, and the card-back credit wraps onto two lines. The tightest card is the Persistent Operator boss, 0.8 px inside the safe zone.

@@ -53,7 +53,7 @@ Your first game? Use the First Shift setup instead (Reference).
 ```
  ┌─────────────────────────────────┐
  │  [ art ]                        │
- │ IDENTITY          BACK 1–10  ◄──┼── its row range: comes back on 1–10
+ │ IDENTITY          BACK 1–13  ◄──┼── its row range: comes back on 1–13
  │ MAILER DAEMON                   │
  │ ┌ DEFENSE 12 ┐ ┌ DAMAGE 1 ┐ ◄───┼── beat 12 to hit; it hits for 1
  │ HITS 1P 1  2P 3  3P 5  4P 6 ◄───┼── hits to beat it, by crew size
@@ -159,11 +159,11 @@ The same at every crew size.
 
 | Mode | HP |
 | --- | --- |
-| Full Shift, Recruit | 58 |
-| Full Shift, Analyst | 43 |
-| Full Shift, Veteran | 35 |
-| Quick Shift | 36 |
-| First Shift | 25 |
+| Full Shift, Recruit | 62 |
+| Full Shift, Analyst | 47 |
+| Full Shift, Veteran | 39 |
+| Quick Shift | 39 |
+| First Shift | 26 |
 
 When damage takes you below the tens coin, drop it a step and move the ones coin up: at 42, taking 5 leaves 37 (tens on 30, ones on 7).
 
@@ -217,11 +217,11 @@ The agent link works for the whole crew’s agents, so a crew builds its own age
 
 ### First Shift (your first game)
 
-Core rules, a fixed feed that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck. Start at 25 HP each, with no agents, and play normally, with one scripted moment: **on flip 2, don’t roll for the row. The MFA Banshee comes back**, hits everyone for 1 on the way in (it’s 1 Damage), and you fight it after Patch Tuesday. The First Shift reference card has the stack.
+Core rules, a fixed feed that teaches one idea per card. Stack these face down, first on top: MFA Banshee, Patch Tuesday, Macro Gremlin, Impossible Travel, DNS Beacon Drone, Coffee Run. The Lockjaw Syndicate goes underneath. Put the Recovery and Triage Agents on top of the kit deck. Start at 26 HP each, with no agents, and play normally, with one scripted moment: **on flip 2, don’t roll for the row. The MFA Banshee comes back**, hits everyone for 1 on the way in (it’s 1 Damage), and you fight it after Patch Tuesday. The First Shift reference card has the stack.
 
 ### Quick Shift (booth mode)
 
-Core rules: 6 situations, no story cards, a random boss with no row trigger, 36 HP each, and the crew starts with two agents. About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
+Core rules: 6 situations, no story cards, a random boss with no row trigger, 39 HP each, and the crew starts with two agents. About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
 
 ### The shift clock
 

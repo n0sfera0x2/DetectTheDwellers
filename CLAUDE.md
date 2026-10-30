@@ -61,7 +61,7 @@ A rule or card change usually touches several places. Work through them in order
 - **One starting HP per difficulty, at every player count.** Fix crew-size spread through scaling, not HP tables.
 - **Every mob has exactly one keyword** from the eight in `data/cards.json`.
 - **The engine stays deterministic given `opt.rnd`.** Tests and sims rely on seeded games.
-- **Persisted UI state is versioned** (`dwellers-board-v27` / `dwellers-v27` in `ui/ui.js`). Bump both when the score shape or rules change enough to make old scores meaningless.
+- **Persisted UI state is versioned** (`dwellers-board-v28` / `dwellers-v28` in `ui/ui.js`). Bump both when the score shape or rules change enough to make old scores meaningless.
 
 ## Writing style
 

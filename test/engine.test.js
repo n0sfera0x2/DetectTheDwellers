@@ -54,8 +54,8 @@ test('a Beacon roll chains: what it brings back rolls the row again', () => {
   const G = E.newGame(['HUN', 'RES'], 'full', { hp: 200, rnd: rng(3) });
   const [spray, druid, mimic] = ['spray', 'druid', 'mimic'].map((id, i) => ({ ...D.mobs.find(m => m.id === id), kind: 'mob', uid: 900 + i, left: 1, hits: 2, back: 0, up: 0 }));
   G.row = [spray, druid, mimic]; G.deck = [{ ...D.mobs.find(m => m.id === 'bat'), kind: 'mob', uid: 999, left: 3, hits: 3, back: 0, up: 0 }];
-  // Flip roll 20 (quiet), Beacon roll 9 (Sprayer 1–10 only), chain roll 1 (Scavenger and Rootkit).
-  const rolls = [20, 9, 1]; G.rnd = () => rolls.length ? (rolls.shift() - 1) / 20 : 0.99;
+  // Flip roll 20 (quiet), Beacon roll 12 (Sprayer 1–13 only), chain roll 1 (Scavenger and Rootkit).
+  const rolls = [20, 12, 1]; G.rnd = () => rolls.length ? (rolls.shift() - 1) / 20 : 0.99;
   assert.ok(E.flip(G));
   assert.deepStrictEqual(G.play.map(m => m.id).sort(), ['bat', 'druid', 'mimic', 'spray']);
   assert.deepStrictEqual(G.plog.map(x => x.why || 'flip'), ['flip', 'beacon', 'chain']);

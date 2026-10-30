@@ -86,7 +86,10 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .paper .nm{color:var(--pk)}
 .mh{display:flex;justify-content:space-between;gap:6px 10px;flex-wrap:wrap;align-items:baseline}
 .paper :focus-visible{outline-color:var(--cyt)}
-.paper .stat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.paper .stat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+/* The hits strip, as printed: 1p to 4p, this crew's column marked */
+.hstrip{display:flex;align-items:baseline;justify-content:space-between;gap:4px;margin:4px 0 0;background:#fff;border:1px solid var(--pr);padding:2px 7px;font-family:var(--mono);font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--pm)}
+.hstrip b{font-size:17px;color:var(--pk);font-variant-numeric:tabular-nums}.hstrip .hc{padding:0 4px}.hstrip .hc.on{background:var(--pk);color:#fff}.hstrip .hc.on b{color:#fff}
 .paper .stat div{background:#fff;border:1px solid var(--pr);padding:3px 7px 4px;min-width:0}
 .paper .stat dt{font-family:var(--mono);font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--pm)}
 .paper .stat dd{font-family:var(--mono);font-weight:600;font-size:24px;line-height:1.15;color:var(--pk);font-variant-numeric:tabular-nums}

@@ -841,6 +841,7 @@
   "4": 2
  },
  "quickStartAgent": 2,
+ "quickStartSolo": 1,
  "bossRow": "roll",
  "persistOnFlip": true,
  "deal": {
@@ -867,12 +868,12 @@
  "recoverHeal": 4,
  "recoverBurn": 6,
  "mobAdd": {
-  "1": -2,
+  "1": 0,
   "2": 0,
   "3": 2,
   "4": 3
  },
- "soloDice": 2,
+ "soloDice": 3,
  "keywords": {
   "piercing": {
    "name": "Piercing",
@@ -966,7 +967,7 @@
   }
  },
  "bossAdd": {
-  "1": 0,
+  "1": 3,
   "2": 3,
   "3": 4,
   "4": 6

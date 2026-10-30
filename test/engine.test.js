@@ -233,3 +233,14 @@ test('First Shift: the second flip brings the Banshee back without a roll', () =
     assert.ok(G.plog.some(p => p.sit === 2 && p.back.includes('MFA Banshee')), `seed ${s}`);
   }
 });
+
+test('Quick Shift: a crew starts with D.quickStartAgent agents, a solo analyst with D.quickStartSolo', () => {
+  assert.strictEqual(E.newGame(['HUN', 'RES'], 'quick', { rnd: rng(2) }).held[0].length, D.quickStartAgent);
+  assert.strictEqual(E.newGame(['HUN'], 'quick', { rnd: rng(2) }).held[0].length, D.quickStartSolo);
+  assert.strictEqual(E.newGame(['HUN'], 'full', { rnd: rng(2) }).held[0].length, 0);
+});
+
+test('solo plays the printed mob hits: no solo discount', () => {
+  const G = E.newGame(['HUN'], 'quick', { rnd: rng(9) });
+  for (const m of G.deck.filter(c => c.kind === 'mob')) assert.strictEqual(m.hits, D.mobs.find(x => x.id === m.id).hits, m.name);
+});

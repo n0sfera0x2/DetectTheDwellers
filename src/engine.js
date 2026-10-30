@@ -27,7 +27,9 @@ function DTD12(D) {
     const bb = intro ? D.bosses.find(x => x.id === D.intro.boss) : D.bosses[Math.floor(rnd() * D.bosses.length)];
     if (intro) { const top = D.intro.kit.map(t => G.kit.find(c => c.type === t)).filter(Boolean); G.kit = G.kit.filter(c => !top.includes(c)); G.kit.push(...top.slice().reverse()); }
     G.boss = { ...mk({ ...bb, hits: bb.hitsBase != null ? bb.hitsBase + ((D.bossAdd && D.bossAdd[team.length]) ?? team.length) : bb.hits }), kind: 'boss' };
-    if (mode === 'quick' && D.quickStartAgent && !G.noAgents) for (let j = 0; j < (D.sharedKit ? D.quickStartAgent : G.team.length); j++) { const i = G.kit.findIndex(c => c.kind === 'agent'); if (i >= 0) G.held[D.sharedKit ? 0 : j].push(G.kit.splice(i, 1)[0]); }
+    const qs = team.length === 1 && D.quickStartSolo != null ? D.quickStartSolo : D.quickStartAgent;
+    // Quick Shift starts the crew with agents in the tray: D.quickStartAgent, or D.quickStartSolo playing alone.
+    if (mode === 'quick' && qs && !G.noAgents) for (let j = 0; j < (D.sharedKit ? qs : G.team.length); j++) { const i = G.kit.findIndex(c => c.kind === 'agent'); if (i >= 0) G.held[D.sharedKit ? 0 : j].push(G.kit.splice(i, 1)[0]); }
     log(G, 'Shift start. Pick who is on point and flip the first situation.');
     return G;
   }

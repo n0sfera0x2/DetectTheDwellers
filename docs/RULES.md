@@ -23,7 +23,7 @@ The rules come in two parts. **Learn the core rules first:** they play First Shi
 1. **Pick an analyst each** and take an HP tracker. Set it to your starting HP (Reference). Two coins: one on the tens, one on the ones. 47 HP is a coin on 40 and a coin on 7.
 2. **Build the feed.** Set the 9 story cards aside; core games don’t use them. Shuffle the other 33 situations and mobs, and deal 6 face down.
 3. **Boss underneath.** Shuffle the three bosses and put one face down under the feed, unseen.
-4. **Shuffle the kit deck.** The crew starts with two agents from it.
+4. **Shuffle the kit deck.** In Quick Shift the crew starts with two agents from it (one if you play solo).
 5. **Lay out the persistence row mat** and the markers. The row starts empty.
 
 Your first game? Use the First Shift setup instead (Reference).
@@ -56,7 +56,7 @@ Your first game? Use the First Shift setup instead (Reference).
  │ IDENTITY          BACK 1–13  ◄──┼── its row range: comes back on 1–13
  │ MAILER DAEMON                   │
  │ ┌ DEFENSE 12 ┐ ┌ DAMAGE 1 ┐ ◄───┼── beat 12 to hit; it hits for 1
- │ HITS 1P 1  2P 3  3P 5  4P 6 ◄───┼── hits to beat it, by crew size
+ │ HITS 1P 3  2P 3  3P 5  4P 6 ◄───┼── hits to beat it, by crew size
  │ ┌ BEACON. When it enters … ┐ ◄──┼── its one keyword
  │ flavour line, read aloud    ◄───┼── no rules here
  └─────────────────────────────────┘
@@ -74,7 +74,7 @@ Situation cards say what they do and whether it's a choice, an event or one atte
 ### A fight
 
 - **Off-shift.** Before the roll, one analyst may sit out: no roll, no damage, heal 1 HP.
-- **Roll.** Everyone rolls a crew die; on point rolls two. Running agents roll agent dice.
+- **Roll.** Everyone rolls a crew die; on point rolls two. Playing solo, you roll three. Running agents roll agent dice.
 - **Assign.** Put each die on a mob it beats: d20 + bonus ≥ the mob’s Defense is one hit.
 - **Doubles.** A natural 18–20 is two hits, and you block this round.
 - **Guard.** A crew die showing 14+ can guard instead of hitting: you block this round, like a double. Agent dice can’t guard.
@@ -173,8 +173,8 @@ Mob cards and boss cards print all four numbers. The data stores the 2-player mo
 
 | Analysts | 1 | 2 | 3 | 4 |
 | --- | --- | --- | --- | --- |
-| Mob hits | printed − 2 | printed | printed + 2 | printed + 3 |
-| Boss hits | base | base + 3 | base + 4 | base + 6 |
+| Mob hits | printed | printed | printed + 2 | printed + 3 |
+| Boss hits | base + 3 | base + 3 | base + 4 | base + 6 |
 
 ### Bosses
 
@@ -182,9 +182,9 @@ The boss arrives with one more row roll, and nothing hits on the way in. Agent d
 
 | Boss | Defense | Damage | Hits 1p / 2p / 3p / 4p | Ability (core) | Full Shift trigger |
 | --- | --- | --- | --- | --- | --- |
-| The Lockjaw Syndicate | 16 | 9 | 7 / 10 / 11 / 13 | +2 damage until it has taken two hits. | At the end of every round it’s still up, roll for the row. |
-| The Persistent Operator | 15 | 9 | 7 / 10 / 11 / 13 | The first time you beat it, it comes back with 2 hits left. | Every double that hits it rolls for the row. |
-| The Rogue AI | 17 | 9 | 6 / 9 / 10 / 12 | Agents can’t roll while it’s in play. | Burning one rolls for the row. |
+| The Lockjaw Syndicate | 16 | 9 | 10 / 10 / 11 / 13 | +2 damage until it has taken two hits. | At the end of every round it’s still up, roll for the row. |
+| The Persistent Operator | 15 | 9 | 10 / 10 / 11 / 13 | The first time you beat it, it comes back with 2 hits left. | Every double that hits it rolls for the row. |
+| The Rogue AI | 17 | 9 | 9 / 9 / 10 / 12 | Agents can’t roll while it’s in play. | Burning one rolls for the row. |
 
 ### Agents
 
@@ -221,7 +221,7 @@ Core rules, a fixed feed that teaches one idea per card. Stack these face down, 
 
 ### Quick Shift (booth mode)
 
-Core rules: 6 situations, no story cards, a random boss with no row trigger, 39 HP each, and the crew starts with two agents. About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
+Core rules: 6 situations, no story cards, a random boss with no row trigger, 39 HP each, and the crew starts with two agents (one solo). About ten to fifteen minutes. Swag by result: Wingman (won with 70%+ of the lowest HP left), Solid Shift, Close Call, Flatlined.
 
 ### The shift clock
 

@@ -48,15 +48,15 @@ const lastMode = (() => { try { const m = localStorage.getItem(MODE_LS); return 
 function rememberMode(m) { try { localStorage.setItem(MODE_LS, m); } catch (e) { /* private mode: First Shift again next visit */ } }
 const UI = { screen: 'intro', mode: lastMode, diff: 'Analyst', pick: ['HUN'], friends: false, team: '', sel: null, aim: null, board: [], savedAt: null, seen: new Set(), dice: new Set(),
   reveal: false, ko: [], confirmEnd: false, quitAsk: false, kitOpen: new Set(), order: [], dmg: {}, logOpen: false, left: [], bossHp: null, after: null, bossRow: null, pulled: 0, gone: null, patched: null };
-let G = null, DB = null; const LS = 'dwellers-board-v28', TIPS_LS = 'dwellers-tips-v1', KEYS_LS = 'dwellers-keys-v1';
+let G = null, DB = null; const LS = 'dwellers-board-v29', TIPS_LS = 'dwellers-tips-v1', KEYS_LS = 'dwellers-keys-v1';
 // The shortcut legend hides for good once a player has used any shortcut.
 let keysUsed = (() => { try { return localStorage.getItem(KEYS_LS) === '1'; } catch (e) { return false; } })();
 function markKeys() { if (keysUsed) return; keysUsed = true; try { localStorage.setItem(KEYS_LS, '1'); } catch (e) { /* private mode: hidden for this visit */ } }
 function loadLocal() { try { UI.board = JSON.parse(localStorage.getItem(LS) || '[]'); } catch (e) { UI.board = []; } }
 function saveLocal(x) { try { const b = JSON.parse(localStorage.getItem(LS) || '[]'); b.push(x); b.sort((a, c) => c.score - a.score); localStorage.setItem(LS, JSON.stringify(b.slice(0, 30))); UI.board = b.slice(0, 30); } catch (e) { UI.board = [x]; } }
 loadLocal();
-(async () => { try { if (window.claude && typeof window.claude.use === 'function') { DB = await window.claude.use('db'); if (DB) DB.collection('dwellers-v28').orderBy('score', 'desc').limit(30).onSnapshot(s => { UI.board = s.docs.map(d => d.data()).filter(Boolean); if (UI.screen !== 'game') render(); }, () => { DB = null; loadLocal(); }); } } catch (e) { DB = null; } })();
-function saveScore(x) { if (DB) DB.collection('dwellers-v28').add(x).catch(() => { DB = null; saveLocal(x); }); else saveLocal(x); }
+(async () => { try { if (window.claude && typeof window.claude.use === 'function') { DB = await window.claude.use('db'); if (DB) DB.collection('dwellers-v29').orderBy('score', 'desc').limit(30).onSnapshot(s => { UI.board = s.docs.map(d => d.data()).filter(Boolean); if (UI.screen !== 'game') render(); }, () => { DB = null; loadLocal(); }); } } catch (e) { DB = null; } })();
+function saveScore(x) { if (DB) DB.collection('dwellers-v29').add(x).catch(() => { DB = null; saveLocal(x); }); else saveLocal(x); }
 
 // Tips for Full and Quick Shift: shown the first time each moment comes up, until dismissed.
 const tipsSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(TIPS_LS) || '[]')); } catch (e) { return new Set(); } })();
@@ -470,14 +470,16 @@ function modNote(m, k, label) {
   const d = m.mod && m.mod[k]; if (!d) return '';
   return `<span class="why"><span class="sr"> (printed ${m[k] - d}, ${d > 0 ? 'plus' : 'minus'} ${Math.abs(d)} from a story card)</span><span aria-hidden="true">${m[k] - d} ${d > 0 ? '+' : '−'}${Math.abs(d)} story</span></span>`;
 }
-// Hits as the engine scales them, with the printed number when they differ: "1 · 2 −1 solo", "3 · 2 +1 for 3 analysts".
-function hitsNote(m) {
-  const n = G.team.length, who = n === 1 ? 'solo' : `${n}p`, whoSr = n === 1 ? 'playing solo' : `for ${n} analysts`;
-  const p = m.kind === 'boss' ? (D.bosses.find(b => b.id === m.id) || {}).hitsBase : (D.mobs.find(x => x.id === m.id) || {}).hits;
-  if (p == null || p === m.hits) return '';
-  const d = m.hits - p;
-  return `<span class="why"><span class="sr"> (printed ${p}, ${d > 0 ? 'plus' : 'minus'} ${Math.abs(d)} ${whoSr})</span><span aria-hidden="true">${p} ${d > 0 ? '+' : '−'}${Math.abs(d)} · ${who}</span></span>`;
+// Hits exactly as the printed card shows them: one strip, 1p to 4p, with this crew's column marked.
+// The card is the same in the web game and on the table; the pips below it stand in for the coins.
+function hitStrip(m) {
+  const n = G.team.length, p = m.kind === 'boss' ? (D.bosses.find(b => b.id === m.id) || {}).hitsBase : (D.mobs.find(x => x.id === m.id) || {}).hits;
+  const at = k => m.kind === 'boss' ? p + ((D.bossAdd && D.bossAdd[k]) || 0) : E.mobHits(p, k);
+  if (p == null) return '';
+  return `<p class="hstrip"><span class="hl">Hits</span>${[1, 2, 3, 4].map(k => `<span class="hc${k === n ? ' on' : ''}"${k === n ? ' aria-current="true"' : ''}><span class="hp">${k}p</span> <b>${at(k)}</b></span>`).join('')}</p>`;
 }
+// Hits still to land, for screen readers: the pips say it visually.
+const hitsLeft = (m, ko) => `<span class="sr">${ko ? 0 : m.left} of ${m.hits} hits left.</span>`;
 
 function mobHTML(m, ko, solo) {
   const key = 'm' + m.uid + '.' + m.back, fresh = ko || UI.seen.has(key) ? '' : 'fresh'; if (!ko) UI.seen.add(key);
@@ -488,14 +490,14 @@ function mobHTML(m, ko, solo) {
   // Wide screens hit from the card; narrow screens hit from the dock's target buttons, so this one hides there.
   const btn = ok ? `<button class="btn p w hitb" type="button" data-a="hit" data-v="${m.uid}" data-k="h${m.uid}">Hit it · ${hitWhy(d, m)}</button>`
     : d ? `<p class="nohit">${esc(missWhy(d, m))}</p>` : '';
-  const right = boss ? `<span class="phud f">${esc(m.domain)}</span>` : `<span class="rng">${m.routine ? 'Routine · ' : ''}Back on ${m.persist[0]}–${m.persist[1]}</span>`;
+  const right = boss ? `<span class="phud f">${esc(m.domain)}</span>` : `<span class="rng">Back ${m.persist[0]}–${m.persist[1]}</span>`;
   const kw = m.kw && D.keywords[m.kw] ? `<svg class="kwi" viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${D.keywords[m.kw].icon}</svg>` : '';
   const back = !ko && !boss && m.back > 0, fx = FOCAL[m.id];
   return `<article class="mob paper ${solo ? 'pcard' : ''} ${boss ? 'boss' : ''} ${fresh} ${back ? 'back' : ''} ${ok ? 'can' : ''} ${ko ? 'ko' : ''} ${ko && m.gone ? 'gonek' : ''}" data-mob="${m.uid}" aria-labelledby="mn${m.uid}"><i class="tab" aria-hidden="true"></i><div class="mob-in">
     <span class="scr"${fx ? ` style="--fx:${fx}%"` : ''}>${slice(mobArt(m))}${back ? `<span class="bstamp" aria-hidden="true">${m.back > 1 ? `Back ×${m.back}` : 'Back'}</span>` : ''}</span><div class="bd">
     <div class="mh"><span class="tags"><span class="ptag">${boss ? 'Boss' : esc(m.domain)}</span></span>${m.scouted && E.active(G, 'recon').length ? `<span class="phud c">Scouted +${RECON}</span>` : ''}${right}</div>
     <h3 class="nm" id="mn${m.uid}">${esc(m.name)}${ko ? `<span class="sr"> is ${m.gone ? 'gone for good' : 'down'}</span>` : back ? '<span class="sr">, back from the row</span>' : ''}</h3>
-    <dl class="stat"><div class="def"><dt>Defense</dt><dd>${m.def}${ko ? '' : modNote(m, 'def')}</dd></div><div><dt>Hits</dt><dd>${ko ? 0 : m.left}/${m.hits}${hitsNote(m)}</dd></div><div><dt>Damage</dt><dd>${dmgStat(m)}</dd></div></dl>${pips}
+    <dl class="stat"><div class="def"><dt>Defense</dt><dd>${m.def}${ko ? '' : modNote(m, 'def')}</dd></div><div><dt>Damage</dt><dd>${dmgStat(m)}</dd></div></dl>${hitStrip(m)}${pips}${hitsLeft(m, ko)}
     <p class="ability">${kw}<b>${esc(m.abilityName)}.</b> ${esc(m.kind === 'boss' ? bossText(m) : m.abilityText)}</p>${m.flavor ? `<p class="fl ${fresh && !ko && !back ? 'reveal-ln' : ''}">${solo && !ko ? aloudHint() : ''}${readAloud(m.flavor, !!fresh && !ko && !back)}</p>` : ''}${btn}</div></div></article>`;
 }
 
@@ -849,7 +851,7 @@ function revealHTML() {
   const b = G.play.find(m => m.kind === 'boss') || G.boss, mv = bossAdvice();
   const burn = mv.i != null && mv.now ? `<button class="btn pp w" type="button" data-a="burn" data-v="${mv.i}" data-k="rvburn">Burn the ${esc(G.held[0][mv.i].name)} first</button>` : '';
   return `<div class="reveal" role="dialog" aria-modal="true" aria-labelledby="rv-h" aria-describedby="rv-mv"><div class="rv paper"><i class="tab" aria-hidden="true"></i><span class="scr">${slice(bossArt(b.id))}</span><div class="bd"><div class="mh"><span class="ptag">Boss</span><span class="phud f">The feed is empty</span></div><h2 class="nm" id="rv-h">${esc(b.name)}</h2>
-    <dl class="stat"><div class="def"><dt>Defense</dt><dd>${b.def}</dd></div><div><dt>Hits</dt><dd>${b.left != null ? b.left : b.hits}${hitsNote(b)}</dd></div><div><dt>Damage</dt><dd>${G.play.includes(b) ? dmgStat(b) : b.dmg}</dd></div></dl>
+    <dl class="stat"><div class="def"><dt>Defense</dt><dd>${b.def}</dd></div><div><dt>Damage</dt><dd>${G.play.includes(b) ? dmgStat(b) : b.dmg}</dd></div></dl>${hitStrip(b)}
     <p class="ability"><b>${esc(b.abilityName)}.</b> ${esc(bossText(b))}</p>
     <div class="move" id="rv-mv"><span class="phud c">Your move</span><p>${esc(mv.text)}</p></div>
     <div class="acts"><button class="btn p big w" type="button" data-a="fight" data-k="fight">Fight</button>${burn}</div></div></div></div>`;

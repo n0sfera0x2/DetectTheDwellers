@@ -502,7 +502,7 @@ test('the end screen shows how long the shift took, stores it, and copies a one-
   const errors = []; w.addEventListener('error', e => errors.push(e.message));
   w.eval(`UI.mode = 'quick'; UI.pick = ['HUN']; start(); Clock.t0 -= 14 * 60000; const before = snap(); G.over = true; G.win = true; finish(before);`);
   assert.match(d.querySelector('[data-dur]').textContent, /Shift took 14 min/);
-  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v28')); assert.strictEqual(Math.round(saved[0].min), 14);
+  const saved = JSON.parse(w.localStorage.getItem('dwellers-board-v29')); assert.strictEqual(Math.round(saved[0].min), 14);
   const line = w.eval('resultLine()');
   assert.match(line, /Quick Shift \(core\)/); assert.match(line, /Hunter \(1p\)/); assert.match(line, /14 min/); assert.match(line, /rounds?/); assert.match(line, /agents:/); assert.match(line, /Win: /);
   d.querySelector('[data-a=copy]').click();
@@ -554,4 +554,21 @@ test('First Shift: the second flip brings the Banshee back, and the tip says so'
   assert.match(d.querySelector('.pbanner').textContent, new RegExp(banshee));
   const tip = d.querySelector('.tip').textContent; assert.match(tip, /back/i); assert.match(tip, /Banshee/);
   assert.deepStrictEqual(errors, []);
+});
+
+test('the web mob card shows hits exactly like the printed card: the 1p–4p strip, this crew marked, no solo note', () => {
+  const C = require('../deck/cards'), D = require('../data/cards.json');
+  const flat = t => t.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  for (const n of [1, 3]) {
+    const w = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.org/' }).window, d = w.document;
+    w.eval(`UI.mode = 'quick'; UI.pick = ${JSON.stringify(['HUN', 'RES', 'ENG'].slice(0, n))}; start(); G.row = [];
+      G.deck = G.deck.filter(c => c.kind !== 'mob' || c.id !== 'bat'); G.deck.push({ ...D.mobs.find(m => m.id === 'bat'), kind: 'mob', uid: 995, hits: E.mobHits(D.mobs.find(m => m.id === 'bat').hits, G.team.length), left: 1, back: 0, up: 0 }); act('flip'); render();`);
+    const card = d.querySelector('[data-mob="995"]'); assert.ok(card, 'mob card not rendered');
+    const strip = card.querySelector('.hstrip'); assert.ok(strip, 'no hits strip');
+    const printed = flat(C.mob(D.mobs.find(m => m.id === 'bat'))).match(/Hits 1p \d+ 2p \d+ 3p \d+ 4p \d+/i)[0].toLowerCase();
+    assert.strictEqual(flat(strip.innerHTML).toLowerCase(), printed);
+    assert.strictEqual(strip.querySelector('.hc.on .hp').textContent, `${n}p`);
+    assert.ok(!/solo|−\d/.test(card.querySelector('.stat').textContent), 'hits note leaked onto the card');
+    assert.match(card.querySelector('.rng').textContent, /^Back 1–\d+$/);
+  }
 });

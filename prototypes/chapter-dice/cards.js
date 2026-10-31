@@ -50,7 +50,7 @@
 
   // ---- Cards (2.5 × 3.5 in) ----------------------------------------------------------------------------------
   const kw = { beacon: 'Beacon', noblock: 'Piercing', onpoint: 'Targeted', hardened: 'Evasive', regen: 'Regen', ramp: 'Escalating' };
-  const kwText = { beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it.', regen: 'At the end of each round, put back one die it lost.', ramp: '+1 Damage every round it stays up.' };
+  const kwText = { beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it. A double of another number takes out one die.', regen: 'At the end of each round, put back one die it lost.', ramp: '+1 Damage every round it stays up.' };
   // The dice strip along the bottom edge: the dice to set under the card, then the + die per player past three. On
   // the table the physical dice sit just below it.
   const strip = (d, px) => `<div class="dice"><div class="set">${d.base.map(n => pip(n, px)).join('')}</div>
@@ -58,10 +58,24 @@
   // The keyword's icon from the game data, as the printed d20 mob cards show it.
   const kwIcon = m => { const k = D.keywords && D.keywords[m.kw]; return k ? `<svg class="kwi" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="#A8360F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${k.icon}</svg>` : ''; };
   const nmRow = (name, dmg) => `<div class="nr"><div class="nm">${name}</div><div class="dmg"><span>Damage</span><b>${dmg}</b></div></div>`;
+  // Baselining (2026-10-31): every alarm prints a harder "Baseline it" condition: set four more threat dice showing
+  // its main number's opposite side (7 − main). Beat it with them and tuck it under an agent: that agent's card gains
+  // the line below while it stays in the tray. Same as sim.js BASES.
+  const BASE_N = 4;
+  const BASE = {
+    mailer: 'The highest-Damage alarm deals 1 less.',
+    spray: 'Once a round, reroll one more die.',
+    imp: 'On point rolls one more die.',
+    druid: 'Comebacks don’t hit on arrival.',
+    wyrmling: 'Add 1 to every row roll.',
+    mimic: 'After every won fight, heal 5 split across the crew.',
+  };
+  const baseDie = id => 7 - numbersFor(id, 1)[0];
+  const baseLine = m => BASE[m.id] ? `<div class="base"><span class="bh"><b>Baseline it</b>${Array(BASE_N).fill(pip(baseDie(m.id), 14)).join('')}</span><span class="bt">${BASE[m.id]}</span></div>` : '';
   function mobCard(m) {
     return `<div class="card mob">${tab}${art(SCENE.mob(m.id))}${hd(m.domain, `back on 2–${rowTop(m.persist[1])}`)}${nmRow(m.name, m.dmg)}
   <div class="kw">${kwIcon(m)}<span><b>${kw[m.ability]}.</b> ${kwText[m.ability]}</span></div><div class="fl">${m.flavor}</div>
-  ${strip(diceFor(m), 24)}</div>`;
+  ${strip(diceFor(m), 24)}${baseLine(m)}</div>`;
   }
   function bossCard(b) {
     return `<div class="card boss">${tab}${art(SCENE.boss(b.id))}${hd('Boss', 'arrives at 05:59')}${nmRow(b.name, b.dmg)}
@@ -69,11 +83,11 @@
   ${strip(diceFor(b, true), 24)}</div>`;
   }
   const PERK = {
-    HUN: 'Your 1s match any number on a mob that has come back from the row.',
-    RES: 'Your doubles sit in the middle: 3 and 4, plus the 6 everyone has.',
-    ENG: 'Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). That die can’t guard.',
-    SOA: `The tray holds one more agent (${D.sharedKit + 1}). Every won fight draws one more agent card.`,
-    PAT: `After every fight, heal ${D.perks.PAT.fight} HP split across the crew. Recovery Agents heal ${D.perks.PAT.recover} more.`,
+    HUN: 'Your 1s match any number on an alarm that has come back from the row.',
+    RES: 'Once a fight, after you roll, pick an alarm: it deals no damage this round.',
+    ENG: 'Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
+    SOA: `The tray holds one more agent (${D.sharedKit + 1}). The first agent you burn each fight stays in the tray.`,
+    PAT: 'Once a fight, after you roll, turn one of your dice one up or one down.',
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'standard d6')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
@@ -81,7 +95,7 @@
   const AGENT = {
     triage: ['Triage Agent', 'Rolls an agent die every round.', 'On point rolls 3 more crew dice this round.'],
     enrich: ['Enrichment Agent', 'Once a round, turn one crew die to any number.', 'Every die matches anything this round.'],
-    contain: ['Containment Agent', `The highest-Damage mob deals ${D.containCut} less, never below 1.`, 'Remove one die from every mob (the boss keeps at least one).'],
+    contain: ['Containment Agent', `The highest-Damage alarm deals ${D.containCut} less, never below 1.`, 'Remove one die from every alarm (the boss keeps at least one).'],
     recover: ['Recovery Agent', `After every fight, heal ${D.recoverHeal} HP split across the crew.`, `Heal ${D.recoverBurn} HP split across the crew.`],
   };
   const agentCard = t => `<div class="card agent cy">${tab}${art(SCENE.agent(t))}${hd('Agent', 'AI agent')}<div class="nm">${AGENT[t][0]}</div>
@@ -93,15 +107,15 @@
   <div class="note">Your doubles are on your analyst card. Crew and agent dice: only a ${pip(6, 14)} is a double.</div>
   <div class="note"><b>Once a round, reroll one of your own dice.</b></div>
   <div class="note">4 players: add the card’s + die.</div>
-  <div class="note">Row: 2 amber dice; a row mob comes back if the sum is at most its number.</div></div>`;
+  <div class="note">Row: 2 amber dice; a row alarm comes back if the sum is at most its number.</div></div>`;
 
   // Situations (2026-10-30): one flips before every flip after the first (the boss's too), once who's on point is
   // picked. The real game's situations (names, scenes and story lines from the data) with rules rewritten for the
   // dice. Each offers a choice, except the event. Same rules as sim.js situation(). [label, rule] per option.
   const SIT_IDS = ['insider', 'pager', 'usb', 'chatter', 'lateral', 'patch'];
   const SIT = {
-    insider: { kind: 'Stay or run', rule: 'Turn the top mob face up, then choose.', opts: [['Hold the room', 'On point takes Exposed. Win the fight: draw an agent.'], ['Fall back', 'It hits everyone once and goes on the row unfought. Not the boss.']] },
-    pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP.'], ['Mute it', `The next mob sets one more threat die: a ${pip(6, 13)}.`]] },
+    insider: { kind: 'Stay or run', rule: 'Turn the top alarm face up, then choose.', opts: [['Hold the room', 'On point takes Exposed. Win the fight: draw an agent.'], ['Fall back', 'It hits everyone once and goes on the row unfought. Not the boss.']] },
+    pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP.'], ['Mute it', `The next alarm sets one more threat die: a ${pip(6, 13)}.`]] },
     usb: { kind: 'Grab', opts: [['Grab it', 'On point rolls 3 dice. Any pair: draw 2 agents and take Focused. No pair: take Rattled.'], ['Leave it', 'Nothing happens.']] },
     chatter: { kind: 'Grab', opts: [['Dig in', `On point picks 1–4 dice and rolls them. Any ${pip(6, 13)}: draw 2 agents. None: lose 1 HP per die.`], ['Let it go', 'Nothing happens.']] },
     lateral: { kind: 'Event', rule: 'Roll the row now. Anything that comes back hits on arrival and joins the next fight.' },
@@ -145,6 +159,8 @@
 .dmg span{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.04em;text-transform:uppercase;color:${C.mut}}.dmg b{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px;line-height:20px;color:${C.ink};font-variant-numeric:tabular-nums}
 .kw{display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.3;background:#FCE6DC;border:1px solid ${C.fl};padding:3px 6px}.kw b{font-weight:700;text-transform:uppercase;font-size:11px;color:${C.ex}}.kw .kwi{flex:none;margin-top:1px}
 .fl{font-size:10px;line-height:1.35;color:${C.mut};border-top:1px solid ${C.rule};padding-top:4px}
+.card.mob .art{height:74px}.card.mob .dice{flex-direction:row;justify-content:center;gap:8px;padding:5px 8px 6px}.card.mob .plus span{max-width:54px;line-height:1.1;font-size:8.5px}
+.base{margin:-6.5px -7.5px 6.5px;padding:3px 8px 4px;background:#EAF6F8;border-top:1px dashed ${C.ink};font-size:9.5px;line-height:1.25;display:flex;flex-direction:column;gap:1px}.base .bh{display:flex;align-items:center;gap:2px}.base .bh b{font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:4px;color:${C.ink}}
 .dice{margin:auto -7.5px 6.5px;padding:6px 8px 7px;background:#fff;border-top:2px solid ${C.ink};display:flex;flex-direction:column;align-items:center;gap:4px;clip-path:polygon(0 0,100% 0,100% 100%,15px 100%,0 calc(100% - 15px))}
 .dice .set{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.boss .dice .set{max-width:150px}
 .dice .plus{display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:${C.mut}}.dice .plus b{font-size:14px;color:${C.ink}}
@@ -159,6 +175,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, agentCard, legend,
+  return { BASE, BASE_N, baseDie, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, agentCard, legend,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });

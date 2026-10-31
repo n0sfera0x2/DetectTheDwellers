@@ -1,6 +1,6 @@
 # Prototype: chapter dice (d6s) against the current d20
 
-**Status:** since the [situations pass](#situations-conditions-and-two-analyst-abilities-2026-10-30) (2026-10-30), a situation card flips before every flip after the first (stay or run, grab or leave it, an event, a breather), three condition cards adjust rolls, the Hunter's 1s match anything on a mob that came back, and the Engineer turns one die a fight to its opposite side. HP 21. Before that, since the [row and reroll pass](#always-persist-row-no-one-off-matches-rerolls-2026-10-30) (2026-10-30), beaten mobs always go back to the row (row numbers retuned to 2–5 / 2–4 / 2–3), there are no one-higher-or-lower matches, and once a round each player may reroll one of their own dice. HP 24. Before that: exact numbers with **clustered dice and two-of-a-number doubles** (see [Clustered dice](#clustered-dice-and-two-of-a-number-doubles-2026-10-30)). Mob cards print the dice to set under them, bunched round a main number (1 2 2 3); a rolled die takes out a die showing exactly its number, and a double counts as two dice showing its number. The sim (`SYS=n6`, the default d6 family), the paper prototype and the web version all play the current rules. The earlier symbol system stays reachable in the sim with `SYS=d6`. Next step: a table playtest against today's Quick Shift.
+**Status:** since the [baselining pass](#alarms-and-baselining-2026-10-31) (2026-10-31), mobs are **alarms**, and any newly flipped alarm can be baselined: set 4 more dice, beat it with them, and tuck it under an agent, which then gains the alarm's line. HP 12. Before that, since the [analyst pass](#a-call-for-every-analyst-and-evasive-fixed-2026-10-31) (2026-10-31), every analyst has a once-a-fight call (the Responder stands a mob down, the Fixer turns a die one up or down, the Soarcerer keeps the first agent it burns; the Engineer's turned die counts as one), and any double can hit an Evasive mob, so no fight is unwinnable. HP 14. Before that, since the [situations pass](#situations-conditions-and-two-analyst-abilities-2026-10-30) (2026-10-30), a situation card flips before every flip after the first (stay or run, grab or leave it, an event, a breather), three condition cards adjust rolls, the Hunter's 1s match anything on a mob that came back, and the Engineer turns one die a fight to its opposite side. HP 21. Before that, since the [row and reroll pass](#always-persist-row-no-one-off-matches-rerolls-2026-10-30) (2026-10-30), beaten mobs always go back to the row (row numbers retuned to 2–5 / 2–4 / 2–3), there are no one-higher-or-lower matches, and once a round each player may reroll one of their own dice. HP 24. Before that: exact numbers with **clustered dice and two-of-a-number doubles** (see [Clustered dice](#clustered-dice-and-two-of-a-number-doubles-2026-10-30)). Mob cards print the dice to set under them, bunched round a main number (1 2 2 3); a rolled die takes out a die showing exactly its number, and a double counts as two dice showing its number. The sim (`SYS=n6`, the default d6 family), the paper prototype and the web version all play the current rules. The earlier symbol system stays reachable in the sim with `SYS=d6`. Next step: a table playtest against today's Quick Shift.
 
 ## Hypothesis
 
@@ -71,6 +71,92 @@ Both play the same cut-down shift.
 | Enrichment burn | Every die is wild this round |
 | Evasive ("natural 12+") | Only a double face hits it |
 | Triage Agent's die | A plain six-face die: one each of D, C, E, D, C, E |
+
+## Alarms and baselining (2026-10-31)
+
+NightBeacon CMD theming: the enemies are **alarms** (player-facing text across the prototype and the main game; code still says mob), and a fight with two or more in play is a **multi-alarm** fight (the web fight header says so). The story for the new choice: the agents are learning the environment.
+
+### The rules now
+
+- **Baseline it.** When an alarm is flipped from the feed (never a comeback, never the boss), on point may set the 4 dice on its Baseline line too (+1 per player past 3), all showing its main number's opposite side. Beat it with them all and tuck it under an agent in the tray: that agent gains the alarm's line until it is burned or discarded (a Soarcerer's kept burn keeps it). Empty tray: it waits for the next agent drawn. The alarm still goes on the row, and comes back with its printed dice only.
+- **The six lines:**
+
+| Alarm | Baseline dice | Baselined |
+| --- | --- | --- |
+| Mailer Daemon | 5 5 5 5 | The highest-Damage alarm deals 1 less. |
+| Password Sprayer | 3 3 3 3 | Once a round, reroll one more die. |
+| OAuth Consent Grifter | 6 6 6 6 | On point rolls one more die. |
+| Living-off-the-Land Scavenger | 4 4 4 4 | Comebacks don’t hit on arrival. |
+| Exfil Courier | 2 2 2 2 | Add 1 to every row roll. |
+| Rootkit Implant | 1 1 1 1 | After every won fight, heal 5 split across the crew. |
+
+- **HP 12.**
+- The alarm card makes room with shorter art and the + die beside the threat dice; the Baseline line sits under the strip. The paper sheet asks for about 18 threat dice.
+
+### Sim (2026-10-31, `SYS=n6`, 1,500 games a row)
+
+| Variant | 1p | 2p | 4p | Why |
+| --- | --- | --- | --- | --- |
+| Three alarms, 2 dice, baselined alarm leaves the row for good (HP 14) | 59 | 65 | 65 | Always baselining beat never by 12 pts at 2p: no choice. Leaving the row is most of the value. |
+| Three alarms, 3 dice, it still goes on the row (HP 14) | 47 | 54 | 57 | vs never 49 / 53 / 52: a real choice at 1–2p |
+| Six alarms, 3 dice (HP 14), always / never | 54 / 49 | 60 / 53 | 60 / 52 | The lines stack: +7 at 2p |
+| Six alarms, 4 dice (HP 13), always / never / when healthy | 48 / 46 / 50 | 53 / 50 / 55 | 52 / 49 / 56 | Judgment beats both: kept |
+| **HP 12 (kept): never / always / when healthy** | **43 / 45 / 46** | **49 / 51 / 53** | **48 / 48 / 52** | |
+
+Each line alone (forced on, at HP 14 with 3 dice): Courier +3 at 2p, Grifter +2, Scavenger +1, Sprayer and Mailer ±0, Rootkit with heal 3 −4 (seven dice for a small heal); heal 5 brought it to −3. The bot baselines when the lowest HP is at least 80% of the start. At HP 13 the skill gap at 2p was 25 points.
+
+**Still open:**
+- The Soarcerer is weakest again solo (39%, spread 15 points): its doubles 1 and 6 match only the Grifter's and Rootkit's Baseline dice.
+- The Rootkit's line is still a slight loss for a seven-die fight. Something stronger, or fewer dice for it alone, if playtests agree.
+- At 4 players baselining is worth the most; the +1 die per player past 3 trims it, watch it at the table.
+
+Sim knobs: `BASE=0` (off), `BASEPICK=always|never|bot`, `BASEDICE` (default 4), `BASEPLUS=0` (no + die past 3 players), `BASEROW=out` (a baselined alarm leaves for good), `BASES=spray,druid,...`, `BASEHP` (the bot's health line, default 0.8), `BASEHEAL` (Rootkit, default 5).
+
+## A call for every analyst, and Evasive fixed (2026-10-31)
+
+Three issues left open by the situations pass: the Soarcerer and Fixer were weakest solo, the Responder's card had no decision, and about 1–2% of solo games stalled.
+
+### What the stalls were
+
+Not an endless guard. Every stalled game was a solo player against the **Druid** (Evasive, dice 3 3 2). Evasive said only a double hits it, and a double only takes dice showing its own number, so an analyst with no double of 2 or 3 could never hit it. The Soarcerer (doubles 1 and 6) could never hit it at all. The player guarded on doubles and bled 1 HP every few rounds until the 200-round cap. The same rule made the Soarcerer the weakest analyst: forcing a fix moved it from 41% to 63% solo before any retune.
+
+### The rules now
+
+- **Evasive:** only a double can hit it. A double of another number takes out one die and is spent; a double of its number still takes two.
+- **Responder:** once a fight, after you roll, pick a mob: it deals no damage this round. Replaces "your doubles sit in the middle" (the doubles 3, 4 and 6 are still on the card).
+- **Fixer:** once a fight, after you roll, turn one of your dice one up or one down. Replaces the heal after every fight and the Recovery bonus.
+- **Soarcerer:** the tray still holds 6. The first agent you burn each fight stays in the tray. Replaces the extra draw after every won fight.
+- **Engineer:** the die turned to its opposite side counts as one die (never a double), so it can't guard either.
+- **HP 14.**
+
+### Sim (2026-10-31, `SYS=n6`, 1,500 games a row)
+
+Each change on its own, at HP 21 (before the retune):
+
+| Change | Solo HUN / RES / ENG / SOA / FIX | 1p | 2p | 4p | Stalls |
+| --- | --- | --- | --- | --- | --- |
+| Committed rules | 47 / 49 / 51 / 41 / 42 | 46 | 53 | 50 | 34 |
+| Any double hits Evasive (rejected: +19 solo) | 65 / 64 / 71 / 63 / 60 | 65 | 62 | 57 | 0 |
+| A double of another number takes one (kept) | 63 / 62 / 69 / 59 / 56 | 62 | 61 | 55 | 0 |
+
+At HP 18 with the Evasive fix, testing each analyst:
+
+| Variant | Solo for that analyst | Verdict |
+| --- | --- | --- |
+| Responder stands a mob down | 55 → 61 | Kept |
+| Soarcerer keeps a burn, with the extra draw | 59 → 70 (at HP 21) | Too strong |
+| Soarcerer keeps a burn, no extra draw | 54 → 56 | Kept |
+| Soarcerer third double (5) | 54 → 69 | Rejected |
+| Fixer: heal 5 or draw an agent, after each fight | 50 → 50 | No gain: healing between fights barely matters |
+| Fixer third double (5) | 50 → 68 | Rejected |
+| Fixer turns a die one up or down | 50 → 55 | Kept |
+| Engineer's turned die counts as one | 64 → 59 | Kept |
+
+**At HP 14, all of it (1,200–1,500 games):** 1p 50% · 2p 50–53% · 4p 52%. Solo: Hunter 48, Responder 54, Engineer 50, Soarcerer 47, Fixer 47 (spread 7 points, was 12). Pairs 44% (Hunter + Engineer) to 62% (Responder + Soarcerer). Skill gap at 2p 21 points (was 18). Games are shorter, 11 rounds at 2p (was 15), since Evasive no longer drags on. No stalls in 7,500 solo games. Losses before the boss 69% at 2p (was 75%).
+
+**Still open:** the Responder's stand is the strongest call (pairs with it top the table); if playtests agree, limit it to on point's damage. HP 14 is low enough that one unlucky row roll matters more; watch for that at the table.
+
+Sim knobs: `EVASIVE=exact|one|wild`, `RESPERK=old|stand`, `SOAPERK=old|keep` (`SOADRAW`), `PATPERK=old|choose|nudge` (`PATHEAL`, `PATDRAW`), `ENGDBL=1` (the turned die keeps its double), `RESMIN` (how much the stand must save before the bot uses it, default 6).
 
 ## Situations, conditions and two analyst abilities (2026-10-30)
 
@@ -454,13 +540,14 @@ Add `?seed=123` to the URL to replay a shift.
 
 **What it plays:** exactly the paper rules sheet.
 
-- 1–4 players, each with their own analyst, all at 21 HP. Tuned for 2 players, and the setup screen says so.
+- 1–4 players, each with their own analyst, all at 12 HP. Tuned for 2 players, and the setup screen says so.
 - The six paper mobs are shuffled, with the Lockjaw Syndicate underneath. 4 players get the card's + die (a 6).
 - The kit deck is the 8 agents. The crew starts with 2 (1 solo), and the tray holds 5 (6 with the Soarcerer). When a draw overfills the tray, you choose what to discard.
 - **A flip:** pick who's on point, then flip. The row roll shows the amber pair, their sum and what came back; the side panel shows each row mob's number on a 2–12 track. The two highest-Damage comebacks hit everyone on arrival, and the Beacon chains.
 - **A round:** roll the row (from round 2), then roll the dice. Each die shows its pips; doubles are ringed and labelled. Tap a die, then a glowing threat die under a mob showing the same number (a Hunter's 1 glows on every die under a mob that came back; with the Enrichment burn every die glows). A double is labelled "Double ×2": it stays selected after its first take ("1 left") so you can tap a second die showing its number, under the same mob or another. Or press Guard instead, before it takes anything. You can also turn a die to any number with a running Enrichment Agent, undo the last move, and end the round.
 - **Situations:** from the second flip, after picking who's on point, the situation card sits on the mat with one button per option (keys 1–9). The Badge That Wasn’t shows the top mob face up beside it, and Fall back is greyed out with the reason when the boss is next. Dark Web Chatter has a 1–4 dice picker. The result (dice, Won or Lost, what happened) shows before "Flip the mob". On point locks once a situation is resolved.
-- **Conditions** sit as small cards beside their holder in the crew strip. With a die selected: **Focused: turn to…** (any number), and for the Engineer **Opposite side** (key O). A Rattled die keeps no doubles for that whole round, even if it is rerolled or turned.
+- **Conditions** sit as small cards beside their holder in the crew strip. With a die selected: **Focused: turn to…** (any number), for the Engineer **Opposite side** (key O), and for the Fixer **−1 / +1**. The Responder gets a **Stand it down** button under each mob once a fight; the mob then shows "Stood down" and deals nothing at round end. A Soarcerer's first burn each fight says it stays in the tray. A Rattled die keeps no doubles for that whole round, even if it is rerolled or turned.
+- **Baselining:** before the first roll, the alarm just flipped has a **Baseline it** button (key B). Its extra dice are set under it, marked +, with a Baselining stamp. Beat it and the mat asks which agent it tucks under (**Tuck it here**); the tucked alarm's line shows under that agent. The fight header says **multi-alarm** when two or more are up.
 - **The crew strip** shows each analyst's incoming damage live as you place dice, Exposed included.
 - **Burns** can be used when the rules allow:
   - Triage and Enrichment after the roll;

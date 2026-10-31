@@ -17,7 +17,7 @@
     analyst: id => ART[id] || '', agent: t => ART['kit_' + t] || '', sit: id => ART['sit_' + id] || '',
   };
   // The art.json / art-print.json keys the cards use, so web/build.js inlines only those.
-  const artKeys = () => ({ art: [...MOB_IDS, ...ANALYST_IDS, ...AGENT_IDS.map(t => 'kit_' + t), ...SIT_IDS.map(id => 'sit_' + id), BOSS_ID], print: ['boss_' + BOSS_ID] });
+  const artKeys = () => ({ art: [...MOB_IDS, ...ANALYST_IDS, ...[...AGENT_IDS, ...CONS_IDS].map(t => ITEM[t][2]), ...SIT_IDS.map(id => 'sit_' + id), BOSS_ID], print: ['boss_' + BOSS_ID] });
   const art = svg => `<div class="art">${svg}</div>`;
   const tab = '<i class="tab"></i>';
   const hd = (tg, hud) => `<div class="hd"><span class="tg">${tg}</span>${hud ? `<span class="hud">${hud}</span>` : ''}</div>`;
@@ -25,7 +25,8 @@
   // set under it; a rolled die takes out a die showing exactly its number. Which numbers are doubles depends on the
   // analyst; every other die (the solo crew die, the Triage agent die) doubles only on a 6.
   // Same numbers as sim.js DOUBLES (web/spec.js checks they agree).
-  const DOUBLES = { HUN: [1, 2, 6], RES: [3, 4, 6], ENG: [2, 4, 6], SOA: [1, 6], PAT: [3, 6], CREW: [6], AGENT: [6] };
+  // Signature doubles (2026-10-31): one number of your own plus the 6 everyone has.
+  const DOUBLES = { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6], CREW: [6], AGENT: [6] };
   const isDouble = (id, n) => (DOUBLES[id] || DOUBLES.CREW).includes(n);
   // The persistence row on 2d6: a row mob comes back if the sum is at most its number. The data's d20 ranges map by
   // tier (top 12+ → 5, 10–11 → 4, 8–9 → 3, 7 or less → 2): every beaten mob goes back to the row, so the odds sit
@@ -38,7 +39,7 @@
   // Solo and 3 players play the base dice.
   const PAST = 3;
   const diceFor = (m, boss) => {
-    const base = boss ? m.hitsBase + D.bossAdd[2] - 2 : m.hits - 1;
+    const base = boss ? m.hitsBase + D.bossAdd[2] - 2 : m.hits - 2; // two fewer than the d20 hits since 2026-10-31 (same as sim.js)
     return { base: numbersFor(m.id, base).slice().sort((a, b) => a - b), extra: 6 };
   };
   // The dice a crew of n sets under the card: the base dice, then the + die once per player past three.
@@ -83,23 +84,33 @@
   ${strip(diceFor(b, true), 24)}</div>`;
   }
   const PERK = {
-    HUN: 'Your 1s match any number on an alarm that has come back from the row.',
+    HUN: 'Your 1s match any number on any alarm.',
     RES: 'Once a fight, after you roll, pick an alarm: it deals no damage this round.',
-    ENG: 'Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
-    SOA: `The tray holds one more agent (${D.sharedKit + 1}). The first agent you burn each fight stays in the tray.`,
-    PAT: 'Once a fight, after you roll, turn one of your dice one up or one down.',
+    ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
+    SOA: 'You hold one more agent: 3 (solo 5).',
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'standard d6')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
   <div class="note">A double counts as two dice showing its number, or guards.</div><div class="perk">${PERK[id]}</div></div>`;
+  // Items (2026-10-31): the deck is items. Agents are passive and work for whoever holds them (2 each, the Soarcerer
+  // 3; solo 4, or 5). Consumables don't take a slot: keep them in hand and use each once. [name, rule, art key].
   const AGENT = {
-    triage: ['Triage Agent', 'Rolls an agent die every round.', 'On point rolls 3 more crew dice this round.'],
-    enrich: ['Enrichment Agent', 'Once a round, turn one crew die to any number.', 'Every die matches anything this round.'],
-    contain: ['Containment Agent', `The highest-Damage alarm deals ${D.containCut} less, never below 1.`, 'Remove one die from every alarm (the boss keeps at least one).'],
-    recover: ['Recovery Agent', `After every fight, heal ${D.recoverHeal} HP split across the crew.`, `Heal ${D.recoverBurn} HP split across the crew.`],
+    triage: ['Triage Agent', 'Roll an agent die with your dice every round.', 'kit_triage'],
+    enrich: ['Enrichment Agent', 'Once a round, turn one of your dice to any number.', 'kit_enrich'],
+    contain: ['Containment Agent', `Your biggest hitter deals you ${D.containCut} less, never below 1.`, 'kit_contain'],
+    recover: ['Recovery Agent', `After every won fight, heal ${D.recoverHeal} HP.`, 'kit_recover'],
   };
-  const agentCard = t => `<div class="card agent cy">${tab}${art(SCENE.agent(t))}${hd('Agent', 'AI agent')}<div class="nm">${AGENT[t][0]}</div>
-  <div class="mode"><b>Run it</b> ${AGENT[t][1]}</div><div class="mode"><b>Or burn it</b> ${AGENT[t][2]}</div></div>`;
+  const CONS = {
+    surge: ['Surge Playbook', 'After the roll: roll 3 more dice.', 'kit_hunt'],
+    intel: ['Threat Intel Feed', 'After the roll: every die matches anything this round.', 'kit_recon'],
+    isolate: ['Isolation Script', 'Remove one die from every alarm (the boss keeps at least one).', 'kit_patch'],
+    coffee: ['Shift Coffee', `Heal ${D.recoverBurn} HP split across the crew.`, 'kit_decoy'],
+    freeze: ['Change Freeze', 'Skip the next row roll.', 'kit_recon'],
+  };
+  const ITEM = { ...AGENT, ...CONS }, isAgent = t => !!AGENT[t];
+  const agentCard = t => isAgent(t)
+    ? `<div class="card agent cy">${tab}${art(ART[AGENT[t][2]] || '')}${hd('Agent', 'passive')}<div class="nm">${AGENT[t][0]}</div><div class="mode"><b>While you hold it</b> ${AGENT[t][1]}</div></div>`
+    : `<div class="card agent use">${tab}${art(ART[CONS[t][2]] || '')}${hd('Consumable', 'use once')}<div class="nm">${CONS[t][0]}</div><div class="mode"><b>Use it</b> ${CONS[t][1]}</div></div>`;
   const legend = `<div class="card ref am">${tab}${hd('Reference', 'every die')}<div class="nm">Dice</div>
   <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
@@ -114,12 +125,12 @@
   // dice. Each offers a choice, except the event. Same rules as sim.js situation(). [label, rule] per option.
   const SIT_IDS = ['insider', 'pager', 'usb', 'chatter', 'lateral', 'patch'];
   const SIT = {
-    insider: { kind: 'Stay or run', rule: 'Turn the top alarm face up, then choose.', opts: [['Hold the room', 'On point takes Exposed. Win the fight: draw an agent.'], ['Fall back', 'It hits everyone once and goes on the row unfought. Not the boss.']] },
+    insider: { kind: 'Stay or run', rule: 'Turn the top alarm face up, then choose.', opts: [['Hold the room', 'On point takes Exposed. Win the fight: draw an item.'], ['Fall back', 'It hits everyone once and goes on the row unfought. Not the boss.']] },
     pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP.'], ['Mute it', `The next alarm sets one more threat die: a ${pip(6, 13)}.`]] },
-    usb: { kind: 'Grab', opts: [['Grab it', 'On point rolls 3 dice. Any pair: draw 2 agents and take Focused. No pair: take Rattled.'], ['Leave it', 'Nothing happens.']] },
-    chatter: { kind: 'Grab', opts: [['Dig in', `On point picks 1–4 dice and rolls them. Any ${pip(6, 13)}: draw 2 agents. None: lose 1 HP per die.`], ['Let it go', 'Nothing happens.']] },
+    usb: { kind: 'Grab', opts: [['Grab it', 'On point rolls 3 dice. Any pair: draw 2 items and take Focused. No pair: take Rattled.'], ['Leave it', 'Nothing happens.']] },
+    chatter: { kind: 'Grab', opts: [['Dig in', `On point picks 1–4 dice and rolls them. Any ${pip(6, 13)}: draw 2 items. None: lose 1 HP per die.`], ['Let it go', 'Nothing happens.']] },
     lateral: { kind: 'Event', rule: 'Roll the row now. Anything that comes back hits on arrival and joins the next fight.' },
-    patch: { kind: 'Choice', opts: [['Take a breather', 'Everyone heals 2 HP.'], ['Raid the supply closet', 'Draw an agent.']] },
+    patch: { kind: 'Choice', opts: [['Take a breather', 'Everyone heals 2 HP.'], ['Raid the supply closet', 'Draw an item.']] },
   };
   const sitData = id => D.situations.find(s => s.id === id);
   const sitCard = id => { const s = SIT[id], d = sitData(id);
@@ -134,9 +145,11 @@
   };
   const condCard = id => `<div class="card cond ${id === 'focused' ? 'cy' : ''}">${tab}${hd('Condition', id === 'focused' ? 'keep it' : 'bad')}<div class="nm">${COND[id][0]}</div><div class="ctext">${COND[id][1]}</div></div>`;
 
-  // The prototype's card set: six mobs, the Lockjaw Syndicate, five analysts, four agent types (two each).
+  // The prototype's card set: six alarms, the Lockjaw Syndicate, four analysts, 16 items (6 agents, 10 consumables).
   const MOB_IDS = ['mailer', 'spray', 'imp', 'druid', 'wyrmling', 'mimic'];
-  const BOSS_ID = 'wyrm', ANALYST_IDS = ['HUN', 'RES', 'ENG', 'SOA', 'PAT'], AGENT_IDS = ['triage', 'enrich', 'contain', 'recover'];
+  const BOSS_ID = 'wyrm', ANALYST_IDS = ['HUN', 'RES', 'ENG', 'SOA'], AGENT_IDS = ['triage', 'enrich', 'contain', 'recover'], CONS_IDS = ['surge', 'intel', 'isolate', 'coffee', 'freeze'];
+  // The item deck, as sim.js KIT: Triage and Containment ×2, Enrichment and Recovery ×1, each consumable ×2.
+  const ITEM_DECK = ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', ...CONS_IDS.flatMap(t => [t, t])];
   const mobs = () => MOB_IDS.map(id => D.mobs.find(m => m.id === id));
   const boss = () => D.bosses.find(b => b.id === BOSS_ID);
 
@@ -154,7 +167,7 @@
 .tg{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.04em;text-transform:uppercase;color:${C.ink};background:var(--pa);padding:0 5px;white-space:nowrap}
 .hud{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.04em;text-transform:uppercase;color:${C.am};white-space:nowrap}.card.cy .hud{color:${C.cy}}
 .nr{display:flex;align-items:center;gap:8px}.nr .nm{flex:1;min-width:0}
-.nm{font-weight:700;font-size:16px;line-height:1.1;text-transform:uppercase;letter-spacing:.01em;text-wrap:balance}.card.boss .nm{color:${C.ex}}.card.agent .nm{color:${C.cy}}
+.nm{font-weight:700;font-size:16px;line-height:1.1;text-transform:uppercase;letter-spacing:.01em;text-wrap:balance}.card.boss .nm{color:${C.ex}}.card.agent .nm{color:${C.cy}}.card.agent.use .nm{color:${C.ex}}
 .dmg{flex:none;display:flex;flex-direction:column;align-items:flex-end;background:#fff;border:1px solid ${C.rule};padding:1px 6px 2px;line-height:1}
 .dmg span{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.04em;text-transform:uppercase;color:${C.mut}}.dmg b{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px;line-height:20px;color:${C.ink};font-variant-numeric:tabular-nums}
 .kw{display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.3;background:#FCE6DC;border:1px solid ${C.fl};padding:3px 6px}.kw b{font-weight:700;text-transform:uppercase;font-size:11px;color:${C.ex}}.kw .kwi{flex:none;margin-top:1px}
@@ -175,6 +188,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { BASE, BASE_N, baseDie, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, agentCard, legend,
+  return { BASE, BASE_N, baseDie, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });

@@ -21,7 +21,10 @@ function symbolsFor(domain, n) { const [a, b, c] = MIX[domain] || 'DCE', pat = [
 const KEY = ['D', 'D', 'C', 'C', 'E', 'E'];
 const pipDie = dbl => KEY.map((s, i) => [s, dbl.includes(i + 1) ? 2 : 1]);
 // Doubles by analyst. Every other die (the solo crew die, the Triage agent die) doubles only on a 6.
-const DOUBLES = { HUN: [1, 2, 6], RES: [3, 4, 6], ENG: [2, 4, 6], SOA: [1, 6], PAT: [3, 6], CREW: [6], AGENT: [6] };
+// Signature doubles (2026-10-31): each analyst has one number of their own, plus the 6 everyone has. Was three numbers
+// each (Hunter 1 2 6, Responder 3 4 6, Engineer 2 4 6): half of every analyst's faces, too swingy. Which number
+// goes where moved solo wins by a few points at most; the gaps come from the abilities.
+const DOUBLES = { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6], PAT: [3, 6], CREW: [6], AGENT: [6] };
 const CUSTOM = process.env.DICE === 'custom';
 const CUSTOM_DICE = {
   HUN: [['D', 2], ['D', 2], ['D', 1], ['C', 1], ['E', 1], ['E', 2]],
@@ -72,7 +75,7 @@ const SITPICK = Object.fromEntries((process.env.SITPICK || '').split(',').filter
 const NEWPERKS = (process.env.PERKS || 'new') === 'new';
 const FOCUSGAIN = +(process.env.FOCUSGAIN || 8);
 // ENGFLIP: how often the Engineer may turn a die, 'fight' (default: once a round was +14 pts solo) or 'round'.
-const ENGFLIP = process.env.ENGFLIP || 'fight';
+const ENGFLIP = process.env.ENGFLIP || 'round'; // once a round since 2026-10-31: the turned die counts as one, so no guard loop
 // EVASIVE=wild (2026-10-31): only a double hits an Evasive mob, and any double matches it (+19 pts solo, rejected).
 // EVASIVE=one: a double of its number takes two as usual; any other double takes one. EVASIVE=exact: a double of
 // its number (an analyst without that double could never hit it: ~1.5% of solo games stalled in an unwinnable fight).
@@ -82,7 +85,8 @@ const EVASIVE = process.env.EVASIVE || 'one';
 // tray, in place of the extra draw (SOADRAW=0). PATPERK=nudge: once a fight, turn one of your dice one up or down, in
 // place of the heals (healing after fights moved the Fixer under 1 pt; choose = heal or draw an agent, no gain).
 // ENGDBL=0: the die the Engineer turns counts as one die (ENG solo 64% → 59%). 'old' is each earlier perk.
-const RESPERK = process.env.RESPERK || 'stand', SOAPERK = process.env.SOAPERK || 'keep', PATPERK = process.env.PATPERK || 'nudge';
+const NEWITEMS = (process.env.ITEMS || 'new') === 'new'; // the item deck (see KIT below)
+const RESPERK = process.env.RESPERK || 'stand', SOAPERK = process.env.SOAPERK || (NEWITEMS ? 'slot' : 'keep'), PATPERK = process.env.PATPERK || 'nudge';
 // Baselining (2026-10-31): every alarm prints a harder "Baseline it" condition. When it first flips, on point may set
 // BASEDICE more threat dice (its main number's opposite side, 7 − main). Beat it with them and it is baselined: it
 // tucks under an agent, which gains its ability while that agent stays in the tray (burning or discarding the agent
@@ -93,7 +97,26 @@ const RESPERK = process.env.RESPERK || 'stand', SOAPERK = process.env.SOAPERK ||
 const BASE = process.env.BASE !== '0', BASEPICK = process.env.BASEPICK || 'bot', BASEDICE = +(process.env.BASEDICE || 4);
 const BASES = (process.env.BASES || 'spray,druid,mailer,imp,wyrmling,mimic').split(',');
 const aug = (G, id) => G.aug && G.aug.some(a => a.id === id && G.tray.includes(a.host));
-const KIT = ['triage', 'enrich', 'contain', 'recover'];
+// Items (2026-10-31, ITEMS=new default): the kit deck is items. Agents are passive (always on while held); consumables
+// are used once. Each analyst holds 2 (the Soarcerer 3); solo holds 4. Deck: 6 agents (Triage, Containment ×2;
+// Enrichment, Recovery ×1) and 10 consumables (×2 each): Surge Playbook (on point rolls 3 more dice), Threat Intel
+// Feed (every die matches anything this round), Isolation Script (one die off every alarm), Shift Coffee (heal 6
+// split), Change Freeze (skip a row roll). ITEMS=old: the 8 two-sided agent cards and the shared tray of 5.
+const USE = NEWITEMS && process.env.TWOSIDED !== '1' ? { triage: 'surge', enrich: 'intel', contain: 'isolate', recover: 'coffee' } : { triage: 'triage', enrich: 'enrich', contain: 'contain', recover: 'recover' };
+const AGENTS = ['triage', 'enrich', 'contain', 'recover'], isAgent = t => AGENTS.includes(t);
+const KIT = NEWITEMS ? (process.env.KITJSON ? JSON.parse(process.env.KITJSON) : ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', 'surge', 'surge', 'intel', 'intel', 'isolate', 'isolate', 'coffee', 'coffee', 'freeze', 'freeze']) : ['triage', 'enrich', 'contain', 'recover'];
+const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : 2 * G.n) + (on(G, 'SOA') && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
+// Each item has a holder (G.trayK, parallel to G.tray): 2 slots each (the Soarcerer 3), solo 4. PERSONAL=1 (default
+// with ITEMS=new): Triage rolls for its holder, Containment cuts what reaches its holder, Recovery heals its holder.
+const PERSONAL = NEWITEMS && process.env.PERSONAL !== '0';
+const slotsK = (G, k) => G.n === 1 ? slotsOf(G) : 2 + (G.team[k] === 'SOA' && process.env.SOASLOT !== '0' ? 1 : 0);
+// CONSFREE=1: consumables don't take a slot (slots hold agents); you keep any number of consumables.
+const CONSFREE = NEWITEMS && process.env.CONSFREE !== '0';
+const held = (G, k) => G.trayK.filter((x, i) => x === k && !(CONSFREE && !isAgent(G.tray[i]))).length;
+const activeK = (G, t, k) => G.play.some(m => m.boss && m.kw === 'ai') ? 0 : G.tray.filter((x, i) => x === t && G.trayK[i] === k).length;
+function dropItem(G, i) { const [t] = G.tray.splice(i, 1); G.trayK.splice(i, 1); return t; }
+// Change Freeze: the bot skips a row roll when two or more alarms wait on the row.
+function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +(process.env.FREEZEMIN || (NEWITEMS ? 1 : 2))) { burn(G, 'freeze'); G.stats.freeze = (G.stats.freeze || 0) + 1; return []; } return rollRow(G, strike); }
 // n6 (exact numbers, 2026-10-30): the mob card prints the dice to set under it, e.g. 1 2 2 3 + 6. A rolled die takes
 // out a die showing exactly its number. A double counts as two dice showing its number, or guards (never both).
 // A crew of four adds the card's + die; solo plays the two-player dice. Hunter (vs comebacks) and
@@ -125,14 +148,14 @@ const needFor = (sys, m, n) => sys === 'd6' ? symbolsFor(m.domain, m.hits) : sys
 function newGame(sys, team, opt) {
   const r = opt.rnd, n = team.length;
   const mk = (m, boss) => {
-    const base = boss ? m.hitsBase + D.bossAdd[2] - +(process.env.BOSSLESS ?? 2) : m.hits - +(process.env.MOBLESS ?? 1);
+    const base = boss ? m.hitsBase + D.bossAdd[2] - +(process.env.BOSSLESS ?? 2) : m.hits - +(process.env.MOBLESS ?? (sys === 'n6' ? 2 : 1)); // n6: two fewer than the d20 hits since 2026-10-31
     const hits = sys === 'n6' ? base + Math.max(0, n - XFROM) : boss ? m.hitsBase + D.bossAdd[n] : Math.max(1, m.hits + (D.mobAdd[n] || 0));
     const domain = boss ? 'Identity' : m.domain, o = { id: m.id, name: m.name, boss, def: m.def, dmg: m.dmg, kw: boss ? m.id : m.ability, persist: m.persist, hits, left: hits, base, domain, back: 0, up: 0 };
     o.need = needFor(sys, o, n); return o;
   };
   const mobs = shuffle(D.mobs, r).slice(0, opt.deal || 6).map(m => mk(m));
   return { sys, team, n, r, hp: team.map(() => opt.hp), max: opt.hp, feed: mobs, boss: mk(D.bosses[Math.floor(r() * 3)], true),
-    row: [], play: [], kit: shuffle(KIT.flatMap(t => [t, t]), r), discard: [], tray: [], point: 0, over: false, win: false,
+    row: [], play: [], trayK: [], kit: shuffle(NEWITEMS ? KIT.slice() : KIT.flatMap(t => [t, t]), r), discard: [], tray: [], point: 0, over: false, win: false,
     stats: { rounds: 0, choice: 0, back: 0, sit: {}, ran: 0, focus: 0, flipped: 0 }, smart: opt.smart !== false,
     cond: team.map(() => ({ rattled: false, exposed: false, focused: false })), sits: shuffle(SITS, r), pending: [], addSix: 0, runNext: false, aug: [] };
 }
@@ -158,9 +181,14 @@ function roll(G) {
   if (G.sys === 'n6') {
     const raw = [];
     G.team.forEach((id, k) => { const nd = (G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0)) + (k === G.point && aug(G, 'imp') ? 1 : 0); for (let i = 0; i < nd; i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : DOUBLES[id] }); });
+    // DBLMODE=pair (proposal, 2026-10-31): no number is a double by itself; two of your own dice showing the same
+    // number are a double (they take two of it, as they would anyway, or together they guard).
+    if (process.env.DBLMODE === 'pair') raw.forEach(r => { r.dbl = process.env.PAIR6 === '1' ? [6] : []; }); // PAIR6=1: a 6 is a double on its own too
     if (REROLL !== '0') rerolls(G, raw);
+    if (process.env.DBLMODE === 'pair') for (let i = 0; i < raw.length; i++) { const j = raw.findIndex((r, x) => x > i && r.k === raw[i].k && r.v === raw[i].v && !r.paired && !raw[i].paired); if (j > 0 && !(process.env.PAIR6 === '1' && raw[i].v === 6)) { raw[i].dbl = [raw[i].v]; raw[i].paired = true; raw.splice(j, 1); } }
     if (process.env.RATTLED !== 'fight') G.cond.forEach(c => { c.rattled = false; }); // Rattled lasts one roll
-    for (let i = 0; i < active(G, 'triage'); i++) raw.push({ k: G.point, crew: false, v: 1 + d6(G), dbl: DOUBLES.AGENT });
+    if (PERSONAL) G.team.forEach((_, k) => { for (let i = 0; i < activeK(G, 'triage', k); i++) raw.push({ k, crew: false, v: 1 + d6(G), dbl: DOUBLES.AGENT }); });
+    else for (let i = 0; i < active(G, 'triage'); i++) raw.push({ k: G.point, crew: false, v: 1 + d6(G), dbl: DOUBLES.AGENT });
     return choose(G, raw);
   }
   G.team.forEach((id, k) => { const nd = G.n === 1 ? D.soloDice : k === G.point ? 2 : 1;
@@ -179,6 +207,8 @@ function rerolls(G, raw) {
 }
 // The Hunter's 1s are wild on a mob that has come back (PERKS=new).
 const hunts = (G, k, v) => NEWPERKS && G.sys === 'n6' && G.team[k] === 'HUN' && v === 1;
+// HUNANY=1: the Hunter's 1s match any number on any alarm, not only one that came back.
+const huntsAny = () => process.env.HUNANY !== '0'; // default since 2026-10-31 (+11 pts solo); HUNANY=0: came-back alarms only
 // n6 choices made after the roll: the Engineer's opposite-face turn and a Focused player's any-number turn. The bot
 // tries each and keeps the best round (a Focused turn only when it gains FOCUSGAIN).
 function choose(G, raw) {
@@ -231,7 +261,7 @@ function matchAt(G, d, m, need, wild) {
   if (m.kw === 'hardened' && EVASIVE === 'wild') return need.length ? 0 : -1;
   // EVASIVE=one: a double of another number still takes out one of its dice (the pair's second half can't).
   if (m.kw === 'hardened' && EVASIVE === 'one' && !need.includes(d.f[0])) return need.length && !d.half ? 0 : -1;
-  if (wild || d.wildAll || (d.crew && m.back && hunts(G, d.k, v))) return need.length ? 0 : -1;
+  if (wild || d.wildAll || (d.crew && (m.back || huntsAny()) && hunts(G, d.k, v))) return need.length ? 0 : -1;
   const i = need.indexOf(v); if (i >= 0) return i;
   const adj = NEAR && ((id === 'HUN' && m.back) || (id === 'RES' && m === top(G)));
   return adj ? need.findIndex(x => Math.abs(x - v) === 1) : -1;
@@ -242,16 +272,18 @@ const autoBlock = (G, d) => G.sys === 'd20' && d.crew && d.r >= (G.team[d.k] ===
 
 // Damage the crew takes at the end of the round, given who is blocking.
 function incoming(G, blocks) {
-  const out = G.team.map(() => 0); const cut = active(G, 'contain');
+  const out = G.team.map(() => 0); const cut = PERSONAL ? 0 : active(G, 'contain'), top1 = G.team.map(() => 0);
   const dm = new Map(G.play.map(m => [m, dmgOf(G, m)]));
   for (let i = 0; i < cut; i++) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], Math.max(1, t[1] - D.containCut)); }
   if (aug(G, 'mailer')) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], t[1] - 1); }
   for (const m of G.play) {
     const d = dm.get(m), pierce = m.kw === 'noblock';
-    if (m.kw === 'onpoint') { if (pierce || !blocks[G.point]) out[G.point] += d * 2; continue; }
+    if (m.kw === 'onpoint') { if (pierce || !blocks[G.point]) { out[G.point] += d * 2; top1[G.point] = Math.max(top1[G.point], d * 2); } continue; }
     let ts = G.team.map((_, k) => k); if (m.kw === 'lowest') { const lo = Math.min(...G.hp); ts = ts.filter(k => G.hp[k] === lo); }
-    for (const k of ts) if (pierce || !blocks[k]) out[k] += d;
+    for (const k of ts) if (pierce || !blocks[k]) { out[k] += d; top1[k] = Math.max(top1[k], d); }
   }
+  // Personal Containment: what reaches its holder from their biggest hitter is 2 less per card, never below 1.
+  if (PERSONAL && G.trayK) G.team.forEach((_, k) => { const c = activeK(G, 'contain', k); if (c && top1[k] > 1) out[k] -= Math.min(top1[k] - 1, c * D.containCut); });
   if (G.cond) G.cond.forEach((c, k) => { if (c.exposed && out[k] > 0) out[k]++; });
   return out;
 }
@@ -316,29 +348,32 @@ function score(G, left, blocks) {
 function fight(G, mobs) {
   G.play = []; G.engUsed = false; G.resUsed = false; G.patUsed = false; G.soaKeep = SOAPERK === 'keep' && on(G, 'SOA'); mobs.forEach(m => enter(G, m)); let round = 0;
   while (!G.over && G.play.length) {
-    round++; G.stats.rounds++; if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rollRow(G, true)) enter(G, b); if (G.over) return;
+    round++; G.stats.rounds++; if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rowRoll(G, true)) enter(G, b); if (G.over) return;
     const boss = G.play.some(m => m.boss);
     const free = G.soaKeep;
-    if (G.tray.includes('contain') && (G.play.length >= (free ? 2 : 3) || boss && G.play.length >= 2)) burn(G, 'contain');
-    if (G.tray.includes('recover') && Math.min(...G.hp) <= G.max * (G.soaKeep ? 0.6 : 0.4)) burn(G, 'recover');
+    const used = NEWITEMS && process.env.ITEMBOT !== 'old', dl = G.play.reduce((a, m) => a + m.left, 0); // consumables have no other use: spend them
+    // LOOSE=1: spend freely (a held consumable does nothing, and a full hand discards new draws).
+    const loose = used && process.env.LOOSE !== '0';
+    if (G.tray.includes(USE.contain) && (loose ? dl >= 4 : G.play.length >= (free || used ? 2 : 3) || boss && G.play.length >= 2)) burn(G, USE.contain);
+    if (G.tray.includes(USE.recover) && Math.min(...G.hp) <= (loose ? G.max - D.recoverBurn : G.max * (G.soaKeep || used ? 0.6 : 0.4))) burn(G, USE.recover);
     let dice = roll(G);
     // SOLO_REROLL=1: playing solo, once a round reroll one crew die that can't hit anything.
     if (process.env.SOLO_REROLL && G.n === 1 && G.sys === 'd6') { const i = dice.findIndex(d => d.crew && G.play.every(m => !options(G, d, m))); if (i >= 0) dice[i] = { ...dice[i], f: (G.r() < 1 / 3 ? CREW_DIE : DICE[G.team[0]])[d6(G)] }; }
-    if (G.soaKeep && !boss && G.tray.includes('triage') && G.play.reduce((a, m) => a + m.left, 0) >= 4) { burn(G, 'triage'); for (let i = 0; i < 3; i++) n6die(G, dice, G.point, true, DOUBLES[G.team[G.point]]); }
-    if (boss && G.tray.includes('triage')) { burn(G, 'triage'); for (let i = 0; i < 3; i++) { const id = G.team[G.point]; if (G.sys === 'n6') n6die(G, dice, G.point, true, DOUBLES[id]); else dice.push(G.sys === 'd20' ? { k: G.point, crew: true, r: d20(G) } : { k: G.point, crew: true, f: DICE[id][d6(G)] }); } }
-    let wildAll = false; if (boss && G.tray.includes('enrich')) { burn(G, 'enrich'); wildAll = true; }
+    if ((G.soaKeep || used) && !boss && G.tray.includes(USE.triage) && dl >= +(process.env.SURGEMIN || (loose ? 3 : 5))) { burn(G, USE.triage); for (let i = 0; i < 3; i++) n6die(G, dice, G.point, true, DOUBLES[G.team[G.point]]); }
+    if (boss && G.tray.includes(USE.triage)) { burn(G, USE.triage); for (let i = 0; i < 3; i++) { const id = G.team[G.point]; if (G.sys === 'n6') n6die(G, dice, G.point, true, DOUBLES[id]); else dice.push(G.sys === 'd20' ? { k: G.point, crew: true, r: d20(G) } : { k: G.point, crew: true, f: DICE[id][d6(G)] }); } }
+    let wildAll = false; if ((boss || used && dl >= +(process.env.INTELMIN || (loose ? 4 : 6))) && G.tray.includes(USE.enrich)) { burn(G, USE.enrich); wildAll = true; }
     if (G.over || !G.play.length) break;
     if (wildAll) dice = dice.map(d => G.sys === 'd20' ? { ...d, r: d.r, boost: 5 } : d);
     const all = allocations(G, wildAll && G.sys !== 'd20' ? dice.map(d => ({ ...d, wildAll: true })) : dice);
     // A real choice: two allocations that use every usable die end in states the bot scores differently.
     const full = all.filter(a => a.plan.every(p => p[1] !== 'idle' || !p[2]));
-    if (full.length > 1 && Math.max(...full.map(a => a.score)) - Math.min(...full.map(a => a.score)) > 0.5) G.stats.choice++;
+    if (full.length > 1 && full.reduce((a, b) => Math.max(a, b.score), -Infinity) - full.reduce((a, b) => Math.min(a, b.score), Infinity) > 0.5) G.stats.choice++;
     const pick = G.smart ? all.reduce((a, b) => b.score > a.score ? b : a) : full[Math.floor(G.r() * full.length)] || all[0];
     for (const m of G.play) { const L = pick.left.get(m); m.left = L.n; m.need = L.need; }
     const beaten = G.play.filter(m => !m.left), alive = G.play.filter(m => m.left);
     for (const m of beaten) {
       if (m.boss) { if (m.kw === 'apt' && !m.rose) { m.rose = true; m.left = 2; m.need = G.sys === 'd6' ? ['D', 'C'] : G.sys === 'n6' ? numbersFor(m.id, 2) : null; alive.push(m); continue; } G.over = true; G.win = true; return; }
-      if (m.baselining) { m.baselining = false; G.stats.baselined = (G.stats.baselined || 0) + 1; const host = G.tray[G.tray.length - 1]; G.aug.push({ id: m.id, host: host || null, pend: !host }); if (process.env.BASEROW === 'out') continue; }
+      if (m.baselining) { m.baselining = false; G.stats.baselined = (G.stats.baselined || 0) + 1; const host = G.tray.filter(isAgent).pop(); G.aug.push({ id: m.id, host: host || null, pend: !host }); if (process.env.BASEROW === 'out') continue; }
       if (G.sys === 'n6' && PERSIST === 'always') { G.row.push(m); continue; }
       const gone = on(G, 'HUN') && m.back > 0; if (!gone && m.back < 1) G.row.push(m);
     }
@@ -357,19 +392,25 @@ function fight(G, mobs) {
   // Won fight: heals, then kit.
   if (on(G, 'PAT') && PATPERK !== 'nudge') { if (PATPERK === 'choose' && Math.min(...G.hp) > G.max - +(process.env.PATMIN || 4)) { draw(G, +(process.env.PATDRAW || 1)); G.stats.patDraw = (G.stats.patDraw || 0) + 1; } else spread(G, +(process.env.PATHEAL || D.perks.PAT.fight)); }
   if (aug(G, 'mimic')) spread(G, +(process.env.BASEHEAL || 5));
-  spread(G, G.tray.filter(x => x === 'recover').length * (D.recoverHeal + (on(G, 'PAT') && (PATPERK !== 'nudge' || process.env.PATREC === '1') ? D.perks.PAT.recover : 0)));
-  draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' ? 0 : D.perks.SOA.draw)) : 0) + (G.bonusDraw || 0)); G.bonusDraw = 0;
+  if (PERSONAL) G.team.forEach((_, k) => { G.hp[k] = Math.min(G.max, G.hp[k] + activeK(G, 'recover', k) * D.recoverHeal); });
+  else spread(G, G.tray.filter(x => x === 'recover').length * (D.recoverHeal + (on(G, 'PAT') && (PATPERK !== 'nudge' || process.env.PATREC === '1') ? D.perks.PAT.recover : 0)));
+  draw(G, (process.env.DRAWS ? (G.n === 1 ? +process.env.DRAWS.split(',')[0] : +process.env.DRAWS.split(',')[1] * (process.env.DRAWPER === '1' ? G.n : 1)) : G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) : 0) + (G.bonusDraw || 0)); G.bonusDraw = 0;
 }
 function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hp.indexOf(Math.min(...G.hp)); if (G.hp[k] >= G.max) return; G.hp[k]++; } }
 function burn(G, t) {
   if (G.aug && !G.soaKeep) { const i = G.aug.findIndex(a => a.host === t); if (i >= 0 && G.tray.filter(x => x === t).length <= 1) G.aug.splice(i, 1); }
-  if (G.soaKeep) { G.soaKeep = false; G.stats.kept = (G.stats.kept || 0) + 1; } else { G.tray.splice(G.tray.indexOf(t), 1); G.discard.push(t); }
-  if (t === 'contain') for (const m of G.play.slice()) { if (m.boss) { m.left = Math.max(1, m.left - 1); if (m.need) m.need.pop(); continue; } m.left--; if (m.need) m.need.pop(); if (!m.left) { G.play = G.play.filter(x => x !== m); if (m.back < 1 || (G.sys === 'n6' && PERSIST === 'always')) G.row.push(m); } }
-  if (t === 'recover') spread(G, D.recoverBurn);
+  G.stats.used = G.stats.used || {}; G.stats.used[t] = (G.stats.used[t] || 0) + 1;
+  if (G.soaKeep) { G.soaKeep = false; G.stats.kept = (G.stats.kept || 0) + 1; } else { dropItem(G, G.tray.indexOf(t)); G.discard.push(t); }
+  if (t === USE.contain) for (const m of G.play.slice()) { if (m.boss) { m.left = Math.max(1, m.left - 1); if (m.need) m.need.pop(); continue; } m.left--; if (m.need) m.need.pop(); if (!m.left) { G.play = G.play.filter(x => x !== m); if (m.back < 1 || (G.sys === 'n6' && PERSIST === 'always')) G.row.push(m); } }
+  if (t === USE.recover) spread(G, D.recoverBurn);
 }
 function draw(G, n) {
-  const cap = D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
-  for (let i = 0; i < n; i++) { if (!G.kit.length) { G.kit = shuffle(G.discard, G.r); G.discard = []; } const c = G.kit.pop(); if (!c) return; if (G.tray.length < cap) { G.tray.push(c); (G.aug || []).filter(a => a.pend).forEach(a => { a.host = c; a.pend = false; }); } else G.discard.push(c); }
+  const cap = slotsOf(G);
+  for (let i = 0; i < n; i++) { if (!G.kit.length) { G.kit = shuffle(G.discard, G.r); G.discard = []; } const c = G.kit.pop(); if (!c) return; // The bot gives an item to whoever holds fewest (Triage to on point first). Full: an agent replaces a consumable.
+    const ks = G.team.map((_, k) => k).filter(k => held(G, k) < slotsK(G, k)).sort((a, b) => held(G, a) - held(G, b) || (b === G.point) - (a === G.point));
+    let owner = !NEWITEMS ? (G.tray.length < cap ? 0 : -1) : CONSFREE && !isAgent(c) ? G.point : ks.length ? ks[0] : -1;
+    if (owner < 0 && NEWITEMS && isAgent(c)) { const j = G.tray.findIndex(x => !isAgent(x)); if (j >= 0) { owner = G.trayK[j]; G.discard.push(dropItem(G, j)); } }
+    if (owner >= 0) { G.tray.push(c); G.trayK.push(owner); if (isAgent(c)) (G.aug || []).filter(a => a.pend).forEach(a => { a.host = c; a.pend = false; }); } else G.discard.push(c); }
 }
 // ---- Situations (n6) ------------------------------------------------------------------------------------------
 // One flips before every flip after the first (the boss's too), once who's on point is picked. Six cards, one each.
@@ -404,6 +445,7 @@ function situation(G) {
 function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
+  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with
   const sits = SIT && G.sys === 'n6';
   for (let f = 0; !G.over; f++) {
     G.point = G.hp.indexOf(Math.max(...G.hp));
@@ -414,7 +456,7 @@ function play(sys, team, opt) {
     if (BASE && m && !boss && !m.back && BASES.includes(m.id) && (BASEPICK === 'always' || BASEPICK === 'bot' && Math.min(...G.hp) >= G.max * +(process.env.BASEHP || 0.8))) {
       const v = 7 - numbersFor(m.id, 1)[0], nb = BASEDICE + (process.env.BASEPLUS === '0' ? 0 : Math.max(0, G.n - XFROM)); m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }
     if (G.addSix) { m.need.push(...Array(G.addSix).fill(6)); m.left += G.addSix; G.addSix = 0; }
-    const back = rollRow(G, !boss); if (G.over) break;
+    const back = rowRoll(G, !boss); if (G.over) break;
     fight(G, [m, ...G.pending, ...back]); G.pending = [];
     if (boss) break;
   }
@@ -424,7 +466,7 @@ function play(sys, team, opt) {
 module.exports = { SITS, play, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, ROWSHIFT, pipDie, rowTop, KEY, DOUBLES };
 
 if (require.main === module) {
-  const N = +(process.env.N || 600), TEAMS = { 1: [['HUN'], ['RES'], ['ENG'], ['SOA'], ['PAT']], 2: [['HUN', 'RES'], ['ENG', 'SOA'], ['RES', 'PAT'], ['HUN', 'PAT'], ['SOA', 'PAT'], ['HUN', 'ENG']], 4: [['HUN', 'RES', 'ENG', 'SOA'], ['HUN', 'RES', 'SOA', 'PAT'], ['RES', 'ENG', 'SOA', 'PAT'], ['HUN', 'RES', 'ENG', 'PAT']] };
+  const N = +(process.env.N || 600), TEAMS = { 1: [['HUN'], ['RES'], ['ENG'], ['SOA']], 2: [['HUN', 'RES'], ['ENG', 'SOA'], ['HUN', 'ENG'], ['RES', 'SOA'], ['HUN', 'SOA'], ['RES', 'ENG']], 4: [['HUN', 'RES', 'ENG', 'SOA']] }; // the Fixer is gone (2026-10-31)
   const run = (sys, teams, hp, smart = true) => { let w = 0, rounds = 0, choice = 0, back = 0, early = 0, seed = 5; for (let g = 0; g < N; g++) { const G = play(sys, teams[g % teams.length], { hp, rnd: rng(seed++ * 2654435761), smart }); w += G.win; rounds += G.stats.rounds; choice += G.stats.choice; back += G.stats.back; early += !G.win && !G.stats.boss; } return { win: w / N, choice: choice / rounds, rounds: rounds / N, back: back / N, early: early / Math.max(1, N - w) }; };
   // Tune HP per system so the smart bot wins about half its two-player games: spreads only compare at equal odds.
   const tune = sys => { let lo = 5, hi = 200; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (run(sys, TEAMS[2], mid).win < 0.5) lo = mid; else hi = mid; } return hi; };
@@ -432,9 +474,9 @@ if (require.main === module) {
   for (const sys of (process.env.SYS || 'd20,n6').split(',')) {
     const hp = process.env.HP ? +process.env.HP : tune(sys); console.log(`\n== ${sys} · HP ${hp} ${process.env.HP ? '(set by HP)' : '(tuned to ~50% at 2p)'} ==`);
     for (const n of [1, 2, 4]) { const s = run(sys, TEAMS[n], hp), r = run(sys, TEAMS[n], hp, false); console.log(`${n}p  win ${pct(s.win)} | random placement ${pct(r.win)} (skill gap ${Math.round((s.win - r.win) * 100)} pts) | rounds with a real dice choice ${pct(s.choice)} | rounds ${s.rounds.toFixed(1)} | comebacks ${s.back.toFixed(1)} | losses before the boss ${pct(s.early)}`); }
-    const solo = ['HUN', 'RES', 'ENG', 'SOA', 'PAT'].map(id => [id, run(sys, [[id]], hp).win]);
+    const solo = ['HUN', 'RES', 'ENG', 'SOA'].map(id => [id, run(sys, [[id]], hp).win]);
     console.log('solo by analyst: ' + solo.map(([id, w]) => `${id} ${pct(w)}`).join(' · ') + `  (spread ${Math.round((Math.max(...solo.map(x => x[1])) - Math.min(...solo.map(x => x[1]))) * 100)} pts)`);
-    const ids = ['HUN', 'RES', 'ENG', 'SOA', 'PAT'], pairs = []; for (let i = 0; i < 5; i++) for (let j = i + 1; j < 5; j++) pairs.push([[ids[i], ids[j]], run(sys, [[ids[i], ids[j]]], hp).win]);
+    const ids = ['HUN', 'RES', 'ENG', 'SOA'], pairs = []; for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) pairs.push([[ids[i], ids[j]], run(sys, [[ids[i], ids[j]]], hp).win]);
     pairs.sort((a, b) => a[1] - b[1]); console.log(`pairs: ${pct(pairs[0][1])} (${pairs[0][0].join('+')}) to ${pct(pairs[pairs.length - 1][1])} (${pairs[pairs.length - 1][0].join('+')})`);
   }
 }

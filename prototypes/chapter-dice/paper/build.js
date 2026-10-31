@@ -1,14 +1,14 @@
-// Paper prototype for the chapter dice test: one printable PDF with the rules sheet and 30 cut-out cards (6 alarms,
-// the boss, 5 analysts, 8 agents, a dice reference, 6 situations, 3 conditions). The dice are standard pip d6s with exact numbers: no stickers.
+// Paper prototype for the chapter dice test: one printable PDF with the rules sheet and 37 cut-out cards (6 alarms,
+// the boss, 4 analysts, 16 items, a dice reference, 6 situations, 3 conditions). The dice are standard pip d6s with exact numbers: no stickers.
 // Numbers come from the sim's tuned run (see ../README.md) and the game's data, so paper and sim agree.
 // Usage: node prototypes/chapter-dice/paper/build.js  →  prototypes/chapter-dice/paper/chapter-dice-paper.{html,pdf}
 const fs = require('fs'), path = require('path');
 const D = require('../../../data/cards.json');
 const { fonts } = require('../../../deck/render');
 const { launch, fontsReady } = require('../../../deck/browser');
-const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, mobs: cardMobs, boss, ANALYST_IDS, AGENT_IDS, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
+const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, mobs: cardMobs, boss, ANALYST_IDS, AGENT_IDS, ITEM_DECK, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
 
-const OUT = __dirname, HP = 12; // starting HP (2026-10-31): situations, conditions, an analyst call each, Evasive any-double, baselining; ~50% at 1–4 players in the sim
+const OUT = __dirname, HP = 19; // starting HP (2026-10-31): signature doubles, four analysts, items (agents hold slots, consumables in hand), alarms one die fewer; ~50% at 1–4 players in the sim
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
@@ -18,13 +18,13 @@ const rules = `<section class="page rules">
 <div class="cols">
 <div>
 <h2>You need</h2>
-<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (2 per player), 3 in a second colour for the solo crew die and agent dice, 2 amber dice for the row, and about <b>18 threat dice</b> to set under the alarm cards. Coins for HP and to mark alarms that came back.</p>
+<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (2 per player), 3 in a second colour for the solo crew die and agent dice, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP and to mark alarms that came back.</p>
 <h2>Setup</h2>
 <ol>
 <li>Each player picks an analyst. Start at <b>${HP} HP</b>.</li>
 <li>Shuffle the six alarms face down. The Lockjaw Syndicate goes underneath.</li>
 <li>Shuffle the 6 situations face down. Set the 3 conditions aside.</li>
-<li>Shuffle the 8 agent cards: that’s the kit deck. The crew starts with ${D.quickStartAgent} agents (${D.quickStartSolo} solo).</li>
+<li>Shuffle the 16 items: that’s the item deck. The crew draws 2.</li>
 </ol>
 <h2>Threat dice</h2>
 <p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. Those dice are its hits. Each alarm’s numbers bunch round one main number, so a double on that number goes a long way. <b>4 players:</b> add the card’s <b>+</b> die (a 6). Solo to 3 players use the printed dice.</p>
@@ -41,18 +41,18 @@ const rules = `<section class="page rules">
 </div>
 <div>
 <h2>Baseline it</h2>
-<p>A newly flipped alarm (never a comeback) can be baselined: set the 4 dice on its <b>Baseline</b> line too (+1 per player past 3). Beat it with them all and the agents have learned it: tuck it under an agent in the tray. That agent gains the alarm’s Baseline line until it is burned or discarded. Empty tray: it waits for the next agent drawn. The alarm still goes on the row.</p>
+<p>A newly flipped alarm (never a comeback) can be baselined: set the 4 dice on its <b>Baseline</b> line too (+1 per player past 3). Beat it with them all and the agents have learned it: tuck it under an agent someone holds. That agent gains the alarm’s Baseline line until it is discarded. No agents: it waits for the next one drawn. The alarm still goes on the row.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>
-<li><b>Roll.</b> Everyone rolls one crew die. On point rolls two. Solo: two of your own dice plus the crew die (second colour). Each running Triage Agent rolls an agent die (second colour), set under its card. <b>Once a round, each player may reroll one of their own dice</b> before using it.</li>
+<li><b>Roll.</b> Everyone rolls one crew die. On point rolls two. Solo: two of your own dice plus the crew die (second colour). Each Triage Agent rolls an agent die (second colour) for whoever holds it. <b>Once a round, each player may reroll one of their own dice</b> before using it.</li>
 <li><b>Match.</b> A die takes out one threat die showing <b>exactly</b> its number: a ${P(4)} takes a ${P(4)}. Turn the taken die aside.</li>
 <li><b>Hits back.</b> Every alarm with dice left hits everyone who isn’t blocking, for its Damage. An alarm with no dice left is beaten.</li>
 </ol>
 <h2>Doubles</h2>
-<p>Your analyst card shows your doubles. Every other die (the solo crew die, agent dice): <b>only a 6</b>. A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(2)} takes two ${P(2)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. Agent dice can’t guard or hit the boss.</p>
+<p>Your analyst card shows your doubles. Every other die (the solo crew die, agent dice): <b>only a 6</b>. A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. Agent dice can’t guard or hit the boss.</p>
 <h2>After a fight</h2>
-<p>Beaten alarms go back on the row, <b>every time</b>: nothing removes them for good. Draw ${D.kitPerFight} agent cards (${D.kitSolo} solo) into the tray, which holds ${D.sharedKit}. Run an agent every round, or burn it once for its big effect. A die turned by Enrichment keeps what it was: a double stays a double.</p>
+<p>Beaten alarms go back on the row, <b>every time</b>: nothing removes them for good. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for whoever holds them: 2 each (the Soarcerer 3; solo 4). Full? Discard one to take another. <b>Consumables</b> don’t take a slot: keep them in hand and use each once.</p>
 <h2>Situations and conditions</h2>
 <p>Most situations make you choose: stay or run, grab it or leave it. On point rolls any grab with spare dice. Conditions are cards you keep in front of you. <b>Rattled</b> and <b>Exposed</b> wear off; <b>Focused</b> waits until you use it. Nobody holds two of the same.</p>
 <h2>Win or lose</h2>
@@ -63,7 +63,7 @@ const rules = `<section class="page rules">
 </section>`;
 
 // ---- Cards (2.5 × 3.5 in, nine to a page): the markup lives in ../cards.js, shared with the web prototype ----
-const cards = [...cardMobs().map(mobCard), bossCard(boss()), legend, ...ANALYST_IDS.map(analystCard), ...AGENT_IDS.flatMap(t => [agentCard(t), agentCard(t)]), ...SIT_IDS.map(sitCard), ...COND_IDS.map(condCard)];
+const cards = [...cardMobs().map(mobCard), bossCard(boss()), legend, ...ANALYST_IDS.map(analystCard), ...ITEM_DECK.map(agentCard), ...SIT_IDS.map(sitCard), ...COND_IDS.map(condCard)];
 const pages = []; for (let i = 0; i < cards.length; i += 9) pages.push(`<section class="page cards"><div class="grid">${cards.slice(i, i + 9).join('')}</div></section>`);
 
 const css = `${fonts()}

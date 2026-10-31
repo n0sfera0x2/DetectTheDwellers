@@ -60,6 +60,19 @@ const NEAR = process.env.NEAR === '1';
 // gives it to the Hunter (own dice) and the Responder (any crew die) only: solo spread 25 pts, rejected. '0' off.
 // The bot rerolls a die that can't do anything.
 const REROLL = process.env.REROLL || 'all';
+// Situations (n6, 2026-10-30): SIT=1 (default) flips a situation card before every flip after the first, the boss's
+// included. SIT=0 turns them off. SITPICK forces options to test whether a choice is real: SITPICK=insider:run,chatter:0.
+// Conditions: Rattled (no doubles next fight), Exposed (+1 damage each round anything hits you next fight), Focused
+// (once, turn one of your dice to any number).
+const SIT = process.env.SIT !== '0';
+const SITPICK = Object.fromEntries((process.env.SITPICK || '').split(',').filter(Boolean).map(x => x.split(':')));
+// PERKS=new (default, 2026-10-30): the Engineer turns one of their dice to its opposite face once a round; the Hunter's
+// 1s match any number on a mob that has come back. PERKS=old: doubles only. FOCUSGAIN: how much better a Focused
+// turn must make the round before the bot spends it.
+const NEWPERKS = (process.env.PERKS || 'new') === 'new';
+const FOCUSGAIN = +(process.env.FOCUSGAIN || 8);
+// ENGFLIP: how often the Engineer may turn a die, 'fight' (default: once a round was +14 pts solo) or 'round'.
+const ENGFLIP = process.env.ENGFLIP || 'fight';
 const KIT = ['triage', 'enrich', 'contain', 'recover'];
 // n6 (exact numbers, 2026-10-30): the mob card prints the dice to set under it, e.g. 1 2 2 3 + 6. A rolled die takes
 // out a die showing exactly its number. A double counts as two dice showing its number, or guards (never both).
@@ -100,7 +113,8 @@ function newGame(sys, team, opt) {
   const mobs = shuffle(D.mobs, r).slice(0, opt.deal || 6).map(m => mk(m));
   return { sys, team, n, r, hp: team.map(() => opt.hp), max: opt.hp, feed: mobs, boss: mk(D.bosses[Math.floor(r() * 3)], true),
     row: [], play: [], kit: shuffle(KIT.flatMap(t => [t, t]), r), discard: [], tray: [], point: 0, over: false, win: false,
-    stats: { rounds: 0, choice: 0, back: 0 }, smart: opt.smart !== false };
+    stats: { rounds: 0, choice: 0, back: 0, sit: {}, ran: 0, focus: 0, flipped: 0 }, smart: opt.smart !== false,
+    cond: team.map(() => ({ rattled: false, exposed: false, focused: false })), sits: shuffle(SITS, r), pending: [], addSix: 0, runNext: false };
 }
 const d20 = G => 1 + Math.floor(G.r() * 20), d6 = G => Math.floor(G.r() * 6);
 const on = (G, id) => G.team.includes(id);
@@ -123,11 +137,11 @@ function roll(G) {
   const dice = [];
   if (G.sys === 'n6') {
     const raw = [];
-    G.team.forEach((id, k) => { const nd = G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) raw.push({ k, v: 1 + d6(G), dbl: G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : DOUBLES[id] }); });
+    G.team.forEach((id, k) => { const nd = G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : DOUBLES[id] }); });
     if (REROLL !== '0') rerolls(G, raw);
-    raw.forEach(r => n6die(G, dice, r.k, true, r.dbl, r.v));
-    for (let i = 0; i < active(G, 'triage'); i++) n6die(G, dice, G.point, false, DOUBLES.AGENT);
-    return dice;
+    if (process.env.RATTLED !== 'fight') G.cond.forEach(c => { c.rattled = false; }); // Rattled lasts one roll
+    for (let i = 0; i < active(G, 'triage'); i++) raw.push({ k: G.point, crew: false, v: 1 + d6(G), dbl: DOUBLES.AGENT });
+    return choose(G, raw);
   }
   G.team.forEach((id, k) => { const nd = G.n === 1 ? D.soloDice : k === G.point ? 2 : 1;
     for (let i = 0; i < nd; i++) dice.push(G.sys === 'd20' ? { k, crew: true, r: d20(G) } : { k, crew: true, f: (SOLO === 'mixed' && G.n === 1 && i === nd - 1 ? CREW_DIE : DICE[id])[d6(G)] }); });
@@ -136,12 +150,31 @@ function roll(G) {
 }
 // n6 rerolls: a die is dead if it isn't a double (doubles can always guard) and no mob in play shows its number.
 function rerolls(G, raw) {
-  const dead = r => !r.dbl.includes(r.v) && !G.play.some(m => m.need.includes(r.v) && m.kw !== 'hardened');
+  const dead = r => !r.dbl.includes(r.v) && !(hunts(G, r.k, r.v) && G.play.some(m => m.back)) && !G.play.some(m => m.need.includes(r.v) && m.kw !== 'hardened');
   const go = r => { if (r) { r.v = 1 + d6(G); G.stats.rerolls = (G.stats.rerolls || 0) + 1; } };
   // all: everyone may reroll one of their own dice once a round (a shared rule instead of two perks).
   if (REROLL === 'all') { G.team.forEach((_, k) => go(raw.find(r => r.k === k && dead(r)))); return; }
   const h = G.team.indexOf('HUN'); if (h >= 0) go(raw.find(r => r.k === h && dead(r)));
   if (on(G, 'RES')) go(raw.find(dead));
+}
+// The Hunter's 1s are wild on a mob that has come back (PERKS=new).
+const hunts = (G, k, v) => NEWPERKS && G.sys === 'n6' && G.team[k] === 'HUN' && v === 1;
+// n6 choices made after the roll: the Engineer's opposite-face turn and a Focused player's any-number turn. The bot
+// tries each and keeps the best round (a Focused turn only when it gains FOCUSGAIN).
+function choose(G, raw) {
+  // A die the Engineer turned can't guard (it hits): otherwise a turn makes a double, and a guard, every round.
+  const build = rs => { const dice = []; rs.forEach(r => { const at = dice.length; n6die(G, dice, r.k, r.crew, r.dbl, r.v); if (r.flip) dice.slice(at).forEach(d => { d.noguard = true; }); }); return dice; };
+  if (!G.smart) return build(raw);
+  const set = (rs, i, v) => rs.map((x, j) => j === i ? { ...x, v } : x), e = G.team.indexOf('ENG');
+  const cands = [{ raw, focus: -1 }];
+  if (NEWPERKS && e >= 0 && !G.engUsed) raw.forEach((r, i) => { if (r.crew && r.k === e) cands.push({ raw: raw.map((x, j) => j === i ? { ...x, v: 7 - x.v, flip: true } : x), focus: -1, flip: true }); });
+  for (const c of cands.slice()) c.raw.forEach((r, i) => { if (r.crew && G.cond[r.k].focused) for (let v = 1; v <= 6; v++) if (v !== r.v) cands.push({ raw: set(c.raw, i, v), focus: r.k, flip: c.flip }); });
+  if (cands.length === 1) return build(raw);
+  cands.forEach(c => { c.s = allocations(G, build(c.raw)).reduce((a, b) => Math.max(a, b.score), -Infinity) - (c.focus >= 0 ? FOCUSGAIN : 0); });
+  const pick = cands.reduce((a, b) => b.s > a.s ? b : a);
+  if (pick.focus >= 0) { G.cond[pick.focus].focused = false; G.stats.focus++; }
+  if (pick.flip) { G.stats.flipped++; if (ENGFLIP === 'fight') G.engUsed = true; }
+  return build(pick.raw);
 }
 // n6: roll one die into the list. A double counts as two dice showing that number: two entries, the second with
 // half: 1 and pair pointing at the first. The pair guards as one (the first half guards; the second then sits out).
@@ -171,13 +204,13 @@ function options(G, d, m, enrichLeft) {
 function matchAt(G, d, m, need, wild) {
   const v = d.f[0], id = d.crew ? G.team[d.k] : null;
   if (m.kw === 'hardened' && d.f[1] < 2) return -1;
-  if (wild || d.wildAll) return need.length ? 0 : -1;
+  if (wild || d.wildAll || (d.crew && m.back && hunts(G, d.k, v))) return need.length ? 0 : -1;
   const i = need.indexOf(v); if (i >= 0) return i;
   const adj = NEAR && ((id === 'HUN' && m.back) || (id === 'RES' && m === top(G)));
   return adj ? need.findIndex(x => Math.abs(x - v) === 1) : -1;
 }
 const top = G => G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0];
-const canGuard = (G, d) => d.crew && (G.sys === 'd20' ? d.r >= D.guard.min && d.r < (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18) : d.f[1] === 2 && !d.half);
+const canGuard = (G, d) => d.crew && (G.sys === 'd20' ? d.r >= D.guard.min && d.r < (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18) : d.f[1] === 2 && !d.half && !d.noguard);
 const autoBlock = (G, d) => G.sys === 'd20' && d.crew && d.r >= (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18);
 
 // Damage the crew takes at the end of the round, given who is blocking.
@@ -191,6 +224,7 @@ function incoming(G, blocks) {
     let ts = G.team.map((_, k) => k); if (m.kw === 'lowest') { const lo = Math.min(...G.hp); ts = ts.filter(k => G.hp[k] === lo); }
     for (const k of ts) if (pierce || !blocks[k]) out[k] += d;
   }
+  if (G.cond) G.cond.forEach((c, k) => { if (c.exposed && out[k] > 0) out[k]++; });
   return out;
 }
 // Every legal way to use this round's dice: each die goes on a mob it can hit, guards, or sits out.
@@ -251,9 +285,9 @@ function score(G, left, blocks) {
 }
 
 function fight(G, mobs) {
-  G.play = []; mobs.forEach(m => enter(G, m)); let round = 0;
+  G.play = []; G.engUsed = false; mobs.forEach(m => enter(G, m)); let round = 0;
   while (!G.over && G.play.length) {
-    round++; G.stats.rounds++; if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rollRow(G, true)) enter(G, b); if (G.over) return;
+    round++; G.stats.rounds++; if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rollRow(G, true)) enter(G, b); if (G.over) return;
     const boss = G.play.some(m => m.boss);
     if (G.tray.includes('contain') && (G.play.length >= 3 || boss && G.play.length >= 2)) burn(G, 'contain');
     if (G.tray.includes('recover') && Math.min(...G.hp) <= G.max * 0.4) burn(G, 'recover');
@@ -280,10 +314,12 @@ function fight(G, mobs) {
     const inc = incoming(G, pick.blocks); inc.forEach((x, k) => hurt(G, k, x)); if (G.over) return;
     for (const m of G.play) { m.up++; if (m.kw === 'regen' && m.left < m.hits) { m.left++; if (m.need) m.need.push(G.sys === 'n6' ? slotsFor(m, G.n)[m.need.length] : symbolsFor(m.domain, m.hits)[m.need.length]); } }
   }
+  // Rattled and Exposed last one fight.
+  G.cond.forEach(c => { c.rattled = false; c.exposed = false; });
   // Won fight: heals, then kit.
   if (on(G, 'PAT')) spread(G, D.perks.PAT.fight);
   spread(G, G.tray.filter(x => x === 'recover').length * (D.recoverHeal + (on(G, 'PAT') ? D.perks.PAT.recover : 0)));
-  draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? D.perks.SOA.draw : 0));
+  draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? D.perks.SOA.draw : 0) + (G.bonusDraw || 0)); G.bonusDraw = 0;
 }
 function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hp.indexOf(Math.min(...G.hp)); if (G.hp[k] >= G.max) return; G.hp[k]++; } }
 function burn(G, t) {
@@ -295,15 +331,55 @@ function draw(G, n) {
   const cap = D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
   for (let i = 0; i < n; i++) { if (!G.kit.length) { G.kit = shuffle(G.discard, G.r); G.discard = []; } const c = G.kit.pop(); if (!c) return; if (G.tray.length < cap) G.tray.push(c); else G.discard.push(c); }
 }
+// ---- Situations (n6) ------------------------------------------------------------------------------------------
+// One flips before every flip after the first (the boss's too), once who's on point is picked. Six cards, one each.
+const SITS = ['insider', 'pager', 'usb', 'chatter', 'lateral', 'patch'];
+const rollN = (G, n) => Array.from({ length: n }, () => 1 + d6(G));
+function situation(G) {
+  const s = G.sits.pop(); if (!s) return;
+  const p = G.point, f = SITPICK[s], lo = Math.min(...G.hp), next = G.feed[G.feed.length - 1]; let pick;
+  if (s === 'insider') { // Stay or run: hold the room (on point is Exposed; win the fight, draw an agent) or the next mob goes on the row unfought.
+    pick = !next ? 'stay' : f || (next.dmg <= 1 || G.hp[p] <= 8 ? 'run' : 'stay');
+    if (pick === 'stay') { G.cond[p].exposed = true; G.bonusDraw = 1; } else { G.runNext = true; if (process.env.RUNHIT !== '0') G.team.forEach((_, k) => hurt(G, k, next.dmg)); }
+  }
+  if (s === 'pager') { // Ride it out (everyone loses 2) or mute it (the next mob sets one more threat die, a 6).
+    pick = f || (lo <= 8 ? 'mute' : 'ride');
+    if (pick === 'ride') G.team.forEach((_, k) => hurt(G, k, 2)); else G.addSix++;
+  }
+  if (s === 'usb') { // A grab: on point rolls 3. Any pair: draw an agent and become Focused. No pair: Rattled.
+    pick = f || 'grab';
+    if (pick === 'grab') { const r = rollN(G, 3); if (new Set(r).size < 3) { draw(G, +(process.env.USBDRAW || 2)); G.cond[p].focused = true; pick = 'grab won'; } else { G.cond[p].rattled = true; pick = 'grab lost'; } }
+  }
+  if (s === 'chatter') { // A grab: on point rolls 0–4 dice. Any 6: draw two agents. No 6: lose 1 HP per die rolled.
+    const k = f != null ? +f : G.hp[p] > 12 ? 3 : G.hp[p] > 6 ? 2 : 0; pick = 'roll ' + k;
+    if (k) { if (rollN(G, k).includes(6)) { draw(G, 2); pick += ' won'; } else { hurt(G, p, k); pick += ' lost'; } }
+  }
+  if (s === 'lateral') { pick = 'event'; G.pending.push(...rollRow(G, true)); } // Roll for the row now; comebacks join the next fight.
+  if (s === 'patch') { // Take a breather (everyone heals 2) or raid the supply closet (draw an agent).
+    pick = f || (lo <= G.max - 4 ? 'heal' : 'agent');
+    if (pick === 'heal') G.hp = G.hp.map(h => Math.min(G.max, h + 2)); else draw(G, 1);
+  }
+  const t = G.stats.sit[s] = G.stats.sit[s] || {}; t[pick] = (t[pick] || 0) + 1;
+}
 function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
-  while (!G.over && G.feed.length) { G.point = G.hp.indexOf(Math.max(...G.hp)); const m = G.feed.pop(); const back = rollRow(G, true); if (G.over) break; fight(G, [m, ...back]); }
-  if (!G.over) { G.stats.boss = 1; const back = rollRow(G, false); fight(G, [G.boss, ...back]); }
+  const sits = SIT && G.sys === 'n6';
+  for (let f = 0; !G.over; f++) {
+    G.point = G.hp.indexOf(Math.max(...G.hp));
+    if (sits && f) { situation(G); if (G.over) break; }
+    let m = G.feed.pop();
+    if (m && G.runNext) { G.row.push(m); G.stats.ran++; m = G.feed.pop(); } G.runNext = false;
+    const boss = !m; if (boss) { m = G.boss; G.stats.boss = 1; }
+    if (G.addSix) { m.need.push(...Array(G.addSix).fill(6)); m.left += G.addSix; G.addSix = 0; }
+    const back = rollRow(G, !boss); if (G.over) break;
+    fight(G, [m, ...G.pending, ...back]); G.pending = [];
+    if (boss) break;
+  }
   return G;
 }
 
-module.exports = { play, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, ROWSHIFT, pipDie, rowTop, KEY, DOUBLES };
+module.exports = { SITS, play, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, ROWSHIFT, pipDie, rowTop, KEY, DOUBLES };
 
 if (require.main === module) {
   const N = +(process.env.N || 600), TEAMS = { 1: [['HUN'], ['RES'], ['ENG'], ['SOA'], ['PAT']], 2: [['HUN', 'RES'], ['ENG', 'SOA'], ['RES', 'PAT'], ['HUN', 'PAT'], ['SOA', 'PAT'], ['HUN', 'ENG']], 4: [['HUN', 'RES', 'ENG', 'SOA'], ['HUN', 'RES', 'SOA', 'PAT'], ['RES', 'ENG', 'SOA', 'PAT'], ['HUN', 'RES', 'ENG', 'PAT']] };

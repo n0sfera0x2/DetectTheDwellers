@@ -1,6 +1,6 @@
 # Prototype: chapter dice (d6s) against the current d20
 
-**Status:** since the [row and reroll pass](#always-persist-row-no-one-off-matches-rerolls-2026-10-30) (2026-10-30), beaten mobs always go back to the row (row numbers retuned to 2–5 / 2–4 / 2–3), there are no one-higher-or-lower matches, and once a round each player may reroll one of their own dice. HP 24. Before that: exact numbers with **clustered dice and two-of-a-number doubles** (see [Clustered dice](#clustered-dice-and-two-of-a-number-doubles-2026-10-30)). Mob cards print the dice to set under them, bunched round a main number (1 2 2 3); a rolled die takes out a die showing exactly its number, and a double counts as two dice showing its number. The sim (`SYS=n6`, the default d6 family), the paper prototype and the web version all play these rules at 25 HP. The earlier symbol system stays reachable in the sim with `SYS=d6`. Next step: a table playtest against today's Quick Shift.
+**Status:** since the [situations pass](#situations-conditions-and-two-analyst-abilities-2026-10-30) (2026-10-30), a situation card flips before every flip after the first (stay or run, grab or leave it, an event, a breather), three condition cards adjust rolls, the Hunter's 1s match anything on a mob that came back, and the Engineer turns one die a fight to its opposite side. HP 21. Before that, since the [row and reroll pass](#always-persist-row-no-one-off-matches-rerolls-2026-10-30) (2026-10-30), beaten mobs always go back to the row (row numbers retuned to 2–5 / 2–4 / 2–3), there are no one-higher-or-lower matches, and once a round each player may reroll one of their own dice. HP 24. Before that: exact numbers with **clustered dice and two-of-a-number doubles** (see [Clustered dice](#clustered-dice-and-two-of-a-number-doubles-2026-10-30)). Mob cards print the dice to set under them, bunched round a main number (1 2 2 3); a rolled die takes out a die showing exactly its number, and a double counts as two dice showing its number. The sim (`SYS=n6`, the default d6 family), the paper prototype and the web version all play the current rules. The earlier symbol system stays reachable in the sim with `SYS=d6`. Next step: a table playtest against today's Quick Shift.
 
 ## Hypothesis
 
@@ -71,6 +71,65 @@ Both play the same cut-down shift.
 | Enrichment burn | Every die is wild this round |
 | Evasive ("natural 12+") | Only a double face hits it |
 | Triage Agent's die | A plain six-face die: one each of D, C, E, D, C, E |
+
+## Situations, conditions and two analyst abilities (2026-10-30)
+
+Asked for: more strategic decisions. Story situations that make you choose (stay and fight, or run; make a grab and roll for it), cards that adjust rolls, another look at the analyst abilities, and whether to add wild numbers.
+
+### The rules now
+
+- **Situations.** Six cards, shuffled. Before every flip after the first (the boss's too), once point is picked, flip one and play it. They are the real game's situations (names, scenes, story lines) with rules rewritten for the dice:
+
+| Situation | Kind | Options |
+| --- | --- | --- |
+| The Badge That Wasn’t | Stay or run | Turn the top mob face up. **Hold the room:** on point takes Exposed; win the fight, draw an extra agent. **Fall back:** it hits everyone once and goes on the row unfought (not the boss). |
+| Pager Storm | Stay or run | **Ride it out:** everyone loses 2 HP. **Mute it:** the next mob sets one more threat die, a 6. |
+| The Janitor’s USB | Grab | **Grab it:** on point rolls 3 dice; any pair (44%): draw 2 agents and take Focused; no pair: take Rattled. **Leave it.** |
+| Dark Web Chatter | Grab | **Dig in:** on point picks 1–4 dice; any 6 (31 / 42 / 52 / 59%): draw 2 agents; none: lose 1 HP per die. **Let it go.** |
+| Lateral Whispers | Event | Roll the row now; comebacks hit on arrival and join the next fight. |
+| Patch Tuesday | Choice | **Take a breather:** everyone heals 2 HP. **Raid the supply closet:** draw an agent. |
+
+- **Conditions** are cards you keep in front of you, one of each, never two of the same. **Rattled:** your next roll has no doubles. **Exposed:** next fight, each round anything hits you, take 1 more. **Focused:** once, after you roll, turn one of your dice to any number.
+- **Hunter:** your 1s match any number on a mob that has come back from the row (a coin marks it the first time; it stays). Replaces "your doubles run low".
+- **Engineer:** once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). That die can't guard. Replaces "every even number is a double" (still true, and still on the card).
+- **HP 21.**
+
+### No wild faces
+
+No die gets a wild face. A wild face makes every die twice as likely to match a given number (2 in 6 instead of 1 in 6). That undoes the exact-number puzzle and makes the Enrichment Agent, whose whole job is "any number", pointless. Wilds come instead from things you earn and choose when to spend: Focused (from a won grab), the Hunter's 1s against comebacks, and Enrichment.
+
+### Sim (2026-10-30, `SYS=n6`)
+
+**Is each choice real?** Win rate with every option forced, 2 players and solo, HP 24, 1,200–1,500 games each (about ±1.4 points of noise). An option that wins clearly more is a choice in name only.
+
+| Option | First draft | Fixed to | 2p | 1p |
+| --- | --- | --- | --- | --- |
+| Badge: stay / run | stay cost 2 HP + Exposed: run won by 4–6 pts | stay: Exposed + an agent; run: the mob hits once | 54 / 55% | 46 / 48% |
+| USB: grab / leave | no pair cost 2 HP + Rattled for a fight: leave won by 2–3 pts | win draws 2; Rattled lasts one roll | 56 / 57% | 51 / 48% |
+| Pager: ride / mute | — | — | 55 / 54% | 49 / 48% |
+| Chatter: 0 / 1 / 2 / 3 / 4 dice | — | — | 55 / 54 / 53 / 55 / 54% | 49 / 48 / 48 / 49 / 47% |
+| Patch: heal / agent | — | — | 56 / 54% | 46 / 49% |
+
+Every option now sits within about 3 points of the others, so which one is right depends on the moment rather than on the card. That's the goal. Each card flips once a game, so no single choice swings the win rate much.
+
+**Abilities, solo at HP 24, 800 games each:**
+
+| Analyst | Doubles only | New ability |
+| --- | --- | --- |
+| Hunter | 45% | 51% (1s wild on comebacks) |
+| Engineer | 44% | 58% once a round: rejected · **51% once a fight** |
+| Responder / Soarcerer / Fixer | 49 / 43 / 44% | unchanged |
+
+The Engineer's turn once a round first let it make a double, and so a guard, every round. Solo games against an Evasive mob it couldn't hit stalled forever. Hence "that die can't guard" and once a fight.
+
+**At HP 21, 400 games a row (3p 900):** 1p 43% · 2p 48% · 3p 59% · 4p 48%. Skill gap at 2p 18 points (was 12): there are more decisions for good play to win. Solo spread 12 points: Engineer 48, Hunter 46, Responder 45, Fixer 38, Soarcerer 36. Pairs 43% (Soarcerer + Fixer) to 59% (Engineer + Soarcerer). The old rules at HP 21 win 50% at 2p, so situations and abilities together roughly cancel out on balance. Each game the bot runs from about 0.25 mobs and uses Focused about 0.3 times.
+
+**Still open:**
+- Losses before the boss are 75% at 2p. Situations don't change that; the row still does the killing.
+- The Soarcerer and Fixer are now the weakest solo; the Responder is the one analyst left with no decision on the card.
+- About 1% of solo games stall, with or without the new abilities: a player who can't hit an Evasive mob can guard every round. The sim calls 200 rounds a loss. At the table, this needs a rule.
+
+Sim knobs: `SIT=0` (no situations), `SITPICK=insider:run,usb:leave,chatter:2,...` (force options), `PERKS=old`, `ENGFLIP=round`, `RATTLED=fight`, `USBDRAW`, `RUNHIT=0`, `FOCUSGAIN` (default 8: how much better a Focused turn must make the round before the bot spends it).
 
 ## Always-persist row, no one-off matches, rerolls (2026-10-30)
 
@@ -395,12 +454,14 @@ Add `?seed=123` to the URL to replay a shift.
 
 **What it plays:** exactly the paper rules sheet.
 
-- 1–4 players, each with their own analyst, all at 24 HP. Tuned for 2 players, and the setup screen says so.
+- 1–4 players, each with their own analyst, all at 21 HP. Tuned for 2 players, and the setup screen says so.
 - The six paper mobs are shuffled, with the Lockjaw Syndicate underneath. 4 players get the card's + die (a 6).
 - The kit deck is the 8 agents. The crew starts with 2 (1 solo), and the tray holds 5 (6 with the Soarcerer). When a draw overfills the tray, you choose what to discard.
 - **A flip:** pick who's on point, then flip. The row roll shows the amber pair, their sum and what came back; the side panel shows each row mob's number on a 2–12 track. The two highest-Damage comebacks hit everyone on arrival, and the Beacon chains.
-- **A round:** roll the row (from round 2), then roll the dice. Each die shows its pips; doubles are ringed and labelled. Tap a die, then a glowing threat die under a mob showing the same number (dashed rings are the Hunter's or Responder's one-off matches; with the Enrichment burn every die glows). A double is labelled "Double ×2": it stays selected after its first take ("1 left") so you can tap a second die showing its number, under the same mob or another. Or press Guard instead, before it takes anything. You can also turn a die to any number with a running Enrichment Agent, undo the last move, and end the round.
-- **The crew strip** shows each analyst's incoming damage live as you place dice.
+- **A round:** roll the row (from round 2), then roll the dice. Each die shows its pips; doubles are ringed and labelled. Tap a die, then a glowing threat die under a mob showing the same number (a Hunter's 1 glows on every die under a mob that came back; with the Enrichment burn every die glows). A double is labelled "Double ×2": it stays selected after its first take ("1 left") so you can tap a second die showing its number, under the same mob or another. Or press Guard instead, before it takes anything. You can also turn a die to any number with a running Enrichment Agent, undo the last move, and end the round.
+- **Situations:** from the second flip, after picking who's on point, the situation card sits on the mat with one button per option (keys 1–9). The Badge That Wasn’t shows the top mob face up beside it, and Fall back is greyed out with the reason when the boss is next. Dark Web Chatter has a 1–4 dice picker. The result (dice, Won or Lost, what happened) shows before "Flip the mob". On point locks once a situation is resolved.
+- **Conditions** sit as small cards beside their holder in the crew strip. With a die selected: **Focused: turn to…** (any number), and for the Engineer **Opposite side** (key O). A Rattled die keeps no doubles for that whole round, even if it is rerolled or turned.
+- **The crew strip** shows each analyst's incoming damage live as you place dice, Exposed included.
 - **Burns** can be used when the rules allow:
   - Triage and Enrichment after the roll;
   - Containment before or after the roll;

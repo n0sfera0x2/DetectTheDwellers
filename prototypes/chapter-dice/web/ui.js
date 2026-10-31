@@ -191,7 +191,7 @@
         <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
     return `<div class="wrap"><div class="intro-grid">
       <section class="hero"><span class="art">${slice(ART.hero)}</span><p class="meta c">Chapter dice · d6 prototype</p><h1 class="logo">Detect the Dwellers</h1>
-        <p class="lede">The night shift with standard d6s instead of d20 sums. Each mob card prints the dice to set under it. Roll, and a die takes out one under a mob showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards. The shift starts at 22:00; take the boss at 05:59 and make it to 06:00.</p>
+        <p class="lede">The night shift with standard d6s instead of d20 sums. Each mob card prints the dice to set under it. Roll, and a die takes out one under a mob showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards. Between fights a situation flips and makes you choose. The shift starts at 22:00; take the boss at 05:59 and make it to 06:00.</p>
         <p class="t-note"><b>Tuned for 2 players.</b> Everyone starts at ${E.HP} HP. Crews of 3–4 add each card’s + die once per player past 2; solo plays the 2-player dice.</p>
         <p class="meta">Same cards as the paper prototype. <button class="lnk" type="button" data-a="cards" data-k="cards">See all 21 cards</button></p></section>
       <section class="setup panel" aria-labelledby="crew-h"><h2 class="sech" id="crew-h">Crew · ${n} of 4</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>
@@ -202,19 +202,25 @@
   }
   function vTop() {
     const G = UI.G, fighting = G.phase === 'assign' || G.phase === 'roll', inc = fighting ? E.incoming(G) : null;
-    const label = G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'flip' || G.phase === 'loot' ? (G.feed.length ? `Next: fight ${G.fight + 1} of ${FLIPS}` : 'Next: the boss') : `Fight ${G.fight} of ${FLIPS} · round ${G.round || 1}`;
-    const now = G.bossOut ? FLIPS : G.phase === 'flip' || G.phase === 'loot' ? -1 : G.fight - 1, next = G.phase === 'flip' ? G.fight : -1;
+    const between = G.phase === 'flip' || G.phase === 'loot' || G.phase === 'sit';
+    const label = G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · before ${G.feed.length ? `fight ${G.fight + 1}` : 'the boss'}` : between ? (G.feed.length ? `Next: fight ${G.fight + 1} of ${FLIPS}` : 'Next: the boss') : `Fight ${G.fight} of ${FLIPS} · round ${G.round || 1}`;
+    const now = G.bossOut ? FLIPS : between ? -1 : G.fight - 1, next = G.phase === 'flip' || G.phase === 'sit' ? G.fight : -1;
     const bar = [...Array(FLIPS)].map((_, i) => `<i class="${i < G.fight - (now === i ? 1 : 0) && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === FLIPS ? ' next' : ''}"></i>`;
     const crew = G.team.map((id, k) => {
       const hp = G.hp[k], n = inc ? inc.total[k] : 0, after = Math.max(0, hp - n);
       const incl = inc ? (G.blocks[k] && !n ? `<span class="inc safe">${ICON.shield}<b>Blocking</b></span>` : n ? `<span class="inc">Incoming <b class="num">−${n}</b>${n >= hp ? ' · lethal' : ''}</span>` : '<span class="inc safe">Nothing incoming</span>') : `<span class="inc">${k === G.point ? '<b class="pt">On point</b>' : 'Off point'}</span>`;
-      return `<div class="pc${k === G.point ? ' on' : ''}" data-hp="${k}"><div class="pc-h">${k === G.point ? '<i class="dot" aria-hidden="true"></i>' : ''}<span class="nm">${esc(nm(id))}</span><span class="hpn"><b class="num">${hp}</b><span class="of">/${G.max}</span></span></div>
+      return `<div class="pc${k === G.point ? ' on' : ''}" data-hp="${k}"><div class="pc-h">${k === G.point ? '<i class="dot" aria-hidden="true"></i>' : ''}<span class="nm">${esc(nm(id))}</span><span class="hpn"><b class="num">${hp}</b><span class="of">/${G.max}</span></span></div>${vConds(k)}
         <span class="hpbar${hp / G.max <= .35 ? ' low' : ''}" aria-hidden="true"><i style="transform:scaleX(${after / G.max})"></i>${n ? `<i class="inci" style="transform:translateX(${after / G.max * 100}%) scaleX(${(hp - after) / G.max})"></i>` : ''}</span>${incl}</div>`;
     }).join('');
     return `<div class="gtop"><header class="top"><span class="brand">Detect the Dwellers<small>Chapter dice</small></span>
       <div class="feed"><span class="fline"><time class="clk" data-clock>${clockNow()}</time><span class="meta c">${label}</span></span><span class="feedbar" aria-hidden="true">${bar}</span></div>
       <nav class="tbtns">${soundBtn()}<button class="btn s" type="button" data-a="cards" data-k="cards" aria-pressed="${UI.cards}">Cards</button><button class="btn s" type="button" data-a="log" data-k="log" aria-pressed="${UI.drawer === 'log'}">Log</button><button class="btn s" type="button" data-a="quit" data-k="quit">New</button></nav></header>
       <div class="crew" style="--n:${G.n}" aria-label="Crew HP">${crew}</div></div>`;
+  }
+  // The condition cards a player holds, small beside their HP (hover or tap one to read it full size).
+  function vConds(k) {
+    const G = UI.G, held = A.COND_IDS.filter(c => G.cond[k][c]); if (!held.length) return '';
+    return `<span class="t-conds" aria-label="${esc(nm(G.team[k]))} holds ${held.map(c => A.COND[c][0]).join(', ')}">${held.map(c => `<span class="t-condc ${c}" data-card="cond:${c}">${A.condCard(c)}<b aria-hidden="true">${A.COND[c][0]}</b></span>`).join('')}</span>`;
   }
   // The amber pair: the two row dice, their sum, and what came back.
   const amber = n => `<span class="t-amb"><span class="f">${A.pip(n, 34)}</span></span>`;
@@ -267,27 +273,50 @@
   }
   // Between fights: the feed face down (the print card back) and who's on point, as analyst cards with portraits.
   function vFlipDesk() {
-    const G = UI.G, boss = !G.feed.length;
-    const label = boss ? 'Bring on the boss' : 'Flip the next mob';
+    const G = UI.G, boss = !G.feed.length, sit = E.sitDue(G);
+    const label = sit ? 'Flip a situation' : boss ? 'Bring on the boss' : 'Flip the next mob';
     return `<div class="pdesk"><div class="pd-feed"><button class="fdown${boss ? ' boss' : ''}" type="button" data-a="flip" data-k="flipcard" style="--stack:${Math.min(3, G.feed.length)}" aria-label="${label}">
         <span class="fd-art" aria-hidden="true">${slice(ART.back)}</span><span class="fd-t" aria-hidden="true">${boss ? 'The boss' : 'Detect the<br>Dwellers'}</span>
-        <span class="fd-b" aria-hidden="true"><b>${boss ? '05:59 · last fight' : `${pl(G.feed.length, 'mob')} in the feed`}</b><span>${boss ? 'Bring it on' : 'Flip'}</span></span></button></div>
-      <div class="pd-side">${G.fight ? `<p class="status">${G.fight ? '<b>Fight won.</b> ' : ''}${boss ? 'The feed is empty. The boss is next.' : `${pl(G.feed.length, 'mob')} left in the feed, then the boss.`}</p>` : '<p class="status"><b>22:00. The shift starts.</b> Pick who’s on point, then flip the first mob.</p>'}
+        <span class="fd-b" aria-hidden="true"><b>${boss ? '05:59 · last fight' : `${pl(G.feed.length, 'mob')} in the feed`}</b><span>${sit ? 'Situation first' : boss ? 'Bring it on' : 'Flip'}</span></span></button></div>
+      <div class="pd-side">${G.fight ? `<p class="status">${G.fight ? '<b>Fight won.</b> ' : ''}${boss ? 'The feed is empty. The boss is next.' : `${pl(G.feed.length, 'mob')} left in the feed, then the boss.`}${sit ? ' Pick who’s on point: a situation flips first and lands on them.' : ''}</p>` : '<p class="status"><b>22:00. The shift starts.</b> Pick who’s on point, then flip the first mob.</p>'}
         <div class="pd-point"><h2 class="sech">On point</h2><div class="acards" role="group" aria-label="On point">${G.team.map((id, k) => { const on = G.point === k;
           return `<button class="acard${on ? ' on' : ''}" type="button" data-a="point" data-n="${k}" data-k="point${k}" aria-pressed="${on}"><i class="tab" aria-hidden="true"></i><span class="scr">${crop(ART[id], THUMB[id])}</span><b class="nm">${esc(nm(id))}</b><span class="phud${on ? ' c' : ''}">${on ? 'On point · 2 dice' : `${G.hp[k]}/${G.max} HP`}</span></button>`; }).join('')}</div>
         <p class="meta">On point rolls two dice${G.n === 1 ? '' : ' and takes Targeted hits'}.</p></div></div></div>`;
   }
   function vTable() {
     const G = UI.G;
-    const head = G.phase === 'flip' || G.phase === 'loot' ? '' : `<div class="fhead"><span class="sech f">${G.bossOut ? 'Boss fight' : `Fight ${G.fight} of ${FLIPS}`} · round ${G.round || 1} · ${esc(nm(G.team[G.point]))} on point</span><span class="sech a">Row · ${G.row.length}</span></div>`;
+    const head = G.phase === 'flip' || G.phase === 'loot' || G.phase === 'sit' ? '' : `<div class="fhead"><span class="sech f">${G.bossOut ? 'Boss fight' : `Fight ${G.fight} of ${FLIPS}`} · round ${G.round || 1} · ${esc(nm(G.team[G.point]))} on point</span><span class="sech a">Row · ${G.row.length}</span></div>`;
     const bans = vBossBanner() + vRowRoll() + vAloud();
     let body = '';
     // A lone mob: the card, and beside it the banners and the round in plain words (as the real game's solo table).
     if (G.play.length === 1) return `<section class="table solo" aria-label="The fight">${head}<div class="solo-b"><div class="inplay">${vMob(G.play[0])}</div><div class="sb">${bans ? `<div class="bans">${bans}</div>` : ''}${vBrief(G.play[0])}</div></div>${vAgents()}</section>`;
     if (G.play.length) body = `<div class="inplay many">${G.play.map(vMob).join('')}</div>`;
+    else if (G.phase === 'sit' || (G.phase === 'flip' && G.sitDone)) body = vSit();
     else if (G.phase === 'flip') body = vFlipDesk();
-    else if (G.phase === 'loot') body = `<p class="status pad"><b>Fight won.</b> The tray is over its limit: discard from the agents below.</p>`;
+    else if (G.phase === 'loot') body = `${G.sitDone ? vSit() : ''}<p class="status pad"><b>${G.sitDone ? 'New agents.' : 'Fight won.'}</b> The tray is over its limit: discard from the agents below.</p>`;
     return `<section class="table" aria-label="The fight">${head}${bans ? `<div class="bans">${bans}</div>` : ''}${body}${vAgents()}</section>`;
+  }
+  // A situation on the mat where the mob would be: its card, the top mob face up beside it (The Badge That Wasn’t),
+  // one button per option under it, then the outcome (the dice rolled, won or lost) and the flip.
+  function vSit() {
+    const G = UI.G, S = G.sit, sd = A.SIT[S.id], opts = E.SIT_OPTS[S.id], who = esc(nm(G.team[G.point]));
+    const top = S.top && (S.top === 'boss' ? G.boss : [...G.feed, ...G.row].find(m => m.uid === S.top));
+    const ran = S.done && S.opt === 'run';
+    const face = top ? `<div class="t-slot faceup" data-card="${cardKey(top)}">${cardFor(top)}<span class="t-stamp bstamp" aria-hidden="true">${ran ? 'Fell back' : 'Face up'}</span><div class="t-under"><span>${ran ? 'On the row, unfought.' : S.boss ? 'The boss is next: no falling back.' : 'The top mob: next to flip.'}</span></div></div>` : '';
+    let n = 0; const key = () => `<kbd>${++n}</kbd>`;
+    const btn = (o, label, i, off) => `<button class="btn${i === 0 ? ' p' : ''}" type="button" data-a="sit" data-o="${o}" data-k="sit${o}"${off ? ' disabled' : ''}>${label} ${key()}</button>`;
+    let acts;
+    if (!S.done) {
+      const lbl = i => sd.opts ? sd.opts[i][0] : 'Roll the row';
+      acts = S.id === 'chatter' ? `<div class="sit-dig" role="group" aria-label="Dig in: how many dice"><span class="phud">${esc(lbl(0))} · dice</span>${[1, 2, 3, 4].map(k => `<button class="btn${k === 1 ? ' p' : ''}" type="button" data-a="sit" data-o="dig" data-n="${k}" data-k="sitdig${k}" aria-label="Dig in with ${k} ${k === 1 ? 'die' : 'dice'}">${A.pip(k, 22)}${key()}</button>`).join('')}</div>${btn('leave', esc(lbl(1)), 1)}`
+        : opts.map((o, i) => { const off = o === 'run' && S.boss;
+          return `<span class="sit-o">${btn(o, esc(lbl(i)), i, off)}${off ? '<span class="why">The boss is next: you can’t fall back from it.</span>' : ''}</span>`; }).join('');
+      acts = `<p class="status"><b>${who} is on point.</b> ${sd.opts ? 'Choose one.' : 'It just happens.'}</p><div class="sit-acts">${acts}</div>`;
+    } else {
+      const res = S.dice ? `<div class="sit-dice${S.won ? ' won' : S.won === false ? ' lost' : ''}" aria-label="Rolled ${S.dice.join(', ')}">${S.dice.map(v => `<span class="t-die${S.id === 'chatter' && v === 6 || S.id === 'usb' && S.won && S.dice.filter(x => x === v).length > 1 ? ' dbl' : ''}"><span class="f">${A.pip(v, 34)}</span></span>`).join('')}<b class="tag">${S.won ? 'Won' : 'Lost'}</b></div>` : '';
+      acts = `<div class="sit-res">${res}<p class="status">${esc(S.text)}</p>${G.phase === 'flip' ? `<div class="sit-acts"><button class="btn p big" type="button" data-a="flip" data-k="sitflip">${G.feed.length ? 'Flip the mob' : 'Bring on the boss'} <kbd>F</kbd></button></div>` : ''}</div>`;
+    }
+    return `<div class="t-sit"><div class="sit-cards"><div class="t-sslot" data-card="sit:${S.id}">${A.sitCard(S.id)}</div>${face}</div><div class="sit-side"><h2 class="sech a">Situation · ${esc(sd.kind)}</h2>${acts}</div></div>`;
   }
   // The agents on the mat, below the mobs: each kit card full size, and under a running Triage Agent the die it
   // rolled this round (or a dashed spot where it will land), as the physical die sits under the physical card.
@@ -307,8 +336,10 @@
     const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null, dm = !m.boss && dataMob(m.id);
     const rows = [['c', 'To hit', 'A die takes one die under it showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards.'],
       ['f', m.boss ? 'Boss' : 'Keyword', m.boss ? 'Agent dice can’t hit it. +2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`],
-      ['f', 'Round end', !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`],
-      ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : `It goes back on the persistence row, every time, and comes back on a row roll of 2–${m.top}.`]];
+      ['f', 'Round end', (!E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`)
+        + (G.cond.some(c => c.exposed) ? ` Exposed: anyone hit takes 1 more (${G.team.filter((_, k) => G.cond[k].exposed).map(id => esc(nm(id))).join(', ')}).` : '')],
+      ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : `It goes back on the persistence row, every time, and comes back on a row roll of 2–${m.top}.`],
+      ['a', 'Next', m.boss ? 'No more situations: this is the last fight.' : 'Before the next flip, a situation flips and on point chooses.']];
     return `<div class="rbrief"><h2 class="sech">Round ${G.round || 1}</h2><ul>${rows.map(([c, h, t]) => `<li><span class="phud ${c}">${h}</span><span>${t}</span></li>`).join('')}</ul></div>`;
   }
   function vSide() {
@@ -326,17 +357,23 @@
   function dieHtml(d, n) {
     const G = UI.G, owner = d.src === 'agent' ? 'Agent' : d.src === 'crew' ? 'Crew' : SHORT[G.team[d.k]] + (d.src === 'burn' ? '+' : '');
     const half = !d.used && d.takes && d.takes.length, usedTo = d.used === 'guard' ? 'Guard' : d.used ? [...new Set(d.takes.map(x => (G.play.find(m => m.uid === x.uid) || { name: '?' }).name))].join(' and ') : '';
-    const label = `${E.faceText(d)}, ${E.dieOwner(G, d)}${d.used ? ', used: ' + usedTo : half ? ', one take left' : ''}${d.turned ? ', turned by Enrichment' : ''}`;
+    const label = `${E.faceText(d)}, ${E.dieOwner(G, d)}${d.used ? ', used: ' + usedTo : half ? ', one take left' : ''}${d.turned ? ', turned by Enrichment' : ''}${d.focused ? ', turned by Focused' : ''}${d.flipped ? ', turned to its opposite side: can’t guard' : ''}${d.rattled ? ', Rattled: no doubles' : ''}`;
     const t = !d.used && G.phase === 'assign' ? E.targets(G, d.i) : null, dead = t && !t.hits.length && !t.guard;
     const cls = ['t-die', d.src === 'agent' || d.src === 'crew' ? 'agent' : '', d.dbl ? 'dbl' : '', d.used ? 'used' : '', half ? 'half' : '', d.used === 'guard' ? 'grd' : '', dead ? 'dead' : ''].filter(Boolean).join(' ');
     return `<button class="${cls}" data-a="die" data-i="${d.i}" data-k="die${d.i}" aria-pressed="${UI.sel === d.i}" aria-label="Die ${d.i + 1}: ${esc(label)}" title="${esc(label)}">
-      ${n <= 9 ? `<kbd aria-hidden="true">${d.i + 1}</kbd>` : ''}<span class="f">${A.pip(d.n, 40)}</span><span class="o">${d.used === 'guard' ? 'Guard' : d.used ? 'Used' : half ? '1 left' : d.dbl ? 'Double ×2' : esc(owner)}</span>${d.used === 'guard' || (t && t.guard && d.dbl) ? `<span class="gmark" aria-hidden="true">${ICON.shield}</span>` : ''}${d.turned ? '<span class="badge w">EN</span>' : ''}</button>`;
+      ${n <= 9 ? `<kbd aria-hidden="true">${d.i + 1}</kbd>` : ''}<span class="f">${A.pip(d.n, 40)}</span><span class="o">${d.used === 'guard' ? 'Guard' : d.used ? 'Used' : half ? '1 left' : d.dbl ? 'Double ×2' : esc(owner)}</span>${d.used === 'guard' || (t && t.guard && d.dbl) ? `<span class="gmark" aria-hidden="true">${ICON.shield}</span>` : ''}${d.turned ? '<span class="badge w">EN</span>' : d.flipped ? '<span class="badge c">OPP</span>' : d.focused ? '<span class="badge c">FO</span>' : d.rattled ? '<span class="badge r">RAT</span>' : ''}</button>`;
   }
   function vDock() {
     const G = UI.G; let hint = '', ctl = '';
-    if (G.phase === 'flip') {
-      hint = `<b>Pick who’s on point</b>, then ${G.feed.length ? 'flip the next mob' : 'bring on the boss'}.`;
-      ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the next mob' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
+    if (G.phase === 'flip' && G.sitDone) {
+      hint = `<b>Situation done.</b> ${G.feed.length ? 'Flip the mob' : 'Bring on the boss'}.`;
+      ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the mob' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
+    } else if (G.phase === 'flip') {
+      const sit = E.sitDue(G);
+      hint = sit ? '<b>Pick who’s on point</b>, then flip a situation: it lands on them before the next mob.' : `<b>Pick who’s on point</b>, then ${G.feed.length ? 'flip the next mob' : 'bring on the boss'}.`;
+      ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${sit ? 'Flip a situation' : G.feed.length ? 'Flip the next mob' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
+    } else if (G.phase === 'sit') {
+      hint = `<b>${esc(A.SIT[G.sit.id].kind)}.</b> ${esc(nm(G.team[G.point]))} is on point: ${A.SIT[G.sit.id].opts ? 'choose on the mat (keys 1–' + (G.sit.id === 'chatter' ? 5 : 2) + ').' : 'roll the row (key 1).'}`;
     } else if (G.phase === 'roll') {
       hint = G.round >= 1 ? '<b>New round.</b> Roll the row first, then everyone rolls.' : '<b>Fight!</b> Burn a Containment or Recovery Agent now if you want, then roll.';
       if (G.round >= 1 && !G.row.length) hint = '<b>New round.</b> The row is empty, so just roll the dice.';
@@ -344,15 +381,17 @@
     } else if (G.phase === 'assign') {
       const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null;
       if (d && !d.used && d.takes.length) hint = `<b>${esc(E.dieOwner(G, d))}: double ${d.n}, one more ${d.n} to place.</b> ${t.hits.length ? 'Tap another matching die, under this mob or another.' : `No ${d.n} left to take.`} Or pick another die.`;
-      else if (!d) hint = G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under a mob. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.';
+      else if (!d) hint = (G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under a mob. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.') + (G.dice.some(x => E.canFocus(G, x)) ? ' Focused: pick one of your dice to turn it to any number.' : '') + (G.dice.some(x => E.canEng(G, x)) ? ' Engineer: pick one of your dice to turn it to its opposite side (once a fight).' : '');
       else if (d.used) hint = 'That die is used. <b>Undo</b> to take it back.';
-      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one mob or two, <b>or Guard</b>.` : 'Tap a glowing die under a mob that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it?</b>' : ''}`}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
+      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one mob or two, <b>or Guard</b>.` : 'Tap a glowing die under a mob that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') + (t.hits.some(h => h.wild) && !G.wildAll ? ' <b>Hunter’s 1:</b> it matches any die under a mob that came back.' : '') : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it?</b>' : ''}`}${t.focus ? ' <b>Focused:</b> turn it to any number.' : ''}${t.eng ? ` <b>Engineer:</b> turn it to its opposite side, a ${7 - d.n} (it can’t guard then).` : ''}${d.rattled ? ' Rattled: no doubles this roll.' : ''}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
       const ag = G.dice.filter(x => x.kuid).length;
       ctl = `<div class="t-dice" role="group" aria-label="Crew dice">${G.dice.filter(x => !x.kuid).map(x => dieHtml(x, G.dice.length)).join('')}${ag ? `<span class="t-agnote">+ ${ag} agent ${ag === 1 ? 'die' : 'dice'} under ${ag === 1 ? 'its card' : 'their cards'}</span>` : ''}</div>
         <div class="acts">
         ${sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard <kbd>G</kbd></button>` : ''}
         ${d && E.canReroll(G, d) ? `<button class="btn" data-a="reroll" data-k="reroll">Reroll it <kbd>X</kbd></button>` : ''}${G.rerolled ? `<span class="inc rr">Rerolls left: ${G.team.map((id, k) => G.rerolled[k] ? '' : esc(SHORT[id])).filter(Boolean).join(', ') || 'none'}</span>` : ''}
+        ${sel && t.eng ? `<button class="btn cy" data-a="eng" data-k="eng" aria-label="Engineer: turn this die to its opposite side, ${7 - d.n}">Opposite side (→ ${7 - d.n}) <kbd>O</kbd></button>` : ''}
+        ${sel && t.focus ? `<span class="inc">Focused: turn to…</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s cy" data-a="focus" data-n="${n}" data-k="focus${n}" aria-label="Focused: turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
         ${sel && t.enrich ? `<span class="inc">Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
         <span class="inc grow dk">${incText()}</span>
         <button class="btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <kbd>U</kbd></button>
@@ -364,7 +403,7 @@
   }
   function incText() {
     const G = UI.G, inc = E.incoming(G), tot = inc.total.reduce((a, b) => a + b, 0);
-    return tot ? `At round end: ${G.team.map((id, k) => `${esc(nm(id))} <b class="num">−${inc.total[k]}</b>`).join(' · ')}` : '<span class="safe">Nothing hits back this round.</span>';
+    return tot ? `At round end: ${G.team.map((id, k) => `${esc(nm(id))} <b class="num">−${inc.total[k]}</b>${inc.exposed.includes(k) ? ' (Exposed +1)' : ''}`).join(' · ')}` : '<span class="safe">Nothing hits back this round.</span>';
   }
   function vLog() {
     if (UI.drawer !== 'log') return '';
@@ -423,7 +462,7 @@
   // The peek holds the same shared card markup as print and the gallery. It lives outside #app so renders keep it.
   const peek = document.createElement('div'); peek.className = 't-peek'; peek.setAttribute('aria-hidden', 'true'); document.body.appendChild(peek);
   const cardByKey = k => k === 'boss' ? A.bossCard(A.boss()) : k === 'legend' ? A.legend : k.startsWith('mob:') ? A.mobCard(dataMob(k.slice(4)))
-    : k.startsWith('analyst:') ? A.analystCard(k.slice(8)) : k.startsWith('agent:') ? A.agentCard(k.slice(6)) : '';
+    : k.startsWith('analyst:') ? A.analystCard(k.slice(8)) : k.startsWith('agent:') ? A.agentCard(k.slice(6)) : k.startsWith('sit:') ? A.sitCard(k.slice(4)) : k.startsWith('cond:') ? A.condCard(k.slice(5)) : '';
   let peekKey = null, lastPtr = 'mouse';
   function showPeek(slot) {
     const c = slot && slot.querySelector('.card'); if (!c || slot.closest('.t-gallery')) return hidePeek();
@@ -457,7 +496,10 @@
     if (!G) return;
     if (a === 'unreveal') { UI.reveal = false; render(); return focusKey('roll'); }
     if (a === 'point') return act(() => E.setPoint(G, +b.dataset.n));
-    if (a === 'flip') { act(() => E.flip(G)); return focusKey(UI.reveal ? 'unreveal' : 'roll'); }
+    if (a === 'flip') { act(() => E.flip(G)); if (G.phase === 'sit') { say(`Situation: ${D.situations.find(s => s.id === G.sit.id).name}. ${nm(G.team[G.point])} is on point.`); return focusKey(app.querySelector('[data-a="sit"]:not(:disabled)') ? app.querySelector('[data-a="sit"]:not(:disabled)').dataset.k : ''); } return focusKey(UI.reveal ? 'unreveal' : 'roll'); }
+    if (a === 'sit') { act(() => E.resolveSit(G, b.dataset.o, b.dataset.n ? +b.dataset.n : undefined)); if (!UI.err && G.sit) say(G.sit.text); return focusKey(G.phase === 'flip' ? 'sitflip' : ''); }
+    if (a === 'focus') { const i = UI.sel; act(() => E.focus(G, i, +b.dataset.n)); return focusKey('die' + i); }
+    if (a === 'eng') { const i = UI.sel; act(() => E.engTurn(G, i)); return focusKey('die' + i); }
     if (a === 'roll') { UI.reveal = false; UI.sel = null; UI.more = null; act(() => E.roll(G)); nextDie(); render(); return focusKey('die' + (UI.sel || 0)); }
     if (a === 'die') { const i = +b.dataset.i; UI.more = null; UI.sel = UI.sel === i ? null : i; UI.msg = ''; return render(); }
     if (a === 'slot') return tapSlot(b.dataset.u, +b.dataset.p);
@@ -479,11 +521,13 @@
     if (key === 'l') return click('log');
     if (UI.reveal && (key === 'enter' || key === ' ')) return click('unreveal');
     if (G.phase === 'flip' && key === 'f') return click('flip');
+    if (G.phase === 'sit' && /^[1-9]$/.test(key)) { const el = [...app.querySelectorAll('[data-a="sit"]')][+key - 1]; if (el && !el.disabled) { el.click(); e.preventDefault(); } return; }
     if (G.phase === 'roll' && key === 'r') return click('roll');
     if (G.phase === 'assign') {
       if (/^[1-9]$/.test(key) && G.dice[+key - 1]) { UI.more = null; UI.sel = +key - 1; UI.msg = ''; render(); return focusKey('die' + UI.sel); }
       if (key === 'g') return click('guard');
       if (key === 'x') return click('reroll');
+      if (key === 'o') return click('eng');
       if (key === 'u' || key === 'backspace') return click('undo');
       if (key === 'e') return click('end');
     }

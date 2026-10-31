@@ -1,18 +1,19 @@
 // Builds the chapter dice web prototype: ONE self-contained page, web/index.html, that runs from file://.
 // Inlines the game data it needs, the mob dice (sim.js numbersFor), the shared card markup (../cards.js), the engine
 // (engine.js), the page script (ui.js), the fonts (deck/render.js) and the Ink & Static scenes it shows (data/art.json,
-// data/art-print.json): the cards' scenes from cards.js artKeys(), plus the page's own (hero, win, card back).
+// data/art-print.json): the cards' scenes from cards.js artKeys() (mobs, boss, analysts, agents, situations), plus the page's own (hero, win, card back).
 // Usage: node prototypes/chapter-dice/web/build.js
 const fs = require('fs'), path = require('path');
 const D = require('../../../data/cards.json');
 const { fonts } = require('../../../deck/render');
 const ART = require('../../../data/art.json'), PRINT = require('../../../data/art-print.json');
-const { CARD_CSS, MOB_IDS, BOSS_ID, artKeys } = require('../cards');
+const { CARD_CSS, MOB_IDS, BOSS_ID, SIT_IDS, artKeys } = require('../cards');
 
 const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8');
 // Only what the prototype uses from the game data.
 const keys = ['mobAdd', 'bossAdd', 'quickStartAgent', 'quickStartSolo', 'sharedKit', 'kitPerFight', 'kitSolo', 'containCut', 'recoverHeal', 'recoverBurn', 'perks', 'soloDice'];
-const data = { classes: D.classes.map(c => ({ id: c.id, name: c.name })), mobs: D.mobs.filter(m => MOB_IDS.includes(m.id)), bosses: D.bosses.filter(b => b.id === BOSS_ID) };
+const data = { classes: D.classes.map(c => ({ id: c.id, name: c.name })), mobs: D.mobs.filter(m => MOB_IDS.includes(m.id)), bosses: D.bosses.filter(b => b.id === BOSS_ID),
+  situations: D.situations.filter(s => SIT_IDS.includes(s.id)).map(({ id, name, text }) => ({ id, name, text })) }; // name and story line for the situation cards
 keys.forEach(k => { data[k] = D[k]; });
 data.keywords = Object.fromEntries(Object.entries(D.keywords).map(([k, v]) => [k, { icon: v.icon }]));
 // The scenes: what the cards use, the hero for the crew pick, the boss's win room and the print card back.

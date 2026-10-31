@@ -276,6 +276,27 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 @keyframes natland{0%{transform:scale(1.28);filter:drop-shadow(0 0 0 transparent)}35%{filter:drop-shadow(0 2px 10px rgba(255,155,84,.85))}100%{transform:none;filter:none}}
 .t-turn{display:flex;flex-wrap:wrap;gap:4px}.t-turn .btn{padding:4px 8px;line-height:0}
 .grdb .ic{width:15px;height:15px}
+.t-die .badge.c{background:var(--cy);color:#04141a}.t-die .badge.r{background:var(--fl);color:#1A1012}
+
+/* ---- Situations: the card where the mob would be, the top mob face up beside it, the choice beside them ---- */
+.t-sit{display:grid;grid-template-columns:auto minmax(0,440px);justify-content:center;gap:16px 32px;align-items:start;padding:16px 14px 18px}
+.sit-cards{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-start}
+.t-sslot{position:relative;--z:1.15}.t-sslot .card{width:240px;height:336px;border:0;clip-path:var(--chp);zoom:var(--z);cursor:zoom-in}
+.t-sit .t-slot.faceup{--z:.9}.t-sit .t-slot.faceup .card{filter:drop-shadow(0 0 0 var(--am)) drop-shadow(0 0 8px rgba(255,155,84,.45))}
+.sit-side{display:flex;flex-direction:column;gap:12px;min-width:0;padding-top:4px}.sit-side .sech{margin:0}
+.sit-acts{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
+.sit-o{display:flex;flex-direction:column;gap:4px}.sit-o .why{font-size:12.5px;color:#FF9478;max-width:26ch}
+.sit-dig{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex-basis:100%}.sit-dig .phud{flex-basis:100%;color:var(--am)}.sit-dig .btn{padding:6px 10px;gap:6px}
+.sit-res{display:flex;flex-direction:column;gap:12px}
+.sit-dice{display:flex;align-items:center;gap:8px}.sit-dice .t-die{cursor:default}
+.sit-dice .tag{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;margin-left:6px}
+.sit-dice.won .tag{background:var(--cy);color:#04141a}.sit-dice.lost .tag{background:var(--fl);color:#1A1012}
+/* Condition cards a player holds: tiny beside their HP, full size on hover or tap */
+.t-conds{display:flex;flex-wrap:wrap;gap:4px 8px}
+.t-condc{display:flex;align-items:center;gap:5px}.t-condc .card{width:240px;height:336px;border:0;zoom:.12;clip-path:var(--chp);cursor:zoom-in}
+.t-condc b{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--fl)}.t-condc.focused b{color:var(--cy)}
+@media (max-width:1040px){.t-conds{flex-wrap:nowrap;gap:6px;min-width:0}.t-condc{gap:3px;min-width:0}.t-condc .card{zoom:.1}.t-condc b{font-size:9.5px;letter-spacing:.03em}}
+@media (max-width:760px){.t-sit{grid-template-columns:minmax(0,1fr);padding:12px 10px 14px}.t-sslot{--z:.8}.t-sit .t-slot.faceup{--z:.62}.sit-cards{flex-wrap:nowrap;gap:10px}}
 
 /* ---- Overlays: log drawer, gallery, boss reveal, end ---- */
 .logp{position:fixed;top:0;right:0;bottom:0;z-index:70;width:min(400px,100%);background:var(--s1);border-left:1px solid var(--rule2);box-shadow:-16px 0 32px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:10px;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));animation:slide .25s var(--ease)}

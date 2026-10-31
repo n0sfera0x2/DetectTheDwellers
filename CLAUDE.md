@@ -14,7 +14,7 @@ Detect the Dwellers: a co-op d20 card game (1–4 players) set on a cyberpunk SO
 
 | Path | What it is |
 | --- | --- |
-| `data/cards.json` | **All card data and tunables.** HP, mobs, keywords, kit, situations, bosses, analysts, First Shift setup, dice and scaling knobs. Most changes start here. |
+| `data/cards.json` | **All card data and tunables.** HP, alarms, keywords, kit, situations, bosses, analysts, First Shift setup, dice and scaling knobs. Most changes start here. |
 | `src/engine.js` | The rules engine, `DTD12(D)`. Pure, no DOM. Also inlined into the page. |
 | `ui/ui.js` | The page script, a template with `__DATA__`, `__ART__`, `__ENGINE__` slots. `ui/head.html` holds the CSS, `ui/tail.html` closes the page. |
 | `data/art.json` | SVG scenes (200×112) for cards and the UI, keyed by card id, domain, or analyst. |
@@ -58,15 +58,15 @@ A rule or card change usually touches several places. Work through them in order
 
 ## Invariants
 
-- **72 cards exactly:** 15 mobs, 18 situations (9 of them story cards with a Recon line), 3 bosses, 5 analysts, 16 kit (8 types × 2), 4 HP trackers, 2 double-sided references, 9 markers (6 Came back, Next mob, Round, Once per fight) on the eighth sheet. Changing the count changes the sheet layout.
+- **72 cards exactly:** 15 alarms, 18 situations (9 of them story cards with a Recon line), 3 bosses, 5 analysts, 16 kit (8 types × 2), 4 HP trackers, 2 double-sided references, 9 markers (6 Came back, Next alarm, Round, Once per fight) on the eighth sheet. Changing the count changes the sheet layout.
 - **One starting HP per difficulty, at every player count.** Fix crew-size spread through scaling, not HP tables.
-- **Every mob has exactly one keyword** from the eight in `data/cards.json`.
+- **Every alarm has exactly one keyword** from the eight in `data/cards.json`.
 - **The engine stays deterministic given `opt.rnd`.** Tests and sims rely on seeded games.
 - **Persisted UI state is versioned** (`dwellers-board-v29` / `dwellers-v29` in `ui/ui.js`). Bump both when the score shape or rules change enough to make old scores meaningless.
 
 ## Writing style
 
-Card and rules text is punchy and plain: short sentences, second person, no corporate voice. Rules use the same words everywhere ("on point", "off-shift", "persistence row", "comes back", "burn it"). Use typographic apostrophes and en dashes in ranges (1–8).
+Card and rules text is punchy and plain: short sentences, second person, no corporate voice. Rules use the same words everywhere ("on point", "off-shift", "persistence row", "comes back", "burn it"). The enemies are **alarms** (a fight with two or more in play is a multi-alarm fight); player-facing text never says mob or monster. Code and data keys still say mob (`mobs`, `mobAdd`, `kind: 'mob'`): leave those. Use typographic apostrophes and en dashes in ranges (1–8).
 
 ## Hosting
 

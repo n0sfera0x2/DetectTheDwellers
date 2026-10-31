@@ -298,8 +298,8 @@ test('analyst cards print the perk numbers from data; bosses mark their row trig
   const D = require('../data/cards.json'), { analyst, boss, story } = require('../deck/cards');
   const flat = s => s.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, '\'').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
   const card = id => flat(analyst(D.classes.find(c => c.id === id)));
-  assert.ok(card('HUN').includes(`+${D.perks.HUN.back} against mobs that came back`));
-  assert.ok(card('RES').includes(`+${D.perks.RES.top} against the highest-damage mob`) && card('RES').includes(`Your +${D.perks.RES.top}`));
+  assert.ok(card('HUN').includes(`+${D.perks.HUN.back} against alarms that came back`));
+  assert.ok(card('RES').includes(`+${D.perks.RES.top} against the highest-damage alarm`) && card('RES').includes(`Your +${D.perks.RES.top}`));
   assert.ok(card('PAT').includes(`heal ${D.perks.PAT.fight} HP split`) && card('PAT').includes(`You heal ${D.perks.PAT.fight} after every fight`));
   for (const b of D.bosses) assert.match(flat(boss(b)), /Full Shift: [^.]*row\./, `${b.name} should lead its row trigger with "Full Shift:"`);
   for (const s of D.situations.filter(x => x.story)) assert.ok(flat(story(s)).includes('Advanced · Full Shift'), `${s.name} should carry the Advanced tag`);
@@ -310,7 +310,7 @@ test('pass 11 on print: no Pack mark anywhere, Guard on the fight card, no Secon
   const D = require('../data/cards.json'), C = require('../deck/cards');
   const flat = s => s.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, '\'').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
   for (const m of D.mobs) assert.ok(!/>Pack</.test(C.mob(m)), `${m.name} still carries a PACK chip`);
-  assert.ok(!/Pack/.test(flat(C.glossary())), 'the Mob keywords card still mentions Pack');
+  assert.ok(!/Pack/.test(flat(C.glossary())), 'the Alarm keywords card still mentions Pack');
   assert.ok(flat(C.fight()).includes(`Guard A crew die showing ${D.guard.min}+ can guard instead of hitting: you block this round.`));
   const once = flat(C.oncePerFight());
   assert.ok(!/Second wind|Once per shift|Don’t clear/.test(once), 'the Once per fight marker still carries the cut Second wind spot');

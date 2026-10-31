@@ -343,7 +343,7 @@ test('a story card without Recon shows the Recon line as a hint and plays the no
   ({ w, d, errors, sit } = story('ceo', false));
   assert.strictEqual(sit().length, 2); sit()[1].click();
   assert.match(d.querySelector('.status').textContent, /no Recon Agent, so the normal outcome: you chose let it ride/);
-  assert.match(d.querySelector('[data-nextmob]').textContent, /Next mob: \+2 Damage/);
+  assert.match(d.querySelector('[data-nextmob]').textContent, /Next alarm: \+2 Damage/);
   w.eval(`G.deck.push({ ...D.mobs.find(m => m.id === 'ogre'), kind: 'mob', uid: 996, left: 1, hits: 1, back: 0, up: 0 }); act('flip');`);
   const m = w.eval('G.play[0]'); assert.ok(m.mod, 'the flipped mob should carry the mark');
   assert.match(d.querySelector('.mob .stat').textContent, new RegExp(`Damage${m.dmg}.*${m.dmg - 2} \\+2 story`));

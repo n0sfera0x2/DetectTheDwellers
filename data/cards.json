@@ -404,7 +404,7 @@
     "unrow": 1
    },
    "text": "A partner sends indicators for something you already beat. For once, you’re ahead.",
-   "rule": "Discard one mob from the persistence row."
+   "rule": "Discard one alarm from the persistence row."
   },
   {
    "id": "pentest",
@@ -474,7 +474,7 @@
    "recon": {
     "unrow": 1
    },
-   "reconText": "You mapped the path first. Discard one mob from the persistence row instead.",
+   "reconText": "You mapped the path first. Discard one alarm from the persistence row instead.",
    "story": true
   },
   {
@@ -492,7 +492,7 @@
      }
     },
     {
-     "label": "Let it ride: the next mob you flip gets +2 Damage",
+     "label": "Let it ride: the next alarm you flip gets +2 Damage",
      "fx": {
       "nextMob": {
        "dmg": 2
@@ -516,13 +516,13 @@
     }
    },
    "text": "A firewall rule changed at 01:00. There’s no ticket, and the account that made it doesn’t exist.",
-   "rule": "The next mob you flip has +3 Defense.",
+   "rule": "The next alarm you flip has +3 Defense.",
    "recon": {
     "nextMob": {
      "def": -3
     }
    },
-   "reconText": "You read the change before it landed. The next mob has −3 Defense instead.",
+   "reconText": "You read the change before it landed. The next alarm has −3 Defense instead.",
    "story": true
   },
   {
@@ -565,11 +565,11 @@
     "call": 1
    },
    "text": "A partner sends a hash from a case you closed in March. It’s running on a laptop on the fourth floor.",
-   "rule": "The mob in the row with the widest range comes back now, with no arrival hit. Fight it after this.",
+   "rule": "The alarm in the row with the widest range comes back now, with no arrival hit. Fight it after this.",
    "recon": {
     "unrow": 1
    },
-   "reconText": "You kept the case open. Discard that mob from the row for good instead.",
+   "reconText": "You kept the case open. Discard that alarm from the row for good instead.",
    "story": true
   },
   {
@@ -612,7 +612,7 @@
    "kind": "agent",
    "type": "triage",
    "name": "Triage Agent",
-   "text": "Rolls every round at +4 against any mob.",
+   "text": "Rolls every round at +4 against any alarm.",
    "burn": "Roll three extra dice this round, with your bonus."
   },
   {
@@ -620,7 +620,7 @@
    "kind": "agent",
    "type": "triage",
    "name": "Triage Agent",
-   "text": "Rolls every round at +4 against any mob.",
+   "text": "Rolls every round at +4 against any alarm.",
    "burn": "Roll three extra dice this round, with your bonus."
   },
   {
@@ -628,39 +628,39 @@
    "kind": "agent",
    "type": "hunt",
    "name": "Hunt Agent",
-   "text": "Rolls every round at +7, but only against a mob that came back from the row.",
-   "burn": "A mob that came back from the row (not the boss) is beaten."
+   "text": "Rolls every round at +7, but only against an alarm that came back from the row.",
+   "burn": "An alarm that came back from the row (not the boss) is beaten."
   },
   {
    "id": "k4",
    "kind": "agent",
    "type": "hunt",
    "name": "Hunt Agent",
-   "text": "Rolls every round at +7, but only against a mob that came back from the row.",
-   "burn": "A mob that came back from the row (not the boss) is beaten."
+   "text": "Rolls every round at +7, but only against an alarm that came back from the row.",
+   "burn": "An alarm that came back from the row (not the boss) is beaten."
   },
   {
    "id": "k5",
    "kind": "agent",
    "type": "contain",
    "name": "Containment Agent",
-   "text": "Each round, the highest-damage mob deals 2 less damage, never below 1.",
-   "burn": "Every mob in play takes 1 hit."
+   "text": "Each round, the highest-damage alarm deals 2 less damage, never below 1.",
+   "burn": "Every alarm in play takes 1 hit."
   },
   {
    "id": "k6",
    "kind": "agent",
    "type": "contain",
    "name": "Containment Agent",
-   "text": "Each round, the highest-damage mob deals 2 less damage, never below 1.",
-   "burn": "Every mob in play takes 1 hit."
+   "text": "Each round, the highest-damage alarm deals 2 less damage, never below 1.",
+   "burn": "Every alarm in play takes 1 hit."
   },
   {
    "id": "k7",
    "kind": "agent",
    "type": "enrich",
    "name": "Enrichment Agent",
-   "text": "Every analyst gets +3 against every mob.",
+   "text": "Every analyst gets +3 against every alarm.",
    "burn": "This round, every analyst die gets +5."
   },
   {
@@ -668,7 +668,7 @@
    "kind": "agent",
    "type": "enrich",
    "name": "Enrichment Agent",
-   "text": "Every analyst gets +3 against every mob.",
+   "text": "Every analyst gets +3 against every alarm.",
    "burn": "This round, every analyst die gets +5."
   },
   {
@@ -677,7 +677,7 @@
    "type": "patch",
    "name": "Patch Agent",
    "text": "When you roll for the persistence row, roll an extra die and keep the highest.",
-   "burn": "Discard one mob from the persistence row for good."
+   "burn": "Discard one alarm from the persistence row for good."
   },
   {
    "id": "k10",
@@ -685,7 +685,7 @@
    "type": "patch",
    "name": "Patch Agent",
    "text": "When you roll for the persistence row, roll an extra die and keep the highest.",
-   "burn": "Discard one mob from the persistence row for good."
+   "burn": "Discard one alarm from the persistence row for good."
   },
   {
    "id": "k11",
@@ -724,7 +724,7 @@
    "kind": "agent",
    "type": "recon",
    "name": "Recon Agent",
-   "text": "Peek at the next situation before picking who’s on point. A mob you peeked: everyone gets +5 against it. A story card: you get its Recon line.",
+   "text": "Peek at the next situation before picking who’s on point. An alarm you peeked: everyone gets +5 against it. A story card: you get its Recon line.",
    "burn": "Look at the next 3 situations and pull one from the feed for good."
   },
   {
@@ -732,7 +732,7 @@
    "kind": "agent",
    "type": "recon",
    "name": "Recon Agent",
-   "text": "Peek at the next situation before picking who’s on point. A mob you peeked: everyone gets +5 against it. A story card: you get its Recon line.",
+   "text": "Peek at the next situation before picking who’s on point. An alarm you peeked: everyone gets +5 against it. A story card: you get its Recon line.",
    "burn": "Look at the next 3 situations and pull one from the feed for good."
   }
  ],
@@ -741,14 +741,14 @@
    "id": "HUN",
    "name": "Hunter",
    "trait": "Threat hunter",
-   "perk": "+3 against mobs that came back from the row. Any comeback you finish is gone for good.",
+   "perk": "+3 against alarms that came back from the row. Any comeback you finish is gone for good.",
    "agent": "Hunt Agents hunt with you: a comeback they finish is gone for good too."
   },
   {
    "id": "RES",
    "name": "Responder",
    "trait": "First responder",
-   "perk": "+3 against the highest-damage mob in play, boss included.",
+   "perk": "+3 against the highest-damage alarm in play, boss included.",
    "agent": "Containment Agents cut 1 more damage."
   },
   {
@@ -931,8 +931,8 @@
    "triage"
   ],
   "tips": {
-   "1": "Everyone rolls at once. Put each die on a mob it beats: d20 + bonus, at least its Defense. Anything still standing hits back. Stalker: the Banshee only goes after whoever is lowest.",
-   "2": "The Banshee came back. Beaten mobs wait in the persistence row, and every flip rolls for them. It hit everyone for 1 on the way in. The card comes first, then you fight it again.",
+   "1": "Everyone rolls at once. Put each die on an alarm it beats: d20 + bonus, at least its Defense. Anything still standing hits back. Stalker: the Banshee only goes after whoever is lowest.",
+   "2": "The Banshee came back. Beaten alarms wait in the persistence row, and every flip rolls for them. It hit everyone for 1 on the way in. The card comes first, then you fight it again.",
    "3": "Targeted: only whoever is on point takes the Gremlin's damage, and it's doubled. Pick on point with that in mind.",
    "4": "A challenge: the analyst on point gets one roll. Bonuses count.",
    "5": "Beacon: the Drone rolls for the persistence row the moment it shows up, and anything it calls back rolls again. Comebacks return at full strength and hit everyone on the way in.",

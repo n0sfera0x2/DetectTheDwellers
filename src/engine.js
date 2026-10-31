@@ -246,7 +246,7 @@ function DTD12(D) {
     if (G.phase !== 'combat' || !G.rolled || G.over) return false;
     const by = incomingBy(G), inc = by.map(l => l.reduce((s, x) => s + x.d, 0)), sum = a => a.reduce((s, x) => s + x, 0);
     G.stats.auto.saved += Math.max(0, sum(incomingBy(G, true).map(l => l.reduce((s, x) => s + x.d, 0))) - sum(inc)); G.blocksPre = null; G.lastHit = inc; G.lastRound = { inc: inc.slice(), by: by.map(l => l.map(x => ({ name: x.m.name, d: x.d }))), blocks: G.blocks.slice(), rest: G.rest, decoy: !!G.decoyRound, contain: active(G, 'contain').length > 0, round: G.round };
-    inc.forEach((n, k) => { if (!G.over && n) hurt(G, k, n, 'mobs still in play', by[k].map(x => x.m.name)); });
+    inc.forEach((n, k) => { if (!G.over && n) hurt(G, k, n, 'alarms still in play', by[k].map(x => x.m.name)); });
     if (G.over) return true;
     for (const m of G.play) { m.up++; if (m.ability === 'regen' && m.left < m.hits) m.left++; }
     beginRound(G); return true;

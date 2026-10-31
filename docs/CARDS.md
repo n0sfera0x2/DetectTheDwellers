@@ -2,7 +2,7 @@
 
 Generated from `data/cards.json` by `npm run cards`. Don't edit by hand.
 
-**54 cards:** 15 mobs and 9 situations (the shuffled situation pool), 3 bosses, 5 analysts, 16 kit cards, 4 HP trackers, 2 double-sided reference cards.
+**54 cards:** 15 alarms and 9 situations (the shuffled situation pool), 3 bosses, 5 analysts, 16 kit cards, 4 HP trackers, 2 double-sided reference cards.
 
 ## Starting HP (each analyst, any player count)
 
@@ -23,11 +23,11 @@ Generated from `data/cards.json` by `npm run cards`. Don't edit by hand.
 | Fileless | Agents can't hit it. |
 | Escalating | +1 damage every round it stays up. |
 
-## Mobs
+## Alarms
 
-Printed hits are for two players. In play: printed + analysts − 2, never below 1. Each mob comes back from the persistence row when the row die lands in its Back range.
+Printed hits are for two players. In play: printed + analysts − 2, never below 1. Each alarm comes back from the persistence row when the row die lands in its Back range.
 
-| Mob | Domain | Def | Hits | Dmg | Back | Keyword |
+| Alarm | Domain | Def | Hits | Dmg | Back | Keyword |
 | --- | --- | --- | --- | --- | --- | --- |
 | Mailer Daemon | Identity | 12 | 3 | 1 | 1–13 | Beacon |
 | Macro Gremlin | Endpoint | 13 | 3 | 1 | 1–12 | Targeted |
@@ -54,17 +54,17 @@ Printed hits are for two players. In play: printed + analysts − 2, never below
 | Marketing Blast | choice | Choose one. Everyone triages: everyone loses 1 HP / On point takes it alone: they lose 3 HP |
 | Patch Tuesday | choice | Choose one. Take a breather: everyone heals 2 HP / Raid the supply locker: draw a kit card |
 | CISO Wants a Briefing | challenge | On point: roll 12+ in one attempt. Fail: you lose 4 HP. |
-| Threat Intel Drop | event | Discard one mob from the persistence row. |
+| Threat Intel Drop | event | Discard one alarm from the persistence row. |
 | Pentest Day | challenge | Everyone rolls once. Anyone under 8 loses 2 HP. |
 | Pager Storm | event | Everyone loses 2 HP. On point loses 2 more. |
 | Budget Approved | event | Draw two kit cards. |
 | The Badge That Wasn’t | challenge | On point: roll 12+ in one attempt. Fail: you lose 4 HP and roll for the row. |
 | Lateral Whispers | event | Roll for the row now. Anything that comes back, you fight after this. |
-| The CEO’s Inbox | choice | Choose one. Quarantine everything: everyone loses 2 HP / Let it ride: the next mob you flip gets +2 Damage |
-| Ghost in the Change Window | event | The next mob you flip has +3 Defense. |
+| The CEO’s Inbox | choice | Choose one. Quarantine everything: everyone loses 2 HP / Let it ride: the next alarm you flip gets +2 Damage |
+| Ghost in the Change Window | event | The next alarm you flip has +3 Defense. |
 | Dark Web Chatter | event | Draw a kit card. |
 | The Janitor’s USB | challenge | Everyone rolls once. Anyone under 10 loses 3 HP. |
-| Old Case, New IOC | event | The mob in the row with the widest range comes back now, with no arrival hit. Fight it after this. |
+| Old Case, New IOC | event | The alarm in the row with the widest range comes back now, with no arrival hit. Fight it after this. |
 | Honeytoken Tripped | event | Everyone heals 2 HP. |
 | Vendor Breach Notice | event | Everyone loses 2 HP. Then roll for the row. |
 
@@ -82,8 +82,8 @@ Hits by crew size (1p / 2p / 3p / 4p). Agents can't hit the boss.
 
 | Analyst | Trait | Perk | Agent link |
 | --- | --- | --- | --- |
-| Hunter | Threat hunter | +3 against mobs that came back from the row. Any comeback you finish is gone for good. | Hunt Agents hunt with you: a comeback they finish is gone for good too. |
-| Responder | First responder | +3 against the highest-damage mob in play, boss included. | Containment Agents cut 1 more damage. |
+| Hunter | Threat hunter | +3 against alarms that came back from the row. Any comeback you finish is gone for good. | Hunt Agents hunt with you: a comeback they finish is gone for good too. |
+| Responder | First responder | +3 against the highest-damage alarm in play, boss included. | Containment Agents cut 1 more damage. |
 | Engineer | Detection as code | Your doubles are 17–20, not 18–20. | Agent dice roll +3. |
 | Soarcerer | Orchestrator | The crew tray holds one more agent. | Every won fight draws one more kit card. |
 | Fixer | Medic | After every fight, heal 5 HP split across the crew. Off-shift, heal 3 split instead of 1 for yourself. | Recovery Agents heal 3 more after each fight. |
@@ -92,14 +92,14 @@ Hits by crew size (1p / 2p / 3p / 4p). Agents can't hit the boss.
 
 | Agent | Run it | Or burn it |
 | --- | --- | --- |
-| Triage Agent | Rolls every round at +4 against any mob. | Roll three extra dice this round, with your bonus. |
-| Hunt Agent | Rolls every round at +7, but only against a mob that came back from the row. | A mob that came back from the row (not the boss) is beaten. |
-| Containment Agent | Each round, the highest-damage mob deals 2 less damage, never below 1. | Every mob in play takes 1 hit. |
-| Enrichment Agent | Every analyst gets +3 against every mob. | This round, every analyst die gets +5. |
-| Patch Agent | When you roll for the persistence row, roll an extra die and keep the highest. | Discard one mob from the persistence row for good. |
+| Triage Agent | Rolls every round at +4 against any alarm. | Roll three extra dice this round, with your bonus. |
+| Hunt Agent | Rolls every round at +7, but only against an alarm that came back from the row. | An alarm that came back from the row (not the boss) is beaten. |
+| Containment Agent | Each round, the highest-damage alarm deals 2 less damage, never below 1. | Every alarm in play takes 1 hit. |
+| Enrichment Agent | Every analyst gets +3 against every alarm. | This round, every analyst die gets +5. |
+| Patch Agent | When you roll for the persistence row, roll an extra die and keep the highest. | Discard one alarm from the persistence row for good. |
 | Recovery Agent | After every fight, heal 4 HP split across the crew. | Heal 6 HP split across the crew. |
 | Decoy Agent | Once per fight, after the roll: the analyst on point takes no damage this round. | After the roll: everyone blocks this round. |
-| Recon Agent | Peek at the next situation before picking who’s on point. A mob you peeked: everyone gets +5 against it. A story card: you get its Recon line. | Look at the next 3 situations and pull one from the feed for good. |
+| Recon Agent | Peek at the next situation before picking who’s on point. An alarm you peeked: everyone gets +5 against it. A story card: you get its Recon line. | Look at the next 3 situations and pull one from the feed for good. |
 
 ## First Shift (tutorial)
 

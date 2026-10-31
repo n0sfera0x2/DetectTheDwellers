@@ -8,7 +8,7 @@ const md = `# Card list
 
 Generated from \`data/cards.json\` by \`npm run cards\`. Don't edit by hand.
 
-**54 cards:** 15 mobs and 9 situations (the shuffled situation pool), 3 bosses, 5 analysts, 16 kit cards, 4 HP trackers, 2 double-sided reference cards.
+**54 cards:** 15 alarms and 9 situations (the shuffled situation pool), 3 bosses, 5 analysts, 16 kit cards, 4 HP trackers, 2 double-sided reference cards.
 
 ## Starting HP (each analyst, any player count)
 
@@ -18,11 +18,11 @@ ${table(['Recruit', 'Analyst', 'Veteran', 'Quick Shift', 'First Shift'], [[hp.Re
 
 ${table(['Keyword', 'Rule'], Object.values(D.keywords).map(k => [k.name, k.text]))}
 
-## Mobs
+## Alarms
 
-Printed hits are for two players. In play: printed + analysts − 2, never below 1. Each mob comes back from the persistence row when the row die lands in its Back range.
+Printed hits are for two players. In play: printed + analysts − 2, never below 1. Each alarm comes back from the persistence row when the row die lands in its Back range.
 
-${table(['Mob', 'Domain', 'Def', 'Hits', 'Dmg', 'Back', 'Keyword'], D.mobs.map(m => [m.name, m.domain, m.def, m.hits, m.dmg, `${m.persist[0]}–${m.persist[1]}`, D.keywords[m.kw].name]))}
+${table(['Alarm', 'Domain', 'Def', 'Hits', 'Dmg', 'Back', 'Keyword'], D.mobs.map(m => [m.name, m.domain, m.def, m.hits, m.dmg, `${m.persist[0]}–${m.persist[1]}`, D.keywords[m.kw].name]))}
 
 ## Situations
 

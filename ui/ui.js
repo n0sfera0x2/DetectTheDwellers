@@ -65,11 +65,11 @@ const TIPS = {
   point: 'Pick who’s on point, then flip. Some situations only hit whoever is on point.',
   roll: 'Everyone rolls a d20 at once, and whoever’s on point rolls two.',
   rest: `Hurt? Before you roll, send one analyst off-shift: no roll, no damage, +${REST_HEAL} HP.`,
-  assign: 'Pick a die, then a mob it beats. The die plus your bonus has to reach its Defense.',
+  assign: 'Pick a die, then an alarm it beats. The die plus your bonus has to reach its Defense.',
   double: `18–20 is a double (${ENG_DBL}–20 for the Engineer): two hits, and you block that round.${GUARD ? ` Any die showing ${GUARD}+ can guard instead: no hit, but you block.` : ''}`,
   guard: `A die showing ${GUARD}+ can guard instead of hitting: pick it, then Guard. You block this round, like a double, but that die doesn’t hit. Piercing ignores it.`,
-  end: `Every mob still up hits everyone who didn’t block${GUARD ? ' (a double or a guard)' : ''}, unless its ability says otherwise. End the round when your dice are spent.`,
-  row: `Beaten mobs go to the persistence row. Every flip makes a Row roll: a mob whose range matches comes back at full strength, every hit restored. The ${numw(CAP)} with the highest Damage hit everyone on the way in.`,
+  end: `Every alarm still up hits everyone who didn’t block${GUARD ? ' (a double or a guard)' : ''}, unless its ability says otherwise. End the round when your dice are spent.`,
+  row: `Beaten alarms go to the persistence row. Every flip makes a Row roll: an alarm whose range matches comes back at full strength, every hit restored. The ${numw(CAP)} with the highest Damage hit everyone on the way in.`,
   loot: (D.intro && D.intro.tips.loot) || 'Kit drop. Every kit card is an agent: keep it running, or burn it once for a big one-shot effect.',
   boss: (D.intro && D.intro.tips.boss) || 'The boss. Burn what you’ve got.'
 };
@@ -86,7 +86,7 @@ const FOCAL = { spray: 45, wraith: 56, druid: 47, imp: 45, mimic: 48, leech: 47,
 const SHORT = { HUN: 'Hunter', RES: 'Resp.', ENG: 'Eng.', SOA: 'Soar.', PAT: 'Fixer' };
 const crop = (svg, vb) => vb ? slice(svg).replace(/viewBox="[^"]*"/, `viewBox="${vb}"`) : slice(svg);
 const pl = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
-const FIRST_FIGHT = { pre: 'Hit Roll. Every analyst rolls at once.', live: 'Tap a ready die, then hit a mob it beats: die plus bonus, at least its Defense.', spent: 'Out of dice. End the round: whatever is still standing hits back.' };
+const FIRST_FIGHT = { pre: 'Hit Roll. Every analyst rolls at once.', live: 'Tap a ready die, then hit an alarm it beats: die plus bonus, at least its Defense.', spent: 'Out of dice. End the round: whatever is still standing hits back.' };
 // The engine logs "Persist roll"; the player only ever sees one name for it: the Row roll.
 const rowWord = t => String(t).replace(/^Persist roll/, 'Row roll').replace(/Persist roll now/, 'Row roll now');
 
@@ -106,7 +106,7 @@ function missWhy(d, m) {
   const who = d.kind === 'agent' ? `The ${d.card.name}’s ${d.r}` : `Die ${d.r}`;
   if (d.kind === 'agent' && m.kind === 'boss') return `${who} can’t hit it: agents never touch the boss.`;
   if (d.kind === 'agent' && m.ability === 'noagent') return `${who} can’t hit it: Fileless, agents can’t touch it.`;
-  if (d.kind === 'agent' && d.card.type === 'hunt' && !E.huntable(m)) return `${who} can’t hit it: the Hunt Agent only hits a mob that came back from the row.`;
+  if (d.kind === 'agent' && d.card.type === 'hunt' && !E.huntable(m)) return `${who} can’t hit it: the Hunt Agent only hits an alarm that came back from the row.`;
   if (m.ability === 'hardened' && d.r < 12) return `${who} can’t hit it: Evasive, only a natural 12 or higher.`;
   if (d.r === 1) return `${who} can’t hit it: a natural 1 always misses.`;
   return `${who} can’t hit it (${E.total(G, d, m)} vs ${m.def}).`;
@@ -262,7 +262,7 @@ function act(a, v) {
   else if (a === 'rest') E.setRest(G, +v);
   else if (a === 'decoy') E.decoy(G);
   else if (a === 'roll') { if (E.rollAll(G)) { UI.sel = firstLive(); extra = rollSummary(); } }
-  else if (a === 'die') { const i = +v; if (G.dice[i] && !G.dice[i].used) UI.sel = UI.sel === i ? null : i; if (UI.sel !== null) extra = `Die ${G.dice[UI.sel].r} picked. It beats ${pl(G.play.filter(m => E.beats(G, G.dice[UI.sel], m)).length, 'mob')}.${canGuard(UI.sel) ? ' It can guard instead: press G.' : ''}`; }
+  else if (a === 'die') { const i = +v; if (G.dice[i] && !G.dice[i].used) UI.sel = UI.sel === i ? null : i; if (UI.sel !== null) extra = `Die ${G.dice[UI.sel].r} picked. It beats ${pl(G.play.filter(m => E.beats(G, G.dice[UI.sel], m)).length, 'alarm')}.${canGuard(UI.sel) ? ' It can guard instead: press G.' : ''}`; }
   else if (a === 'guard') { if (E.guard(G, +v)) UI.sel = firstLive(); }
   else if (a === 'hit') { if (UI.sel !== null && E.assign(G, UI.sel, +v)) UI.sel = G.phase === 'combat' ? firstLive() : null; }
   else if (a === 'undo') { const u = G.undo && G.undo[G.undo.length - 1], g = !!(u && u.guard); if (E.unassign(G)) { UI.sel = g ? u.i : firstLive(); extra = g ? 'Guard taken back.' : 'Last hit taken back.'; } }
@@ -338,7 +338,7 @@ function announce(a, before, extra) {
     out.push(...last.slice(0, 3).map(rowWord));
     if (rolls.length) out.push(rolls.join('. ') + '.');
   } else if (a === 'end') {
-    out.push(`Round ${before.round} over.` + (hurtK.length ? ` Mobs hit ${whoFor()}.` : ' Nobody took damage.'));
+    out.push(`Round ${before.round} over.` + (hurtK.length ? ` Alarms hit ${whoFor()}.` : ' Nobody took damage.'));
     if (rolls.length) out.push(rolls.join('. ') + '.');
   } else if (a !== 'roll' && a !== 'die') {
     const lines = G.log.slice(before.logN).map(l => rowWord(l.t)); out.push(...lines.slice(-2));
@@ -385,7 +385,7 @@ function finish(before) {
   rememberMode(UI.mode === 'intro' ? 'quick' : UI.mode);
   UI.savedAt = x.at; UI.before = before; UI.fellAt = clockNow(); saveScore(x); Sound.ambience(false); Sound.play(G.win ? 'win' : 'loss'); UI.screen = 'end'; UI.reveal = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); toTop(); render();
   const h = document.getElementById('end-h'); if (h) h.focus({ preventScroll: true });
-  say(G.win ? `Shift survived. You made it to 06:00. ${G.boss.name} contained. ${G.tier}.` : `Shift lost at ${UI.fellAt}. The ${nm(G.dropped)} went down to ${listOf(G.downBy || ['the mobs'])}.`);
+  say(G.win ? `Shift survived. You made it to 06:00. ${G.boss.name} contained. ${G.tier}.` : `Shift lost at ${UI.fellAt}. The ${nm(G.dropped)} went down to ${listOf(G.downBy || ['the alarms'])}.`);
 }
 
 app.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b || b.disabled) return; act(b.dataset.a, b.dataset.v); });
@@ -511,7 +511,7 @@ function aimTargets() { if (!UI.aim) return ''; const t = UI.aim.type;
 
 // The Recon burn: the next three situations, next first, each with its type. The pick leaves the feed for good.
 const ORD = ['Next', '2nd', '3rd'];
-const kindOf = c => c.kind === "mob" ? `Mob · ${c.domain}` : c.story ? `Story ${c.type}` : cap1(c.type);
+const kindOf = c => c.kind === "mob" ? `Alarm · ${c.domain}` : c.story ? `Story ${c.type}` : cap1(c.type);
 function pullPicker() {
   const top = G.deck.slice(-3), opts = top.map((c, i) => [i, c]).reverse();
   return `<div class="pull" role="group" aria-labelledby="pull-h"><p class="meta c" id="pull-h">Recon burn: pull one of the next ${numw(top.length)} from the feed for good.</p><div class="pulls">${opts.map(([i, c], n) =>
@@ -527,7 +527,7 @@ function bossMove() {
   const say1 = (i, eff) => { const c = held[i], now = canBurn(c); return { i, now, text: now ? `Burn your ${c.name} now: ${eff}` : `After you roll, burn your ${c.name}: ${eff}` }; };
   let i = at('recover'); const gain = i >= 0 ? healGain(BURN_HEAL) : 0;
   if (i >= 0 && gain) return say1(i, `+${gain} HP${G.team.length > 1 ? ' across the crew' : ''}.`);
-  i = at('contain'); if (i >= 0) { const b = G.play.find(m => m.kind === 'boss'); return say1(i, `every mob in play takes 1 hit${b ? `, ${b.name} included` : ''}.`); }
+  i = at('contain'); if (i >= 0) { const b = G.play.find(m => m.kind === 'boss'); return say1(i, `every alarm in play takes 1 hit${b ? `, ${b.name} included` : ''}.`); }
   for (const t of ['triage', 'enrich', 'decoy']) { i = at(t); if (i >= 0) return say1(i, lc1(held[i].burn)); }
   return null;
 }
@@ -549,7 +549,7 @@ function bossAdvice0() {
     else if (c.type === 'patch') out.push(`Your ${c.name} can’t touch a boss.`);
   }
   const b = G.play.find(m => m.kind === 'boss') || G.boss, dbl = G.team.includes('ENG') && G.team.length === 1 ? `${ENG_DBL}–20` : '18–20';
-  if (others.length) out.push(`Put ${others[0].name} down first: ${others[0].left === 1 ? 'it’s one hit from down, and ' : ''}a mob you finish never hits back.`);
+  if (others.length) out.push(`Put ${others[0].name} down first: ${others[0].left === 1 ? 'it’s one hit from down, and ' : ''}an alarm you finish never hits back.`);
   else if (G.team.length > 1) out.push(`Anyone low goes off-shift before the roll: no damage, +${REST_HEAL} HP${onCrew('PAT') ? ` (the Fixer heals ${PAT_REST} across the crew)` : ''}.`);
   else out.push(`Every die goes on ${b.name}. A natural ${dbl} is two hits and blocks its damage.`);
   return { i: null, now: false, text: out.join(' ') };
@@ -688,7 +688,7 @@ function sitResult(r) {
 // Between fights, one status line: what just happened, then what is next. Replaces the old Fight over / Next panels.
 function statusLine() {
   const r = G.lastSit, won = G.lastRound && G.lastRound.ended, out = [];
-  if (won) { out.push('<b>Fight won.</b> The last mob went down before it could hit back.');
+  if (won) { out.push('<b>Fight won.</b> The last alarm went down before it could hit back.');
     if (UI.gone && UI.gone.sit === G.sit) out.push(`<span class="gone-l">${esc(listOf(UI.gone.names))} ${UI.gone.names.length > 1 ? 'are' : 'is'} hunted down for good, never back to the row.</span>`);
     if (UI.patched && UI.patched.sit === G.sit) out.push(`<span class="fix-l" data-fixer>The Fixer patched the crew: <b class="num">+${UI.patched.n}</b> HP.</span>`); }
   else if (r) { out.push(sitResult(r)); const A = UI.after; if (A && A.buried.length) out.push(`${esc(listOf(A.buried))} went to the bottom of the feed.`); }
@@ -771,7 +771,7 @@ function rowStrip() {
 function rowCards() {
   const cards = G.row.map(m => `<li class="rcard paper am" data-chip="${m.uid}"><i class="tab" aria-hidden="true"></i><span class="scr">${crop(ART[m.id] || ART[m.domain], null)}</span><b class="nm">${esc(m.name)}</b><span class="rng">Back on ${m.persist[0]}–${m.persist[1]}</span></li>`).join('');
   const last = G.plog[G.plog.length - 1];
-  const note = !G.row.length ? 'Empty, for now. Beaten mobs land here.' : G.deck.length ? 'Flipping makes a Row roll for these: one d20.' : 'The boss brings one last Row roll.';
+  const note = !G.row.length ? 'Empty, for now. Beaten alarms land here.' : G.deck.length ? 'Flipping makes a Row roll for these: one d20.' : 'The boss brings one last Row roll.';
   return `<section class="pd-row" aria-labelledby="row-h" data-rowsum><h2 class="sech a" id="row-h">Persistence row${G.row.length ? ` · ${G.row.length}` : ''}</h2>${cards ? `<ul class="rcards">${cards}</ul>` : ''}<p class="meta">${note}${last ? ` Last Row roll: ${last.r}, ${last.back.length ? esc(listOf(last.back)) + ' came back' : 'quiet'}.` : ''}</p></section>`;
 }
 // The feed, face down: the print card back. Tap it (or press F) to flip the next situation; an empty feed is the boss.
@@ -781,10 +781,10 @@ function feedCard() {
   return `<button class="fdown ${boss ? 'boss' : ''}" type="button" data-a="flip" data-k="flip" data-primary aria-keyshortcuts="F" aria-label="${esc(label)}" style="--stack:${Math.min(3, Math.max(0, left - 1))}">
     <span class="fd-art" aria-hidden="true">${slice(pickArt('_back', 'hero', 'event'))}</span><span class="fd-t" aria-hidden="true">${boss ? 'The boss' : 'Detect the<br>Dwellers'}</span>
     <span class="fd-b" aria-hidden="true"><b>${boss ? 'The feed is empty' : sitOf(G.sit + 1)}</b><span>Tap to flip <kbd>F</kbd></span></span></button>
-    ${pk ? `<p class="meta c peek">Recon: next up is ${esc(pk.name)}${pk.kind === 'mob' ? ` (a mob: +${RECON} all fight)` : pk.story ? ' (a story card: you get its Recon line)' : ''}.</p>` : ''}${nextMark()}`;
+    ${pk ? `<p class="meta c peek">Recon: next up is ${esc(pk.name)}${pk.kind === 'mob' ? ` (an alarm: +${RECON} all fight)` : pk.story ? ' (a story card: you get its Recon line)' : ''}.</p>` : ''}${nextMark()}`;
 }
 // A story card's mark on the next mob, waiting under the feed until a mob is flipped.
-const nextMark = () => G.nextMob && modText(G.nextMob) ? `<p class="nmark ${modBad(G.nextMob) ? '' : 'good'}" data-nextmob><b>Next mob:</b> ${esc(modText(G.nextMob))}</p>` : '';
+const nextMark = () => G.nextMob && modText(G.nextMob) ? `<p class="nmark ${modBad(G.nextMob) ? '' : 'good'}" data-nextmob><b>Next alarm:</b> ${esc(modText(G.nextMob))}</p>` : '';
 // Who's on point, as analyst cards. A solo analyst is always on point, so there is no choice to show.
 function pointCards() {
   if (G.team.length < 2) return '';
@@ -875,7 +875,7 @@ function helped() {
   const left = UI.left.find(useful);
   if (left) return `You left a ${left.name} at a kit drop. Kept, it burns for this: ${lc1(left.burn)}`;
   const bossName = G.boss.name, top = Object.entries(UI.dmg).filter(([n]) => n !== bossName).sort((a, b) => b[1] - a[1])[0];
-  if (top && top[1] >= 3) return `${top[0]} did the most damage: ${top[1]} HP across the shift. A mob you finish in a round never hits back, so it’s worth your best dice.`;
+  if (top && top[1] >= 3) return `${top[0]} did the most damage: ${top[1]} HP across the shift. An alarm you finish in a round never hits back, so it’s worth your best dice.`;
   if (boss && UI.bossHp) { const lo = Math.min(...UI.bossHp); return `You met ${bossName} with ${lo} of ${G.max} HP, and it hits for ${E.dmgOf(G, G.boss)} a round. HP you keep in the feed is what carries the boss fight.`; }
   return '';
 }
@@ -901,7 +901,7 @@ function vEnd() {
   const who = G.dropped != null ? nm(G.dropped) : 'crew', killers = G.downBy || [];
   const lastBy = G.lastRound && G.lastRound.by && G.dropped != null ? G.lastRound.by[G.dropped] : null;
   const fromRound = lastBy && lastBy.length && killers.every(n => lastBy.some(x => x.name === n));
-  const cause = G.win ? '' : fromRound ? `The ${esc(who)} went down in round ${G.lastRound.round}: ${lastBy.map(x => `${esc(x.name)} hit for <b class="num">${x.d}</b>`).join(', ')}.` : `The ${esc(who)} went down to ${esc(listOf(killers.length ? killers : ['the mobs']))}.`;
+  const cause = G.win ? '' : fromRound ? `The ${esc(who)} went down in round ${G.lastRound.round}: ${lastBy.map(x => `${esc(x.name)} hit for <b class="num">${x.d}</b>`).join(', ')}.` : `The ${esc(who)} went down to ${esc(listOf(killers.length ? killers : ['the alarms']))}.`;
   const killerMob = [...D.mobs, ...D.bosses].find(m => killers.includes(m.name));
   // A win shows the boss's room after the crew held the line (screens cyan, countdown stopped), else the boss scene.
   const artSvg = G.win ? ((ART._win && ART._win[G.boss.id]) || ART['win_' + G.boss.id] || bossArt(G.boss.id)) : killerMob ? (D.bosses.includes(killerMob) ? bossArt(killerMob.id) : ART[killerMob.id]) : pickArt('hero', 'event');

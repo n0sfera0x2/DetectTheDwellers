@@ -26,8 +26,8 @@
 .dmg span{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.04em;text-transform:uppercase;color:#5A4B43}.dmg b{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px;line-height:20px;color:#1A1418;font-variant-numeric:tabular-nums}
 .kw{display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.3;background:#FCE6DC;border:1px solid #FF5A2A;padding:3px 6px}.kw b{font-weight:700;text-transform:uppercase;font-size:11px;color:#A8360F}.kw .kwi{flex:none;margin-top:1px}
 .fl{font-size:10px;line-height:1.35;color:#5A4B43;border-top:1px solid #D8CEC3;padding-top:4px}
-.card.mob .art{height:74px}.card.mob .dice{flex-direction:row;justify-content:center;gap:8px;padding:5px 8px 6px}.card.mob .plus span{max-width:54px;line-height:1.1;font-size:8.5px}
-.base{margin:-6.5px -7.5px 6.5px;padding:3px 8px 4px;background:#EAF6F8;border-top:1px dashed #1A1418;font-size:9.5px;line-height:1.25;display:flex;flex-direction:column;gap:1px}.base .bh{display:flex;align-items:center;gap:2px}.base .bh b{font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:4px;color:#1A1418}
+.card.mob .art{height:62px}.card.mob .dice{flex-direction:row;justify-content:center;gap:8px;padding:5px 8px 6px}.card.mob .plus span{max-width:54px;line-height:1.1;font-size:8.5px}
+.base{flex:none;box-sizing:border-box;height:44px;margin:-6.5px -7.5px 6.5px;padding:3px 8px 4px;background:#EAF6F8;border-top:1.5px dashed #005F73;font-size:9.5px;line-height:1.25;display:flex;flex-direction:column;gap:1px}.base .bt b{color:#005F73;text-transform:uppercase;letter-spacing:.04em}.base .bh{display:flex;align-items:center;gap:2px}.base .bh b{font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:4px;color:#1A1418}
 .dice{margin:auto -7.5px 6.5px;padding:6px 8px 7px;background:#fff;border-top:2px solid #1A1418;display:flex;flex-direction:column;align-items:center;gap:4px;clip-path:polygon(0 0,100% 0,100% 100%,15px 100%,0 calc(100% - 15px))}
 .dice .set{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.boss .dice .set{max-width:150px}
 .dice .plus{display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#5A4B43}.dice .plus b{font-size:14px;color:#1A1418}
@@ -456,7 +456,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 /* Baselining: the stamp on an alarm being baselined, the tuck step, and the alarm tucked under an agent. */
 .bstamp.base{border-color:var(--cy);color:var(--cy);left:auto;right:12px;transform:rotate(8deg);transform-origin:right top}
 .t-tuckp{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;padding:8px 0 16px}.t-tuckp .t-slot{position:relative}.t-tuckp .sb{flex:1 1 260px;max-width:460px}
-.t-tucked{display:flex;flex-direction:column;gap:2px;margin-top:6px;padding:6px 8px;border:1px dashed var(--cy);font-size:12px;line-height:1.3;max-width:100%}.t-tucked b{color:var(--cy);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.t-tuckc{display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;height:calc(51px * var(--z));margin-top:-6px;flex:none}.t-tuckc .card{flex:none}.t-tucked{display:flex;flex-direction:column;gap:2px;margin-top:6px;padding:6px 8px;border:1px dashed var(--cy);font-size:12px;line-height:1.3;max-width:100%}.t-tucked b{color:var(--cy);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
 </style>
 </head>
 <body>
@@ -540,6 +540,8 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   // Since 2026-11-02 each line is a trait of the agent it tucks under (its agent), lost if that agent is discarded:
   // Twin and Repair change the agent itself, Ghost and Scramble guard the row. Same as sim.js TRAIT (hybrid).
   const BASE_N = 3;
+  // The boss pulls the row (2026-11-02 review): at round end, when it is down to each of these dice counts, roll the row.
+  const BOSS_STEPS = [6, 4, 2];
   const BASE = {
     imp: 'Twin: its agent counts as two of itself.',
     druid: 'Ghost: comebacks don’t hit on arrival.',
@@ -548,6 +550,8 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   };
   const traitName = id => BASE[id] ? BASE[id].split(':')[0] : '';
   const baseDie = id => 7 - numbersFor(id, 1)[0];
+  // The tuck band (2026-11-02 review): a fixed-height band on the bottom edge, in the agents' colour. Beaten with its
+  // Baseline dice, the card slides under an agent until only this band shows below it; several stack, band under band.
   const baseLine = m => BASE[m.id] ? `<div class="base"><span class="bh"><b>Baseline it</b>${Array(BASE_N).fill(pip(baseDie(m.id), 14)).join('')}</span><span class="bt">${BASE[m.id].replace(/^(\w+):/, '<b>$1:</b>')}</span></div>` : '';
   function mobCard(m) {
     return `<div class="card mob">${tab}${art(SCENE.mob(m.id))}${hd(m.domain, `back on 2–${rowTop(m.persist[1])}`)}${nmRow(m.name, m.dmg)}
@@ -556,7 +560,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   }
   function bossCard(b) {
     return `<div class="card boss">${tab}${art(SCENE.boss(b.id))}${hd('Boss', 'arrives at 05:59')}${nmRow(b.name, b.dmg)}
-  <div class="kw"><span><b>${b.abilityName}.</b> +2 Damage until it has lost two dice.</span></div>
+  <div class="kw"><span><b>${b.abilityName}.</b> +2 Damage until it has lost two dice. Down to ${BOSS_STEPS.join(', ').replace(/, (\d+)$/, ' and $1')} dice: roll the row.</span></div>
   ${strip(diceFor(b, true), 24)}</div>`;
   }
   const PERK = {
@@ -594,7 +598,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards anyone.</div>
   <div class="note">Your doubles are on your analyst card. The solo crew die: only a ${pip(6, 14)}. <b>Two of yours on one number: a double.</b></div>
   <div class="note"><b>Once a round, reroll one of your own dice.</b></div>
-  <div class="note">4 players: add the alarm’s + die.</div>
+  <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
   <div class="note">Row: 2 amber dice; back if the sum is at most its number.</div></div>`;
 
   // The shift tracker (2026-11-01): the table's memory for every once-a-round, once-a-fight and waiting effect. Coins
@@ -602,21 +606,21 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   const box = t => `<span class="bx">${t}</span>`;
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
   <div class="note">Put a coin on a box when you use it. Clear a row when its round or fight ends.</div>
-  <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}</div>
+  <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Enrichment 2 (Twin)')}</div>
   <div class="trow"><b>This fight</b>${box('Responder stand')}${box('Hold the room: +1 item')}</div>
-  <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm hits all')}</div>
+  <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
   <div class="note"><b>Escalating:</b> a coin on it each round. <b>Regen:</b> line up taken dice; it puts back the last.</div></div>`;
   // Situations (2026-10-30; shuffled into the feed with the alarms since 2026-11-02, the boss underneath). Who's on point is
   // picked. The real game's situations (names, scenes and story lines from the data) with rules rewritten for the
   // dice. Each offers a choice, except the event. Same rules as sim.js situation(). [label, rule] per option.
   const SIT_IDS = ['insider', 'pager', 'usb', 'chatter', 'lateral', 'patch'];
   const SIT = {
-    insider: { kind: 'Stay or run', opts: [['Hold the room', 'On point takes Exposed. Win the next fight: draw an item.'], ['Fall back', 'The next alarm hits everyone once when it flips. Not the boss.']] },
-    pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP.'], ['Mute it', `The next alarm sets one more threat die: a ${pip(6, 13)}.`]] },
-    usb: { kind: 'Grab', opts: [['Grab it', 'On point rolls 3 dice. Any pair: draw 2 items and take Focused. No pair: take Rattled.'], ['Leave it', 'Nothing happens.']] },
+    insider: { kind: 'Stay or run', opts: [['Hold the room', 'On point takes Exposed. Win the next fight: draw an item.'], ['Fall back', 'Draw 2 items. The next alarm that flips goes straight on the row, unfought. Not the boss.']] },
+    pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP. Draw an item.'], ['Mute it', `The next alarm sets one more threat die: a ${pip(6, 13)}.`]] },
+    usb: { kind: 'Grab', opts: [['Grab it', 'On point rolls 3 dice. Any pair: draw 2 items and take Focused. No pair: take Rattled.'], ['Leave it', 'Draw an item.']] },
     chatter: { kind: 'Grab', opts: [['Dig in', `On point picks 1–4 dice and rolls them. Any ${pip(6, 13)}: draw 2 items. None: lose 1 HP per die.`], ['Let it go', 'Nothing happens.']] },
     lateral: { kind: 'Event', rule: 'Roll the row now. Anything that comes back hits on arrival and joins the next fight.' },
-    patch: { kind: 'Choice', opts: [['Take a breather', 'Everyone heals 2 HP.'], ['Raid the supply closet', 'Draw an item.']] },
+    patch: { kind: 'Choice', opts: [['Take a breather', 'Everyone heals 3 HP.'], ['Raid the supply closet', 'Draw an item. On point loses 1 HP.']] },
   };
   const sitData = id => D.situations.find(s => s.id === id);
   const sitCard = id => { const s = SIT[id], d = sitData(id);
@@ -658,8 +662,8 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
 .dmg span{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.04em;text-transform:uppercase;color:${C.mut}}.dmg b{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px;line-height:20px;color:${C.ink};font-variant-numeric:tabular-nums}
 .kw{display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.3;background:#FCE6DC;border:1px solid ${C.fl};padding:3px 6px}.kw b{font-weight:700;text-transform:uppercase;font-size:11px;color:${C.ex}}.kw .kwi{flex:none;margin-top:1px}
 .fl{font-size:10px;line-height:1.35;color:${C.mut};border-top:1px solid ${C.rule};padding-top:4px}
-.card.mob .art{height:74px}.card.mob .dice{flex-direction:row;justify-content:center;gap:8px;padding:5px 8px 6px}.card.mob .plus span{max-width:54px;line-height:1.1;font-size:8.5px}
-.base{margin:-6.5px -7.5px 6.5px;padding:3px 8px 4px;background:#EAF6F8;border-top:1px dashed ${C.ink};font-size:9.5px;line-height:1.25;display:flex;flex-direction:column;gap:1px}.base .bh{display:flex;align-items:center;gap:2px}.base .bh b{font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:4px;color:${C.ink}}
+.card.mob .art{height:62px}.card.mob .dice{flex-direction:row;justify-content:center;gap:8px;padding:5px 8px 6px}.card.mob .plus span{max-width:54px;line-height:1.1;font-size:8.5px}
+.base{flex:none;box-sizing:border-box;height:44px;margin:-6.5px -7.5px 6.5px;padding:3px 8px 4px;background:#EAF6F8;border-top:1.5px dashed ${C.cy};font-size:9.5px;line-height:1.25;display:flex;flex-direction:column;gap:1px}.base .bt b{color:${C.cy};text-transform:uppercase;letter-spacing:.04em}.base .bh{display:flex;align-items:center;gap:2px}.base .bh b{font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:4px;color:${C.ink}}
 .dice{margin:auto -7.5px 6.5px;padding:6px 8px 7px;background:#fff;border-top:2px solid ${C.ink};display:flex;flex-direction:column;align-items:center;gap:4px;clip-path:polygon(0 0,100% 0,100% 100%,15px 100%,0 calc(100% - 15px))}
 .dice .set{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.boss .dice .set{max-width:150px}
 .dice .plus{display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:${C.mut}}.dice .plus b{font-size:14px;color:${C.ink}}
@@ -676,7 +680,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { BASE, BASE_N, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { BASE, BASE_N, BOSS_STEPS, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });
 </script>
@@ -735,11 +739,11 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
       // The item deck (cards.js ITEM_DECK), each card a { uid, t }. Drawn items wait in G.deal until someone takes them.
       kit: shuffle(CARDS.ITEM_DECK.map((t, i) => ({ uid: 'k' + (i + 1), t })), r), discard: [], deal: [], dealNext: 'flip',
       agents: team.map(() => []), hand: team.map(() => []), freeze: false,
-      sit: null, sitDone: false, badgeHit: false, pending: [], mute: 0, bonusDraw: 0, engUsed: false, resUsed: false, stand: null, aug: [], tuck: [], flipped: null, augReroll: false,
+      sit: null, sitDone: false, badgeSkip: false, pending: [], mute: 0, bonusDraw: 0, engUsed: false, resUsed: false, stand: null, aug: [], tuck: [], flipped: null, augReroll: false,
       cond: team.map(() => ({ rattled: false, exposed: false, focused: false })),
       point: 0, phase: 'flip', fight: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
       over: false, win: false, log: [], rows: [], lastRow: null, drawn: [], beaten: [],
-      stats: { rounds: 0, back: 0, flips: 0, guards: 0, used: {}, gone: 0, healed: 0, sits: 0, items: { triage: 0, contain: 0, recover: 0, enrich: 0, surge: 0, intel: 0, isolate: 0, coffee: 0, freeze: 0 } } };
+      stats: { rounds: 0, back: 0, flips: 0, guards: 0, used: {}, gone: 0, healed: 0, sits: 0, items: { triage: 0, contain: 0, recover: 0, enrich: 0, surge: 0, intel: 0, isolate: 0, coffee: 0, freeze: 0, twin: 0, ghost: 0, scramble: 0, repair: 0 } } };
     const si = startItems(n);
     say(G, `Shift starts: ${team.map(nameOf).join(' + ')} at ${hp} HP. ${n === 1 ? 'You draw' : 'The crew draws'} ${si === 1 ? 'an item' : si + ' items'}.`);
     draw(G, si); toDeal(G, 'flip');
@@ -762,12 +766,14 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   // Damage right now: Lockjaw +2 until it has lost two dice; Escalating +1 per round it stayed up.
   const dmgOf = (G, m) => m.boss ? m.dmg + (left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0);
   const d6 = G => Math.floor(G.r() * 6);
+  const BOSS_STEPS = CARDS.BOSS_STEPS;
   const findMob = (G, uid) => G.play.find(m => m.uid === uid);
   // A baselined alarm gives the agent it is tucked under a trait (cards.js TRAIT), kept while anyone holds that agent:
   // Twin (Grifter) and Repair (Rootkit) change the agent itself; Ghost (Scavenger) and Scramble (Courier) guard the row.
   const aug = (G, id) => G.aug.some(a => a.id === id && a.host && G.agents.some(h => h.some(c => c.uid === a.host)));
   // Discarding an agent ends what is tucked under it.
-  function loseAug(G, uid) { for (const a of G.aug.filter(a => a.host === uid)) say(G, `${a.name}’s baseline goes with it.`, 'kit'); G.aug = G.aug.filter(a => a.host !== uid); }
+  // The tucked alarm card slides out from under it and goes back on the row (it was off the row while tucked).
+  function loseAug(G, uid) { for (const a of G.aug.filter(a => a.host === uid)) { say(G, `${a.name} slides out from under it: its trait is lost, and it goes back on the row.`, 'kit'); if (a.mob) G.row.push(a.mob); } G.aug = G.aug.filter(a => a.host !== uid); }
   const fail = msg => { const e = new Error(msg); e.rule = true; throw e; };
 
   function hurt(G, k, n, why) {
@@ -838,10 +844,13 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     G.row = G.row.filter(m => !back.includes(m));
     back.forEach(m => { m.off = Array(m.hits).fill(false); m.offStack = []; m.back++; m.up = 0; });
     G.stats.back += back.length;
-    const strikes = strike && !aug(G, 'druid') ? back.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a)).slice(0, 2) : [];
+    const top2 = strike ? back.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a)).slice(0, 2) : [], ghost = aug(G, 'druid'), strikes = ghost ? [] : top2;
+    // What the traits did: Ghost's arrival damage stopped, Scramble's comebacks that its +1 kept on the row.
+    if (ghost && top2.length) { const n = top2.reduce((s, m) => s + dmgOf(G, m), 0) * G.n; G.stats.items.ghost += n; say(G, `Ghost: ${top2.map(m => m.name).join(' and ')} ${top2.length > 1 ? 'come' : 'comes'} back without hitting anyone (${n} damage stopped).`, 'kit'); }
+    if (plus) { const kept = G.row.filter(m => m.top === roll - 1); G.stats.items.scramble += kept.length; if (kept.length) say(G, `Scramble: the +1 keeps ${kept.map(m => m.name).join(' and ')} on the row.`, 'kit'); }
     const rec = { roll, pair, plus, why, back: back.map(m => m.name), strikes: strikes.map(m => ({ name: m.name, dmg: dmgOf(G, m) })), seq: G.rows.length + 1, fight: G.fight, round: G.round };
     G.rows.push(rec); G.lastRow = rec;
-    say(G, `Row roll ${pair.join(' + ')}${plus ? ' + 1 (Exfil Courier baseline)' : ''} = ${roll} (${why}): ${back.length ? back.map(m => m.name).join(', ') + (back.length > 1 ? ' come back.' : ' comes back.') : 'nothing comes back.'}`, 'row');
+    say(G, `Row roll ${pair.join(' + ')}${plus ? ' + 1 (Scramble)' : ''} = ${roll} (${why}): ${back.length ? back.map(m => m.name).join(', ') + (back.length > 1 ? ' come back.' : ' comes back.') : 'nothing comes back.'}`, 'row');
     for (const m of strikes) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} arrives`));
     return back;
   }
@@ -865,8 +874,10 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     G.fight++; G.round = 0; G.stats.flips++; G.play = []; G.beaten = []; G.sit = null; G.sitDone = false; G.resUsed = false; G.stand = null;
     const pend = G.pending; G.pending = [];
     if (G.feed.length) {
-      const m = G.feed.shift(); muteOn(G, m); G.flipped = m.uid; say(G, `Flip ${G.fight}: ${m.name}. ${nameOf(G.team[G.point])} is on point.`, 'flip');
-      if (G.badgeHit) { G.badgeHit = false; const dm = dmgOf(G, m); G.team.forEach((_, k) => hurt(G, k, dm, `${m.name}, after falling back`)); if (G.over) return G; }
+      const m = G.feed.shift();
+      // Fell back (The Badge That Wasn’t): this alarm goes straight on the row, unfought. No fight, no row roll, no draw.
+      if (G.badgeSkip) { G.badgeSkip = false; G.pending = pend; G.row.push(m); G.stats.skipped = (G.stats.skipped || 0) + 1; G.phase = 'flip'; say(G, `Flip ${G.fight}: ${m.name}. You fell back: it goes straight on the row, unfought (back on 2–${m.top}).`, 'flip'); return G; }
+      muteOn(G, m); G.flipped = m.uid; say(G, `Flip ${G.fight}: ${m.name}. ${nameOf(G.team[G.point])} is on point.`, 'flip');
       const back = rollRow(G, true, 'the flip'); if (G.over) return G;
       enter(G, m); [...pend, ...back].forEach(b => enter(G, b));
     } else {
@@ -932,8 +943,8 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     if (opt === 'dig' && !(n >= 1 && n <= 4 && n === Math.floor(n))) fail('Dig in with 1 to 4 dice.');
     let text = '', dice = null, won = null;
     if (opt === 'stay') { gain(G, p, 'exposed'); G.bonusDraw = 1; text = `${who} holds the room and takes Exposed. Win the next fight: draw an item.`; }
-    if (opt === 'run') { G.badgeHit = true; text = 'Fell back: the next alarm hits everyone once when it flips.'; }
-    if (opt === 'ride') { text = 'Rode it out: everyone loses 2 HP.'; say(G, text, 'sit'); G.team.forEach((_, k) => hurt(G, k, 2, 'Pager Storm')); text += ` ${hpLine(G)} HP.`; }
+    if (opt === 'run') { G.badgeSkip = true; const got = draw(G, 2); text = `Fell back: the next alarm that flips goes straight on the row, unfought. Drew ${got.map(c => KIT_NAME[c.t]).join(' and ') || 'nothing'}.`; }
+    if (opt === 'ride') { text = 'Rode it out: everyone loses 2 HP and you draw an item.'; say(G, text, 'sit'); G.team.forEach((_, k) => hurt(G, k, 2, 'Pager Storm')); text += ` ${hpLine(G)} HP.`; if (!G.over) { const got = draw(G, 1); text += ` Drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing'}.`; } }
     if (opt === 'mute') { G.mute++; text = `Muted: the next ${alarmsLeft(G) ? 'alarm' : 'boss'} sets one more threat die, a 6.`; }
     if (opt === 'grab') {
       dice = rollN(G, 3); won = new Set(dice).size < 3;
@@ -947,14 +958,15 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
       if (won) { const got = draw(G, 2); text += ` Drew ${got.map(c => KIT_NAME[c.t]).join(' and ') || 'nothing'}.`; }
       else { hurt(G, p, n, 'Dark Web Chatter'); text += ` ${who} loses ${n} HP (${G.hp[p]} left).`; }
     }
-    if (opt === 'leave') text = 'Left it alone. Nothing happens.';
+    if (opt === 'leave' && S.id === 'usb') { const got = draw(G, 1); text = `Left it alone and played it safe: drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing'}.`; }
+    else if (opt === 'leave') text = 'Left it alone. Nothing happens.';
     if (opt === 'ok') {
       const had = G.row.length, back = rollRow(G, true, 'Lateral Whispers'); G.pending.push(...back);
       text = !had ? 'The row is empty: nothing comes back.' : back.length ? `${back.map(m => m.name).join(', ')} ${back.length > 1 ? 'come back and join' : 'comes back and joins'} the next fight.` : 'Nothing comes back.';
     }
-    if (opt === 'heal') { G.hp = G.hp.map(h => Math.min(G.max, h + 2)); text = `Took a breather: everyone heals 2. ${hpLine(G)} HP.`; }
-    if (opt === 'agent') { const got = draw(G, 1); text = `Raided the supply closet: drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing, the deck is empty'}.`; }
-    if (!['ride', 'grab', 'dig'].includes(opt)) say(G, text, 'sit');
+    if (opt === 'heal') { G.hp = G.hp.map(h => Math.min(G.max, h + 3)); text = `Took a breather: everyone heals 3. ${hpLine(G)} HP.`; }
+    if (opt === 'agent') { const got = draw(G, 1); text = `Raided the supply closet: drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing, the deck is empty'}. ${who} loses 1 HP.`; say(G, text, 'sit'); hurt(G, p, 1, 'the supply closet'); }
+    if (!['ride', 'grab', 'dig', 'agent'].includes(opt)) say(G, text, 'sit');
     Object.assign(S, { opt, n: opt === 'dig' ? n : null, dice, won, text, done: true }); G.sitDone = true;
     if (G.over) return G;
     return toDeal(G, 'flip');
@@ -972,7 +984,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     });
     // Each Triage Agent: its holder rolls one more of their own dice (it pairs, guards, rerolls and hits the boss like
     // any of theirs); kuid ties the die to its card (it sits under that card).
-    G.agents.forEach((a, k) => a.filter(c => c.t === 'triage').forEach(c => { for (let j = weight(G, c.uid); j > 0; j--) dice.push({ k, crew: true, src: 'triage', kuid: c.uid, ...pipDie(1 + d6(G), G.team[k]) }); }));
+    G.agents.forEach((a, k) => a.filter(c => c.t === 'triage').forEach(c => { for (let j = weight(G, c.uid); j > 0; j--) dice.push({ k, crew: true, src: 'triage', kuid: c.uid, twin: j > 1, ...pipDie(1 + d6(G), G.team[k]) }); }));
     dice.forEach((d, i) => { d.i = i; d.used = null; d.takes = []; d.turned = false; });
     // Rattled: that player's dice in this roll have no doubles (they stay single if turned later). Then it's gone.
     dice.forEach(d => { if (d.crew && G.cond[d.k].rattled) { d.rattled = true; d.dbl = false; } });
@@ -1190,18 +1202,27 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     // What the items did this round (the end screen shows the totals): dice the Triage and Surge dice took or guarded
     // with, Enrichment turns that were used, takes made while a Threat Intel Feed made every die wild.
     const I = G.stats.items, did = d => d.takes.length + (d.used === 'guard' ? 1 : 0);
-    G.dice.forEach(d => { if (d.src === 'triage') I.triage += did(d); if (d.src === 'surge') I.surge += did(d); if (d.enriched && did(d)) I.enrich++; if (G.wildAll) I.intel += d.takes.length; });
+    G.dice.forEach(d => { if (d.src === 'triage') I.triage += did(d); if (d.twin) I.twin += did(d); if (d.src === 'surge') I.surge += did(d); if (d.enriched && did(d)) I.enrich++; if (G.wildAll) I.intel += d.takes.length; });
     const beaten = G.play.filter(m => !left(m)); G.beaten = beaten.map(m => m.uid);
     if (beaten.some(m => m.boss)) { G.over = true; G.win = true; G.phase = 'over'; say(G, `${G.boss.name} is beaten. You survived the night.`, 'end'); return G; }
     for (const m of beaten) {
       // Every beaten mob goes back on the row, however often it has come back.
-      if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid }); say(G, `${m.name} is beaten with its Baseline dice.`, 'win'); }
+      // Baselined: the card tucks under an agent instead of going on the row (it can't be in two places).
+      if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid, mob: m }); unmute(m); say(G, `${m.name} is beaten with its Baseline dice. It tucks under an agent, off the row.`, 'win'); continue; }
       unmute(m); G.row.push(m); say(G, `${m.name} is beaten and goes on the persistence row (back on 2–${m.top}).`, 'beat');
     }
     G.play = G.play.filter(m => left(m));
+    // The boss pulls the row (2026-11-02 review): when it is down to 6, 4 and 2 dice, roll the row; comebacks hit on
+    // arrival and join the fight. Printed on the boss card. Same as sim.js BOSSROW=steps.
+    const bo = G.play.find(m => m.boss);
+    if (bo) for (const t of BOSS_STEPS) { if (left(bo) > t || (bo.steps || []).includes(t)) continue; bo.steps = [...(bo.steps || []), t];
+      const back = rollRow(G, true, `${bo.name} down to ${t}`); back.forEach(b => enter(G, b)); G.stats.bossRow = (G.stats.bossRow || 0) + 1; if (G.over) return G; }
     const inc = incoming(G, G.blocks);
     inc.by.forEach(b => { if (b.cut && b.to.length) say(G, `Containment Agent: ${b.name} deals ${b.cut} less to ${b.to.length > 1 ? 'each of you' : nameOf(G.team[b.to[0]])}.`, 'kit'); });
     inc.hits.forEach(h => { G.stats.items.contain += h.cut; hurt(G, h.k, h.dmg, `${h.name} hits back`); });
+    // Twin on a Containment Agent: its share of the damage stopped (it cuts like a second card).
+    const allC = running(G, 'contain'), plainC = G.agents.flat().filter(c => c.t === 'contain').length;
+    if (allC > plainC) I.twin += Math.round(inc.hits.reduce((s, h) => s + h.cut, 0) * (allC - plainC) / allC);
     inc.exposed.forEach(k => hurt(G, k, 1, 'Exposed'));
     G.dice = []; G.undo = []; G.wildAll = false; G.blocks = G.team.map(() => false); G.stand = null;
     if (G.over) return G;
@@ -1220,7 +1241,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     say(G, `Fight ${G.fight} won in ${G.round} round${G.round === 1 ? '' : 's'}.`, 'win');
     G.cond.forEach((c, k) => { if (c.exposed) { c.exposed = false; say(G, `${nameOf(G.team[k])} discards Exposed.`, 'sit'); } });
     const rec = running(G, 'recover'); if (rec) G.stats.items.recover += spread(G, rec * D.recoverHeal, 'Recovery Agent'); // crew-wide since 2026-11-01
-    G.agents.forEach((a, k) => a.forEach(c => { const n = traitsOn(G, c.uid, 'mimic') * 2, h = Math.min(n, G.max - G.hp[k]); if (!n) return; G.hp[k] += h; G.stats.healed += h; say(G, `Repair: the ${KIT_NAME[c.t]} heals ${nameOf(G.team[k])} ${h}.`, 'heal'); }));
+    G.agents.forEach((a, k) => a.forEach(c => { const n = traitsOn(G, c.uid, 'mimic') * 2, h = Math.min(n, G.max - G.hp[k]); if (!n) return; G.hp[k] += h; G.stats.healed += h; G.stats.items.repair += h; say(G, `Repair: the ${KIT_NAME[c.t]} heals ${nameOf(G.team[k])} ${h}.`, 'heal'); }));
     draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + G.bonusDraw); G.bonusDraw = 0; // + Hold the room
     // With no agent held, a baselined alarm waits for the next agent dealt.
     if (G.tuck.length && !heldAgents(G).length) { G.tuck.forEach(a => { G.aug.push({ ...a, host: null }); say(G, `${a.name} is baselined. Nobody holds an agent: it waits for the next agent dealt.`, 'kit'); }); G.tuck = []; }
@@ -1465,7 +1486,8 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   // What the items did this shift (engine G.stats.items), one line per item that did something.
   const ITEM_DID = { triage: ['Triage Agents', 'dice taken or guarded'], contain: ['Containment Agents', 'damage stopped'], recover: ['Recovery Agents', 'HP healed'],
     enrich: ['Enrichment Agent', 'turned dice put to work'], surge: ['Surge Playbook', 'dice taken or guarded'], intel: ['Threat Intel Feed', 'wild takes'],
-    isolate: ['Isolation Script', 'threat dice removed'], coffee: ['Shift Coffee', 'HP healed'], freeze: ['Change Freeze', 'row rolls skipped'] };
+    isolate: ['Isolation Script', 'threat dice removed'], coffee: ['Shift Coffee', 'HP healed'], freeze: ['Change Freeze', 'row rolls skipped'],
+    twin: ['Twin', 'extra dice put to work and damage stopped'], ghost: ['Ghost', 'arrival damage stopped'], scramble: ['Scramble', 'comebacks kept on the row'], repair: ['Repair', 'HP healed'] };
   const itemsDid = G => Object.entries(G.stats.items || {}).filter(([, n]) => n > 0).map(([t, n]) => ({ t, n, name: ITEM_DID[t][0], what: ITEM_DID[t][1] }));
   // ---- Copy result -----------------------------------------------------------------------------------------------
   function resultLine() {
@@ -1600,7 +1622,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     else if (G.phase === 'sit' || (G.phase === 'flip' && G.sitDone)) body = vSit();
     else if (G.phase === 'flip') body = vFlipDesk();
     else if (G.phase === 'tuck') { const a = G.tuck[0], m = dataMob(a.id);
-      body = `<div class="t-tuckp"><div class="t-slot" data-card="mob:${a.id}">${A.mobCard(m)}<span class="t-stamp beat">Baselined</span></div><div class="sb"><h2 class="sech a">The agents learned it</h2><p class="status"><b>${esc(a.name)}</b> is baselined. Tuck it under an agent someone holds, below. That agent gains <b>${esc(A.traitName(a.id))}</b>: ${esc(A.BASE[a.id].replace(/^\w+: /, ''))} Pick the agent with care: discarding it loses the trait.</p><p class="meta">It still goes on the persistence row.</p></div></div>`; }
+      body = `<div class="t-tuckp"><div class="t-slot" data-card="mob:${a.id}">${A.mobCard(m)}<span class="t-stamp beat">Baselined</span></div><div class="sb"><h2 class="sech a">The agents learned it</h2><p class="status"><b>${esc(a.name)}</b> is baselined. Tuck it under an agent someone holds, below. That agent gains <b>${esc(A.traitName(a.id))}</b>: ${esc(A.BASE[a.id].replace(/^\w+: /, ''))} Pick the agent with care: discarding it loses the trait.</p><p class="meta">Tucked, it is off the persistence row. If that agent is discarded, it slides out and goes back on the row.</p></div></div>`; }
     else if (G.phase === 'deal') body = vDeal();
     return `<section class="table" aria-label="The fight">${head}${bans ? `<div class="bans">${bans}</div>` : ''}${body}${vAgents()}</section>`;
   }
@@ -1629,7 +1651,8 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   function vAgents() {
     const G = UI.G, tucking = G.phase === 'tuck', top = G.phase === 'deal' ? G.deal[0] : null, drawn = new Set(G.drawn.map(c => c.uid));
     // A baselined alarm tucked under this agent: its name and Baseline line, as the tucked card's edge shows at the table.
-    const tucked = c => G.aug.filter(a => a.host === c.uid).map(a => `<div class="t-tucked" data-tucked="${a.id}"><b>Baselined · ${esc(a.name)}</b><span>${A.BASE[a.id].replace(/^(\w+):/, '<b>$1:</b>')}</span></div>`).join('');
+    // A baselined alarm tucked under this agent: the real card, slid under it so only its tuck band shows, as at the table.
+    const tucked = c => G.aug.filter(a => a.host === c.uid).map(a => `<div class="t-tuckc" data-card="mob:${a.id}" data-tucked="${a.id}" aria-label="${esc(a.name)} tucked under it: ${esc(A.BASE[a.id])}">${A.mobCard(dataMob(a.id))}</div>`).join('');
     // With any Triage on the mat, every card keeps the die row's height so the buttons line up.
     const anyT = G.agents.some(a => a.some(c => c.t === 'triage'));
     const under = c => { if (c.t !== 'triage') return anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''; const ds = G.dice.filter(d => d.kuid === c.uid);
@@ -1671,7 +1694,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
       ['f', m.boss ? 'Boss' : 'Keyword', m.boss ? '+2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`],
       ['f', 'Round end', (!E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`)
         + (G.cond.some(c => c.exposed) ? ` Exposed: anyone hit takes 1 more (${G.team.filter((_, k) => G.cond[k].exposed).map(id => esc(nm(id))).join(', ')}).` : '')],
-      ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : `It goes back on the persistence row, every time, and comes back on a row roll of 2–${m.top}. Win the fight: draw ${G.n === 1 ? (D.kitSolo === 1 ? 'an item' : D.kitSolo + ' items') : D.kitPerFight + ' items'} and deal them.`],
+      ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : `${m.based ? 'Beaten with its Baseline dice, it tucks under an agent, off the row.' : `It goes back on the persistence row, every time, and comes back on a row roll of 2–${m.top}.`} Win the fight: draw ${G.n === 1 ? (D.kitSolo === 1 ? 'an item' : D.kitSolo + ' items') : D.kitPerFight + ' items'} and deal them.`],
       ['a', 'Next', m.boss ? 'No more situations: this is the last fight.' : !G.feed.length ? 'The feed is empty: the boss is next.' : `The feed: ${pl(G.feed.length, 'card')} face down, alarms and situations shuffled, then the boss.`]];
     return `<div class="rbrief"><h2 class="sech">Round ${G.round || 1}</h2><ul>${rows.map(([c, h, t]) => `<li><span class="phud ${c}">${h}</span><span>${t}</span></li>`).join('')}</ul></div>`;
   }

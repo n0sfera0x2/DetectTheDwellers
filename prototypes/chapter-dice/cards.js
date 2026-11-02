@@ -66,6 +66,8 @@
   // Since 2026-11-02 each line is a trait of the agent it tucks under (its agent), lost if that agent is discarded:
   // Twin and Repair change the agent itself, Ghost and Scramble guard the row. Same as sim.js TRAIT (hybrid).
   const BASE_N = 3;
+  // The boss pulls the row (2026-11-02 review): at round end, when it is down to each of these dice counts, roll the row.
+  const BOSS_STEPS = [6, 4, 2];
   const BASE = {
     imp: 'Twin: its agent counts as two of itself.',
     druid: 'Ghost: comebacks don’t hit on arrival.',
@@ -74,6 +76,8 @@
   };
   const traitName = id => BASE[id] ? BASE[id].split(':')[0] : '';
   const baseDie = id => 7 - numbersFor(id, 1)[0];
+  // The tuck band (2026-11-02 review): a fixed-height band on the bottom edge, in the agents' colour. Beaten with its
+  // Baseline dice, the card slides under an agent until only this band shows below it; several stack, band under band.
   const baseLine = m => BASE[m.id] ? `<div class="base"><span class="bh"><b>Baseline it</b>${Array(BASE_N).fill(pip(baseDie(m.id), 14)).join('')}</span><span class="bt">${BASE[m.id].replace(/^(\w+):/, '<b>$1:</b>')}</span></div>` : '';
   function mobCard(m) {
     return `<div class="card mob">${tab}${art(SCENE.mob(m.id))}${hd(m.domain, `back on 2–${rowTop(m.persist[1])}`)}${nmRow(m.name, m.dmg)}
@@ -82,7 +86,7 @@
   }
   function bossCard(b) {
     return `<div class="card boss">${tab}${art(SCENE.boss(b.id))}${hd('Boss', 'arrives at 05:59')}${nmRow(b.name, b.dmg)}
-  <div class="kw"><span><b>${b.abilityName}.</b> +2 Damage until it has lost two dice.</span></div>
+  <div class="kw"><span><b>${b.abilityName}.</b> +2 Damage until it has lost two dice. Down to ${BOSS_STEPS.join(', ').replace(/, (\d+)$/, ' and $1')} dice: roll the row.</span></div>
   ${strip(diceFor(b, true), 24)}</div>`;
   }
   const PERK = {
@@ -120,7 +124,7 @@
   <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards anyone.</div>
   <div class="note">Your doubles are on your analyst card. The solo crew die: only a ${pip(6, 14)}. <b>Two of yours on one number: a double.</b></div>
   <div class="note"><b>Once a round, reroll one of your own dice.</b></div>
-  <div class="note">4 players: add the alarm’s + die.</div>
+  <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
   <div class="note">Row: 2 amber dice; back if the sum is at most its number.</div></div>`;
 
   // The shift tracker (2026-11-01): the table's memory for every once-a-round, once-a-fight and waiting effect. Coins
@@ -128,21 +132,21 @@
   const box = t => `<span class="bx">${t}</span>`;
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
   <div class="note">Put a coin on a box when you use it. Clear a row when its round or fight ends.</div>
-  <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}</div>
+  <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Enrichment 2 (Twin)')}</div>
   <div class="trow"><b>This fight</b>${box('Responder stand')}${box('Hold the room: +1 item')}</div>
-  <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm hits all')}</div>
+  <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
   <div class="note"><b>Escalating:</b> a coin on it each round. <b>Regen:</b> line up taken dice; it puts back the last.</div></div>`;
   // Situations (2026-10-30; shuffled into the feed with the alarms since 2026-11-02, the boss underneath). Who's on point is
   // picked. The real game's situations (names, scenes and story lines from the data) with rules rewritten for the
   // dice. Each offers a choice, except the event. Same rules as sim.js situation(). [label, rule] per option.
   const SIT_IDS = ['insider', 'pager', 'usb', 'chatter', 'lateral', 'patch'];
   const SIT = {
-    insider: { kind: 'Stay or run', opts: [['Hold the room', 'On point takes Exposed. Win the next fight: draw an item.'], ['Fall back', 'The next alarm hits everyone once when it flips. Not the boss.']] },
-    pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP.'], ['Mute it', `The next alarm sets one more threat die: a ${pip(6, 13)}.`]] },
-    usb: { kind: 'Grab', opts: [['Grab it', 'On point rolls 3 dice. Any pair: draw 2 items and take Focused. No pair: take Rattled.'], ['Leave it', 'Nothing happens.']] },
+    insider: { kind: 'Stay or run', opts: [['Hold the room', 'On point takes Exposed. Win the next fight: draw an item.'], ['Fall back', 'Draw 2 items. The next alarm that flips goes straight on the row, unfought. Not the boss.']] },
+    pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP. Draw an item.'], ['Mute it', `The next alarm sets one more threat die: a ${pip(6, 13)}.`]] },
+    usb: { kind: 'Grab', opts: [['Grab it', 'On point rolls 3 dice. Any pair: draw 2 items and take Focused. No pair: take Rattled.'], ['Leave it', 'Draw an item.']] },
     chatter: { kind: 'Grab', opts: [['Dig in', `On point picks 1–4 dice and rolls them. Any ${pip(6, 13)}: draw 2 items. None: lose 1 HP per die.`], ['Let it go', 'Nothing happens.']] },
     lateral: { kind: 'Event', rule: 'Roll the row now. Anything that comes back hits on arrival and joins the next fight.' },
-    patch: { kind: 'Choice', opts: [['Take a breather', 'Everyone heals 2 HP.'], ['Raid the supply closet', 'Draw an item.']] },
+    patch: { kind: 'Choice', opts: [['Take a breather', 'Everyone heals 3 HP.'], ['Raid the supply closet', 'Draw an item. On point loses 1 HP.']] },
   };
   const sitData = id => D.situations.find(s => s.id === id);
   const sitCard = id => { const s = SIT[id], d = sitData(id);
@@ -184,8 +188,8 @@
 .dmg span{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.04em;text-transform:uppercase;color:${C.mut}}.dmg b{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px;line-height:20px;color:${C.ink};font-variant-numeric:tabular-nums}
 .kw{display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.3;background:#FCE6DC;border:1px solid ${C.fl};padding:3px 6px}.kw b{font-weight:700;text-transform:uppercase;font-size:11px;color:${C.ex}}.kw .kwi{flex:none;margin-top:1px}
 .fl{font-size:10px;line-height:1.35;color:${C.mut};border-top:1px solid ${C.rule};padding-top:4px}
-.card.mob .art{height:74px}.card.mob .dice{flex-direction:row;justify-content:center;gap:8px;padding:5px 8px 6px}.card.mob .plus span{max-width:54px;line-height:1.1;font-size:8.5px}
-.base{margin:-6.5px -7.5px 6.5px;padding:3px 8px 4px;background:#EAF6F8;border-top:1px dashed ${C.ink};font-size:9.5px;line-height:1.25;display:flex;flex-direction:column;gap:1px}.base .bh{display:flex;align-items:center;gap:2px}.base .bh b{font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:4px;color:${C.ink}}
+.card.mob .art{height:62px}.card.mob .dice{flex-direction:row;justify-content:center;gap:8px;padding:5px 8px 6px}.card.mob .plus span{max-width:54px;line-height:1.1;font-size:8.5px}
+.base{flex:none;box-sizing:border-box;height:44px;margin:-6.5px -7.5px 6.5px;padding:3px 8px 4px;background:#EAF6F8;border-top:1.5px dashed ${C.cy};font-size:9.5px;line-height:1.25;display:flex;flex-direction:column;gap:1px}.base .bt b{color:${C.cy};text-transform:uppercase;letter-spacing:.04em}.base .bh{display:flex;align-items:center;gap:2px}.base .bh b{font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:4px;color:${C.ink}}
 .dice{margin:auto -7.5px 6.5px;padding:6px 8px 7px;background:#fff;border-top:2px solid ${C.ink};display:flex;flex-direction:column;align-items:center;gap:4px;clip-path:polygon(0 0,100% 0,100% 100%,15px 100%,0 calc(100% - 15px))}
 .dice .set{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.boss .dice .set{max-width:150px}
 .dice .plus{display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:${C.mut}}.dice .plus b{font-size:14px;color:${C.ink}}
@@ -202,6 +206,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { BASE, BASE_N, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { BASE, BASE_N, BOSS_STEPS, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });

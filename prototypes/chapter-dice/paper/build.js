@@ -28,7 +28,7 @@ const rules = `<section class="page rules">
 <li>Set out the shift tracker: a coin on a box marks anything used once a round or once a fight.</li>
 </ol>
 <h2>Threat dice</h2>
-<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. Those dice are its hits. Each alarm’s numbers bunch round one main number, so a double on that number goes a long way. <b>4 players:</b> add the card’s <b>+</b> die (a 6). Solo to 3 players use the printed dice.</p>
+<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. Those dice are its hits. <b>4 players:</b> add the card’s <b>+</b> die (a 6). Solo to 3 players use the printed dice.</p>
 <p class="ex3"><span>Card</span>${[1, 2, 2, 3].map(n => P(n, 20)).join('')}<b>+</b>${P(6, 16)}<span>per player past 3</span></p>
 <p class="ex3"><span>1–3 players set</span>${[1, 2, 2, 3].map(n => P(n, 17)).join('')}<span>· 4 players</span>${[1, 2, 2, 3, 6].map(n => P(n, 17)).join('')}</p>
 <h2>A flip</h2>
@@ -36,14 +36,14 @@ const rules = `<section class="page rules">
 <li>Pick who’s on point. They stay on point through any situations until the next fight ends.</li>
 <li>Flip the top card of the feed. A <b>situation</b>: play it, then flip again.</li>
 <li>An <b>alarm</b>: set its dice. On point may <b>baseline it</b> (below). If anything is on the row, roll the row: every row alarm that comes back returns with its printed dice, and the two with the highest Damage hit everyone on the way in. Two or more in play: a <b>multi-alarm</b> fight.</li>
-<li>Fight. When the feed is empty, the boss arrives with one last row roll and no arrival hits.</li>
+<li>Fight. When the feed is empty, the boss arrives with one last row roll and no arrival hits. It pulls the row too: at round end, when it is down to <b>6, 4 and 2 dice</b>, roll the row (comebacks hit on arrival and join the fight).</li>
 </ol>
 <h2>The row</h2>
 <p>Roll the <b>2 amber dice</b> and add them. A row alarm comes back if the sum is <b>at most its number</b> (“back on 2–5” comes back on 5 or less). The first time an alarm comes back, put a coin on it. It stays.</p>
 </div>
 <div>
 <h2>Baseline it</h2>
-<p>A newly flipped alarm with a <b>Baseline</b> line (never a comeback) can be baselined: set the 3 dice on that line too. Beat it with them all and the agents have learned it: tuck it under an agent someone holds. That agent gains the alarm’s trait (<b>Twin</b>, <b>Ghost</b>, <b>Scramble</b> or <b>Repair</b>) and keeps it until the agent is discarded, so pick the agent with care. No agents: it waits for the next one drawn. The alarm still goes on the row.</p>
+<p>A newly flipped alarm with a <b>Baseline</b> line (never a comeback) can be baselined: set the 3 dice on that line too. Beat it with them all and the agents have learned it: slide it under an agent someone holds, so only its blue <b>tuck band</b> shows below. That agent gains the band’s trait (<b>Twin</b>, <b>Ghost</b>, <b>Scramble</b> or <b>Repair</b>), so pick the agent with care. Tucked, the alarm is <b>off the row</b>. Discard that agent and the alarm slides out and goes back on the row. No agents: set it aside until the next one is drawn.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>
@@ -54,7 +54,7 @@ const rules = `<section class="page rules">
 <h2>Doubles</h2>
 <p>Your analyst card shows your doubles. The solo crew die: <b>only a 6</b>. A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you or anyone you choose blocks this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
 <h2>After a fight</h2>
-<p>Beaten alarms go back on the row, <b>every time</b>: nothing removes them for good. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. Each player holds 2 (the Soarcerer 3; solo 4). Full? Discard one to take another. <b>Consumables</b> don’t take a slot: keep them in hand and use each once.</p>
+<p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. Each player holds 2 (the Soarcerer 3; solo 4). Full? Discard one to take another. <b>Consumables</b> don’t take a slot: keep them in hand and use each once.</p>
 <h2>Situations and conditions</h2>
 <p>Most situations make you choose: stay or run, grab it or leave it. On point rolls any grab with spare dice. Conditions are cards you keep in front of you. <b>Rattled</b> and <b>Exposed</b> wear off; <b>Focused</b> waits until you use it. Nobody holds two of the same.</p>
 <h2>Win or lose</h2>

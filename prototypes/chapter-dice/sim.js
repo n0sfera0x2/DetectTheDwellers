@@ -67,7 +67,7 @@ const REROLL = process.env.REROLL || 'all';
 // included. SIT=0 turns them off. SITPICK forces options to test whether a choice is real: SITPICK=insider:run,chatter:0.
 // Conditions: Rattled (no doubles next fight), Exposed (+1 damage each round anything hits you next fight), Focused
 // (once, turn one of your dice to any number).
-const SIT = process.env.SIT !== '0', FEED = process.env.FEED || 'mixed';
+const SIT = process.env.SIT !== '0', FEED = process.env.FEED || 'mixed', SITV = +(process.env.SITV || 2);
 const SITPICK = Object.fromEntries((process.env.SITPICK || '').split(',').filter(Boolean).map(x => x.split(':')));
 // PERKS=new (default, 2026-10-30): the Engineer turns one of their dice to its opposite face once a round; the Hunter's
 // 1s match any number on a mob that has come back. PERKS=old: doubles only. FOCUSGAIN: how much better a Focused
@@ -104,6 +104,15 @@ const aug = (G, id) => TRAITS ? (id === 'druid' && traitN(G, 'ghost') > 0) || (i
 // a fight; solo, one more reroll a round) instead of Ghost and Scramble. TRAITS=0: the 2026-11-01 crew-wide lines (aug).
 // LEVEL=1: every tucked alarm also adds one to its agent. TWINTO=contain: the bot tucks Twin under Containment first.
 const TRAITS = process.env.TRAITS !== '0';
+// TUCKOUT=1 (default, 2026-11-02 review): the baselined alarm card slides under its agent, so it leaves the row while
+// tucked (a discarded agent puts it back on the row; agents are never discarded by the bot). TUCKOUT=0: it also goes on the row.
+const TUCKOUT = TRAITS && process.env.TUCKOUT !== '0';
+// BOSSROW (2026-11-02 review): 'steps' rolls the row when the boss is down to 6, 4 and 2 dice (printed on its card);
+// 'round' rolls the row at the end of every round it lost a die; 'none' (the 2026-11-02 rules) only on arrival.
+const BOSSROW = process.env.BOSSROW || 'steps', BOSSSTEPS = (process.env.BOSSSTEPS || '6,4,2').split(',').map(Number);
+// SOLORES=1: solo, the alarm the Responder stands down also loses a die (never its last). Tested in the 2026-11-02
+// review: +1 pt for the solo Responder, so not adopted.
+const SOLORES = process.env.SOLORES === '1';
 const TRAIT = process.env.TRAITSET === 'agent' ? { imp: 'twin', druid: 'stealth', wyrmling: 'relay', mimic: 'repair' } : { imp: 'twin', druid: 'ghost', wyrmling: 'scramble', mimic: 'repair' };
 // Which agent the bot tucks each trait under, best first.
 const TUCK = { twin: process.env.TWINTO === 'contain' ? ['contain', 'triage', 'recover', 'enrich'] : ['triage', 'contain', 'recover', 'enrich'], stealth: ['triage', 'contain', 'recover', 'enrich'], relay: ['triage', 'contain', 'recover', 'enrich'], repair: ['recover', 'contain', 'triage', 'enrich'], ghost: ['enrich', 'recover', 'contain', 'triage'], scramble: ['enrich', 'recover', 'contain', 'triage'] };
@@ -403,16 +412,23 @@ function fight(G, mobs) {
       if (m.boss) { if (m.kw === 'apt' && !m.rose) { m.rose = true; m.left = 2; m.need = G.sys === 'd6' ? ['D', 'C'] : G.sys === 'n6' ? numbersFor(m.id, 2) : null; alive.push(m); continue; } G.over = true; G.win = true; return; }
       if (m.baselining) { m.baselining = false; G.stats.baselined = (G.stats.baselined || 0) + 1;
         if (TRAITS) { if (!tuckTrait(G, TRAIT[m.id])) G.pendT.push(TRAIT[m.id]); } else { const host = G.tray.filter(isAgent).pop(); G.aug.push({ id: m.id, host: host || null, pend: !host }); }
-        if (process.env.BASEROW === 'out') continue; }
+        if (process.env.BASEROW === 'out' || TUCKOUT) continue; } // TUCKOUT: tucked under its agent, so not on the row
       if (G.sys === 'n6' && PERSIST === 'always') { G.row.push(m); continue; }
       const gone = on(G, 'HUN') && m.back > 0; if (!gone && m.back < 1) G.row.push(m);
     }
     G.play = alive;
+    const bo = G.play.find(m => m.boss);
+    if (bo && BOSSROW !== 'none') { // the boss pulls the row: comebacks hit on arrival and join the fight
+      let n = 0; if (BOSSROW === 'round') n = bo.left < (bo.was ?? bo.hits) ? 1 : 0; else for (const t of BOSSSTEPS) if (bo.left <= t && !(bo.steps || []).includes(t)) { bo.steps = [...(bo.steps || []), t]; n++; }
+      bo.was = bo.left; for (let i = 0; i < n && !G.over; i++) { const back = rowRoll(G, true); back.forEach(b => enter(G, b)); G.stats.bossRow = (G.stats.bossRow || 0) + 1; G.stats.bossBack = (G.stats.bossBack || 0) + back.length; }
+      if (G.over) return;
+    }
     let inc = incoming(G, pick.blocks);
     if (RESPERK === 'stand' && on(G, 'RES') && !G.resUsed && G.play.length) { // stand down the mob that would hurt most, when it matters
       const saved = G.play, opts = saved.map(m => { G.play = saved.filter(x => x !== m); const o = incoming(G, pick.blocks); return [m, o]; }); G.play = saved;
       const best = opts.reduce((a, b) => b[1].reduce((x, y) => x + y, 0) < a[1].reduce((x, y) => x + y, 0) ? b : a), cut = inc.reduce((x, y) => x + y, 0) - best[1].reduce((x, y) => x + y, 0);
-      if (cut >= +(process.env.RESMIN || 6) || inc.some((x, k) => x >= G.hp[k])) { inc = best[1]; G.resUsed = true; G.stats.stand = (G.stats.stand || 0) + 1; }
+      if (cut >= +(process.env.RESMIN || 6) || inc.some((x, k) => x >= G.hp[k])) { inc = best[1]; G.resUsed = true; G.stats.stand = (G.stats.stand || 0) + 1;
+        if (SOLORES && G.n === 1 && best[0].left > 1) { best[0].left--; if (best[0].need) best[0].need.pop(); } }
     }
     inc.forEach((x, k) => hurt(G, k, x)); if (G.over) return;
     for (const m of G.play) { m.up++; if (m.kw === 'regen' && m.left < m.hits) { m.left++; if (m.need) m.need.push(G.sys === 'n6' ? slotsFor(m, G.n)[m.need.length] : symbolsFor(m.domain, m.hits)[m.need.length]); } }
@@ -451,18 +467,20 @@ const rollN = (G, n) => Array.from({ length: n }, () => 1 + d6(G));
 function situation(G, s) {
   if (!s) return;
   const p = G.point, f = SITPICK[s], lo = Math.min(...G.hp); let pick;
-  if (s === 'insider') { // Stay or run (2026-11-02): hold the room (on point is Exposed; win the next fight, draw an item) or fall back
-    // (the next alarm that flips hits everyone once on arrival; never the boss, so with no alarm left you hold the room).
+  if (s === 'insider') { // Stay or run: hold the room (on point is Exposed; win the next fight, draw an item) or fall back. SITV=2
+    // (default, 2026-11-02 review): the next alarm that flips goes straight on the row, unfought (never the boss). SITV=1:
+    // it hits everyone once on arrival, then is fought.
     const alarmLeft = G.feed.some(c => !c.sit);
     pick = !alarmLeft ? 'stay' : f || (G.hp[p] <= +(process.env.BADGEHP || 5) ? 'run' : 'stay');
-    if (pick === 'stay') { G.cond[p].exposed = true; G.bonusDraw = 1; } else G.badgeHit = true;
+    if (pick === 'stay') { G.cond[p].exposed = true; G.bonusDraw = 1; } else if (SITV === 2) { G.badgeSkip = true; draw(G, +(process.env.BADGEDRAW ?? 2)); } else G.badgeHit = true; // fall back also draws 2 items (BADGEDRAW)
   }
-  if (s === 'pager') { // Ride it out (everyone loses 2) or mute it (the next mob sets one more threat die, a 6).
-    pick = f || (lo <= 8 ? 'mute' : 'ride');
-    if (pick === 'ride') G.team.forEach((_, k) => hurt(G, k, 2)); else G.addSix++;
+  if (s === 'pager') { // Ride it out (everyone loses 2; SITV=2: and draw an item) or mute it (the next mob sets one more threat die, a 6).
+    pick = f || (lo <= +(process.env.PAGERHP || 8) ? 'mute' : 'ride');
+    if (pick === 'ride') { G.team.forEach((_, k) => hurt(G, k, 2)); if (SITV === 2 && !G.over) draw(G, 1); } else G.addSix++;
   }
   if (s === 'usb') { // A grab: on point rolls 3. Any pair: draw an agent and become Focused. No pair: Rattled.
-    pick = f || 'grab';
+    pick = f || (SITV === 2 && G.hp[p] <= +(process.env.USBHP || 0) ? 'leave' : 'grab');
+    if (pick === 'leave' && SITV === 2) { if ((process.env.USBLEAVE || 'item') === 'item') draw(G, 1); else G.hp[p] = Math.min(G.max, G.hp[p] + +(process.env.USBHEAL || 2)); } // SITV=2: leave it, on point heals 2 (default since the review: USBLEAVE=item, draw an item; USBLEAVE=heal: on point heals 2)
     if (pick === 'grab') { const r = rollN(G, 3); if (new Set(r).size < 3) { draw(G, +(process.env.USBDRAW || 2)); G.cond[p].focused = true; pick = 'grab won'; } else { G.cond[p].rattled = true; pick = 'grab lost'; } }
   }
   if (s === 'chatter') { // A grab: on point rolls 0–4 dice. Any 6: draw two agents. No 6: lose 1 HP per die rolled.
@@ -472,7 +490,7 @@ function situation(G, s) {
   if (s === 'lateral') { pick = 'event'; G.pending.push(...rollRow(G, true)); } // Roll for the row now; comebacks join the next fight.
   if (s === 'patch') { // Take a breather (everyone heals 2) or raid the supply closet (draw an agent).
     pick = f || (lo <= G.max - 4 ? 'heal' : 'agent');
-    if (pick === 'heal') G.hp = G.hp.map(h => Math.min(G.max, h + 2)); else draw(G, 1);
+    if (pick === 'heal') G.hp = G.hp.map(h => Math.min(G.max, h + (SITV === 2 ? +(process.env.PATCHHEAL || 3) : 2))); else { draw(G, 1); hurt(G, p, +(process.env.PATCHCOST ?? 1)); } // SITV=2: heal 3; PATCHCOST: the raid costs on point HP
   }
   const t = G.stats.sit[s] = G.stats.sit[s] || {}; t[pick] = (t[pick] || 0) + 1;
 }
@@ -493,7 +511,8 @@ function play(sys, team, opt) {
     let m = G.feed.pop();
     if (m && m.sit) { situation(G, m.sit); if (G.over) break; continue; } // a situation card from the mixed feed
     const boss = !m; if (boss) { m = G.boss; G.stats.boss = 1; }
-    if (!boss && G.badgeHit) { G.badgeHit = false; G.stats.ran++; G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m))); if (G.over) break; } // fell back
+    if (!boss && G.badgeHit) { G.badgeHit = false; G.stats.ran++; G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m))); if (G.over) break; } // fell back (SITV=1)
+    if (!boss && G.badgeSkip) { G.badgeSkip = false; G.stats.ran++; G.row.push(m); continue; } // fell back: on the row, unfought
     relay(G);
     if (BASE && m && !boss && !m.back && BASES.includes(m.id) && (BASEPICK === 'always' || BASEPICK === 'bot' && Math.min(...G.hp) >= G.max * +(process.env.BASEHP || 0.8))) {
       const v = 7 - numbersFor(m.id, 1)[0], nb = BASEDICE + (process.env.BASEPLUS !== '1' ? 0 : Math.max(0, G.n - XFROM)); m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }

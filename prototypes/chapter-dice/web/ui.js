@@ -176,7 +176,8 @@
   // What the items did this shift (engine G.stats.items), one line per item that did something.
   const ITEM_DID = { triage: ['Triage Agents', 'dice taken or guarded'], contain: ['Containment Agents', 'damage stopped'], recover: ['Recovery Agents', 'HP healed'],
     enrich: ['Enrichment Agent', 'turned dice put to work'], surge: ['Surge Playbook', 'dice taken or guarded'], intel: ['Threat Intel Feed', 'wild takes'],
-    isolate: ['Isolation Script', 'threat dice removed'], coffee: ['Shift Coffee', 'HP healed'], freeze: ['Change Freeze', 'row rolls skipped'] };
+    isolate: ['Isolation Script', 'threat dice removed'], coffee: ['Shift Coffee', 'HP healed'], freeze: ['Change Freeze', 'row rolls skipped'],
+    twin: ['Twin', 'extra dice put to work and damage stopped'], ghost: ['Ghost', 'arrival damage stopped'], scramble: ['Scramble', 'comebacks kept on the row'], repair: ['Repair', 'HP healed'] };
   const itemsDid = G => Object.entries(G.stats.items || {}).filter(([, n]) => n > 0).map(([t, n]) => ({ t, n, name: ITEM_DID[t][0], what: ITEM_DID[t][1] }));
   // ---- Copy result -----------------------------------------------------------------------------------------------
   function resultLine() {
@@ -311,7 +312,7 @@
     else if (G.phase === 'sit' || (G.phase === 'flip' && G.sitDone)) body = vSit();
     else if (G.phase === 'flip') body = vFlipDesk();
     else if (G.phase === 'tuck') { const a = G.tuck[0], m = dataMob(a.id);
-      body = `<div class="t-tuckp"><div class="t-slot" data-card="mob:${a.id}">${A.mobCard(m)}<span class="t-stamp beat">Baselined</span></div><div class="sb"><h2 class="sech a">The agents learned it</h2><p class="status"><b>${esc(a.name)}</b> is baselined. Tuck it under an agent someone holds, below. That agent gains <b>${esc(A.traitName(a.id))}</b>: ${esc(A.BASE[a.id].replace(/^\w+: /, ''))} Pick the agent with care: discarding it loses the trait.</p><p class="meta">It still goes on the persistence row.</p></div></div>`; }
+      body = `<div class="t-tuckp"><div class="t-slot" data-card="mob:${a.id}">${A.mobCard(m)}<span class="t-stamp beat">Baselined</span></div><div class="sb"><h2 class="sech a">The agents learned it</h2><p class="status"><b>${esc(a.name)}</b> is baselined. Tuck it under an agent someone holds, below. That agent gains <b>${esc(A.traitName(a.id))}</b>: ${esc(A.BASE[a.id].replace(/^\w+: /, ''))} Pick the agent with care: discarding it loses the trait.</p><p class="meta">Tucked, it is off the persistence row. If that agent is discarded, it slides out and goes back on the row.</p></div></div>`; }
     else if (G.phase === 'deal') body = vDeal();
     return `<section class="table" aria-label="The fight">${head}${bans ? `<div class="bans">${bans}</div>` : ''}${body}${vAgents()}</section>`;
   }
@@ -340,7 +341,8 @@
   function vAgents() {
     const G = UI.G, tucking = G.phase === 'tuck', top = G.phase === 'deal' ? G.deal[0] : null, drawn = new Set(G.drawn.map(c => c.uid));
     // A baselined alarm tucked under this agent: its name and Baseline line, as the tucked card's edge shows at the table.
-    const tucked = c => G.aug.filter(a => a.host === c.uid).map(a => `<div class="t-tucked" data-tucked="${a.id}"><b>Baselined · ${esc(a.name)}</b><span>${A.BASE[a.id].replace(/^(\w+):/, '<b>$1:</b>')}</span></div>`).join('');
+    // A baselined alarm tucked under this agent: the real card, slid under it so only its tuck band shows, as at the table.
+    const tucked = c => G.aug.filter(a => a.host === c.uid).map(a => `<div class="t-tuckc" data-card="mob:${a.id}" data-tucked="${a.id}" aria-label="${esc(a.name)} tucked under it: ${esc(A.BASE[a.id])}">${A.mobCard(dataMob(a.id))}</div>`).join('');
     // With any Triage on the mat, every card keeps the die row's height so the buttons line up.
     const anyT = G.agents.some(a => a.some(c => c.t === 'triage'));
     const under = c => { if (c.t !== 'triage') return anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''; const ds = G.dice.filter(d => d.kuid === c.uid);
@@ -382,7 +384,7 @@
       ['f', m.boss ? 'Boss' : 'Keyword', m.boss ? '+2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`],
       ['f', 'Round end', (!E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`)
         + (G.cond.some(c => c.exposed) ? ` Exposed: anyone hit takes 1 more (${G.team.filter((_, k) => G.cond[k].exposed).map(id => esc(nm(id))).join(', ')}).` : '')],
-      ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : `It goes back on the persistence row, every time, and comes back on a row roll of 2–${m.top}. Win the fight: draw ${G.n === 1 ? (D.kitSolo === 1 ? 'an item' : D.kitSolo + ' items') : D.kitPerFight + ' items'} and deal them.`],
+      ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : `${m.based ? 'Beaten with its Baseline dice, it tucks under an agent, off the row.' : `It goes back on the persistence row, every time, and comes back on a row roll of 2–${m.top}.`} Win the fight: draw ${G.n === 1 ? (D.kitSolo === 1 ? 'an item' : D.kitSolo + ' items') : D.kitPerFight + ' items'} and deal them.`],
       ['a', 'Next', m.boss ? 'No more situations: this is the last fight.' : !G.feed.length ? 'The feed is empty: the boss is next.' : `The feed: ${pl(G.feed.length, 'card')} face down, alarms and situations shuffled, then the boss.`]];
     return `<div class="rbrief"><h2 class="sech">Round ${G.round || 1}</h2><ul>${rows.map(([c, h, t]) => `<li><span class="phud ${c}">${h}</span><span>${t}</span></li>`).join('')}</ul></div>`;
   }

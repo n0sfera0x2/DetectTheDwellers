@@ -9,13 +9,13 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const qs = new URLSearchParams(location.search || '');
   const UI = { G: null, sel: null, more: null, guarding: null, dealTo: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false,
-    setup: { team: ['HUN', 'RES'] }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
+    setup: { team: ['HUN', 'RES'], mode: 'quick' }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
   const nm = id => A.cls(id).name;
   const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
   const mmss = ms => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   const dataMob = id => D.mobs.find(m => m.id === id);
-  const cardFor = m => m.boss ? A.bossCard(A.boss()) : A.mobCard(dataMob(m.id));
-  const cardKey = m => m.boss ? 'boss' : 'mob:' + m.id;
+  const cardFor = m => m.boss ? A.bossCard(A.boss(m.id)) : A.mobCard(dataMob(m.id));
+  const cardKey = m => m.boss ? 'boss:' + m.id : 'mob:' + m.id;
   const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } };
 
   // ---- Art helpers (as ui/ui.js): scenes fill their frame; analyst thumbnails crop to the analyst and their screen ----
@@ -29,13 +29,14 @@
   const ICON = { check: ic('<path d="M3 8.5l3.2 3L13 4.5"/>'), shield: ic('<path d="M8 1.8l5 2v4c0 3.2-2.2 5.3-5 6.4-2.8-1.1-5-3.2-5-6.4v-4z"/>') };
   const SPK = on => ic(`<path d="M2 6h3l4-3v10l-4-3H2z"/>${on ? '<path d="M11.5 5.5a3.5 3.5 0 010 5"/><path d="M13.5 3.5a6.5 6.5 0 010 9"/>' : '<path d="M11 6l4 4M15 6l-4 4"/>'}`);
 
-  // ---- The shift clock (as ui/ui.js): 22:00 to 06:00 by flip index, never real time. Six mobs, the boss at 05:59 ----
-  const FLIPS = A.MOB_IDS.length, BOSS_TIME = '05:59';
+  // ---- The shift clock (as ui/ui.js): 22:00 to 06:00 by feed card, never real time. The boss at 05:59 ----
+  // The feed is dealt at random (2026-11-02), so the clock and the bar count feed cards, not fights.
+  const BOSS_TIME = '05:59', flipped = G => G.feedTotal - G.feed.length;
   function clockAt(i, n) {
     const m = 22 * 60 + Math.floor((Math.max(1, i) - 1) * 480 / Math.max(1, n) / 5) * 5;
     return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
   }
-  const clockNow = () => UI.G.bossOut ? BOSS_TIME : clockAt(UI.G.fight, FLIPS);
+  const clockNow = () => UI.G.bossOut ? BOSS_TIME : clockAt(flipped(UI.G), UI.G.feedTotal);
 
   // ---- Sound (as ui/ui.js): synthesised Web Audio stings, no files. Nothing starts before a gesture; no-op in jsdom ----
   const SND_LS = 'dwellers-chapter-sound-v1';
@@ -146,7 +147,7 @@
   // ---- Actions ------------------------------------------------------------------------------------------------
   function startGame() {
     const team = UI.setup.team.slice();
-    UI.G = E.newGame({ team, seed: UI.seed }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.dealTo = null; UI.msg = ''; UI.copied = null; UI.reveal = false; UI.guarding = null;
+    UI.G = E.newGame({ team, seed: UI.seed, mode: UI.setup.mode }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.dealTo = null; UI.msg = ''; UI.copied = null; UI.reveal = false; UI.guarding = null;
     render(); focusKey(UI.G.phase === 'deal' ? 'give0' : 'flip'); say(`Shift started at 22:00. Survive until 06:00. ${UI.G.phase === 'deal' ? `Deal the ${UI.G.deal.length} items, then pick who is on point and flip.` : team.length > 1 ? 'Pick who is on point, then flip.' : 'Flip the first alarm.'}`);
   }
   // After a die is used, select the next unused die that can still do something.
@@ -196,6 +197,7 @@
   // ---- Views --------------------------------------------------------------------------------------------------------
   const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button>`;
   const dbls = id => A.DOUBLES[id].map(n => A.pip(n, 18)).join('');
+  const MODE_SUB = { quick: '6 cards from the deck, then the boss. About 15 minutes.', full: '14 cards, 3 of them story cards, then the boss. The boss pulls the row. About 35 minutes.' };
   function vSetup() {
     const team = UI.setup.team, n = team.length;
     const picks = A.ANALYST_IDS.map(id => { const on = team.includes(id);
@@ -204,21 +206,23 @@
         <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
     return `<div class="wrap"><div class="intro-grid">
       <section class="hero"><span class="art">${slice(ART.hero)}</span><p class="meta c">Chapter dice · d6 prototype</p><h1 class="logo">Detect the Dwellers</h1>
-        <p class="lede">The night shift with standard d6s instead of d20 sums. Each alarm card prints the dice to set under it. Roll, and a die takes out one under an alarm showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards anyone. Two of your own dice showing the same number pair up as a double. Situations are shuffled into the feed with the alarms: flip one and on point chooses. The shift starts at 22:00; take the boss at 05:59 and make it to 06:00.</p>
-        <p class="t-note"><b>Tuned for 1–4 players.</b> Everyone starts at ${E.HP} HP. A crew of 4 adds each card’s + die; solo to 3 players set the printed dice. Win a fight and draw items: agents work for the whole crew, consumables are used once.</p>
-        <p class="meta">Same cards as the paper prototype. <button class="lnk" type="button" data-a="cards" data-k="cards">See all ${A.mobs().length + 3 + A.ANALYST_IDS.length + A.AGENT_IDS.length + A.CONS_IDS.length + A.SIT_IDS.length + A.COND_IDS.length} cards</button></p></section>
+        <p class="lede">The night shift with standard d6s instead of d20 sums. Each alarm card prints the dice to set under it. Roll, and a die takes out one under an alarm showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards anyone. Two of your own dice showing the same number pair up as a double. Every shift deals a different feed from one deck of alarms and situations, and one of three bosses waits underneath. The shift starts at 22:00; take the boss at 05:59 and make it to 06:00.</p>
+        <p class="t-note"><b>Tuned for 1–4 players.</b> A crew of 4 adds each card’s + die; solo to 3 players set the printed dice. Win a fight and draw items: agents work for the whole crew, consumables are used once.</p>
+        <p class="meta">Same cards as the paper prototype. <button class="lnk" type="button" data-a="cards" data-k="cards">See all ${A.mobs().length + A.BOSS_IDS.length + 2 + A.ANALYST_IDS.length + A.AGENT_IDS.length + A.CONS_IDS.length + A.SIT_IDS.length + A.COND_IDS.length} cards</button></p></section>
       <section class="setup panel" aria-labelledby="crew-h"><h2 class="sech" id="crew-h">Crew · ${n} of 4</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>
         <p class="meta">One analyst per player, up to 4. Tap to add or drop.</p>
-        <div class="startbar"><p class="meta">${n === 1 ? 'Solo' : `${n} players`} · ${E.HP} HP each · Survive until 06:00</p>
+        <h2 class="sech" id="mode-h">Shift</h2><div class="modes" role="group" aria-labelledby="mode-h">${Object.entries(E.MODES).map(([k, M]) => `<button type="button" class="shiftm${UI.setup.mode === k ? ' on' : ''}" data-a="mode" data-m="${k}" data-k="mode${k}" aria-pressed="${UI.setup.mode === k}"><b>${M.label}</b><span class="meta">${MODE_SUB[k]}</span></button>`).join('')}</div>
+        <div class="startbar"><p class="meta">${n === 1 ? 'Solo' : `${n} players`} · ${E.MODES[UI.setup.mode].label} · ${E.MODES[UI.setup.mode].hp} HP each · Survive until 06:00</p>
           <button class="btn p w big" type="button" data-a="start" data-k="start">Clock in</button></div></section>
     </div></div>`;
   }
   function vTop() {
     const G = UI.G, fighting = G.phase === 'assign' || G.phase === 'roll', inc = fighting ? E.incoming(G) : null;
     const between = G.phase === 'flip' || G.phase === 'deal' || G.phase === 'sit' || G.phase === 'tuck';
-    const label = G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · ${E.alarmsLeft(G) ? `before fight ${G.fight + 1}` : 'before the boss'}` : between ? (E.alarmsLeft(G) ? `Next: fight ${G.fight + 1} of ${FLIPS}` : 'Next: the boss') : `Fight ${G.fight} of ${FLIPS} · round ${G.round || 1}`;
-    const now = G.bossOut ? FLIPS : between ? -1 : G.fight - 1, next = G.phase === 'flip' || G.phase === 'sit' || G.phase === 'deal' ? G.fight : -1;
-    const bar = [...Array(FLIPS)].map((_, i) => `<i class="${i < G.fight - (now === i ? 1 : 0) && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === FLIPS ? ' next' : ''}"></i>`;
+    const F = flipped(G), T = G.feedTotal;
+    const label = G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · card ${F} of ${T}` : between ? (G.feed.length ? `Next: card ${F + 1} of ${T}` : 'Next: the boss') : `Fight ${G.fight} · card ${F} of ${T} · round ${G.round || 1}`;
+    const now = G.bossOut ? T : between && G.phase !== 'sit' ? -1 : F - 1, next = !G.bossOut && (G.phase === 'flip' || G.phase === 'deal') ? F : -1;
+    const bar = [...Array(T)].map((_, i) => `<i class="${i < F && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === T ? ' next' : ''}"></i>`;
     const crew = G.team.map((id, k) => {
       const hp = G.hp[k], n = inc ? inc.total[k] : 0, after = Math.max(0, hp - n);
       const incl = inc ? (G.blocks[k] && !n ? `<span class="inc safe">${ICON.shield}<b>Blocking</b></span>` : n ? `<span class="inc">Incoming <b class="num">−${n}</b>${n >= hp ? ' · lethal' : ''}</span>` : '<span class="inc safe">Nothing incoming</span>') : `<span class="inc">${k === G.point ? '<b class="pt">On point</b>' : 'Off point'}</span>`;
@@ -247,7 +251,7 @@
   }
   function vBossBanner() {
     const G = UI.G; if (!G.bossOut || G.round > 1) return '';
-    return `<div class="pbanner boss"><time class="clk f">05:59</time><p><span class="lead f">${esc(G.boss.name)} arrives.</span> The feed is empty: this is the last fight. It hits for +2 until it has lost two dice.</p></div>`;
+    return `<div class="pbanner boss"><time class="clk f">05:59</time><p><span class="lead f">${esc(G.boss.name)} arrives.</span> The feed is empty: this is the last fight. ${esc(A.BOSS_TEXT[G.boss.id][0])}${E.MODES[G.mode].bossRow ? ` Full Shift: ${esc(A.BOSS_TEXT[G.boss.id][1])}` : ''}</p></div>`;
   }
   // Read-aloud: on the flip, whoever is on point reads the new mob's flavour out, one line at a time (CSS only).
   const lines = t => String(t).split(/(?<=[.!?…])\s+/).filter(Boolean);
@@ -303,7 +307,7 @@
   }
   function vTable() {
     const G = UI.G;
-    const head = G.phase === 'flip' || G.phase === 'deal' || G.phase === 'sit' || G.phase === 'tuck' ? '' : `<div class="fhead"><span class="sech f">${G.bossOut ? 'Boss fight' : `Fight ${G.fight} of ${FLIPS}`}${G.play.filter(m => E.left(m)).length > 1 ? ' · multi-alarm' : ''} · round ${G.round || 1} · ${esc(nm(G.team[G.point]))} on point</span><span class="sech a">Row · ${G.row.length}</span></div>`;
+    const head = G.phase === 'flip' || G.phase === 'deal' || G.phase === 'sit' || G.phase === 'tuck' ? '' : `<div class="fhead"><span class="sech f">${G.bossOut ? 'Boss fight' : `Fight ${G.fight}`}${G.play.filter(m => E.left(m)).length > 1 ? ' · multi-alarm' : ''} · round ${G.round || 1} · ${esc(nm(G.team[G.point]))} on point</span><span class="sech a">Row · ${G.row.length}</span></div>`;
     const bans = vBossBanner() + vRowRoll() + vAloud();
     let body = '';
     // A lone mob: the card, and beside it the banners and the round in plain words (as the real game's solo table).
@@ -318,13 +322,14 @@
   }
   // A situation on the mat where the mob would be: its card, one button per option under it, then the outcome (the
   // dice rolled, won or lost) and the next flip.
+  const OK_LABEL = { lateral: 'Roll the row', travel: 'Roll 2 dice', ciso: 'Roll 2 dice', pentest: 'Everyone rolls', vendor: 'Take the hit', coffee: 'Drink up', honey: 'Heal up', budget: 'Draw 2 items', intel: 'Drop it', change: 'Brace', ioc: 'Reopen it' };
   function vSit() {
     const G = UI.G, S = G.sit, sd = A.SIT[S.id], opts = E.SIT_OPTS[S.id], who = esc(nm(G.team[G.point]));
     let n = 0; const key = () => `<kbd>${++n}</kbd>`;
     const btn = (o, label, i, off) => `<button class="btn${i === 0 ? ' p' : ''}" type="button" data-a="sit" data-o="${o}" data-k="sit${o}"${off ? ' disabled' : ''}>${label} ${key()}</button>`;
     let acts;
     if (!S.done) {
-      const lbl = i => sd.opts ? sd.opts[i][0] : 'Roll the row';
+      const lbl = i => sd.opts ? sd.opts[i][0] : OK_LABEL[S.id] || 'Carry on';
       acts = S.id === 'chatter' ? `<div class="sit-dig" role="group" aria-label="Dig in: how many dice"><span class="phud">${esc(lbl(0))} · dice</span>${[1, 2, 3, 4].map(k => `<button class="btn${k === 1 ? ' p' : ''}" type="button" data-a="sit" data-o="dig" data-n="${k}" data-k="sitdig${k}" aria-label="Dig in with ${k} ${k === 1 ? 'die' : 'dice'}">${A.pip(k, 22)}${key()}</button>`).join('')}</div>${btn('leave', esc(lbl(1)), 1)}`
         : opts.map((o, i) => { const off = o === 'run' && !S.alarms;
           return `<span class="sit-o">${btn(o, esc(lbl(i)), i, off)}${off ? '<span class="why">No alarm left in the feed: you can’t fall back.</span>' : ''}</span>`; }).join('');
@@ -420,7 +425,7 @@
       hint = `<b>Pick who’s on point</b>, then ${G.feed.length ? 'flip the top card: an alarm or a situation' : 'bring on the boss'}.`;
       ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the top card' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
     } else if (G.phase === 'sit') {
-      hint = `<b>${esc(A.SIT[G.sit.id].kind)}.</b> ${esc(nm(G.team[G.point]))} is on point: ${A.SIT[G.sit.id].opts ? 'choose on the mat (keys 1–' + (G.sit.id === 'chatter' ? 5 : 2) + ').' : 'roll the row (key 1).'}`;
+      hint = `<b>${esc(A.SIT[G.sit.id].kind)}.</b> ${esc(nm(G.team[G.point]))} is on point: ${A.SIT[G.sit.id].opts ? 'choose on the mat (keys 1–' + (G.sit.id === 'chatter' ? 5 : 2) + ').' : 'resolve it (key 1).'}`;
     } else if (G.phase === 'roll') {
       const usable = G.hand.some(h => h.some(c => E.canUse(G, c.t)));
       hint = G.round >= 1 ? '<b>New round.</b> Roll the row first, then everyone rolls.' : '<b>Fight!</b> Roll the dice.';
@@ -474,15 +479,15 @@
   }
   function vGallery() {
     if (!UI.cards) return '';
-    const all = [...A.mobs().map(m => ['mob:' + m.id, A.mobCard(m)]), ['boss', A.bossCard(A.boss())], ['legend', A.legend], ['tracker', A.tracker], ...A.ANALYST_IDS.map(id => ['analyst:' + id, A.analystCard(id)]), ...[...A.AGENT_IDS, ...A.CONS_IDS].map(t => ['agent:' + t, A.agentCard(t)]), ...A.SIT_IDS.map(id => ['sit:' + id, A.sitCard(id)]), ...A.COND_IDS.map(id => ['cond:' + id, A.condCard(id)])];
+    const all = [...A.mobs().map(m => ['mob:' + m.id, A.mobCard(m)]), ...A.BOSS_IDS.map(id => ['boss:' + id, A.bossCard(A.boss(id))]), ['legend', A.legend], ['tracker', A.tracker], ...A.ANALYST_IDS.map(id => ['analyst:' + id, A.analystCard(id)]), ...[...A.AGENT_IDS, ...A.CONS_IDS].map(t => ['agent:' + t, A.agentCard(t)]), ...A.SIT_IDS.map(id => ['sit:' + id, A.sitCard(id)]), ...A.COND_IDS.map(id => ['cond:' + id, A.condCard(id)])];
     return `<div class="t-gallery" role="dialog" aria-label="All cards"><div class="in"><div class="lh"><h2 class="sech">Every card in the prototype · the same markup as the paper PDF</h2><button class="btn s" data-a="cards" data-k="cardsx">Close <kbd>Esc</kbd></button></div>
       <div class="grid">${all.map(([k, h]) => `<div class="t-gslot" data-card="${k}">${h}</div>`).join('')}</div></div></div>`;
   }
   // The boss reveal (as ui/ui.js): the boss card scans in over the table, with the one thing worth knowing.
   function vReveal() {
     const G = UI.G; if (!UI.reveal || G.over) return '';
-    return `<div class="reveal" role="dialog" aria-modal="true" aria-labelledby="rv-h"><div class="rv"><div class="rv-card" data-card="boss">${A.bossCard(A.boss())}</div>
-      <div class="rv-b"><time class="clk f">05:59</time><h2 class="logo" id="rv-h">The boss is here</h2><p class="lede">${esc(G.boss.name)} arrives with one last row roll and no arrival hits. Agent dice can’t hit it; it hits for +2 until it has lost two dice. Spend your doubles.</p>
+    return `<div class="reveal" role="dialog" aria-modal="true" aria-labelledby="rv-h"><div class="rv"><div class="rv-card" data-card="boss:${G.boss.id}">${A.bossCard(A.boss(G.boss.id))}</div>
+      <div class="rv-b"><time class="clk f">05:59</time><h2 class="logo" id="rv-h">The boss is here</h2><p class="lede">${esc(G.boss.name)} arrives with one last row roll and no arrival hits. ${esc(A.BOSS_TEXT[G.boss.id][0])}${E.MODES[G.mode].bossRow ? ` Full Shift: ${esc(A.BOSS_TEXT[G.boss.id][1])}` : ''} Spend your doubles.</p>
       <button class="btn p big" type="button" data-a="unreveal" data-k="unreveal">Face it</button></div></div></div>`;
   }
   // Who dropped the crew: the last mob whose hit took someone to 0, from the log.
@@ -493,7 +498,7 @@
   function vEnd() {
     const G = UI.G; if (!G.over) return '';
     const ms = (UI.end || Date.now()) - UI.start, who = killer(), km = who && [...D.mobs].find(m => m.name === who);
-    const artSvg = G.win ? ART.win : km ? ART[km.id] : (who === G.boss.name ? A.SCENE.boss(G.boss.id) : ART.hero);
+    const artSvg = G.win ? (ART['win_' + G.boss.id] || ART.win) : km ? ART[km.id] : (who === G.boss.name ? A.SCENE.boss(G.boss.id) : ART.hero);
     const down = G.hp.findIndex(h => h <= 0);
     const roster = G.team.map((id, k) => `<li class="${!G.win && k === down ? 'down' : ''}"><span class="art">${crop(ART[id], SQUARE(id))}</span><span><span class="nm">${esc(nm(id))}</span><br><span class="num">${G.hp[k]}/${G.max}</span> <span class="meta">HP</span></span></li>`).join('');
     return `<div class="t-end" role="dialog" aria-label="Shift over"><div class="end">
@@ -524,7 +529,7 @@
   // ---- Card peek: hover a small card (tap it on a phone) to read it full size ----------------------------------
   // The peek holds the same shared card markup as print and the gallery. It lives outside #app so renders keep it.
   const peek = document.createElement('div'); peek.className = 't-peek'; peek.setAttribute('aria-hidden', 'true'); document.body.appendChild(peek);
-  const cardByKey = k => k === 'boss' ? A.bossCard(A.boss()) : k === 'legend' ? A.legend : k === 'tracker' ? A.tracker : k.startsWith('mob:') ? A.mobCard(dataMob(k.slice(4)))
+  const cardByKey = k => k.startsWith('boss:') ? A.bossCard(A.boss(k.slice(5))) : k === 'legend' ? A.legend : k === 'tracker' ? A.tracker : k.startsWith('mob:') ? A.mobCard(dataMob(k.slice(4)))
     : k.startsWith('analyst:') ? A.analystCard(k.slice(8)) : k.startsWith('agent:') ? A.agentCard(k.slice(6)) : k.startsWith('sit:') ? A.sitCard(k.slice(4)) : k.startsWith('cond:') ? A.condCard(k.slice(5)) : '';
   let peekKey = null, lastPtr = 'mouse';
   function showPeek(slot) {
@@ -551,6 +556,7 @@
     const a = b.dataset.a;
     if (a === 'pick') { const s = UI.setup.team, id = b.dataset.id, j = s.indexOf(id); if (j >= 0) { if (s.length > 1) s.splice(j, 1); } else if (s.length < 4) s.push(id); return render(); }
     if (a === 'start') return startGame();
+    if (a === 'mode') { UI.setup.mode = b.dataset.m; return render(); }
     if (a === 'snd') { Sound.toggle(); return render(); }
     if (a === 'cards') { UI.cards = !UI.cards; return render(); }
     if (a === 'log') { UI.drawer = UI.drawer === 'log' ? null : 'log'; return render(); }

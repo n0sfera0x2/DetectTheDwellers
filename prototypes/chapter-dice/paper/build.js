@@ -1,49 +1,48 @@
-// Paper prototype for the chapter dice test: one printable PDF with the rules sheet and 38 cut-out cards (6 alarms,
-// the boss, 4 analysts, 16 items, a dice reference, the shift tracker, 6 situations, 3 conditions). The dice are standard pip d6s with exact numbers: no stickers.
+// Paper prototype for the chapter dice test: one printable PDF with the rules sheet and 61 cut-out cards (15 alarms,
+// 3 bosses, 4 analysts, 16 items, a dice reference, the shift tracker, 18 situations, 3 conditions). The dice are standard pip d6s with exact numbers: no stickers.
 // Numbers come from the sim's tuned run (see ../README.md) and the game's data, so paper and sim agree.
 // Usage: node prototypes/chapter-dice/paper/build.js  →  prototypes/chapter-dice/paper/chapter-dice-paper.{html,pdf}
 const fs = require('fs'), path = require('path');
 const D = require('../../../data/cards.json');
 const { fonts } = require('../../../deck/render');
 const { launch, fontsReady } = require('../../../deck/browser');
-const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, tracker, mobs: cardMobs, boss, ANALYST_IDS, AGENT_IDS, ITEM_DECK, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
+const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, tracker, mobs: cardMobs, boss, BOSS_IDS, ANALYST_IDS, AGENT_IDS, ITEM_DECK, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
 
-const OUT = __dirname, HP = 10; // starting HP (2026-11-02): situations shuffled into the feed, agent traits; ~53% solo, 60% at 2p, 59% at 4p in the sim
+const OUT = __dirname, HP = 10; // Full Shift starting HP (Quick: 9), 2026-11-02 full pool; the numbers are in the README
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
 const rules = `<section class="page rules">
 <h1>Detect the Dwellers · Chapter dice test</h1>
-<p class="lede">Match exact numbers on standard d6s, beat six alarms, then take down the boss. Tuned for <b>2 players</b>; 1–4 play the same rules.</p>
+<p class="lede">Match exact numbers on standard d6s. A fresh feed every shift, then the boss. 1–4 players.</p>
 <div class="cols">
 <div>
 <h2>You need</h2>
-<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, to mark alarms that came back, and for the shift tracker.</p>
+<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
 <h2>Setup</h2>
 <ol>
-<li>Each player picks an analyst. Start at <b>${HP} HP</b>.</li>
-<li>Shuffle the 6 alarms and the 6 situations together face down: that’s the <b>feed</b>. The Lockjaw Syndicate goes underneath.</li>
-<li>Set the 3 conditions aside.</li>
-<li>Shuffle the 16 items: that’s the item deck. The crew draws 2.</li>
+<li>Pick the shift. <b>Quick:</b> everyone starts at <b>9 HP</b>. <b>Full:</b> <b>10 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
+<li>The <b>situation deck</b> is the 15 alarms and 18 situations. Set the 9 <b>story</b> situations aside and shuffle the rest. <b>Quick:</b> deal 6. <b>Full:</b> deal 11, add 3 story cards, shuffle the 14. That’s the <b>feed</b>.</li>
+<li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
+<li>Shuffle the 16 items: the item deck. The crew draws 2 (Quick solo: 1).</li>
 <li>Set out the shift tracker: a coin on a box marks anything used once a round or once a fight.</li>
 </ol>
 <h2>Threat dice</h2>
-<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. Those dice are its hits. <b>4 players:</b> add the card’s <b>+</b> die (a 6). Solo to 3 players use the printed dice.</p>
+<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. <b>4 players:</b> add the card’s <b>+</b> die (a 6).</p>
 <p class="ex3"><span>Card</span>${[1, 2, 2, 3].map(n => P(n, 20)).join('')}<b>+</b>${P(6, 16)}<span>per player past 3</span></p>
-<p class="ex3"><span>1–3 players set</span>${[1, 2, 2, 3].map(n => P(n, 17)).join('')}<span>· 4 players</span>${[1, 2, 2, 3, 6].map(n => P(n, 17)).join('')}</p>
 <h2>A flip</h2>
 <ol>
 <li>Pick who’s on point. They stay on point through any situations until the next fight ends.</li>
 <li>Flip the top card of the feed. A <b>situation</b>: play it, then flip again.</li>
 <li>An <b>alarm</b>: set its dice. On point may <b>baseline it</b> (below). If anything is on the row, roll the row: every row alarm that comes back returns with its printed dice, and the two with the highest Damage hit everyone on the way in. Two or more in play: a <b>multi-alarm</b> fight.</li>
-<li>Fight. When the feed is empty, the boss arrives with one last row roll and no arrival hits. It pulls the row too: at round end, when it is down to <b>6, 4 and 2 dice</b>, roll the row (comebacks hit on arrival and join the fight).</li>
+<li>Fight. When the feed is empty, turn the boss up: it arrives with one last row roll and no arrival hits. <b>Full Shift:</b> its card says when it pulls the row (comebacks hit on arrival and join the fight).</li>
 </ol>
 <h2>The row</h2>
 <p>Roll the <b>2 amber dice</b> and add them. A row alarm comes back if the sum is <b>at most its number</b> (“back on 2–5” comes back on 5 or less). The first time an alarm comes back, put a coin on it. It stays.</p>
 </div>
 <div>
 <h2>Baseline it</h2>
-<p>A newly flipped alarm with a <b>Baseline</b> line (never a comeback) can be baselined: set the 3 dice on that line too. Beat it with them all and the agents have learned it: slide it under an agent someone holds, so only its blue <b>tuck band</b> shows below. That agent gains the band’s trait (<b>Twin</b>, <b>Ghost</b>, <b>Scramble</b> or <b>Repair</b>), so pick the agent with care. Tucked, the alarm is <b>off the row</b>. Discard that agent and the alarm slides out and goes back on the row. No agents: set it aside until the next one is drawn.</p>
+<p>A newly flipped alarm with a <b>Baseline</b> line (never a comeback) can be baselined: set the 3 dice on that line too. Beat it with them all and the agents have learned it: slide it under an agent someone holds, so only its blue <b>tuck band</b> shows below. That agent gains the band’s trait (<b>Twin</b>, <b>Ghost</b>, <b>Scramble</b> or <b>Repair</b>), so pick the agent with care. Tucked, the alarm is <b>off the row</b>. Discard that agent and the alarm goes back on the row. No agents: set it aside until one is drawn.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>
@@ -65,7 +64,7 @@ const rules = `<section class="page rules">
 </section>`;
 
 // ---- Cards (2.5 × 3.5 in, nine to a page): the markup lives in ../cards.js, shared with the web prototype ----
-const cards = [...cardMobs().map(mobCard), bossCard(boss()), legend, tracker, ...ANALYST_IDS.map(analystCard), ...ITEM_DECK.map(agentCard), ...SIT_IDS.map(sitCard), ...COND_IDS.map(condCard)];
+const cards = [...cardMobs().map(mobCard), ...BOSS_IDS.map(id => bossCard(boss(id))), legend, tracker, ...ANALYST_IDS.map(analystCard), ...ITEM_DECK.map(agentCard), ...SIT_IDS.map(sitCard), ...COND_IDS.map(condCard)];
 const pages = []; for (let i = 0; i < cards.length; i += 9) pages.push(`<section class="page cards"><div class="grid">${cards.slice(i, i + 9).join('')}</div></section>`);
 
 const css = `${fonts()}

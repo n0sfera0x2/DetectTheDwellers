@@ -16,12 +16,14 @@ function dealAll(G) {
 // The feed mixes alarms and situations (2026-11-02). Most rule tests want alarms only: newG drops the situation cards
 // (the feed tests and the scripted game use the real feed).
 const alarmsOnly = G => { G.feed = G.feed.filter(c => !c.sit); return G; };
+// Rule tests: every alarm in the feed (no situations) and the Lockjaw Syndicate, unless a test says otherwise.
+const game = opt => E.newGame({ alarmsOnly: true, boss: 'wyrm', hp: E.HP, ...opt });
 const sitCard = id => ({ sit: id, uid: 's-' + id });
 // A new game with its starting items dealt (2 players start in the deal phase).
-const newG = opt => dealAll(alarmsOnly(E.newGame(opt)));
+const newG = opt => dealAll(game(opt));
 // A game in a fight round: chosen mobs in play, no items held, chosen dice.
-function fight(team, ids, { seed = 1, dice = [], point = 0 } = {}) {
-  const G = E.newGame({ team, seed });
+function fight(team, ids, { seed = 1, dice = [], point = 0, boss, mode } = {}) {
+  const G = game({ team, seed, boss, mode });
   G.kit.unshift(...G.deal, ...G.agents.flat(), ...G.hand.flat()); G.deal = []; G.agents = team.map(() => []); G.hand = team.map(() => []);
   G.point = point; G.fight = 1; G.round = 1; G.phase = 'assign';
   G.play = ids.map(id => { if (id === 'boss') return G.boss; const m = G.feed.find(x => x.id === id); G.feed = G.feed.filter(x => x !== m); return m; });
@@ -52,27 +54,29 @@ const otherSlot = (m, n, p) => m.slots.findIndex((v, i) => v === n && !m.off[i] 
 
 test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (the boss too); HP 10; the crew draws 2 items, solo 2', () => {
   for (const m of CARDS.mobs()) {
-    const d = CARDS.diceFor(m); assert.deepEqual([d.base, d.extra], PRINTED[m.id], m.id);
+    const d = CARDS.diceFor(m); if (PRINTED[m.id]) assert.deepEqual([d.base, d.extra], PRINTED[m.id], m.id);
     assert.deepEqual(d.base, SIM.numbersFor(m.id, m.hits - 2).slice().sort((a, b) => a - b));
   }
   const b = CARDS.boss(), bd = CARDS.diceFor(b, true);
   assert.equal(bd.base.length, b.hitsBase + D.bossAdd[2] - 2); assert.deepEqual([bd.base, bd.extra], PRINTED.wyrm);
   // Clustered: the main number repeats, e.g. 1 2 2 2 3 for five dice.
   assert.deepEqual(SIM.numbersFor('mailer', 5).sort(), [1, 2, 2, 2, 3]); assert.deepEqual(SIM.numbersFor('imp', 5).sort(), [1, 1, 1, 2, 2]);
+  assert.equal(CARDS.mobs().length, 15); assert.deepEqual(CARDS.BOSS_IDS, ['wyrm', 'apt', 'ai']);
   const G = E.newGame({ team: ['HUN', 'RES'], seed: 3 });
-  assert.equal(G.hp[0], 10); assert.equal(E.HP, 10);
+  assert.equal(G.hp[0], E.MODES.quick.hp); assert.equal(E.newGame({ team: ['HUN', 'RES'], seed: 3, mode: 'full' }).hp[0], E.MODES.full.hp);
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, 2); assert.equal(G.kit.length, CARDS.ITEM_DECK.length - 2);
   // Solo starts with 2 items (since 2026-11-01) and deals itself: 4 free slots and a hand.
-  const S = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
+  const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
   assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 2); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
-  assert.equal(E.startItems(1), 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), 2);
+  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 1, 'Quick Shift solo starts with 1');
+  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 1); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), 2);
   for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 2, team.length + 'p draws 2');
   assert.equal(CARDS.ITEM_DECK.length, 16);
 });
 test('scaling: a 6 per player past three; solo to 3 players play the printed dice', () => {
-  const spray = n => E.newGame({ team: ['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), seed: 3 }).feed.find(m => m.id === 'spray').slots;
+  const spray = n => game({ team: ['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), seed: 3 }).feed.find(m => m.id === 'spray').slots;
   assert.deepEqual(spray(1), [4]); assert.deepEqual(spray(2), [4]); assert.deepEqual(spray(3), [4]); assert.deepEqual(spray(4), [4, 6]);
-  const boss = n => E.newGame({ team: ['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), seed: 3 }).boss;
+  const boss = n => game({ team: ['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), seed: 3 }).boss;
   assert.equal(boss(1).hits, 8); assert.equal(boss(3).hits, 8); assert.equal(boss(4).hits, 9); assert.deepEqual(boss(4).slots.slice(8), [6]);
   assert.equal(SIM.XFROM, CARDS.PAST);
   // The sim sets the same dice (in its own order) for every crew size.
@@ -177,7 +181,7 @@ test('the row on 2d6: tiers from the d20 ranges; a mob comes back if the sum is 
   for (const [N, k] of [[13, 5], [12, 5], [11, 4], [10, 4], [9, 3], [8, 3], [7, 2], [5, 2]]) { assert.equal(CARDS.rowTop(N), k); assert.equal(SIM.rowTop(N), k); }
   const G = newG({ team: ['ENG', 'SOA'], seed: 2 });
   const tops = Object.fromEntries(G.feed.map(m => [m.id, m.top]));
-  assert.deepEqual(tops, { mailer: 5, spray: 5, druid: 4, imp: 3, mimic: 3, wyrmling: 3 });
+  for (const [id, t] of Object.entries({ mailer: 5, spray: 5, druid: 4, imp: 3, mimic: 3, wyrmling: 3 })) assert.equal(tops[id], t, id);
   const take = id => { const m = G.feed.find(x => x.id === id); G.feed = G.feed.filter(x => x !== m); return m; };
   const imp = take('imp'), spray = take('spray'), druid = take('druid'); // back on 2–3, 2–5, 2–4
   G.row = [imp, spray, druid];
@@ -414,12 +418,15 @@ function atSit(team, id, { seed = 1, point = 0, dice = [] } = {}) {
 }
 const kits = G => G.deal.length; // items drawn and waiting to be dealt
 
-test('the feed: 6 alarms and 6 situations shuffled together, the boss underneath; a situation keeps on point through the next fight', () => {
-  const F = E.newGame({ team: ['HUN', 'RES'], seed: 6 });
-  assert.equal(F.feed.length, 12); assert.deepEqual(F.feed.filter(c => c.sit).map(c => c.sit).sort(), CARDS.SIT_IDS.slice().sort());
-  assert.equal(E.alarmsLeft(F), 6); assert.ok(!F.feed.includes(F.boss));
+test('the feed: one deck of 15 alarms and 18 situations; Quick deals 6 core cards, Full deals 3 story + 11 core; one of three bosses', () => {
+  assert.equal(CARDS.SIT_IDS.length, 18); assert.equal(CARDS.SIT_CORE.length, 9); assert.equal(CARDS.SIT_STORY.length, 9);
+  const games = mode => [...Array(60)].map((_, s) => E.newGame({ team: ['HUN', 'RES'], seed: s, mode }));
+  for (const F of games('quick')) { assert.equal(F.feed.length, 6); assert.ok(F.feed.every(c => !c.sit || CARDS.SIT_CORE.includes(c.sit)), 'no story cards'); assert.equal(F.alarmsTotal, F.feed.filter(c => !c.sit).length); }
+  for (const F of games('full')) { assert.equal(F.feed.length, 14); assert.equal(F.feed.filter(c => CARDS.SIT_STORY.includes(c.sit)).length, 3); }
+  const qs = games('quick'), n = qs.map(F => F.alarmsTotal); assert.ok(Math.min(...n) < Math.max(...n), 'the number of fights varies');
+  assert.deepEqual([...new Set(qs.map(F => F.boss.id))].sort(), ['ai', 'apt', 'wyrm'], 'every boss turns up'); assert.ok(qs.every(F => !F.feed.includes(F.boss)));
   // Shuffled: across seeds, the first card is sometimes a situation and sometimes an alarm.
-  const firsts = new Set([...Array(30)].map((_, s) => !!E.newGame({ team: ['HUN', 'RES'], seed: s }).feed[0].sit)); assert.equal(firsts.size, 2);
+  assert.equal(new Set(qs.map(F => !!F.feed[0].sit)).size, 2);
   // A situation first, then another, then an alarm: the fight count only counts alarms.
   const G = newG({ team: ['HUN', 'RES'], seed: 6 }); G.feed.unshift(sitCard('pager'), sitCard('patch'));
   E.setPoint(G, 1); E.flip(G); assert.equal(G.phase, 'sit'); assert.equal(G.fight, 0, 'no alarm flipped yet'); assert.equal(G.sit.id, 'pager');
@@ -497,12 +504,72 @@ test('Patch Tuesday: take a breather (everyone +3, capped) or raid the supply cl
   assert.equal(A2.phase, 'flip'); assert.ok(A2.sitDone); E.flip(A2); assert.equal(A2.fight, 2);
 });
 test('the boss pulls the row: down to 6, 4 and 2 dice, roll the row at round end; comebacks hit on arrival and join the fight', () => {
-  assert.deepEqual(CARDS.BOSS_STEPS, [6, 4, 2]); assert.match(CARDS.bossCard(CARDS.boss()), /Down to 6, 4 and 2 dice: roll the row/);
-  const G = fight(['HUN', 'RES'], ['boss'], {}), b = G.boss, imp = G.feed.find(m => m.id === 'imp'); G.feed = G.feed.filter(m => m !== imp);
+  assert.deepEqual(CARDS.BOSS_STEPS, [6, 4, 2]); assert.match(CARDS.bossCard(CARDS.boss()), /Full Shift:<\/b> Down to 6, 4 and 2 dice: roll the row/);
+  // Quick Shift: no row trigger.
+  const Q = fight(['HUN', 'RES'], ['boss'], {}), qb = Q.boss; Q.row = [{ ...Q.feed[0], uid: 'q1', top: 12 }]; Q.bossOut = true; qb.off = qb.off.map((_, i) => i < qb.hits - 6); E.endRound(Q); assert.equal(Q.rows.length, 0);
+  const G = fight(['HUN', 'RES'], ['boss'], { mode: 'full' }), b = G.boss, imp = G.feed.find(m => m.id === 'imp'); G.feed = G.feed.filter(m => m !== imp);
   imp.top = 12; G.row = [imp]; G.bossOut = true;
   b.off = b.off.map((_, i) => i < b.hits - 6); E.endRound(G); // down to 6 this round
   assert.ok(G.play.includes(imp), 'the comeback joins the boss fight'); assert.equal(G.lastRow.why, `${b.name} down to 6`); assert.deepEqual(b.steps, [6]);
   const rows = G.rows.length; G.phase = 'assign'; G.dice = []; E.endRound(G); assert.equal(G.rows.length, rows, 'once per mark');
+});
+test('the full pool: the twelve new situations, each as its card says', () => {
+  const T = (id, opt = {}) => atSit(['ENG', 'SOA'], id, opt);
+  // Impossible Travel: 7+ draws an item; under 7, on point loses 2.
+  let G = T('travel', { dice: [3, 4] }), n0 = kits(G); E.resolveSit(G, 'ok'); assert.equal(G.sit.won, true); assert.equal(kits(G), n0 + 1);
+  G = T('travel', { point: 1, dice: [1, 2] }); E.resolveSit(G, 'ok'); assert.deepEqual(G.hp, [E.HP, E.HP - 2]);
+  // CISO Wants a Briefing: under 6, on point loses 3.
+  G = T('ciso', { dice: [2, 3] }); E.resolveSit(G, 'ok'); assert.deepEqual(G.hp, [E.HP - 3, E.HP]); G = T('ciso', { dice: [3, 3] }); E.resolveSit(G, 'ok'); assert.deepEqual(G.hp, [E.HP, E.HP]);
+  // Pentest Day: everyone rolls; a 1 or 2 loses 2.
+  G = T('pentest', { dice: [2, 5] }); E.resolveSit(G, 'ok'); assert.deepEqual(G.hp, [E.HP - 2, E.HP]);
+  // Coffee Run heals 3, Honeytoken Tripped 2; Budget Approved draws 2.
+  G = T('coffee'); G.hp = [2, 9]; E.resolveSit(G, 'ok'); assert.deepEqual(G.hp, [5, E.HP]);
+  G = T('honey'); G.hp = [2, 2]; E.resolveSit(G, 'ok'); assert.deepEqual(G.hp, [4, 4]);
+  G = T('budget'); n0 = kits(G); E.resolveSit(G, 'ok'); assert.equal(kits(G), n0 + 2);
+  // Marketing Blast: everyone loses 1, or on point loses 3 and draws an item.
+  G = T('blast'); E.resolveSit(G, 'all'); assert.deepEqual(G.hp, [E.HP - 1, E.HP - 1]);
+  G = T('blast', { point: 1 }); n0 = kits(G); E.resolveSit(G, 'point'); assert.deepEqual(G.hp, [E.HP, E.HP - 3]); assert.equal(kits(G), n0 + 1);
+  // Threat Intel Drop: the highest-Damage row alarm leaves the game.
+  G = T('intel'); const lo = G.feed.find(m => m.id === 'mailer'), hi = G.feed.find(m => m.id === 'mimic'); G.feed = G.feed.filter(m => m !== lo && m !== hi); G.row = [lo, hi];
+  E.resolveSit(G, 'ok'); assert.deepEqual(G.row, [lo]); assert.ok(G.gone.includes(hi));
+  // The CEO's Inbox: everyone loses 2, or the next alarm gets +2 Damage for that fight only.
+  G = T('ceo'); E.resolveSit(G, 'quarantine'); assert.deepEqual(G.hp, [E.HP - 2, E.HP - 2]);
+  G = T('ceo'); E.resolveSit(G, 'letride'); G.row = []; const c = G.feed[0], dm = c.dmg; E.flip(G); assert.equal(E.dmgOf(G, c), dm + 2 + (c.kw === 'ramp' ? c.up : 0));
+  G.phase = 'assign'; G.dice = []; c.off = c.off.map(() => true); E.endRound(G); assert.equal(c.plus, 0, 'gone once beaten');
+  // Ghost in the Change Window: the next alarm sets a copy of its first die.
+  G = T('change'); E.resolveSit(G, 'ok'); G.row = []; const g = G.feed[0], first = g.slots[0], h0 = g.hits; E.flip(G); assert.equal(g.hits, h0 + 1); assert.equal(g.slots[g.slots.length - 1], first);
+  // Old Case, New IOC: the row alarm with the highest comeback number comes back now, no arrival hit, next fight.
+  G = T('ioc'); const a = G.feed.find(m => m.id === 'mailer'), b = G.feed.find(m => m.id === 'imp'); G.feed = G.feed.filter(m => m !== a && m !== b); G.row = [b, a]; const hp = G.hp.slice();
+  E.resolveSit(G, 'ok'); assert.deepEqual(G.pending, [a]); assert.deepEqual(G.row, [b]); assert.deepEqual(G.hp, hp); assert.equal(a.back, 1);
+  // Vendor Breach Notice: everyone loses 2, then the row rolls and comebacks join the next fight.
+  G = T('vendor'); const v = G.feed.find(m => m.id === 'mailer'); G.feed = G.feed.filter(m => m !== v); v.top = 12; G.row = [v];
+  E.resolveSit(G, 'ok'); assert.ok(G.pending.includes(v)); assert.equal(G.lastRow.why, 'Vendor Breach Notice'); assert.ok(G.hp.every(x => x <= E.HP - 2));
+});
+test('the bosses: the Persistent Operator comes back once with 2 dice; the Rogue AI switches agents and traits off; Full Shift row triggers', () => {
+  // Quick Shift: the Operator comes back with 2 dice, no row roll.
+  const Q = fight(['HUN', 'RES'], ['boss'], { boss: 'apt' }), qb = Q.boss; Q.bossOut = true; Q.row = [{ ...Q.feed[0], uid: 'r9', top: 12 }]; qb.off = qb.off.map(() => true); E.endRound(Q);
+  assert.equal(Q.over, false); assert.equal(E.left(qb), 2); assert.deepEqual(qb.slots, CARDS.numbersFor('apt', 2)); assert.equal(Q.rows.length, 0);
+  Q.phase = 'assign'; Q.dice = []; qb.off = qb.off.map(() => true); E.endRound(Q); assert.ok(Q.over && Q.win, 'the second time it stays down');
+  // Full Shift: coming back rolls the row.
+  const F = fight(['HUN', 'RES'], ['boss'], { boss: 'apt', mode: 'full' }), fb = F.boss; F.bossOut = true; const r = F.feed.find(m => m.id === 'mailer'); F.feed = F.feed.filter(m => m !== r); r.top = 12; F.row = [r];
+  fb.off = fb.off.map(() => true); E.endRound(F); assert.ok(F.play.includes(r), 'the comeback joins the fight'); assert.match(F.lastRow.why, /comes back/);
+  // The Rogue AI: no Triage dice, no Containment, no traits while it is in play.
+  const A = fight(['HUN', 'RES'], ['boss'], { boss: 'ai' }); setAgents(A, 0, ['triage', 'contain']); A.aug = [{ id: 'bat', name: 'b', host: 'a0-0' }];
+  assert.equal(E.running(A, 'contain'), 0); assert.equal(E.traitCount(A, 'Scramble'), 0); A.phase = 'roll'; A.round = 0; E.roll(A); assert.equal(A.dice.filter(d => d.src === 'triage').length, 0);
+  // Full Shift: each consumable used rolls the row (not Change Freeze).
+  const U = fight(['HUN', 'RES'], ['boss'], { boss: 'ai', mode: 'full' }); const u = U.feed.find(m => m.id === 'mailer'); U.feed = U.feed.filter(m => m !== u); u.top = 12; U.row = [u];
+  setHand(U, 0, ['coffee']); U.hp = [5, 5]; E.use(U, 'coffee'); assert.ok(U.play.includes(u)); assert.equal(U.lastRow.why, 'the Rogue AI');
+  // Every boss card prints its core ability and its Full Shift trigger.
+  for (const id of CARDS.BOSS_IDS) { const h = CARDS.bossCard(CARDS.boss(id)); assert.match(h, /Full Shift:/); assert.ok(h.includes(CARDS.BOSS_TEXT[id][0].replace(/’/g, '’'))); }
+});
+test('Stalker hits only the lowest HP; Fileless: Containment cuts the highest-Damage alarm that isn’t Fileless; stacked traits add up', () => {
+  const G = fight(['HUN', 'RES'], ['banshee'], {}); G.hp = [8, 5]; assert.deepEqual(E.incoming(G).total, [0, 1]);
+  const W = fight(['HUN', 'RES'], ['wraith', 'spray'], {}); setAgents(W, 0, ['contain']); const inc = E.incoming(W);
+  assert.equal(inc.by.find(b => b.name === mob(W, 'wraith').name).cut, 0, 'Fileless: no cut'); assert.equal(inc.total[0], 3 + 1, 'the Sprayer is already at 1');
+  // Two Scrambles: +2 to the row roll. Two Twins on one Triage Agent: it rolls three dice.
+  const R = fight(['HUN', 'RES'], ['spray'], {}); setAgents(R, 0, ['recover', 'triage']); R.aug = [{ id: 'wyrmling', name: 'w', host: 'a0-0' }, { id: 'bat', name: 'b', host: 'a0-1' }];
+  R.row = [{ ...mob(R, 'spray'), uid: 'r5', top: 1, off: [], hits: 0 }]; E.rollRow(R, false, 'test'); assert.equal(R.lastRow.plus, 2);
+  R.aug.push({ id: 'imp', name: 'i', host: 'a0-1' }, { id: 'wraith', name: 'x', host: 'a0-1' }); R.phase = 'roll'; R.round = 0; R.row = []; E.roll(R); assert.equal(R.dice.filter(d => d.kuid === 'a0-1').length, 3);
 });
 test('Rattled: that player’s next roll has no doubles, then it’s gone', () => {
   const G = newG({ team: ['HUN', 'RES'], seed: 2 }); E.flip(G); G.cond[0].rattled = true; G.agents = [[], []];
@@ -592,8 +659,9 @@ test('Evasive: a double of its number takes two; a double of another number take
 function flipBaselinable(team) {
   for (let seed = 1; ; seed++) { const G = newG({ team, seed }); E.flip(G); const m = G.play.find(x => x.uid === G.flipped); if (CARDS.BASE[m.id]) return { G, m, seed }; }
 }
-test('baseline it: only the four heavier alarms; the Mailer Daemon and Password Sprayer have no Baseline line', () => {
-  assert.deepEqual(Object.keys(CARDS.BASE).sort(), ['druid', 'imp', 'mimic', 'wyrmling']); assert.equal(CARDS.BASE_N, 3);
+test('baseline it: eight alarms carry a tuck band, two per trait; the Mailer Daemon and Password Sprayer have none', () => {
+  assert.deepEqual(Object.keys(CARDS.BASE).sort(), ['bat', 'druid', 'imp', 'leech', 'mimic', 'specter', 'wraith', 'wyrmling']); assert.equal(CARDS.BASE_N, 3);
+  const per = {}; Object.keys(CARDS.BASE).forEach(id => { const t = CARDS.traitName(id); per[t] = (per[t] || 0) + 1; }); assert.deepEqual(per, { Twin: 2, Ghost: 2, Scramble: 2, Repair: 2 });
   for (const id of ['mailer', 'spray']) assert.doesNotMatch(CARDS.mobCard(D.mobs.find(x => x.id === id)), /Baseline it/);
   for (let seed = 1; seed < 40; seed++) { const G = newG({ team: ['HUN', 'RES'], seed }); E.flip(G); const m = G.play.find(x => x.uid === G.flipped); if (!CARDS.BASE[m.id]) { assert.ok(!E.canBaseline(G, m), m.id); return; } }
   assert.fail('no seed flipped a Mailer Daemon or Password Sprayer first');
@@ -615,7 +683,7 @@ test('baseline it: three more dice before the first roll, on a fresh flip only; 
   // Not on a comeback, not after the first roll, not the boss.
   const H = newG({ team: ['HUN', 'RES'], seed }); E.flip(H); const c = H.play.find(x => x.uid === H.flipped); c.back = 1; assert.ok(!E.canBaseline(H, c));
   c.back = 0; E.roll(H); throwsRule(() => E.baseline(H, c.uid), /before the first roll/);
-  assert.equal(Object.keys(CARDS.BASE).length, 4); assert.ok(CARDS.mobs().every(x => CARDS.mobCard(x).includes('Baseline it') === !!CARDS.BASE[x.id]));
+  assert.equal(Object.keys(CARDS.BASE).length, 8); assert.ok(CARDS.mobs().every(x => CARDS.mobCard(x).includes('Baseline it') === !!CARDS.BASE[x.id]));
 });
 test('baselined with no agent held: it waits, and tucks under the next agent dealt', () => {
   const G = fight(['HUN', 'RES'], ['mailer'], {}); const m = mob(G, 'mailer'); m.based = 0; m.off = m.off.map(() => true);
@@ -746,7 +814,7 @@ const load = seed => {
 };
 // Card parity: the card element on the page, minus live-state classes, equals the shared card function's output.
 function cardParity(w, slot) {
-  const k = slot.dataset.card, want = k === 'boss' ? CARDS.bossCard(CARDS.boss()) : k === 'legend' ? CARDS.legend : k === 'tracker' ? CARDS.tracker
+  const k = slot.dataset.card, want = k.startsWith('boss:') ? CARDS.bossCard(CARDS.boss(k.slice(5))) : k === 'legend' ? CARDS.legend : k === 'tracker' ? CARDS.tracker
     : k.startsWith('mob:') ? CARDS.mobCard(D.mobs.find(m => m.id === k.slice(4))) : k.startsWith('analyst:') ? CARDS.analystCard(k.slice(8))
     : k.startsWith('sit:') ? CARDS.sitCard(k.slice(4)) : k.startsWith('cond:') ? CARDS.condCard(k.slice(5)) : CARDS.agentCard(k.slice(6));
   const got = slot.querySelector('.card').cloneNode(true);
@@ -766,7 +834,7 @@ function pageDeal(w) {
 }
 
 test('page: every card in the gallery matches the shared paper card markup', { skip: !JSDOM && 'jsdom not installed' }, () => {
-  const w = load(5), d = w.document, n = 6 + 1 + 1 + 1 + 4 + 4 + 5 + 6 + 3; // + the shift tracker
+  const w = load(5), d = w.document, n = 15 + 3 + 1 + 1 + 4 + 4 + 5 + 18 + 3; // alarms, bosses, dice reference, shift tracker, analysts, agents, consumables, situations, conditions
   assert.match(d.body.textContent, new RegExp(`See all ${n} cards`));
   assert.equal(d.querySelectorAll('[data-a="pick"]').length, 4, 'the setup lists 4 analysts'); assert.doesNotMatch(d.body.textContent, /Fixer/);
   d.querySelector('[data-a="cards"]').click();

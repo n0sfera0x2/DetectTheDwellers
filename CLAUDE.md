@@ -6,14 +6,14 @@ Guidance for Claude Code working in this repo.
 
 Detect the Dwellers: a co-op dice-and-card game (1–4 players) set on a cyberpunk SOC night shift.
 
-**The game is the d6 chapter dice system** (since 2026-10-31), in `prototypes/chapter-dice/`. Its README opens with the current rules, card set, sim numbers and open items; read that first. Design reviews, sims and balance work target it (`SYS=n6 HP=10 node prototypes/chapter-dice/sim.js`), not the d20 build. It is still prototype code: under `.claude/rules/prototype-code.md` it gets rewritten to production standards before it replaces the d20 build, and it must not edit files outside `prototypes/` unless the user asks.
+**The game is the d6 chapter dice system** (since 2026-10-31), in `prototypes/chapter-dice/`. Its README opens with the current rules, card set, sim numbers and open items; read that first. Design reviews, sims and balance work target it (`SYS=n6 HP=9 node prototypes/chapter-dice/sim.js` for Quick Shift, `MODE=full SYS=n6 HP=10` for Full), not the d20 build. It is still prototype code: under `.claude/rules/prototype-code.md` it gets rewritten to production standards before it replaces the d20 build, and it must not edit files outside `prototypes/` unless the user asks.
 
 | Path | What it is |
 | --- | --- |
 | `prototypes/chapter-dice/sim.js` | The bot and balance sim. `SYS=n6` is the d6 game; knobs in the README. |
 | `prototypes/chapter-dice/cards.js` | The card markup and per-card rules text, shared by paper and web (card parity). |
 | `prototypes/chapter-dice/web/` | The playable page: `engine.js` (DOM-free, seeded), `ui.js`, `ui.css`, `build.js`, `spec.js` (`node --test`). |
-| `prototypes/chapter-dice/paper/build.js` | The rules sheet and 38 cut-out cards as a PDF. |
+| `prototypes/chapter-dice/paper/build.js` | The rules sheet and 61 cut-out cards as a PDF. |
 
 A d6 rule change touches the sim, `web/engine.js`, `cards.js` (and the paper rules sheet), then the README: update **The rules now** and **Where it stands** (check the **Targets** table), and add a dated section under History.
 

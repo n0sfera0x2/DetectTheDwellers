@@ -12,10 +12,10 @@ This folder is still prototype code. Under the repo's prototype rules it gets re
 
 | Mode | Feed | HP | Solo starts with | Boss |
 | --- | --- | --- | --- | --- |
-| **Quick Shift** | deal 6 from the 24 core cards (alarms and core situations) | 9 | 1 item | its core ability only |
+| **Quick Shift** | deal 8 from the 24 core cards (alarms and core situations) | 9 | 1 item | its core ability only |
 | **Full Shift** | deal 11 core cards and 3 story cards, shuffled together (14) | 10 | 2 items | its core ability and its **Full Shift** row trigger |
 
-One boss, drawn at random, goes face down under the feed. A crew draws 2 items. The number of alarms in a feed varies: about 3.4 in Quick, 6 in Full.
+One boss, drawn at random, goes face down under the feed. A crew draws 2 items. The number of alarms in a feed varies: about 4.3 in Quick, 6 in Full.
 
 **A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (4 players add the card's + die, a 6). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll and no arrival hits.
 
@@ -131,14 +131,14 @@ Bot sims, `SYS=n6 N=600`, 2026-11-02. Every game deals its own feed and draws it
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Fights (incl. boss) | Comebacks | Losses before the boss |
 | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 56% | 20 pts | 40% | 4.4 | 2.6 | 39% |
-| Quick, 2p | 54% | 13 pts | 49% | 4.4 | 1.6 | 30% |
-| Quick, 4p | 59% | 25 pts | 61% | 4.4 | 1.3 | 30% |
+| Quick, 1p | 52% | 21 pts | 40% | 5.3 | 3.6 | 55% |
+| Quick, 2p | 54% | 13 pts | 46% | 5.2 | 2.3 | 51% |
+| Quick, 4p | 60% | 20 pts | 56% | 5.4 | 2.1 | 45% |
 | Full, 1p | 57% | 19 pts | 41% | 7.1 | 6.1 | 44% |
 | Full, 2p | 57% | 16 pts | 45% | 6.9 | 4.2 | 46% |
 | Full, 4p | 61% | 20 pts | 49% | 7.1 | 4.1 | 47% |
 
-Solo by analyst: Quick Hunter 57%, Responder 61%, Engineer 53%, Soarcerer 51%; Full 61 / 62 / 58 / 56%. Pairs: Quick 48–62%, Full 52–63% (Engineer + Soarcerer lowest, Hunter + Responder highest). Crews that reach the boss beat it 62–68% (Quick) and 70–75% (Full; 77–84% without the Full Shift triggers).
+Solo by analyst: Quick Hunter 52%, Responder 56%, Engineer 49%, Soarcerer 50%; Full 61 / 62 / 58 / 56%. Pairs: Quick 49–60%, Full 52–63% (Hunter + Engineer or Engineer + Soarcerer lowest, Hunter + Responder highest). Crews that reach the boss beat it about 70% (Quick) and 70–75% (Full; 77–84% without the Full Shift triggers).
 
 ### Targets
 
@@ -146,23 +146,23 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 56 / 54 / 59% | 57 / 57 / 61% (4p a point over) | the mode's HP, one point at a time |
-| Spread across crew sizes | 10 points or less | 5 | 4 | solo: starting items, solo slots; 4p: the + die |
-| Solo spread across analysts | 10 points or less | 11 (misses: Responder 61%, Soarcerer 51%) | 6 | the analyst's ability, not their doubles |
-| Pairs, lowest to highest | within 15 points | 48–62% | 52–63% | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 20 / 13 / 25 (2p misses) | 19 / 16 / 20 (1p and 2p miss) | more decisions per roll (guards, pairs, items with timing) |
-| Rounds with a real dice choice | 40% or more | 40 / 49 / 61% | 41 / 45 / 49% | solo: more of your own dice to place |
-| Losses before the boss | 60% or less | 39 / 30 / 30% | 44 / 46 / 47% | the boss's dice and Damage; HP |
-| Comebacks per shift | 3–6 | 2.6 / 1.6 / 1.3 (misses) | 6.1 / 4.2 / 4.1 | the row numbers (`ROWSHIFT`); the feed size |
-| Baselining worth doing | always beats never | +15 / −3 / +2 (2p misses) | +30 / +16 / +23 | the Baseline dice and the traits |
-| Every situation choice is real | forced options within 4 points | Patch, Pager, Blast within 3 | Badge, USB, Chatter, CEO, Pager within 3 | the losing option's payoff, not the winner's cost |
+| Win rate, every crew size | 50–60% | 52 / 54 / 60% | 57 / 57 / 61% (4p a point over) | the mode's HP, one point at a time |
+| Spread across crew sizes | 10 points or less | 8 | 4 | solo: starting items, solo slots; 4p: the + die |
+| Solo spread across analysts | 10 points or less | 7 | 6 | the analyst's ability, not their doubles |
+| Pairs, lowest to highest | within 15 points | 49–60% | 52–63% | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 21 / 13 / 20 (2p misses) | 19 / 16 / 20 (1p and 2p miss) | more decisions per roll (guards, pairs, items with timing) |
+| Rounds with a real dice choice | 40% or more | 40 / 46 / 56% | 41 / 45 / 49% | solo: more of your own dice to place |
+| Losses before the boss | 60% or less | 55 / 51 / 45% | 44 / 46 / 47% | the boss's dice and Damage; HP |
+| Comebacks per shift | 3–6 | 3.6 / 2.3 / 2.1 (crews miss) | 6.1 / 4.2 / 4.1 | the row numbers (`ROWSHIFT`); the feed size |
+| Baselining worth doing | always beats never | +17 / −2 / +9 (2p misses) | +30 / +16 / +23 | the Baseline dice and the traits |
+| Every situation choice is real | forced options within 4 points | Patch, Pager, Blast within 2 | Badge, USB, Chatter, CEO, Pager within 3 | the losing option's payoff, not the winner's cost |
 | Every item card earns its place | blanking a type costs points somewhere | not rerun this pass | | the item's number |
 | The boss is a climax (Full) | beating it once there: 75% or less | — | 70–75% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
 
-- **Quick Shift has few comebacks** (1.3–2.6 a shift): a 6-card feed averages 3.4 alarms, so little reaches the row. The persistence row is the game's signature; Quick shows less of it. Levers: a 7- or 8-card Quick deal, or row numbers one higher in Quick.
-- **Baselining doesn't pay at 2p in Quick** (−3; with 2 Baseline dice −1). Few fights are left to use the trait. A mode-specific cost would mean different cards per mode, so it stays open.
+- **Quick Shift crews see few comebacks** (2.3 / 2.1 a shift, solo 3.6), even at 8 cards: crews beat alarms in fewer rounds, so the row rolls less. The printed "back on" numbers are shared by both modes, so a Quick-only fix would need a rule, not a card change.
+- **Baselining doesn't pay at 2p in Quick** (−2). Few fights are left to use the trait. A mode-specific cost would mean different cards per mode, so it stays open.
 - **Skill gap** is under 20 at 2p in both modes (13 Quick, 16 Full): real situation choices, the random feed and the boss trigger all add luck.
 - **The 6 classic alarms were easy.** Before this pass the printed game always used the same 6 alarms and the Lockjaw, while the sim dealt 6 of 15 and any boss. With the printed 6 the shift won 72 / 66 / 75%, not the 52 / 58 / 59% reported: the table game was about 10–20 points easier than the numbers said. The full pool ends that split: sim, web and paper now deal from the same deck.
 - Paper tuck: several tucked alarms stack band under band. Untested at a table: does the stack stay neat when agents change hands?
@@ -205,8 +205,8 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `ROW` | `2d6` (default for d6) or `d20`. The d20 system always rolls the d20 |
 | `ROWMAP` | `tier` (default) or `near`, the rejected nearest-odds mapping |
 | `SOLO_REROLL=1` | solo rerolls one dead die a round (tested, rejected) |
-| `MODE` | `quick` (default): deal 6 core cards. `full`: 3 story + 11 core. `classic`: the six printed alarms and six situations of the passes before the full pool |
-| `DEALQ`, `DEALF`, `STORYF` | the deal sizes (6, 14, 3) |
+| `MODE` | `quick` (default): deal 8 core cards. `full`: 3 story + 11 core. `classic`: the six printed alarms and six situations of the passes before the full pool |
+| `DEALQ`, `DEALF`, `STORYF` | the deal sizes (8, 14, 3) |
 | `FEED` | `mixed` (default, 2026-11-02): situations shuffled into the feed. `split` (classic only): a situation before every flip after the first |
 | `TRAITS=0` | the 2026-11-01 crew-wide Baseline lines instead of agent traits |
 | `TRAITSET=agent` | the rejected agent-only traits (Twin, Stealth, Relay, Repair) |
@@ -335,6 +335,8 @@ Found on the way: **the printed game was easier than the reported numbers.** The
 Baselining, always vs never: Quick +15 / −3 / +2 (2 Baseline dice in Quick: +18 / −1 / +4, not adopted: the band prints 3), Full +30 / +16 / +23. The Full Shift boss triggers cost 6 / 7 / 8 points.
 
 Knobs: `MODE`, `DEALQ`, `DEALF`, `STORYF`, `BLASTDRAW`; `BOSSROW` now defaults to `none` in Quick.
+
+**Then: Quick Shift deals 8.** Six cards left crews about 1.5 comebacks a shift. At HP 9: 7 cards 56 / 57 / 64% (comebacks 1.7–3.2); **8 cards 52 / 54 / 60%** (2.1–3.6, about 5.3 fights; kept). Eight also brought the Quick solo analyst spread from 11 to 7 points and baselining at 2p from −3 to −2.
 
 ### Review: real situation choices, the boss pulls the row, the tuck (2026-11-02)
 

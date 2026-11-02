@@ -760,10 +760,10 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   const nameOf = id => D.classes.find(c => c.id === id).name;
 
   // ---- Setup ------------------------------------------------------------------------------------------------
-  // The modes (2026-11-02): one situation deck holds all 15 alarms and 18 situations. Quick Shift deals 6 of the 24
-  // core cards; Full Shift deals 3 story cards and 11 core. The boss is drawn from three; its row trigger is Full Shift
+  // The modes (2026-11-02): one situation deck holds all 15 alarms and 18 situations. Quick Shift deals 8 of the 24
+  // core cards (8 since 2026-11-02: 6 left too few comebacks); Full Shift deals 3 story cards and 11 core. The boss is drawn from three; its row trigger is Full Shift
   // only. Same deals as sim.js MODE, DEALQ, DEALF and STORYF.
-  const MODES = { quick: { label: 'Quick Shift', deal: 6, story: 0, hp: 9, soloItems: 1, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 10, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 9, soloItems: 1, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 10, bossRow: true } };
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -1589,7 +1589,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   // ---- Views --------------------------------------------------------------------------------------------------------
   const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button>`;
   const dbls = id => A.DOUBLES[id].map(n => A.pip(n, 18)).join('');
-  const MODE_SUB = { quick: '6 cards from the deck, then the boss. About 15 minutes.', full: '14 cards, 3 of them story cards, then the boss. The boss pulls the row. About 35 minutes.' };
+  const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '14 cards, 3 of them story cards, then the boss. The boss pulls the row. About 35 minutes.' };
   function vSetup() {
     const team = UI.setup.team, n = team.length;
     const picks = A.ANALYST_IDS.map(id => { const on = team.includes(id);

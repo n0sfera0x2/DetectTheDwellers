@@ -37,10 +37,10 @@
   const nameOf = id => D.classes.find(c => c.id === id).name;
 
   // ---- Setup ------------------------------------------------------------------------------------------------
-  // The modes (2026-11-02): one situation deck holds all 15 alarms and 18 situations. Quick Shift deals 6 of the 24
-  // core cards; Full Shift deals 3 story cards and 11 core. The boss is drawn from three; its row trigger is Full Shift
+  // The modes (2026-11-02): one situation deck holds all 15 alarms and 18 situations. Quick Shift deals 8 of the 24
+  // core cards (8 since 2026-11-02: 6 left too few comebacks); Full Shift deals 3 story cards and 11 core. The boss is drawn from three; its row trigger is Full Shift
   // only. Same deals as sim.js MODE, DEALQ, DEALF and STORYF.
-  const MODES = { quick: { label: 'Quick Shift', deal: 6, story: 0, hp: 9, soloItems: 1, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 10, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 9, soloItems: 1, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 10, bossRow: true } };
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');

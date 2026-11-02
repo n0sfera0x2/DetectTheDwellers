@@ -418,10 +418,10 @@ function atSit(team, id, { seed = 1, point = 0, dice = [] } = {}) {
 }
 const kits = G => G.deal.length; // items drawn and waiting to be dealt
 
-test('the feed: one deck of 15 alarms and 18 situations; Quick deals 6 core cards, Full deals 3 story + 11 core; one of three bosses', () => {
+test('the feed: one deck of 15 alarms and 18 situations; Quick deals 8 core cards, Full deals 3 story + 11 core; one of three bosses', () => {
   assert.equal(CARDS.SIT_IDS.length, 18); assert.equal(CARDS.SIT_CORE.length, 9); assert.equal(CARDS.SIT_STORY.length, 9);
   const games = mode => [...Array(60)].map((_, s) => E.newGame({ team: ['HUN', 'RES'], seed: s, mode }));
-  for (const F of games('quick')) { assert.equal(F.feed.length, 6); assert.ok(F.feed.every(c => !c.sit || CARDS.SIT_CORE.includes(c.sit)), 'no story cards'); assert.equal(F.alarmsTotal, F.feed.filter(c => !c.sit).length); }
+  for (const F of games('quick')) { assert.equal(F.feed.length, 8); assert.ok(F.feed.every(c => !c.sit || CARDS.SIT_CORE.includes(c.sit)), 'no story cards'); assert.equal(F.alarmsTotal, F.feed.filter(c => !c.sit).length); }
   for (const F of games('full')) { assert.equal(F.feed.length, 14); assert.equal(F.feed.filter(c => CARDS.SIT_STORY.includes(c.sit)).length, 3); }
   const qs = games('quick'), n = qs.map(F => F.alarmsTotal); assert.ok(Math.min(...n) < Math.max(...n), 'the number of fights varies');
   assert.deepEqual([...new Set(qs.map(F => F.boss.id))].sort(), ['ai', 'apt', 'wyrm'], 'every boss turns up'); assert.ok(qs.every(F => !F.feed.includes(F.boss)));

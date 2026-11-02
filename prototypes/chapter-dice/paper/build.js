@@ -22,7 +22,7 @@ const rules = `<section class="page rules">
 <h2>Setup</h2>
 <ol>
 <li>Pick the shift. <b>Quick:</b> everyone starts at <b>9 HP</b>. <b>Full:</b> <b>10 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
-<li>The <b>situation deck</b> is the 15 alarms and 18 situations. Set the 9 <b>story</b> situations aside and shuffle the rest. <b>Quick:</b> deal 6. <b>Full:</b> deal 11, add 3 story cards, shuffle the 14. That’s the <b>feed</b>.</li>
+<li>The <b>situation deck</b> is the 15 alarms and 18 situations. Set the 9 <b>story</b> situations aside and shuffle the rest. <b>Quick:</b> deal 8. <b>Full:</b> deal 11, add 3 story cards, shuffle the 14. That’s the <b>feed</b>.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
 <li>Shuffle the 16 items: the item deck. The crew draws 2 (Quick solo: 1).</li>
 <li>Set out the shift tracker: a coin on a box marks anything used once a round or once a fight.</li>

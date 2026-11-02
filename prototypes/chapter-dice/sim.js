@@ -192,12 +192,12 @@ function newGame(sys, team, opt) {
     o.need = needFor(sys, o, n); return o;
   };
   // MODE (2026-11-02, the full pool): one situation deck holds all 15 alarms and 18 situations. quick (default): deal
-  // 6 from the 24 core cards (alarms and core situations). full: deal 3 story cards and 7 core cards. classic: the
+  // 8 from the 24 core cards (alarms and core situations). full: deal 3 story cards and 11 core cards. classic: the
   // earlier six alarms and six situations, all in every shift. FEED=split (classic only): a situation before every flip.
   let feed, mobs;
   if (sys === 'n6' && SIT && MODE !== 'classic') {
     const core = shuffle([...D.mobs.map(m => mk(m)), ...SITS_CORE.map(s => ({ sit: s }))], r), story = shuffle(SITS_STORY.map(s => ({ sit: s })), r).slice(0, MODE === 'full' ? +(process.env.STORYF || 3) : 0);
-    feed = shuffle([...story, ...core.slice(0, (MODE === 'full' ? +(process.env.DEALF || 14) : +(process.env.DEALQ || 6)) - story.length)], r); // DEALQ, DEALF, STORYF: deal sizes mobs = feed.filter(c => !c.sit);
+    feed = shuffle([...story, ...core.slice(0, (MODE === 'full' ? +(process.env.DEALF || 14) : +(process.env.DEALQ || 8)) - story.length)], r); // DEALQ, DEALF, STORYF: deal sizes mobs = feed.filter(c => !c.sit);
   } else { mobs = shuffle(D.mobs.filter(m => CLASSIC.includes(m.id)), r).slice(0, opt.deal || 6).map(m => mk(m)); feed = SIT && sys === 'n6' && FEED === 'mixed' ? shuffle([...mobs, ...SITS.map(s => ({ sit: s }))], r) : mobs; }
   return { sys, team, n, r, hp: team.map(() => opt.hp), max: opt.hp, feed, boss: mk(D.bosses[Math.floor(r() * 3)], true),
     row: [], play: [], trayK: [], trayT: [], pendT: [], kit: shuffle(NEWITEMS ? KIT.slice() : KIT.flatMap(t => [t, t]), r), discard: [], tray: [], point: 0, over: false, win: false,

@@ -48,11 +48,12 @@
         off: Array(slots.length).fill(false), offStack: [], back: 0, up: 0 }; };
     const hp = opt.hp || HP;
     const G = { n, team: team.slice(), hp: team.map(() => hp), max: hp, r,
-      feed: shuffle(CARDS.mobs().map(m => mk(m, false)), r), boss: mk(CARDS.boss(), true), bossOut: false, row: [], play: [], gone: [],
+      // The feed (2026-11-02): the six alarms and the six situations shuffled together, the boss underneath.
+      feed: shuffle([...CARDS.mobs().map(m => mk(m, false)), ...CARDS.SIT_IDS.map(id => ({ sit: id, uid: 's-' + id }))], r), boss: mk(CARDS.boss(), true), bossOut: false, row: [], play: [], gone: [],
       // The item deck (cards.js ITEM_DECK), each card a { uid, t }. Drawn items wait in G.deal until someone takes them.
       kit: shuffle(CARDS.ITEM_DECK.map((t, i) => ({ uid: 'k' + (i + 1), t })), r), discard: [], deal: [], dealNext: 'flip',
       agents: team.map(() => []), hand: team.map(() => []), freeze: false,
-      sits: shuffle(CARDS.SIT_IDS, r), sit: null, sitDone: false, pending: [], mute: 0, bonusDraw: 0, engUsed: false, resUsed: false, stand: null, aug: [], tuck: [], flipped: null, augReroll: false,
+      sit: null, sitDone: false, badgeHit: false, pending: [], mute: 0, bonusDraw: 0, engUsed: false, resUsed: false, stand: null, aug: [], tuck: [], flipped: null, augReroll: false,
       cond: team.map(() => ({ rattled: false, exposed: false, focused: false })),
       point: 0, phase: 'flip', fight: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
       over: false, win: false, log: [], rows: [], lastRow: null, drawn: [], beaten: [],
@@ -69,8 +70,10 @@
   const remaining = m => m.slots.filter((s, i) => !m.off[i]);
   // Agent slots: 2 each (the Soarcerer 3). Solo: 4 (the Soarcerer 5). Same as sim.js slotsK.
   const slotsOf = (G, k) => (G.n === 1 ? 4 : 2) + (G.team[k] === 'SOA' ? 1 : 0);
-  // How many agents of type t player k holds (every player's, without k).
-  const running = (G, t, k) => (k == null ? G.agents.flat() : G.agents[k] || []).filter(c => c.t === t).length;
+  // How many agents of type t player k holds (every player's, without k). A Twin agent (the Grifter's trait) counts as two.
+  const running = (G, t, k) => (k == null ? G.agents.flat() : G.agents[k] || []).reduce((s, c) => s + (c.t === t ? weight(G, c.uid) : 0), 0);
+  const traitsOn = (G, uid, id) => G.aug.filter(a => a.host === uid && a.id === id).length;
+  const weight = (G, uid) => 1 + traitsOn(G, uid, 'imp');
   // Every held agent with its holder: [{ c, k }].
   const heldAgents = G => G.agents.flatMap((a, k) => a.map(c => ({ c, k })));
   const on = (G, id) => G.team.includes(id);
@@ -78,7 +81,8 @@
   const dmgOf = (G, m) => m.boss ? m.dmg + (left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0);
   const d6 = G => Math.floor(G.r() * 6);
   const findMob = (G, uid) => G.play.find(m => m.uid === uid);
-  // A baselined alarm's line works while the agent it is tucked under is held by anyone. Its effect stays crew-wide.
+  // A baselined alarm gives the agent it is tucked under a trait (cards.js TRAIT), kept while anyone holds that agent:
+  // Twin (Grifter) and Repair (Rootkit) change the agent itself; Ghost (Scavenger) and Scramble (Courier) guard the row.
   const aug = (G, id) => G.aug.some(a => a.id === id && a.host && G.agents.some(h => h.some(c => c.uid === a.host)));
   // Discarding an agent ends what is tucked under it.
   function loseAug(G, uid) { for (const a of G.aug.filter(a => a.host === uid)) say(G, `${a.name}’s baseline goes with it.`, 'kit'); G.aug = G.aug.filter(a => a.host !== uid); }
@@ -167,11 +171,12 @@
   // ---- Flip ---------------------------------------------------------------------------------------------------
   function setPoint(G, k) {
     if (G.phase !== 'flip') fail('Pick who’s on point before the flip.');
-    if (G.sitDone) fail('On point is set: the situation already happened to them.');
+    if (G.sitDone) fail('On point is set: they stay on point through the situation and the next fight.');
     if (!(k >= 0 && k < G.n)) fail('No such analyst.'); G.point = k; return G;
   }
-  // A situation is due before every flip after the first (the boss's too), once per flip.
-  const sitDue = G => G.phase === 'flip' && G.fight > 0 && G.sits.length > 0 && !G.sitDone;
+  // The top feed card is a situation (face down at the table: the page never shows this before the flip).
+  const sitDue = G => G.phase === 'flip' && !!G.feed[0] && !!G.feed[0].sit;
+  const alarmsLeft = G => G.feed.filter(c => !c.sit).length;
   function flip(G) {
     if (G.phase !== 'flip') fail('Not time to flip.');
     if (sitDue(G)) return revealSit(G);
@@ -179,6 +184,7 @@
     const pend = G.pending; G.pending = [];
     if (G.feed.length) {
       const m = G.feed.shift(); muteOn(G, m); G.flipped = m.uid; say(G, `Flip ${G.fight}: ${m.name}. ${nameOf(G.team[G.point])} is on point.`, 'flip');
+      if (G.badgeHit) { G.badgeHit = false; const dm = dmgOf(G, m); G.team.forEach((_, k) => hurt(G, k, dm, `${m.name}, after falling back`)); if (G.over) return G; }
       const back = rollRow(G, true, 'the flip'); if (G.over) return G;
       enter(G, m); [...pend, ...back].forEach(b => enter(G, b));
     } else {
@@ -227,10 +233,10 @@
   const rollN = (G, n) => Array.from({ length: n }, () => 1 + d6(G));
   const hpLine = G => G.team.map((id, k) => `${nameOf(id)} ${G.hp[k]}`).join(', ');
   function revealSit(G) {
-    const id = G.sits.pop(), top = id === 'insider' ? (G.feed[0] || G.boss) : null;
-    G.sit = { id, top: top && top.uid, topName: top && top.name, boss: !G.feed.length }; G.phase = 'sit'; G.stats.sits++;
+    const id = G.feed.shift().sit;
+    G.sit = { id, boss: !G.feed.length, alarms: alarmsLeft(G) }; G.phase = 'sit'; G.stats.sits++;
     const d = D.situations ? D.situations.find(s => s.id === id) : null;
-    say(G, `Situation: ${d ? d.name : id}. ${nameOf(G.team[G.point])} is on point.${top ? ` The top alarm, face up: ${top.name}.` : ''}`, 'sit');
+    say(G, `Situation: ${d ? d.name : id}. ${nameOf(G.team[G.point])} is on point.`, 'sit');
     return G;
   }
   // Resolve the situation: opt is the option ('stay'/'run', 'ride'/'mute', 'grab'/'leave', 'dig'/'leave' with n
@@ -240,16 +246,13 @@
     if (G.phase !== 'sit') fail('No situation to resolve.');
     const S = G.sit, p = G.point, who = nameOf(G.team[p]);
     if (!SIT_OPTS[S.id].includes(opt)) fail('Not an option on this situation.');
-    if (opt === 'run' && !G.feed.length) fail('The boss is next: you can’t fall back from it.');
+    if (opt === 'run' && !alarmsLeft(G)) fail('No alarm left in the feed: you can’t fall back.');
     if (opt === 'dig' && !(n >= 1 && n <= 4 && n === Math.floor(n))) fail('Dig in with 1 to 4 dice.');
     let text = '', dice = null, won = null;
     if (opt === 'stay') { gain(G, p, 'exposed'); G.bonusDraw = 1; text = `${who} holds the room and takes Exposed. Win the next fight: draw an item.`; }
-    if (opt === 'run') {
-      const m = G.feed.shift(), dm = dmgOf(G, m); text = `Fell back: ${m.name} hits everyone for ${dm} and goes on the row unfought.`; say(G, text, 'sit');
-      G.team.forEach((_, k) => hurt(G, k, dm, `${m.name}, falling back`)); G.row.push(m); text += ` ${hpLine(G)} HP.`;
-    }
+    if (opt === 'run') { G.badgeHit = true; text = 'Fell back: the next alarm hits everyone once when it flips.'; }
     if (opt === 'ride') { text = 'Rode it out: everyone loses 2 HP.'; say(G, text, 'sit'); G.team.forEach((_, k) => hurt(G, k, 2, 'Pager Storm')); text += ` ${hpLine(G)} HP.`; }
-    if (opt === 'mute') { G.mute++; text = `Muted: the next ${G.feed.length ? 'mob' : 'boss'} sets one more threat die, a 6.`; }
+    if (opt === 'mute') { G.mute++; text = `Muted: the next ${alarmsLeft(G) ? 'alarm' : 'boss'} sets one more threat die, a 6.`; }
     if (opt === 'grab') {
       dice = rollN(G, 3); won = new Set(dice).size < 3;
       text = `${who} rolls ${dice.join(', ')}: ${won ? 'a pair' : 'no pair'}.`; say(G, text, 'sit');
@@ -269,7 +272,7 @@
     }
     if (opt === 'heal') { G.hp = G.hp.map(h => Math.min(G.max, h + 2)); text = `Took a breather: everyone heals 2. ${hpLine(G)} HP.`; }
     if (opt === 'agent') { const got = draw(G, 1); text = `Raided the supply closet: drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing, the deck is empty'}.`; }
-    if (!['run', 'ride', 'grab', 'dig'].includes(opt)) say(G, text, 'sit');
+    if (!['ride', 'grab', 'dig'].includes(opt)) say(G, text, 'sit');
     Object.assign(S, { opt, n: opt === 'dig' ? n : null, dice, won, text, done: true }); G.sitDone = true;
     if (G.over) return G;
     return toDeal(G, 'flip');
@@ -282,12 +285,12 @@
     if (G.round > 1) { const back = rollRow(G, true, `round ${G.round}`); back.forEach(b => enter(G, b)); if (G.over) return G; }
     const dice = [];
     G.team.forEach((id, k) => {
-      const nd = (G.n === 1 ? D.soloDice : k === G.point ? 2 : 1) + (k === G.point && aug(G, 'imp') ? 1 : 0); // + the Grifter baseline
+      const nd = G.n === 1 ? D.soloDice : k === G.point ? 2 : 1;
       for (let i = 0; i < nd; i++) { const crewDie = G.n === 1 && i === D.soloDice - 1; dice.push({ k, crew: true, src: crewDie ? 'crew' : 'own', ...pipDie(1 + d6(G), crewDie ? 'CREW' : id) }); }
     });
     // Each Triage Agent: its holder rolls one more of their own dice (it pairs, guards, rerolls and hits the boss like
     // any of theirs); kuid ties the die to its card (it sits under that card).
-    G.agents.forEach((a, k) => a.filter(c => c.t === 'triage').forEach(c => dice.push({ k, crew: true, src: 'triage', kuid: c.uid, ...pipDie(1 + d6(G), G.team[k]) })));
+    G.agents.forEach((a, k) => a.filter(c => c.t === 'triage').forEach(c => { for (let j = weight(G, c.uid); j > 0; j--) dice.push({ k, crew: true, src: 'triage', kuid: c.uid, ...pipDie(1 + d6(G), G.team[k]) }); }));
     dice.forEach((d, i) => { d.i = i; d.used = null; d.takes = []; d.turned = false; });
     // Rattled: that player's dice in this roll have no doubles (they stay single if turned later). Then it's gone.
     dice.forEach(d => { if (d.crew && G.cond[d.k].rattled) { d.rattled = true; d.dbl = false; } });
@@ -535,7 +538,7 @@
     say(G, `Fight ${G.fight} won in ${G.round} round${G.round === 1 ? '' : 's'}.`, 'win');
     G.cond.forEach((c, k) => { if (c.exposed) { c.exposed = false; say(G, `${nameOf(G.team[k])} discards Exposed.`, 'sit'); } });
     const rec = running(G, 'recover'); if (rec) G.stats.items.recover += spread(G, rec * D.recoverHeal, 'Recovery Agent'); // crew-wide since 2026-11-01
-    if (aug(G, 'mimic')) spread(G, 5, 'Rootkit Implant baseline');
+    G.agents.forEach((a, k) => a.forEach(c => { const n = traitsOn(G, c.uid, 'mimic') * 2, h = Math.min(n, G.max - G.hp[k]); if (!n) return; G.hp[k] += h; G.stats.healed += h; say(G, `Repair: the ${KIT_NAME[c.t]} heals ${nameOf(G.team[k])} ${h}.`, 'heal'); }));
     draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + G.bonusDraw); G.bonusDraw = 0; // + Hold the room
     // With no agent held, a baselined alarm waits for the next agent dealt.
     if (G.tuck.length && !heldAgents(G).length) { G.tuck.forEach(a => { G.aug.push({ ...a, host: null }); say(G, `${a.name} is baselined. Nobody holds an agent: it waits for the next agent dealt.`, 'kit'); }); G.tuck = []; }
@@ -598,6 +601,6 @@
     return G;
   }
 
-  return { aug, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, resolveSit, focus, engTurn, canFocus, canEng, stand, canStand, hunts, roll, assign, guard, enrichTurn, unassign, endRound,
+  return { aug, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, stand, canStand, hunts, roll, assign, guard, enrichTurn, unassign, endRound,
     give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

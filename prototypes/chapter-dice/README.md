@@ -1,14 +1,14 @@
 # Detect the Dwellers: chapter dice (d6)
 
-**Status:** this is the game. Chapter dice replaced the d20 system as the design direction on 2026-10-31. The d20 build (`src/`, `data/`, `ui/`, `deck/`, `sim/`) is legacy: it still builds and tests, but new design work happens here. The rules below are current as of the [crew-wide agents pass](#crew-wide-agents-worthwhile-baselining-shift-tracker-2026-11-01) (2026-11-01), at **HP 10**. The sim (`SYS=n6`), the paper prototype and the web version all play them.
+**Status:** this is the game. Chapter dice replaced the d20 system as the design direction on 2026-10-31. The d20 build (`src/`, `data/`, `ui/`, `deck/`, `sim/`) is legacy: it still builds and tests, but new design work happens here. The rules below are current as of the [shuffled feed and agent traits pass](#shuffled-feed-agent-traits-the-badge-that-wasnt-2026-11-02) (2026-11-02), at **HP 10**. The sim (`SYS=n6`), the paper prototype and the web version all play them.
 
 This folder is still prototype code. Under the repo's prototype rules it gets rewritten to production standards before it replaces the d20 build; it isn't extended into production in place. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
 ## The rules now
 
-1–4 players, each an analyst at 10 HP. Six alarms are shuffled face down with the Lockjaw Syndicate (the boss) underneath. Survive the feed and beat the boss. Anyone at 0 HP and the shift is lost.
+1–4 players, each an analyst at 10 HP. Six alarms and six situations are shuffled together face down (the **feed**), with the Lockjaw Syndicate (the boss) underneath. Survive the feed and beat the boss. Anyone at 0 HP and the shift is lost.
 
-**A flip.** Pick who's on point. From the second flip on, flip a situation first and play it. Flip the top alarm and set its threat dice just below the card, turned to the numbers printed on its bottom edge (4 players add the card's + die, a 6). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll and no arrival hits.
+**A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (4 players add the card's + die, a 6). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll and no arrival hits.
 
 **A fight round.**
 
@@ -21,7 +21,7 @@ This folder is still prototype code. Under the repo's prototype rules it gets re
 
 **The row.** Beaten alarms always go back on the row; nothing removes them for good. Roll the two amber dice: a row alarm comes back if the sum is at most its number. Comebacks return with their printed dice, and the two with the highest Damage hit everyone on arrival. A coin marks an alarm the first time it comes back.
 
-**Baseline it.** A newly flipped alarm with a Baseline line (never a comeback, never the boss) can be baselined: set the 3 dice on that line too, all showing its main number's opposite side. Beat it with all of them and tuck it under an agent someone holds: that agent gains the alarm's Baseline line until it's discarded. No agents: it waits for the next one drawn. The alarm still goes on the row.
+**Baseline it.** A newly flipped alarm with a Baseline line (never a comeback, never the boss) can be baselined: set the 3 dice on that line too, all showing its main number's opposite side. Beat it with all of them and tuck it under an agent someone holds: that agent gains the alarm's **trait** and keeps it until it's discarded, so which agent you pick matters. No agents: it waits for the next one drawn. The alarm still goes on the row.
 
 **After a fight.** Draw 2 items (solo 1) and decide who takes each. The crew starts with 2 items, solo too.
 
@@ -30,14 +30,14 @@ This folder is still prototype code. Under the repo's prototype rules it gets re
 
 ### Alarms and the boss
 
-| Card | Dice (1–3p) | Damage | Keyword | Back on | Baseline (3 dice) | Baselined line |
+| Card | Dice (1–3p) | Damage | Keyword | Back on | Baseline (3 dice) | Trait its agent gains |
 | --- | --- | --- | --- | --- | --- | --- |
 | Mailer Daemon | 2 | 1 | Beacon: roll the row when it arrives or comes back | 2–5 | — | — |
 | Password Sprayer | 4 | 1 | Piercing: blocks don't stop it | 2–5 | — | — |
-| OAuth Consent Grifter | 1 | 3 | Targeted: only on point takes its damage, doubled | 2–3 | 6 | On point rolls one more die |
-| Living-off-the-Land Scavenger | 3 3 | 3 | Evasive: only a double hits it; a double of another number takes one die | 2–4 | 4 | Comebacks don't hit on arrival |
-| Exfil Courier | 5 5 | 4 | Escalating: +1 Damage every round it stays up | 2–3 | 2 | Add 1 to every row roll |
-| Rootkit Implant | 5 6 6 | 4 | Regen: puts back one lost die each round end | 2–3 | 1 | After every won fight, heal 5 split |
+| OAuth Consent Grifter | 1 | 3 | Targeted: only on point takes its damage, doubled | 2–3 | 6 | **Twin:** its agent counts as two of itself (Triage: two more dice; Containment: 4 less; Enrichment: two turns; Recovery: heal 8) |
+| Living-off-the-Land Scavenger | 3 3 | 3 | Evasive: only a double hits it; a double of another number takes one die | 2–4 | 4 | **Ghost:** comebacks don't hit on arrival |
+| Exfil Courier | 5 5 | 4 | Escalating: +1 Damage every round it stays up | 2–3 | 2 | **Scramble:** add 1 to every row roll |
+| Rootkit Implant | 5 6 6 | 4 | Regen: puts back one lost die each round end | 2–3 | 1 | **Repair:** after every won fight, its agent heals its holder 2 |
 | The Lockjaw Syndicate (boss) | 2 2 3 3 3 3 3 4 | 9 | +2 Damage until it has lost two dice | — | — | — |
 
 ### Analysts
@@ -65,11 +65,11 @@ This folder is still prototype code. Under the repo's prototype rules it gets re
 
 ### Situations and conditions
 
-Six situations, one before every flip after the first (the boss's too). Each offers a choice except Lateral Whispers.
+Six situations, shuffled into the feed with the alarms. Any of them can come first, two can come in a row, and one can be the last card before the boss. Each offers a choice except Lateral Whispers.
 
 | Situation | Options |
 | --- | --- |
-| The Badge That Wasn't | Turn the top alarm face up. **Hold the room:** on point takes Exposed; win the fight, draw an item. **Fall back:** it hits everyone once and goes on the row unfought (not the boss). |
+| The Badge That Wasn't | **Hold the room:** on point takes Exposed; win the next fight, draw an item. **Fall back:** the next alarm hits everyone once when it flips, then is fought as usual (never the boss: with no alarm left, you hold the room). |
 | Pager Storm | **Ride it out:** everyone loses 2 HP. **Mute it:** the next alarm sets one more threat die, a 6. |
 | The Janitor's USB | **Grab it:** on point rolls 3 dice. Any pair: draw 2 items and take Focused. No pair: take Rattled. **Leave it.** |
 | Dark Web Chatter | **Dig in:** on point rolls 1–4 dice. Any 6: draw 2 items. None: lose 1 HP per die. **Let it go.** |
@@ -78,7 +78,7 @@ Six situations, one before every flip after the first (the boss's too). Each off
 
 Conditions are cards kept in front of a player, one of each at most. **Rattled:** your next roll has no doubles. **Exposed:** next fight, each round anything hits you, take 1 more. **Focused:** once, after you roll, turn one of your dice to any number.
 
-**The shift tracker.** A reference card with coin boxes for everything the table would otherwise have to remember: each player's reroll, the Engineer's turn and the Enrichment turn (this round); the Responder's stand and Hold the room's bonus draw (this fight); a pending Change Freeze and Pager Storm's Mute die (waiting). It also says how to track Escalating (a coin on the alarm each round) and Regen (taken dice set aside in a line). The web version tracks all of this itself.
+**The shift tracker.** A reference card with coin boxes for everything the table would otherwise have to remember: each player's reroll, the Engineer's turn and the Enrichment turn (this round); the Responder's stand and Hold the room's bonus draw (this fight); a pending Change Freeze, Pager Storm's Mute die and a Badge fall-back hit (waiting). It also says how to track Escalating (a coin on the alarm each round) and Regen (taken dice set aside in a line). The web version tracks all of this itself.
 
 ### Components
 
@@ -86,15 +86,15 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600 HP=10`, 2026-11-01:
+Bot sims, `SYS=n6 N=600 HP=10`, 2026-11-02:
 
 | Crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Rounds | Comebacks | Losses before the boss |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1p | 53% | 24 pts | 38% | 13.9 | 5.4 | 59% |
-| 2p | 56% | 18 pts | 42% | 10.6 | 3.8 | 61% |
-| 4p | 55% | 26 pts | 52% | 9.4 | 3.5 | 54% |
+| 1p | 53% | 22 pts | 38% | 14.0 | 5.5 | 64% |
+| 2p | 60% | 22 pts | 43% | 10.8 | 3.8 | 59% |
+| 4p | 59% | 25 pts | 51% | 9.6 | 3.6 | 59% |
 
-Solo by analyst: Hunter 54%, Responder 51%, Engineer 50%, Soarcerer 50%. Pairs: 51% (Hunter + Engineer) to 61% (Hunter + Responder).
+Solo by analyst: Hunter 59%, Responder 49%, Engineer 53%, Soarcerer 53%. Pairs: 59% (Hunter + Soarcerer) to 65% (Hunter + Responder).
 
 ### Targets
 
@@ -102,21 +102,23 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Now (600 games) | If it misses |
 | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 53 / 56 / 55% | HP, one point at a time (about 3–8 points each) |
-| Spread across crew sizes | 10 points or less | 3 | solo: starting items, solo slots; 4p: the + die |
-| Solo spread across analysts | 10 points or less | 4 | the analyst's ability, not their doubles |
-| Pairs, lowest to highest | within 15 points | 51–61% | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 24 / 18 / 26 | more decisions per roll (guards, pairs, items with timing) |
-| Rounds with a real dice choice | 40% or more | 38 / 42 / 52% | solo: more of your own dice to place |
-| Losses before the boss | 60% or less | 59 / 61 / 54% | the boss's dice and Damage; HP |
-| Comebacks per shift | 3–6 | 5.4 / 3.8 / 3.5 | the row numbers (`ROWSHIFT`) |
-| Agents worth more than consumables | agents-only deck ≥ consumables-only deck | 46 / 26 / 36% vs 17 / 24 / 35% | the agent cards |
-| Baselining worth doing | always beats never | +12 / +5 / +4 pts | the Baseline dice and lines |
+| Win rate, every crew size | 50–60% | 53 / 60 / 59% | HP, one point at a time (about 3–8 points each) |
+| Spread across crew sizes | 10 points or less | 7 | solo: starting items, solo slots; 4p: the + die |
+| Solo spread across analysts | 10 points or less | 10 | the analyst's ability, not their doubles |
+| Pairs, lowest to highest | within 15 points | 59–65% | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 22 / 22 / 25 | more decisions per roll (guards, pairs, items with timing) |
+| Rounds with a real dice choice | 40% or more | 38 / 43 / 51% (solo misses) | solo: more of your own dice to place |
+| Losses before the boss | 60% or less | 64 / 59 / 59% (solo misses) | the boss's dice and Damage; HP |
+| Comebacks per shift | 3–6 | 5.5 / 3.8 / 3.6 | the row numbers (`ROWSHIFT`) |
+| Agents worth more than consumables | agents-only deck ≥ consumables-only deck | 37 / 23 / 36% vs 23 / 30 / 39% (2p and 4p miss) | the agent cards |
+| Baselining worth doing | always beats never | +6 / +1 / +4 pts (2p barely) | the Baseline dice and the traits |
 
 **Open:**
 
-- The 2p skill gap (18) and solo's real-choice rounds (38%) sit just under their targets. Stronger items let a random bot win more (2p random placement went from 29% to 37%).
-- Losses before the boss sit at the 60% line: HP 10 makes the row and the feed deadlier.
+- **Agents vs consumables misses at 2p and 4p** (23 vs 30%, 36 vs 39%). It already missed at 2p under the 2026-11-01 rules once rerun at 600 games (25 vs 30%); the old 26 vs 24% was 400 games. Next lever: the agent cards themselves.
+- **Baselining pays only a little at 2p** (+1). Agent traits are worth less than the old crew-wide lines (+12 / +5 / +4). Ghost and Scramble carry it; Repair is the weakest.
+- 2p and 4p sit at the top of the win band (60 / 59%); HP 9 drops solo to 44%. Solo misses on real-choice rounds (38%) and losses before the boss (64%).
+- The solo analyst spread is at its 10-point limit (Hunter 59%, Responder 49%).
 - HP 10 is low enough that one bad row roll with two Damage-4 arrivals ends a shift. Watch for it at the table.
 - The bot always pairs when it can. A player can choose not to: two loose dice can't guard, but a pair can.
 - No human has played these rules yet. Teach time, play time and whether matching feels better than adding all need a table.
@@ -156,6 +158,10 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `ROW` | `2d6` (default for d6) or `d20`. The d20 system always rolls the d20 |
 | `ROWMAP` | `tier` (default) or `near`, the rejected nearest-odds mapping |
 | `SOLO_REROLL=1` | solo rerolls one dead die a round (tested, rejected) |
+| `FEED` | `mixed` (default, 2026-11-02): situations shuffled into the feed. `split`: a situation before every flip after the first |
+| `TRAITS=0` | the 2026-11-01 crew-wide Baseline lines instead of agent traits |
+| `TRAITSET=agent` | the rejected agent-only traits (Twin, Stealth, Relay, Repair) |
+| `BADGEHP` | on point's HP at or below which the bot falls back from The Badge That Wasn't (default 5) |
 
 Nothing in `src/`, `data/` or `ui/` reads this folder. This folder reads the alarm names, flavour, Damage, keywords and comeback ranges from `data/cards.json`, and the art from `data/art.json` and `data/art-print.json`.
 
@@ -197,13 +203,13 @@ Add `?seed=123` to the URL to replay a shift.
 **What it plays:** exactly the paper rules sheet ([The rules now](#the-rules-now)).
 
 - 1–4 players, each with their own analyst (Hunter, Responder, Engineer, Soarcerer), all at 10 HP.
-- The six alarms are shuffled, with the Lockjaw Syndicate underneath. 4 players get the card's + die (a 6).
+- The six alarms and six situations are shuffled into one face-down feed, with the Lockjaw Syndicate underneath. The page says only how many cards are left, never what the top one is. 4 players get the card's + die (a 6).
 - **Items:** the deck is the 16 items. The crew starts with 2 (solo 2) and draws 2 after each won fight (solo 1). A **deal** step shows each drawn card with a **Give to …** button per player; an agent for a full player asks which of their agents to discard, or **Keep it out**. Solo deals itself. The mat shows one group per player: their agent cards (a Triage Agent's extra die sits under its card), empty slots, and their consumables with a **Use** button that lights only when its timing allows (Surge Playbook and Threat Intel Feed after the roll; Isolation Script before or after; Shift Coffee outside an open roll; Change Freeze before a row roll).
-- **A flip:** pick who's on point, then flip. The row roll shows the amber pair, their sum and what came back; the side panel shows each row mob's number on a 2–12 track. The two highest-Damage comebacks hit everyone on arrival, and the Beacon chains.
+- **A flip:** pick who's on point, then **Flip the top card**. The row roll shows the amber pair, their sum and what came back; the side panel shows each row mob's number on a 2–12 track. The two highest-Damage comebacks hit everyone on arrival, and the Beacon chains.
 - **A round:** roll the row (from round 2), then roll the dice. Each die shows its pips; doubles are ringed and labelled. Tap a die, then a glowing threat die under a mob showing the same number (a Hunter's 1 glows on every die under every alarm except an Evasive one; with a Threat Intel Feed every die glows). A double is labelled "Double ×2": it stays selected after its first take ("1 left") so you can tap a second die showing its number, under the same mob or another. Or press Guard instead, before it takes anything, and pick who it covers. Two of your own unused dice on one number show a **Pair** button (P) that makes them one double; pairing is optional. You can also turn a die to any number with a running Enrichment Agent, undo the last move, and end the round.
-- **Situations:** from the second flip, after picking who's on point, the situation card sits on the mat with one button per option (keys 1–9). The Badge That Wasn’t shows the top mob face up beside it, and Fall back is greyed out with the reason when the boss is next. Dark Web Chatter has a 1–4 dice picker. The result (dice, Won or Lost, what happened) shows before "Flip the alarm". On point locks once a situation is resolved.
+- **Situations:** a situation flipped from the feed sits on the mat with one button per option (keys 1–9). The Badge That Wasn’t's Fall back is greyed out with the reason when no alarm is left in the feed. Dark Web Chatter has a 1–4 dice picker. The result (dice, Won or Lost, what happened) shows before "Flip the next card". On point locks once a situation is resolved, until the next fight ends.
 - **Conditions** sit as small cards beside their holder in the crew strip. With a die selected: **Focused: turn to…** (any number), for the Engineer **Opposite side** (key O). The Responder gets a **Stand it down** button under each mob once a fight; the mob then shows "Stood down" and deals nothing at round end. A Rattled die keeps no doubles for that whole round, even if it is rerolled or turned.
-- **Baselining:** before the first roll, the alarm just flipped has a **Baseline it** button (key B). Its extra dice are set under it, marked +, with a Baselining stamp. Beat it and the mat asks which agent it tucks under (**Tuck it here**); the tucked alarm's line shows under that agent. The fight header says **multi-alarm** when two or more are up.
+- **Baselining:** before the first roll, the alarm just flipped has a **Baseline it** button (key B). Its extra dice are set under it, marked +, with a Baselining stamp. Beat it and the mat asks which agent it tucks under (**Tuck it here**); the trait (Twin, Ghost, Scramble or Repair) shows under that agent, and a Twin Triage Agent's spot says it rolls 2 dice. The fight header says **multi-alarm** when two or more are up.
 - **The crew strip** shows each analyst's incoming damage live as you place dice, Exposed included.
 - **End screen:** rounds, comebacks, time, guards and lowest HP; **What your items did**, one line per item type that did something (dice the Triage and Surge dice took or guarded with, damage Containment stopped, HP healed, turned dice put to work, wild takes, threat dice removed, row rolls skipped); and a "Copy result" line for playtest notes.
 
@@ -241,6 +247,42 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### Shuffled feed, agent traits, The Badge That Wasn't (2026-11-02)
+
+Three changes from the owner:
+
+| Problem | Change |
+| --- | --- |
+| The Badge That Wasn't turned the top alarm face up. In the production game the feed mixes situations and alarms, so the top card may not be an alarm. | **Hold the room:** on point takes Exposed; win the **next** fight, draw an item. **Fall back:** the **next alarm** hits everyone once when it flips, then is fought as usual. Never the boss: with no alarm left, Fall back is off. A box for it on the shift tracker. |
+| Situations had their own deck, one before every flip after the first. | **One feed:** the 6 alarms and 6 situations shuffled together, the boss underneath. On point, once a situation lands on them, stays on point through the next fight. |
+| A baselined alarm's line worked for the crew whatever agent it sat under ("On point rolls one more die" under a Triage Agent). The owner wants the agent itself to change, for a roguelike build. | **Traits:** the alarm gives the agent it tucks under a trait, lost if that agent is discarded. Grifter: **Twin** (the agent counts as two). Scavenger: **Ghost** (comebacks don't hit on arrival). Courier: **Scramble** (+1 to every row roll). Rootkit: **Repair** (after every won fight, the agent heals its holder 2). |
+
+#### What was tried (`SYS=n6`, HP 10, 600 games a row unless noted)
+
+The Badge change alone (split feed, old lines): 56 / 61 / 59%, up 3–5 points from 53 / 56 / 55%; falling back no longer skips a fight, and the bot holds the room more. The mixed feed alone (old lines): 58 / 62 / 60%.
+
+Baselining under each kind of trait. Never baselining: 48 / 61 / 55%.
+
+| Traits | Always baseline | vs never |
+| --- | --- | --- |
+| Old crew-wide lines (on point +1 die, Ghost, Scramble, heal 5 split) | 59 / 65 / 61% | +11 / +4 / +6 |
+| Agent only: Twin, Stealth (no slot), Relay (pass it once a fight), Repair (heal its holder 2) | 40 / 50 / 47% | −8 / −11 / −8 |
+| Agent only, 2 Baseline dice | 43 / 53 / 51% | −5 / −8 / −4 |
+| Agent only, 1 Baseline die | 51 / 60 / 54% | +3 / −1 / −1 |
+| Agent only, every tucked alarm also +1 to its agent | 44 / 55 / 52% | −4 / −6 / −3 |
+| Agent only, the alarm leaves the game for good | 54 / 57 / 60% | +6 / −4 / +5 |
+| **Hybrid: Twin, Ghost, Scramble, Repair (kept)** | **54 / 62 / 59%** | **+6 / +1 / +4** |
+
+One trait at a time, always baselined (400 games for the traits, 600 for the old lines): Twin −2 / 0 / −2 tucked under Triage first (−3 / +1 / +1 under Containment first), Stealth −2 / −5 / −3, Relay 0 / −3 / −3, Repair −5 / −2 / −2. The old lines alone: Grifter +3 / −1 / −1, Scavenger +5 / +1 / +1, Courier +6 / +2 / +3, Rootkit −1 / −2 / −2. What carried the old lines was protecting the row; an agent-only trait can't, so Ghost and Scramble stay, now carried by the agent card.
+
+HP with everything: 9 gives 44 / 56 / 51% (solo out of band); **10 gives 53 / 60 / 59% (kept)**.
+
+Agents-only vs consumables-only decks: 37 / 23 / 36% vs 23 / 30 / 39%. Rerun under the 2026-11-01 rules at 600 games: 44 / 25 / 35% vs 21 / 30 / 32%, so 2p already missed before this pass.
+
+Renamed: the Rootkit's trait is **Repair**, not Regen, because Regen is the Rootkit's own keyword. Card fit: the trait lines lost "while its agent is held" (the rules sheet says it once) and the tracker's boxes got shorter.
+
+Knobs: `FEED`, `TRAITS`, `TRAITSET`, `BADGEHP`, `LEVEL=1`, `TWINTO=contain`.
 
 ### Crew-wide agents, worthwhile baselining, shift tracker (2026-11-01)
 

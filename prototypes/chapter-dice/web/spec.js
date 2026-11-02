@@ -13,8 +13,12 @@ function dealAll(G) {
   while (G.phase === 'deal') { const k = G.team.map((_, j) => j).find(j => !E.dealFull(G, j)); if (k == null) E.give(G, 0, G.deal[0].uid); else E.give(G, k); }
   return G;
 }
+// The feed mixes alarms and situations (2026-11-02). Most rule tests want alarms only: newG drops the situation cards
+// (the feed tests and the scripted game use the real feed).
+const alarmsOnly = G => { G.feed = G.feed.filter(c => !c.sit); return G; };
+const sitCard = id => ({ sit: id, uid: 's-' + id });
 // A new game with its starting items dealt (2 players start in the deal phase).
-const newG = opt => dealAll(E.newGame(opt));
+const newG = opt => dealAll(alarmsOnly(E.newGame(opt)));
 // A game in a fight round: chosen mobs in play, no items held, chosen dice.
 function fight(team, ids, { seed = 1, dice = [], point = 0 } = {}) {
   const G = E.newGame({ team, seed });
@@ -369,7 +373,7 @@ test('consumables: when each can be used', () => {
   setHand(G, 0, ['surge']); G.phase = 'roll'; throwsRule(() => E.use(G, 'surge'), /Can’t use the Surge Playbook now/);
 });
 test('Change Freeze skips the next row roll, of any kind, once', () => {
-  const G = newG({ team: ['HUN', 'RES'], seed: 5 }); G.sits = []; G.feed = G.feed.filter(m => m.id !== 'mailer'); // no Beacon roll after the flip
+  const G = newG({ team: ['HUN', 'RES'], seed: 5 }); G.feed = G.feed.filter(m => m.id !== 'mailer'); // no Beacon roll after the flip
   const imp = G.feed.find(m => m.id === 'imp'); G.feed = G.feed.filter(m => m !== imp); imp.top = 12; G.row = [imp];
   setHand(G, 1, ['freeze', 'freeze']); E.use(G, 'freeze'); assert.equal(G.freeze, true);
   throwsRule(() => E.use(G, 'freeze'), /Can’t use/); // one at a time
@@ -394,7 +398,7 @@ test('deterministic given a seed, and a scripted game reaches an end', () => {
     while (!G.over && n++ < 3000) {
       if (G.phase === 'deal') dealAll(G); else if (G.phase === 'flip') E.flip(G); else if (G.phase === 'roll') E.roll(G);
       else if (G.phase === 'tuck') E.tuck(G, E.heldAgents(G)[0].c.uid);
-      else if (G.phase === 'sit') E.resolveSit(G, ...(G.sit.id === 'chatter' ? ['dig', 1] : [E.SIT_OPTS[G.sit.id][G.feed.length ? 1 : 0]]));
+      else if (G.phase === 'sit') E.resolveSit(G, ...(G.sit.id === 'chatter' ? ['dig', 1] : [E.SIT_OPTS[G.sit.id][E.alarmsLeft(G) ? 1 : 0]]));
       else { for (const d of G.dice) { const t = E.targets(G, d.i); if (t.hits.length) E.assign(G, d.i, t.hits[0].uid, t.hits[0].p); else if (t.guard) E.guard(G, d.i, E.guardable(G)[0]); } E.endRound(G); }
     } return G; };
   const a = run(11), b = run(11);
@@ -402,45 +406,51 @@ test('deterministic given a seed, and a scripted game reaches an end', () => {
 });
 
 // ---- Situations, conditions, the Hunter's 1s and the Engineer's turn (sim.js situation(), choose(), incoming()) ----
-// A game between fights 1 and 2 with situation id on top; dice: the d6 rolls to come (G.r stubbed), then the seed.
+// A game between fights 1 and 2 with situation id on top of the feed; dice: the d6 rolls to come (G.r stubbed), then the seed.
 function atSit(team, id, { seed = 1, point = 0, dice = [] } = {}) {
-  const G = newG({ team, seed }); G.fight = 1; G.phase = 'flip'; G.point = point; G.sits = [id];
+  const G = newG({ team, seed }); G.fight = 1; G.phase = 'flip'; G.point = point; G.feed.unshift(sitCard(id));
   const r = G.r, seq = dice.map(v => (v - .5) / 6); G.r = () => seq.length ? seq.shift() : r();
   E.flip(G); assert.equal(G.phase, 'sit'); assert.equal(G.sit.id, id); return G;
 }
 const kits = G => G.deal.length; // items drawn and waiting to be dealt
 
-test('situations: none before fight 1; one before every later flip, the boss’s too; on point is set', () => {
-  const G = newG({ team: ['HUN', 'RES'], seed: 6 }); assert.equal(G.sits.length, 6); assert.deepEqual(G.sits.slice().sort(), CARDS.SIT_IDS.slice().sort());
-  E.flip(G); assert.equal(G.fight, 1); assert.notEqual(G.phase, 'sit'); assert.equal(G.sit, null);
-  G.play = []; G.phase = 'flip'; G.sits = ['patch', 'pager'];
-  E.setPoint(G, 1); E.flip(G); assert.equal(G.phase, 'sit'); assert.equal(G.fight, 1, 'the mob is not flipped yet'); assert.equal(G.sit.id, 'pager');
+test('the feed: 6 alarms and 6 situations shuffled together, the boss underneath; a situation keeps on point through the next fight', () => {
+  const F = E.newGame({ team: ['HUN', 'RES'], seed: 6 });
+  assert.equal(F.feed.length, 12); assert.deepEqual(F.feed.filter(c => c.sit).map(c => c.sit).sort(), CARDS.SIT_IDS.slice().sort());
+  assert.equal(E.alarmsLeft(F), 6); assert.ok(!F.feed.includes(F.boss));
+  // Shuffled: across seeds, the first card is sometimes a situation and sometimes an alarm.
+  const firsts = new Set([...Array(30)].map((_, s) => !!E.newGame({ team: ['HUN', 'RES'], seed: s }).feed[0].sit)); assert.equal(firsts.size, 2);
+  // A situation first, then another, then an alarm: the fight count only counts alarms.
+  const G = newG({ team: ['HUN', 'RES'], seed: 6 }); G.feed.unshift(sitCard('pager'), sitCard('patch'));
+  E.setPoint(G, 1); E.flip(G); assert.equal(G.phase, 'sit'); assert.equal(G.fight, 0, 'no alarm flipped yet'); assert.equal(G.sit.id, 'pager');
   throwsRule(() => E.flip(G), /Not time/); throwsRule(() => E.resolveSit(G, 'heal'), /Not an option/);
   E.resolveSit(G, 'mute'); assert.equal(G.phase, 'flip'); assert.ok(G.sitDone && G.sit.done); assert.match(G.sit.text, /one more threat die/);
   throwsRule(() => E.setPoint(G, 0), /On point is set/);
-  E.flip(G); assert.equal(G.fight, 2); assert.equal(G.sit, null); assert.equal(G.sitDone, false);
-  // The boss's flip gets one too.
-  G.play = []; G.phase = 'flip'; G.feed = []; E.flip(G); assert.equal(G.phase, 'sit'); assert.equal(G.sit.id, 'patch'); assert.equal(G.bossOut, false);
+  E.flip(G); assert.equal(G.phase, 'sit'); assert.equal(G.sit.id, 'patch'); E.resolveSit(G, 'heal'); throwsRule(() => E.setPoint(G, 0), /On point is set/);
+  const m = G.feed[0]; E.flip(G); assert.equal(G.fight, 1); assert.deepEqual(G.play, [m]); assert.equal(G.point, 1); assert.equal(G.sit, null); assert.equal(G.sitDone, false);
+  assert.equal(m.slots[m.slots.length - 1], 6, 'the mute waited for the alarm');
+  // A situation as the last card: the boss is next after it.
+  G.play = []; G.phase = 'flip'; G.feed = [sitCard('patch')]; E.flip(G); assert.equal(G.phase, 'sit'); assert.ok(G.sit.boss); assert.equal(G.bossOut, false);
   E.resolveSit(G, 'agent'); assert.equal(G.phase, 'deal', 'the item drawn is dealt first'); dealAll(G); E.flip(G); assert.ok(G.bossOut);
-  // None left: straight to the mob.
-  const H = newG({ team: ['HUN', 'RES'], seed: 6 }); H.fight = 1; H.sits = []; E.flip(H); assert.equal(H.fight, 2);
   assert.ok(G.log.some(l => l.kind === 'sit' && /Situation: Pager Storm/.test(l.text)));
 });
-test('The Badge That Wasn’t: hold the room (Exposed, an extra item for the win) or fall back (it hits, goes on the row)', () => {
+test('The Badge That Wasn’t: hold the room (Exposed, an extra item for the next win) or fall back (the next alarm hits everyone once when it flips)', () => {
   const G = atSit(['ENG', 'RES'], 'insider', { point: 1 }), top = G.feed[0];
-  assert.equal(G.sit.top, top.uid); assert.equal(G.sit.topName, top.name);
+  assert.equal(G.sit.top, undefined, 'nothing is turned face up');
   E.resolveSit(G, 'stay'); assert.equal(G.cond[1].exposed, true); assert.equal(G.cond[0].exposed, false); assert.equal(G.bonusDraw, 1);
   assert.match(G.sit.text, /draw an item/);
   E.flip(G); assert.equal(G.play[0], top);
   // Win the fight: the usual draw plus one, and Exposed is discarded.
   G.phase = 'assign'; G.dice = []; G.play.forEach(m => { m.off = m.off.map(() => true); }); E.endRound(G);
   assert.equal(kits(G), D.kitPerFight + 1); assert.equal(G.bonusDraw, 0); assert.equal(G.cond[1].exposed, false);
-  const R = atSit(['ENG', 'SOA'], 'insider'), t2 = R.feed[0], next = R.feed[1], hp = R.hp.slice();
-  E.resolveSit(R, 'run'); assert.ok(R.row.includes(t2)); assert.equal(t2.back, 0, 'not a comeback'); assert.ok(!R.feed.includes(t2));
-  assert.deepEqual(R.hp, hp.map(h => h - t2.dmg)); assert.match(R.sit.text, /unfought/);
-  R.row = []; E.flip(R); assert.equal(R.play[0], next, 'the next flip flips the following mob');
-  const B = newG({ team: ['ENG', 'SOA'], seed: 1 }); B.fight = 5; B.feed = []; B.sits = ['insider']; E.flip(B);
-  assert.equal(B.sit.top, 'boss'); assert.ok(B.sit.boss); throwsRule(() => E.resolveSit(B, 'run'), /boss is next/); assert.equal(B.phase, 'sit');
+  // Fall back with another situation before the next alarm: the hit waits for the alarm, then it is fought as usual.
+  const R = atSit(['ENG', 'SOA'], 'insider'); R.feed.unshift(sitCard('patch')); const t2 = R.feed[1], hp = R.hp.slice();
+  E.resolveSit(R, 'run'); assert.deepEqual(R.hp, hp, 'nothing hits yet'); assert.ok(R.badgeHit); assert.match(R.sit.text, /next alarm hits everyone once/);
+  E.flip(R); E.resolveSit(R, 'agent'); dealAll(R); R.row = []; E.flip(R);
+  assert.deepEqual(R.play, [t2], 'it is fought'); assert.deepEqual(R.hp, hp.map(h => h - t2.dmg)); assert.equal(R.badgeHit, false);
+  // No alarm left in the feed (only the boss): you can't fall back.
+  const B = newG({ team: ['ENG', 'SOA'], seed: 1 }); B.fight = 5; B.feed = [sitCard('insider')]; E.flip(B);
+  assert.ok(B.sit.boss); throwsRule(() => E.resolveSit(B, 'run'), /No alarm left/); assert.equal(B.phase, 'sit');
 });
 test('Pager Storm: ride it out (everyone loses 2) or mute it (one more threat die, a 6, dropped when beaten)', () => {
   const G = atSit(['ENG', 'SOA'], 'pager'); E.resolveSit(G, 'ride'); assert.deepEqual(G.hp, [E.HP - 2, E.HP - 2]);
@@ -460,7 +470,7 @@ test('The Janitor’s USB: a pair draws 2 items and Focuses; no pair Rattles; le
   const L = atSit(['ENG', 'SOA'], 'usb', { dice: [1, 2, 3] }), ln = kits(L);
   E.resolveSit(L, 'grab'); assert.equal(L.sit.won, false); assert.equal(kits(L), ln); assert.equal(L.cond[0].rattled, true);
   // Can't hold two of the same.
-  L.cond[0].rattled = true; L.phase = 'sit'; L.sits = []; E.resolveSit(L, 'grab'); assert.equal(L.cond[0].rattled, true);
+  L.cond[0].rattled = true; L.phase = 'sit'; E.resolveSit(L, 'grab'); assert.equal(L.cond[0].rattled, true);
   const N = atSit(['ENG', 'SOA'], 'usb'), state = X => JSON.stringify([X.hp, X.agents, X.hand, X.deal, X.cond]), before = state(N); E.resolveSit(N, 'leave'); assert.equal(state(N), before);
 });
 test('Dark Web Chatter: dig in with 1–4 dice; a 6 draws 2 items, no 6 costs on point 1 HP a die', () => {
@@ -605,27 +615,29 @@ test('baselined with no agent held: it waits, and tucks under the next agent dea
   E.give(G, 0); assert.equal(G.aug[0].host, null, 'a consumable isn’t an agent');
   E.give(G, 1); assert.equal(G.aug[0].host, 'q2'); assert.ok(E.aug(G, 'mailer'));
 });
-test('baselined lines: each works for the whole crew while its agent is held', () => {
-  const G = fight(['HUN', 'RES'], ['spray', 'wyrmling'], {}); setAgents(G, 1, ['recover', 'triage']);
-  const with_ = (id, fn) => { G.aug = [{ id, name: id, host: 'a1-0' }]; const r = fn(); G.aug = []; return r; };
-  // Mailer Daemon: the highest-Damage alarm deals 1 less, to everyone (the host is the Responder's).
-  const base = E.incoming(G).total; assert.deepEqual(with_('mailer', () => E.incoming(G).total), base.map(x => x - 1));
-  // Grifter: on point rolls one more die.
-  const dice = H => { H.phase = 'roll'; H.round = 0; E.roll(H); return H.dice.filter(d => d.k === H.point && d.crew).length; };
-  const a = fight(['HUN', 'RES'], ['spray'], {}); setAgents(a, 1, ['recover']); const b = fight(['HUN', 'RES'], ['spray'], {}); setAgents(b, 1, ['recover']); b.aug = [{ id: 'imp', name: 'imp', host: 'a1-0' }];
-  assert.equal(dice(b), dice(a) + 1);
-  // Password Sprayer: one more reroll a round.
-  const r = fight(['HUN', 'RES'], ['spray'], { dice: [[0, 3], [0, 5]] }); r.rerolled = [true, false]; setAgents(r, 0, ['recover']); r.augReroll = true;
-  assert.ok(E.canReroll(r, r.dice[0])); E.reroll(r, 0); assert.equal(r.augReroll, false); assert.ok(!E.canReroll(r, r.dice[1]));
-  // Scavenger: comebacks don't hit on arrival. Exfil Courier: +1 to the row roll.
-  const q = fight(['HUN', 'RES'], ['spray'], {}); setAgents(q, 0, ['recover']); const w = mob(G, 'wyrmling'); q.row = [{ ...w, uid: 'r1', top: 12, off: [], hits: 0 }];
+test('agent traits: Twin counts its agent as two, Repair heals its holder, Ghost and Scramble guard the row, only while that agent is held', () => {
+  // Twin (Grifter) on a Triage Agent: its holder rolls two more of their own dice, both under that card.
+  const dice = H => { H.phase = 'roll'; H.round = 0; E.roll(H); return H.dice.filter(d => d.src === 'triage' && d.kuid === 'a1-0').length; };
+  const a = fight(['HUN', 'RES'], ['spray'], {}); setAgents(a, 1, ['triage']); const b = fight(['HUN', 'RES'], ['spray'], {}); setAgents(b, 1, ['triage']); b.aug = [{ id: 'imp', name: 'imp', host: 'a1-0' }];
+  assert.equal(dice(a), 1); assert.equal(dice(b), 2); assert.ok(b.dice.filter(d => d.src === 'triage').every(d => d.k === 1));
+  // Twin on a Containment Agent: it cuts like two cards (the Courier deals 4 less, never below 1); on another card it does nothing for Containment.
+  const G = fight(['HUN', 'RES'], ['wyrmling'], {}); setAgents(G, 0, ['contain', 'recover']);
+  const hit = () => E.incoming(G).total[0]; const one = hit();
+  G.aug = [{ id: 'imp', name: 'imp', host: 'a0-1' }]; assert.equal(hit(), one, 'Twin on the Recovery Agent');
+  G.aug = [{ id: 'imp', name: 'imp', host: 'a0-0' }]; assert.equal(E.running(G, 'contain'), 2); assert.equal(hit(), 1);
+  // Repair (Rootkit): after a won fight, its agent heals its holder 2, nobody else.
+  const k = fight(['HUN', 'RES'], ['spray'], {}); setAgents(k, 1, ['triage']); k.aug = [{ id: 'mimic', name: 'mimic', host: 'a1-0' }]; k.hp = [5, 5]; k.play = []; k.dice = []; E.endRound(k);
+  assert.deepEqual(k.hp, [5, 7]); assert.ok(k.log.some(l => /Repair: the Triage Agent heals Responder 2/.test(l.text)));
+  // Ghost (Scavenger): comebacks don't hit on arrival. Scramble (Courier): +1 to the row roll.
+  const w = mob(G, 'wyrmling');
+  const q = fight(['HUN', 'RES'], ['spray'], {}); setAgents(q, 0, ['recover']); q.row = [{ ...w, uid: 'r1', top: 12, off: [], hits: 0 }];
   q.aug = [{ id: 'druid', name: 'druid', host: 'a0-0' }]; const hp = q.hp.slice(); E.rollRow(q, true, 'test'); assert.deepEqual(q.hp, hp);
   const u = fight(['HUN', 'RES'], ['spray'], {}); setAgents(u, 0, ['recover']); u.row = [{ ...w, uid: 'r2', top: 1, off: [], hits: 0 }]; u.aug = [{ id: 'wyrmling', name: 'w', host: 'a0-0' }];
   E.rollRow(u, false, 'test'); assert.equal(u.lastRow.plus, 1); assert.equal(u.lastRow.roll, u.lastRow.pair[0] + u.lastRow.pair[1] + 1);
-  // Rootkit: heal 5 split after a won fight.
-  const k = fight(['HUN', 'RES'], ['spray'], {}); setAgents(k, 1, ['triage']); k.aug = [{ id: 'mimic', name: 'mimic', host: 'a1-0' }]; k.hp = [5, 5]; k.play = []; k.dice = []; E.endRound(k); assert.equal(k.hp[0] + k.hp[1], 15);
-  // Not held by anyone: no effect.
-  const z = fight(['HUN', 'RES'], ['spray'], {}); z.aug = [{ id: 'mailer', name: 'm', host: 'gone' }]; assert.ok(!E.aug(z, 'mailer'));
+  // Not held by anyone: no effect. The card text names each trait.
+  const z = fight(['HUN', 'RES'], ['spray'], {}); z.aug = [{ id: 'druid', name: 'd', host: 'gone' }]; assert.ok(!E.aug(z, 'druid'));
+  assert.deepEqual(['imp', 'druid', 'wyrmling', 'mimic'].map(CARDS.traitName), ['Twin', 'Ghost', 'Scramble', 'Repair']);
+  assert.match(CARDS.mobCard(D.mobs.find(m => m.id === 'imp')), /<b>Twin:<\/b> its agent counts as two of itself/);
 });
 // ---- Guard anyone, pairs, the solo Soarcerer's keep roll, baselining at every crew size (sim.js GUARDANY, PAIRADD, SOASOLOKEEP) ----
 test('a guard covers anyone not blocking yet: a crewmate, or by default the guarder; never someone already blocking', () => {
@@ -731,6 +743,8 @@ function cardParity(w, slot) {
   const t = w.document.createElement('div'); t.innerHTML = want;
   assert.equal(got.outerHTML, t.firstElementChild.outerHTML, `card ${k} differs from the shared card markup`);
 }
+// The page's feed with its alarms first, so the next flip starts a fight (the situations follow, in order).
+function alarmFirst(w) { const G = w.CDUI.UI.G; G.feed = [...G.feed.filter(c => !c.sit), ...G.feed.filter(c => c.sit)]; w.CDUI.render(); }
 // Deal on the page: Give to each player in turn; a full player discards their first agent.
 function pageDeal(w) {
   const d = w.document, G = w.CDUI.UI.G; let n = 0;
@@ -752,7 +766,7 @@ test('page: every card in the gallery matches the shared paper card markup', { s
 });
 
 test('page: a 2-player game clicked through to the end screen, items dealt and used, cards in parity throughout', { skip: !JSDOM && 'jsdom not installed' }, () => {
-  const w = load(4), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
+  const w = load(7), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
   assert.match(d.body.textContent, /Tuned for 1–4 players/);
   click('[data-a="start"]');
   let n = 0, slotHits = 0, twos = 0, guards = 0, pickers = 0, sits = 0, bases = 0, tucks = 0, deals = 0, uses = 0, checked = new Set(), sawRow = false;
@@ -819,7 +833,7 @@ test('page: the deal phase shows the drawn item on the mat with a Give button pe
 
 test('page: a consumable is usable only when its timing allows; Surge rolls more dice into the tray', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(8), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
-  click('[data-a="start"]'); pageDeal(w); const G = w.CDUI.UI.G;
+  click('[data-a="start"]'); pageDeal(w); alarmFirst(w); const G = w.CDUI.UI.G;
   G.hand = [[{ uid: 'u1', t: 'surge' }, { uid: 'u2', t: 'coffee' }], [{ uid: 'u3', t: 'freeze' }]]; w.CDUI.render();
   const btn = uid => d.querySelector(`[data-a="use"][data-u="${uid}"]`);
   assert.ok(btn('u1').disabled); assert.ok(!btn('u2').disabled); assert.ok(!btn('u3').disabled, 'Change Freeze before the flip');
@@ -832,7 +846,7 @@ test('page: a consumable is usable only when its timing allows; Surge rolls more
 
 test('page: a double stays selected for its second take; undo takes one back; keyboard picks dice', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(8), d = w.document, click = s => d.querySelector(s).click();
-  click('[data-a="start"]'); pageDeal(w); click('[data-a="flip"]'); if (w.CDUI.UI.G.phase === 'roll') click('[data-a="roll"]');
+  click('[data-a="start"]'); pageDeal(w); alarmFirst(w); click('[data-a="flip"]'); if (w.CDUI.UI.G.phase === 'roll') click('[data-a="roll"]');
   const G = w.CDUI.UI.G; assert.equal(G.phase, 'assign');
   // Put a known double in hand, and two dice showing its number under the first mob.
   const m = G.play[0], id = G.team[0], n = CARDS.DOUBLES[id][0];
@@ -852,7 +866,7 @@ test('page: a double stays selected for its second take; undo takes one back; ke
 
 test('page: agents sit on the mat in their holder’s group; a Triage Agent’s die lands under its own card, not in the dice tray', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(8), d = w.document, click = s => d.querySelector(s).click();
-  click('[data-a="start"]'); pageDeal(w);
+  click('[data-a="start"]'); pageDeal(w); alarmFirst(w);
   const G = w.CDUI.UI.G; G.agents = [[{ uid: 'k1', t: 'triage' }, { uid: 'k2', t: 'recover' }], [{ uid: 'k3', t: 'triage' }]]; G.hand = [[], []]; w.CDUI.render();
   assert.ok(d.querySelector('.table .t-agents [data-holder="0"] [data-kuid="k1"]'), 'agents are on the play mat, by holder'); assert.ok(!d.querySelector('.t-side .t-kslot'), 'not in the side panel');
   assert.ok(d.querySelector('[data-holder="1"] [data-kuid="k3"]'));
@@ -878,9 +892,10 @@ test('page: hovering a small card on the mat shows it full size, with the shared
 test('page: a situation flips on the mat, its choice resolves, its condition shows by the HP; Focused and Engineer controls', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(8), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); }, key = k => d.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true }));
   w.CDUI.UI.setup.team = ['ENG', 'HUN']; click('[data-a="start"]'); pageDeal(w);
-  const G = w.CDUI.UI.G; click('[data-a="flip"]');
-  G.play = []; G.phase = 'flip'; G.sits = ['usb']; const r = G.r, seq = [2, 2, 5].map(v => (v - .5) / 6); G.r = () => seq.length ? seq.shift() : r(); w.CDUI.render();
-  assert.match(d.querySelector('.dock [data-a="flip"]').textContent, /Flip a situation/);
+  alarmFirst(w); const G = w.CDUI.UI.G; click('[data-a="flip"]');
+  G.play = []; G.phase = 'flip'; G.feed = G.feed.filter(c => c.sit !== 'usb'); G.feed.unshift(sitCard('usb')); const r = G.r, seq = [2, 2, 5].map(v => (v - .5) / 6); G.r = () => seq.length ? seq.shift() : r(); w.CDUI.render();
+  assert.match(d.querySelector('.dock [data-a="flip"]').textContent, /Flip the top card/, 'the page never says what the face-down card is');
+  assert.doesNotMatch(d.querySelector('.table').textContent, /situation first/i);
   click('[data-a="flip"]'); assert.equal(G.phase, 'sit');
   const slot = d.querySelector('.table .t-sslot[data-card="sit:usb"]'); assert.ok(slot, 'the situation card is on the mat'); cardParity(w, slot);
   assert.deepEqual([...d.querySelectorAll('[data-a="sit"]')].map(b => b.dataset.o), ['grab', 'leave']);
@@ -889,7 +904,7 @@ test('page: a situation flips on the mat, its choice resolves, its condition sho
   assert.match(d.querySelector('.t-dealp').textContent, /takes Focused/, 'the outcome stays on the mat while dealing');
   const cond = d.querySelector('[data-hp="0"] [data-card="cond:focused"]'); assert.ok(cond, 'Focused sits by the on-point HP'); cardParity(w, cond);
   pageDeal(w); assert.equal(G.phase, 'flip');
-  click('[data-k="sitflip"]'); assert.equal(G.fight, 2); if (G.phase === 'roll') click('[data-a="roll"]'); assert.equal(G.phase, 'assign');
+  alarmFirst(w); click('[data-k="sitflip"]'); assert.equal(G.fight, 2); if (G.phase === 'roll') click('[data-a="roll"]'); assert.equal(G.phase, 'assign');
   // The Engineer's die: an Opposite side button and the Focused picker.
   const i = G.dice.findIndex(x => x.k === 0 && x.crew); G.dice[i] = { ...G.dice[i], n: 2, dbl: false, used: null, takes: [], turned: false }; w.CDUI.UI.sel = i; w.CDUI.render();
   assert.match(d.querySelector('[data-a="eng"]').textContent, /Opposite side \(→ 5\)/); assert.equal(d.querySelectorAll('[data-a="focus"]').length, 5);
@@ -897,15 +912,15 @@ test('page: a situation flips on the mat, its choice resolves, its condition sho
   click('[data-k="focus6"]'); assert.equal(G.dice[i].n, 6); assert.equal(G.cond[0].focused, false); assert.ok(!d.querySelector('[data-card="cond:focused"]'));
   key('o'); assert.equal(G.dice[i].n, 1); assert.ok(G.dice[i].flipped); assert.ok(!d.querySelector('[data-a="eng"]'));
   assert.match(d.querySelector(`[data-k="die${i}"]`).textContent, /OPP/);
-  // The Badge That Wasn’t before the boss: Fall back is disabled with the reason.
-  G.play = []; G.phase = 'flip'; G.feed = []; G.sits = ['insider']; G.sitDone = false; w.CDUI.render(); click('[data-a="flip"]');
-  const run = d.querySelector('[data-a="sit"][data-o="run"]'); assert.ok(run.disabled); assert.match(d.querySelector('.sit-o .why').textContent, /boss is next/);
-  assert.ok(d.querySelector('.t-sit .t-slot.faceup[data-card="boss"]'), 'the boss face up beside it');
+  // The Badge That Wasn’t with no alarm left in the feed: Fall back is disabled with the reason; nothing is face up.
+  G.play = []; G.phase = 'flip'; G.feed = [sitCard('insider')]; G.sitDone = false; w.CDUI.render(); click('[data-a="flip"]');
+  const run = d.querySelector('[data-a="sit"][data-o="run"]'); assert.ok(run.disabled); assert.match(d.querySelector('.sit-o .why').textContent, /No alarm left/);
+  assert.ok(!d.querySelector('.t-sit .t-slot.faceup'), 'no card turned face up beside it');
 });
 
 test('page: Guard asks who to cover when more than one player is open; with one left it guards them directly', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(8), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
-  click('[data-a="start"]'); pageDeal(w); click('[data-a="flip"]'); if (w.CDUI.UI.G.phase === 'roll') click('[data-a="roll"]');
+  click('[data-a="start"]'); pageDeal(w); alarmFirst(w); click('[data-a="flip"]'); if (w.CDUI.UI.G.phase === 'roll') click('[data-a="roll"]');
   const G = w.CDUI.UI.G; assert.equal(G.phase, 'assign');
   const own = G.dice.filter(x => x.k === 0 && x.crew).map(x => x.i); assert.equal(own.length, 2);
   own.forEach(i => { G.dice[i] = { ...G.dice[i], ...E.pipDie(6, G.team[0]), used: null, takes: [], turned: false }; });
@@ -927,7 +942,7 @@ test('page: Guard asks who to cover when more than one player is open; with one 
 
 test('page: two matching dice show a Pair control in the tray and the hint; pairing makes a double; undo splits it', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(8), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
-  click('[data-a="start"]'); pageDeal(w); click('[data-a="flip"]'); if (w.CDUI.UI.G.phase === 'roll') click('[data-a="roll"]');
+  click('[data-a="start"]'); pageDeal(w); alarmFirst(w); click('[data-a="flip"]'); if (w.CDUI.UI.G.phase === 'roll') click('[data-a="roll"]');
   const G = w.CDUI.UI.G; assert.equal(G.phase, 'assign');
   const own = G.dice.filter(x => x.k === 0 && x.crew).map(x => x.i), n = [1, 2, 3, 5].find(v => !CARDS.DOUBLES[G.team[0]].includes(v) && v !== 1);
   own.forEach(i => { G.dice[i] = { ...G.dice[i], ...E.pipDie(n, G.team[0]), used: null, takes: [], turned: false }; });

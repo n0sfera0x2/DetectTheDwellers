@@ -203,7 +203,7 @@
         <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
     return `<div class="wrap"><div class="intro-grid">
       <section class="hero"><span class="art">${slice(ART.hero)}</span><p class="meta c">Chapter dice · d6 prototype</p><h1 class="logo">Detect the Dwellers</h1>
-        <p class="lede">The night shift with standard d6s instead of d20 sums. Each alarm card prints the dice to set under it. Roll, and a die takes out one under an alarm showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards anyone. Two of your own dice showing the same number pair up as a double. Between fights a situation flips and makes you choose. The shift starts at 22:00; take the boss at 05:59 and make it to 06:00.</p>
+        <p class="lede">The night shift with standard d6s instead of d20 sums. Each alarm card prints the dice to set under it. Roll, and a die takes out one under an alarm showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards anyone. Two of your own dice showing the same number pair up as a double. Situations are shuffled into the feed with the alarms: flip one and on point chooses. The shift starts at 22:00; take the boss at 05:59 and make it to 06:00.</p>
         <p class="t-note"><b>Tuned for 1–4 players.</b> Everyone starts at ${E.HP} HP. A crew of 4 adds each card’s + die; solo to 3 players set the printed dice. Win a fight and draw items: agents work for the whole crew, consumables are used once.</p>
         <p class="meta">Same cards as the paper prototype. <button class="lnk" type="button" data-a="cards" data-k="cards">See all ${A.mobs().length + 3 + A.ANALYST_IDS.length + A.AGENT_IDS.length + A.CONS_IDS.length + A.SIT_IDS.length + A.COND_IDS.length} cards</button></p></section>
       <section class="setup panel" aria-labelledby="crew-h"><h2 class="sech" id="crew-h">Crew · ${n} of 4</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>
@@ -215,7 +215,7 @@
   function vTop() {
     const G = UI.G, fighting = G.phase === 'assign' || G.phase === 'roll', inc = fighting ? E.incoming(G) : null;
     const between = G.phase === 'flip' || G.phase === 'deal' || G.phase === 'sit' || G.phase === 'tuck';
-    const label = G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · before ${G.feed.length ? `fight ${G.fight + 1}` : 'the boss'}` : between ? (G.feed.length ? `Next: fight ${G.fight + 1} of ${FLIPS}` : 'Next: the boss') : `Fight ${G.fight} of ${FLIPS} · round ${G.round || 1}`;
+    const label = G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · ${E.alarmsLeft(G) ? `before fight ${G.fight + 1}` : 'before the boss'}` : between ? (E.alarmsLeft(G) ? `Next: fight ${G.fight + 1} of ${FLIPS}` : 'Next: the boss') : `Fight ${G.fight} of ${FLIPS} · round ${G.round || 1}`;
     const now = G.bossOut ? FLIPS : between ? -1 : G.fight - 1, next = G.phase === 'flip' || G.phase === 'sit' || G.phase === 'deal' ? G.fight : -1;
     const bar = [...Array(FLIPS)].map((_, i) => `<i class="${i < G.fight - (now === i ? 1 : 0) && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === FLIPS ? ' next' : ''}"></i>`;
     const crew = G.team.map((id, k) => {
@@ -246,7 +246,7 @@
   }
   function vBossBanner() {
     const G = UI.G; if (!G.bossOut || G.round > 1) return '';
-    return `<div class="pbanner boss"><time class="clk f">05:59</time><p><span class="lead f">${esc(G.boss.name)} arrives.</span> The feed is empty: this is the last fight. Agent dice can’t hit it, and it hits for +2 until it has lost two dice.</p></div>`;
+    return `<div class="pbanner boss"><time class="clk f">05:59</time><p><span class="lead f">${esc(G.boss.name)} arrives.</span> The feed is empty: this is the last fight. It hits for +2 until it has lost two dice.</p></div>`;
   }
   // Read-aloud: on the flip, whoever is on point reads the new mob's flavour out, one line at a time (CSS only).
   const lines = t => String(t).split(/(?<=[.!?…])\s+/).filter(Boolean);
@@ -289,12 +289,13 @@
   }
   // Between fights: the feed face down (the print card back) and who's on point, as analyst cards with portraits.
   function vFlipDesk() {
-    const G = UI.G, boss = !G.feed.length, sit = E.sitDue(G);
-    const label = sit ? 'Flip a situation' : boss ? 'Bring on the boss' : 'Flip the next alarm';
+    // The feed is face down: the page never says whether the top card is an alarm or a situation.
+    const G = UI.G, boss = !G.feed.length, al = E.alarmsLeft(G), si = G.feed.length - al;
+    const label = boss ? 'Bring on the boss' : 'Flip the top card';
     return `<div class="pdesk"><div class="pd-feed"><button class="fdown${boss ? ' boss' : ''}" type="button" data-a="flip" data-k="flipcard" style="--stack:${Math.min(3, G.feed.length)}" aria-label="${label}">
         <span class="fd-art" aria-hidden="true">${slice(ART.back)}</span><span class="fd-t" aria-hidden="true">${boss ? 'The boss' : 'Detect the<br>Dwellers'}</span>
-        <span class="fd-b" aria-hidden="true"><b>${boss ? '05:59 · last fight' : `${pl(G.feed.length, 'alarm')} in the feed`}</b><span>${sit ? 'Situation first' : boss ? 'Bring it on' : 'Flip'}</span></span></button></div>
-      <div class="pd-side">${G.fight ? `<p class="status">${G.fight ? '<b>Fight won.</b> ' : ''}${boss ? 'The feed is empty. The boss is next.' : `${pl(G.feed.length, 'alarm')} left in the feed, then the boss.`}${sit ? ' Pick who’s on point: a situation flips first and lands on them.' : ''}</p>` : '<p class="status"><b>22:00. The shift starts.</b> Pick who’s on point, then flip the first alarm.</p>'}
+        <span class="fd-b" aria-hidden="true"><b>${boss ? '05:59 · last fight' : `${pl(G.feed.length, 'card')} in the feed`}</b><span>${boss ? 'Bring it on' : 'Flip'}</span></span></button></div>
+      <div class="pd-side">${G.fight ? `<p class="status">${G.fight ? '<b>Fight won.</b> ' : ''}${boss ? 'The feed is empty. The boss is next.' : `${pl(al, 'alarm')} and ${pl(si, 'situation')} left in the feed, shuffled, then the boss.`}</p>` : '<p class="status"><b>22:00. The shift starts.</b> Pick who’s on point, then flip the top card of the feed. Alarms and situations are shuffled together.</p>'}
         <div class="pd-point"><h2 class="sech">On point</h2><div class="acards" role="group" aria-label="On point">${G.team.map((id, k) => { const on = G.point === k;
           return `<button class="acard${on ? ' on' : ''}" type="button" data-a="point" data-n="${k}" data-k="point${k}" aria-pressed="${on}"><i class="tab" aria-hidden="true"></i><span class="scr">${crop(ART[id], THUMB[id])}</span><b class="nm">${esc(nm(id))}</b><span class="phud${on ? ' c' : ''}">${on ? 'On point · 2 dice' : `${G.hp[k]}/${G.max} HP`}</span></button>`; }).join('')}</div>
         <p class="meta">On point rolls two dice${G.n === 1 ? '' : ' and takes Targeted hits'}.</p></div></div></div>`;
@@ -310,31 +311,28 @@
     else if (G.phase === 'sit' || (G.phase === 'flip' && G.sitDone)) body = vSit();
     else if (G.phase === 'flip') body = vFlipDesk();
     else if (G.phase === 'tuck') { const a = G.tuck[0], m = dataMob(a.id);
-      body = `<div class="t-tuckp"><div class="t-slot" data-card="mob:${a.id}">${A.mobCard(m)}<span class="t-stamp beat">Baselined</span></div><div class="sb"><h2 class="sech a">The agents learned it</h2><p class="status"><b>${esc(a.name)}</b> is baselined. Tuck it under an agent someone holds, below: while that agent is held, ${esc(A.BASE[a.id].replace(/^./, c => c.toLowerCase()))} It works for the whole crew. Discarding that agent loses it.</p><p class="meta">It still goes on the persistence row.</p></div></div>`; }
+      body = `<div class="t-tuckp"><div class="t-slot" data-card="mob:${a.id}">${A.mobCard(m)}<span class="t-stamp beat">Baselined</span></div><div class="sb"><h2 class="sech a">The agents learned it</h2><p class="status"><b>${esc(a.name)}</b> is baselined. Tuck it under an agent someone holds, below. That agent gains <b>${esc(A.traitName(a.id))}</b>: ${esc(A.BASE[a.id].replace(/^\w+: /, ''))} Pick the agent with care: discarding it loses the trait.</p><p class="meta">It still goes on the persistence row.</p></div></div>`; }
     else if (G.phase === 'deal') body = vDeal();
     return `<section class="table" aria-label="The fight">${head}${bans ? `<div class="bans">${bans}</div>` : ''}${body}${vAgents()}</section>`;
   }
-  // A situation on the mat where the mob would be: its card, the top mob face up beside it (The Badge That Wasn’t),
-  // one button per option under it, then the outcome (the dice rolled, won or lost) and the flip.
+  // A situation on the mat where the mob would be: its card, one button per option under it, then the outcome (the
+  // dice rolled, won or lost) and the next flip.
   function vSit() {
     const G = UI.G, S = G.sit, sd = A.SIT[S.id], opts = E.SIT_OPTS[S.id], who = esc(nm(G.team[G.point]));
-    const top = S.top && (S.top === 'boss' ? G.boss : [...G.feed, ...G.row].find(m => m.uid === S.top));
-    const ran = S.done && S.opt === 'run';
-    const face = top ? `<div class="t-slot faceup" data-card="${cardKey(top)}">${cardFor(top)}<span class="t-stamp bstamp" aria-hidden="true">${ran ? 'Fell back' : 'Face up'}</span><div class="t-under"><span>${ran ? 'On the row, unfought.' : S.boss ? 'The boss is next: no falling back.' : 'The top alarm: next to flip.'}</span></div></div>` : '';
     let n = 0; const key = () => `<kbd>${++n}</kbd>`;
     const btn = (o, label, i, off) => `<button class="btn${i === 0 ? ' p' : ''}" type="button" data-a="sit" data-o="${o}" data-k="sit${o}"${off ? ' disabled' : ''}>${label} ${key()}</button>`;
     let acts;
     if (!S.done) {
       const lbl = i => sd.opts ? sd.opts[i][0] : 'Roll the row';
       acts = S.id === 'chatter' ? `<div class="sit-dig" role="group" aria-label="Dig in: how many dice"><span class="phud">${esc(lbl(0))} · dice</span>${[1, 2, 3, 4].map(k => `<button class="btn${k === 1 ? ' p' : ''}" type="button" data-a="sit" data-o="dig" data-n="${k}" data-k="sitdig${k}" aria-label="Dig in with ${k} ${k === 1 ? 'die' : 'dice'}">${A.pip(k, 22)}${key()}</button>`).join('')}</div>${btn('leave', esc(lbl(1)), 1)}`
-        : opts.map((o, i) => { const off = o === 'run' && S.boss;
-          return `<span class="sit-o">${btn(o, esc(lbl(i)), i, off)}${off ? '<span class="why">The boss is next: you can’t fall back from it.</span>' : ''}</span>`; }).join('');
+        : opts.map((o, i) => { const off = o === 'run' && !S.alarms;
+          return `<span class="sit-o">${btn(o, esc(lbl(i)), i, off)}${off ? '<span class="why">No alarm left in the feed: you can’t fall back.</span>' : ''}</span>`; }).join('');
       acts = `<p class="status"><b>${who} is on point.</b> ${sd.opts ? 'Choose one.' : 'It just happens.'}</p><div class="sit-acts">${acts}</div>`;
     } else {
       const res = S.dice ? `<div class="sit-dice${S.won ? ' won' : S.won === false ? ' lost' : ''}" aria-label="Rolled ${S.dice.join(', ')}">${S.dice.map(v => `<span class="t-die${S.id === 'chatter' && v === 6 || S.id === 'usb' && S.won && S.dice.filter(x => x === v).length > 1 ? ' dbl' : ''}"><span class="f">${A.pip(v, 34)}</span></span>`).join('')}<b class="tag">${S.won ? 'Won' : 'Lost'}</b></div>` : '';
-      acts = `<div class="sit-res">${res}<p class="status">${esc(S.text)}</p>${G.phase === 'flip' ? `<div class="sit-acts"><button class="btn p big" type="button" data-a="flip" data-k="sitflip">${G.feed.length ? 'Flip the alarm' : 'Bring on the boss'} <kbd>F</kbd></button></div>` : ''}</div>`;
+      acts = `<div class="sit-res">${res}<p class="status">${esc(S.text)}</p>${G.phase === 'flip' ? `<div class="sit-acts"><button class="btn p big" type="button" data-a="flip" data-k="sitflip">${G.feed.length ? 'Flip the next card' : 'Bring on the boss'} <kbd>F</kbd></button></div>` : ''}</div>`;
     }
-    return `<div class="t-sit"><div class="sit-cards"><div class="t-sslot" data-card="sit:${S.id}">${A.sitCard(S.id)}</div>${face}</div><div class="sit-side"><h2 class="sech a">Situation · ${esc(sd.kind)}</h2>${acts}</div></div>`;
+    return `<div class="t-sit"><div class="sit-cards"><div class="t-sslot" data-card="sit:${S.id}">${A.sitCard(S.id)}</div></div><div class="sit-side"><h2 class="sech a">Situation · ${esc(sd.kind)}</h2>${acts}</div></div>`;
   }
   // The items on the mat, below the mobs, grouped by who holds them: each player's agents full size in their slots
   // (an empty slot is a dashed spot), a Triage Agent's die under its own card (or a dashed spot where it will land),
@@ -342,11 +340,11 @@
   function vAgents() {
     const G = UI.G, tucking = G.phase === 'tuck', top = G.phase === 'deal' ? G.deal[0] : null, drawn = new Set(G.drawn.map(c => c.uid));
     // A baselined alarm tucked under this agent: its name and Baseline line, as the tucked card's edge shows at the table.
-    const tucked = c => G.aug.filter(a => a.host === c.uid).map(a => `<div class="t-tucked" data-tucked="${a.id}"><b>Baselined · ${esc(a.name)}</b><span>${esc(A.BASE[a.id])}</span></div>`).join('');
+    const tucked = c => G.aug.filter(a => a.host === c.uid).map(a => `<div class="t-tucked" data-tucked="${a.id}"><b>Baselined · ${esc(a.name)}</b><span>${A.BASE[a.id].replace(/^(\w+):/, '<b>$1:</b>')}</span></div>`).join('');
     // With any Triage on the mat, every card keeps the die row's height so the buttons line up.
     const anyT = G.agents.some(a => a.some(c => c.t === 'triage'));
     const under = c => { if (c.t !== 'triage') return anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''; const ds = G.dice.filter(d => d.kuid === c.uid);
-      return `<div class="t-adice" role="group" aria-label="${esc(E.KIT_NAME[c.t])} die">${ds.length ? ds.map(d => dieHtml(d, G.dice.length)).join('') : '<span class="t-dph" aria-hidden="true">Rolls<br>1 die</span>'}</div>`; };
+      return `<div class="t-adice" role="group" aria-label="${esc(E.KIT_NAME[c.t])} die">${ds.length ? ds.map(d => dieHtml(d, G.dice.length)).join('') : `<span class="t-dph" aria-hidden="true">Rolls<br>${E.weight(G, c.uid) > 1 ? E.weight(G, c.uid) + ' dice' : '1 die'}</span>`}</div>`; };
     const groups = G.team.map((id, k) => {
       const ag = G.agents[k], slots = E.slotsOf(G, k), hand = G.hand[k], swap = top && E.dealFull(G, k) && UI.dealTo === k;
       const cards = ag.map(c => `<div class="t-kslot${swap ? ' swap' : ''}" data-card="agent:${c.t}" data-kuid="${c.uid}">${A.agentCard(c.t)}${tucked(c)}${under(c)}
@@ -385,7 +383,7 @@
       ['f', 'Round end', (!E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`)
         + (G.cond.some(c => c.exposed) ? ` Exposed: anyone hit takes 1 more (${G.team.filter((_, k) => G.cond[k].exposed).map(id => esc(nm(id))).join(', ')}).` : '')],
       ['a', 'Beaten', m.boss ? 'Beat it and the shift is survived.' : `It goes back on the persistence row, every time, and comes back on a row roll of 2–${m.top}. Win the fight: draw ${G.n === 1 ? (D.kitSolo === 1 ? 'an item' : D.kitSolo + ' items') : D.kitPerFight + ' items'} and deal them.`],
-      ['a', 'Next', m.boss ? 'No more situations: this is the last fight.' : 'Before the next flip, a situation flips and on point chooses.']];
+      ['a', 'Next', m.boss ? 'No more situations: this is the last fight.' : !G.feed.length ? 'The feed is empty: the boss is next.' : `The feed: ${pl(G.feed.length, 'card')} face down, alarms and situations shuffled, then the boss.`]];
     return `<div class="rbrief"><h2 class="sech">Round ${G.round || 1}</h2><ul>${rows.map(([c, h, t]) => `<li><span class="phud ${c}">${h}</span><span>${t}</span></li>`).join('')}</ul></div>`;
   }
   function vSide() {
@@ -414,12 +412,11 @@
   function vDock() {
     const G = UI.G; let hint = '', ctl = '';
     if (G.phase === 'flip' && G.sitDone) {
-      hint = `<b>Situation done.</b> ${G.feed.length ? 'Flip the alarm' : 'Bring on the boss'}.`;
-      ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the alarm' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
+      hint = `<b>Situation done.</b> ${esc(nm(G.team[G.point]))} stays on point through the next fight. ${G.feed.length ? 'Flip the next card' : 'Bring on the boss'}.`;
+      ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the next card' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
     } else if (G.phase === 'flip') {
-      const sit = E.sitDue(G);
-      hint = sit ? '<b>Pick who’s on point</b>, then flip a situation: it lands on them before the next alarm.' : `<b>Pick who’s on point</b>, then ${G.feed.length ? 'flip the next alarm' : 'bring on the boss'}.`;
-      ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${sit ? 'Flip a situation' : G.feed.length ? 'Flip the next alarm' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
+      hint = `<b>Pick who’s on point</b>, then ${G.feed.length ? 'flip the top card: an alarm or a situation' : 'bring on the boss'}.`;
+      ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the top card' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
     } else if (G.phase === 'sit') {
       hint = `<b>${esc(A.SIT[G.sit.id].kind)}.</b> ${esc(nm(G.team[G.point]))} is on point: ${A.SIT[G.sit.id].opts ? 'choose on the mat (keys 1–' + (G.sit.id === 'chatter' ? 5 : 2) + ').' : 'roll the row (key 1).'}`;
     } else if (G.phase === 'roll') {

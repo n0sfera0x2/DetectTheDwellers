@@ -8,7 +8,7 @@ const { fonts } = require('../../../deck/render');
 const { launch, fontsReady } = require('../../../deck/browser');
 const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, tracker, mobs: cardMobs, boss, ANALYST_IDS, AGENT_IDS, ITEM_DECK, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
 
-const OUT = __dirname, HP = 10; // starting HP (2026-11-01): crew-wide agents, Triage as a crew die, 3-die baselining on four alarms, solo starts with 2 items; ~53% solo, 56% at 2p, 55% at 4p in the sim
+const OUT = __dirname, HP = 10; // starting HP (2026-11-02): situations shuffled into the feed, agent traits; ~53% solo, 60% at 2p, 59% at 4p in the sim
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
@@ -22,8 +22,8 @@ const rules = `<section class="page rules">
 <h2>Setup</h2>
 <ol>
 <li>Each player picks an analyst. Start at <b>${HP} HP</b>.</li>
-<li>Shuffle the six alarms face down. The Lockjaw Syndicate goes underneath.</li>
-<li>Shuffle the 6 situations face down. Set the 3 conditions aside.</li>
+<li>Shuffle the 6 alarms and the 6 situations together face down: that’s the <b>feed</b>. The Lockjaw Syndicate goes underneath.</li>
+<li>Set the 3 conditions aside.</li>
 <li>Shuffle the 16 items: that’s the item deck. The crew draws 2.</li>
 <li>Set out the shift tracker: a coin on a box marks anything used once a round or once a fight.</li>
 </ol>
@@ -33,8 +33,9 @@ const rules = `<section class="page rules">
 <p class="ex3"><span>1–3 players set</span>${[1, 2, 2, 3].map(n => P(n, 17)).join('')}<span>· 4 players</span>${[1, 2, 2, 3, 6].map(n => P(n, 17)).join('')}</p>
 <h2>A flip</h2>
 <ol>
-<li>Pick who’s on point. From the second flip on, flip a <b>situation</b> first and play it.</li>
-<li>Flip the top alarm and set its dice. On point may <b>baseline it</b> (below). If anything is on the row, roll the row: every row alarm that comes back returns with its printed dice, and the two with the highest Damage hit everyone on the way in. Two or more in play: a <b>multi-alarm</b> fight.</li>
+<li>Pick who’s on point. They stay on point through any situations until the next fight ends.</li>
+<li>Flip the top card of the feed. A <b>situation</b>: play it, then flip again.</li>
+<li>An <b>alarm</b>: set its dice. On point may <b>baseline it</b> (below). If anything is on the row, roll the row: every row alarm that comes back returns with its printed dice, and the two with the highest Damage hit everyone on the way in. Two or more in play: a <b>multi-alarm</b> fight.</li>
 <li>Fight. When the feed is empty, the boss arrives with one last row roll and no arrival hits.</li>
 </ol>
 <h2>The row</h2>
@@ -42,7 +43,7 @@ const rules = `<section class="page rules">
 </div>
 <div>
 <h2>Baseline it</h2>
-<p>A newly flipped alarm with a <b>Baseline</b> line (never a comeback) can be baselined: set the 3 dice on that line too. Beat it with them all and the agents have learned it: tuck it under an agent someone holds. That agent gains the alarm’s Baseline line until it is discarded. No agents: it waits for the next one drawn. The alarm still goes on the row.</p>
+<p>A newly flipped alarm with a <b>Baseline</b> line (never a comeback) can be baselined: set the 3 dice on that line too. Beat it with them all and the agents have learned it: tuck it under an agent someone holds. That agent gains the alarm’s trait (<b>Twin</b>, <b>Ghost</b>, <b>Scramble</b> or <b>Repair</b>) and keeps it until the agent is discarded, so pick the agent with care. No agents: it waits for the next one drawn. The alarm still goes on the row.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>
@@ -60,7 +61,7 @@ const rules = `<section class="page rules">
 <p>Beat the boss and you’ve survived the night. Anyone at 0 HP and the shift is lost.</p>
 </div>
 </div>
-<p class="foot">Prototype only. Numbers from the bot sim of 2026-11-01, crew-wide agents and 3-die baselining (prototypes/chapter-dice/README.md). Record: who played, time, win or loss, and every rule you played wrong.</p>
+<p class="foot">Prototype only. Numbers from the bot sim of 2026-11-02: situations shuffled into the feed, agent traits (prototypes/chapter-dice/README.md). Record: who played, time, win or loss, and every rule you played wrong.</p>
 </section>`;
 
 // ---- Cards (2.5 × 3.5 in, nine to a page): the markup lives in ../cards.js, shared with the web prototype ----

@@ -5,7 +5,7 @@
 // in the card's accent, a solid tab, and the art set in as a dark screen of fixed height per card type.
 // Throwaway prototype code: nothing outside prototypes/ may import this.
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../data/cards.json'), require('./sim').numbersFor, require('../../data/art.json'), require('../../data/art-print.json'));
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../data/cards.json'), require('./sim').numbersFor, { ...require('../../data/art.json'), ...require('./art/art.json') }, require('../../data/art-print.json')); // art/art.json: the consumables' own scenes (art/scenes.js)
   else root.CDCards = factory(root.CD_DATA, root.CD_NUMBERS, root.CD_ART || {}, root.CD_ART || {});
 })(typeof self !== 'undefined' ? self : this, function (D, numbersFor, ART, PRINT) {
   const C = { bg: '#F6F2EC', ink: '#1A1418', mut: '#5A4B43', rule: '#D8CEC3', cy: '#005F73', fl: '#FF5A2A', ex: '#A8360F', E: '#A8360F', am: '#8A4510' };
@@ -59,13 +59,12 @@
   // The keyword's icon from the game data, as the printed d20 mob cards show it.
   const kwIcon = m => { const k = D.keywords && D.keywords[m.kw]; return k ? `<svg class="kwi" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="#A8360F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${k.icon}</svg>` : ''; };
   const nmRow = (name, dmg) => `<div class="nr"><div class="nm">${name}</div><div class="dmg"><span>Damage</span><b>${dmg}</b></div></div>`;
-  // Baselining (2026-10-31): every alarm prints a harder "Baseline it" condition: set four more threat dice showing
-  // its main number's opposite side (7 − main). Beat it with them and tuck it under an agent: that agent's card gains
-  // the line below while it stays in the tray. Same as sim.js BASES.
-  const BASE_N = 4;
+  // Baselining (2026-10-31): an alarm prints a harder "Baseline it" condition: set more threat dice showing its main
+  // number's opposite side (7 − main). Beat it with them and tuck it under an agent: that agent's card gains the line
+  // below while it stays in the tray. Since 2026-11-01: 3 dice (was 4), and only the four heavier alarms have a line
+  // (the Mailer Daemon and Password Sprayer cost more than their lines gave back). Same as sim.js BASES and BASEDICE.
+  const BASE_N = 3;
   const BASE = {
-    mailer: 'The highest-Damage alarm deals 1 less.',
-    spray: 'Once a round, reroll one more die.',
     imp: 'On point rolls one more die.',
     druid: 'Comebacks don’t hit on arrival.',
     wyrmling: 'Add 1 to every row roll.',
@@ -80,32 +79,33 @@
   }
   function bossCard(b) {
     return `<div class="card boss">${tab}${art(SCENE.boss(b.id))}${hd('Boss', 'arrives at 05:59')}${nmRow(b.name, b.dmg)}
-  <div class="kw"><span><b>${b.abilityName}.</b> +2 Damage until it has lost two dice. Agent dice can’t hit it.</span></div>
+  <div class="kw"><span><b>${b.abilityName}.</b> +2 Damage until it has lost two dice.</span></div>
   ${strip(diceFor(b, true), 24)}</div>`;
   }
   const PERK = {
     HUN: 'Your 1s match any number on any alarm.',
     RES: 'Once a fight, after you roll, pick an alarm: it deals no damage this round.',
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
-    SOA: 'You hold one more agent: 3 (solo 5).',
+    SOA: 'You hold one more agent: 3 (solo 5). Solo: when you use a consumable, roll a die. On a 2 or 6, keep it.',
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'standard d6')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
-  <div class="note">A double counts as two dice showing its number, or guards.</div><div class="perk">${PERK[id]}</div></div>`;
-  // Items (2026-10-31): the deck is items. Agents are passive and work for whoever holds them (2 each, the Soarcerer
-  // 3; solo 4, or 5). Consumables don't take a slot: keep them in hand and use each once. [name, rule, art key].
+  <div class="note">A double counts as two dice showing its number, or guards anyone.</div><div class="perk">${PERK[id]}</div></div>`;
+  // Items (2026-10-31): the deck is items. Agents are passive: each player holds 2 (the Soarcerer 3; solo 4, or 5).
+  // Since 2026-11-01 they work for the whole crew, and Triage rolls one more die of its holder's own. Consumables
+  // don't take a slot: keep them in hand and use each once. [name, rule, art key].
   const AGENT = {
-    triage: ['Triage Agent', 'Roll an agent die with your dice every round.', 'kit_triage'],
-    enrich: ['Enrichment Agent', 'Once a round, turn one of your dice to any number.', 'kit_enrich'],
-    contain: ['Containment Agent', `Your biggest hitter deals you ${D.containCut} less, never below 1.`, 'kit_contain'],
-    recover: ['Recovery Agent', `After every won fight, heal ${D.recoverHeal} HP.`, 'kit_recover'],
+    triage: ['Triage Agent', 'Every round, roll one more of your own dice.', 'kit_triage'],
+    enrich: ['Enrichment Agent', 'Once a round, turn any crew die to any number.', 'kit_enrich'],
+    contain: ['Containment Agent', `The highest-Damage alarm deals ${D.containCut} less to everyone, never below 1.`, 'kit_contain'],
+    recover: ['Recovery Agent', `After every won fight, heal ${D.recoverHeal} HP split across the crew.`, 'kit_recover'],
   };
   const CONS = {
-    surge: ['Surge Playbook', 'After the roll: roll 3 more dice.', 'kit_hunt'],
-    intel: ['Threat Intel Feed', 'After the roll: every die matches anything this round.', 'kit_recon'],
-    isolate: ['Isolation Script', 'Remove one die from every alarm (the boss keeps at least one).', 'kit_patch'],
-    coffee: ['Shift Coffee', `Heal ${D.recoverBurn} HP split across the crew.`, 'kit_decoy'],
-    freeze: ['Change Freeze', 'Skip the next row roll.', 'kit_recon'],
+    surge: ['Surge Playbook', 'After the roll: roll 3 more dice.', 'cons_surge'],
+    intel: ['Threat Intel Feed', 'After the roll: every die matches anything this round.', 'cons_intel'],
+    isolate: ['Isolation Script', 'Remove one die from every alarm (the boss keeps at least one).', 'cons_isolate'],
+    coffee: ['Shift Coffee', `Heal ${D.recoverBurn} HP split across the crew.`, 'cons_coffee'],
+    freeze: ['Change Freeze', 'Skip the next row roll.', 'cons_freeze'],
   };
   const ITEM = { ...AGENT, ...CONS }, isAgent = t => !!AGENT[t];
   const agentCard = t => isAgent(t)
@@ -114,12 +114,21 @@
   const legend = `<div class="card ref am">${tab}${hd('Reference', 'every die')}<div class="nm">Dice</div>
   <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
-  <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards. Never both.</div>
-  <div class="note">Your doubles are on your analyst card. Crew and agent dice: only a ${pip(6, 14)} is a double.</div>
+  <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards anyone.</div>
+  <div class="note">Your doubles are on your analyst card. The solo crew die: only a ${pip(6, 14)}. <b>Two of yours on one number: a double.</b></div>
   <div class="note"><b>Once a round, reroll one of your own dice.</b></div>
-  <div class="note">4 players: add the card’s + die.</div>
-  <div class="note">Row: 2 amber dice; a row alarm comes back if the sum is at most its number.</div></div>`;
+  <div class="note">4 players: add the alarm’s + die.</div>
+  <div class="note">Row: 2 amber dice; back if the sum is at most its number.</div></div>`;
 
+  // The shift tracker (2026-11-01): the table's memory for every once-a-round, once-a-fight and waiting effect. Coins
+  // go on its boxes when something is used; a row is cleared when its round or fight ends. Paper only: the web tracks it.
+  const box = t => `<span class="bx">${t}</span>`;
+  const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
+  <div class="note">Put a coin on a box when you use it. Clear a row when its round or fight ends.</div>
+  <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}</div>
+  <div class="trow"><b>This fight</b>${box('Responder stand')}${box('Hold the room: win, draw 1')}</div>
+  <div class="trow"><b>Waiting</b>${box('Change Freeze: skip the next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}</div>
+  <div class="note"><b>Escalating:</b> a coin on the alarm each round it stays up. <b>Regen:</b> set taken dice aside in a line; it puts back the last.</div></div>`;
   // Situations (2026-10-30): one flips before every flip after the first (the boss's too), once who's on point is
   // picked. The real game's situations (names, scenes and story lines from the data) with rules rewritten for the
   // dice. Each offers a choice, except the event. Same rules as sim.js situation(). [label, rule] per option.
@@ -181,6 +190,8 @@
 .perk{font-size:11px;line-height:1.33;font-weight:600;background:#fff;border:1px solid ${C.cy};padding:4px 7px;margin-top:auto;margin-bottom:11px}
 .ex{display:flex;align-items:center;gap:5px;font-size:11px;color:${C.mut};background:#fff;border:1px solid ${C.rule};padding:5px 7px}
 .note{font-size:11px;line-height:1.35;color:${C.mut}}.note svg{vertical-align:-2px}.note b{color:${C.ink}}
+.trow{display:flex;flex-wrap:wrap;gap:3px;align-items:center;font-size:10px;line-height:1.25}.trow b{width:100%;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:${C.am}}
+.bx{background:#fff;border:1px solid ${C.rule};padding:2px 5px;color:${C.ink}}.bx svg{vertical-align:-2px}.card.trk{gap:6px}
 .card.ref .kw{display:block}.card.ref .kw b{text-transform:none;font-size:inherit}
 .card.sit .art{height:74px}.card.sit .fl{border-top:0;padding-top:0}.card.sit .nm{color:${C.am}}
 .srule{font-size:11px;line-height:1.3;font-weight:600}
@@ -188,6 +199,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { BASE, BASE_N, baseDie, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend,
+  return { BASE, BASE_N, baseDie, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });

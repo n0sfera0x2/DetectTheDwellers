@@ -4,13 +4,28 @@ Guidance for Claude Code working in this repo.
 
 ## What this is
 
-Detect the Dwellers: a co-op d20 card game (1–4 players) set on a cyberpunk SOC night shift. One rules engine drives three outputs:
+Detect the Dwellers: a co-op dice-and-card game (1–4 players) set on a cyberpunk SOC night shift.
+
+**The game is the d6 chapter dice system** (since 2026-10-31), in `prototypes/chapter-dice/`. Its README opens with the current rules, card set, sim numbers and open items; read that first. Design reviews, sims and balance work target it (`SYS=n6 HP=10 node prototypes/chapter-dice/sim.js`), not the d20 build. It is still prototype code: under `.claude/rules/prototype-code.md` it gets rewritten to production standards before it replaces the d20 build, and it must not edit files outside `prototypes/` unless the user asks.
+
+| Path | What it is |
+| --- | --- |
+| `prototypes/chapter-dice/sim.js` | The bot and balance sim. `SYS=n6` is the d6 game; knobs in the README. |
+| `prototypes/chapter-dice/cards.js` | The card markup and per-card rules text, shared by paper and web (card parity). |
+| `prototypes/chapter-dice/web/` | The playable page: `engine.js` (DOM-free, seeded), `ui.js`, `ui.css`, `build.js`, `spec.js` (`node --test`). |
+| `prototypes/chapter-dice/paper/build.js` | The rules sheet and 38 cut-out cards as a PDF. |
+
+A d6 rule change touches the sim, `web/engine.js`, `cards.js` (and the paper rules sheet), then the README: update **The rules now** and **Where it stands** (check the **Targets** table), and add a dated section under History.
+
+## The legacy d20 build
+
+Everything below describes the d20 game. It still builds, tests and ships its print deck, but new design work goes into the d6 game. One rules engine drives three outputs:
 
 1. **The playable web version**, a single self-contained HTML file (`dist/index.html`).
 2. **The print deck**, 72 poker-size cards on eight duplex Letter sheets (`dist/deck/`).
 3. **The balance sims**, a bot that plays thousands of games to tune HP and check spread.
 
-## Layout
+### Layout
 
 | Path | What it is |
 | --- | --- |
@@ -26,7 +41,7 @@ Detect the Dwellers: a co-op d20 card game (1–4 players) set on a cyberpunk SO
 | `test/` | `node:test` suites: engine invariants, deck snapshot, headless UI play-throughs (jsdom). |
 | `docs/` | `RULES.md` (rules text), `CARDS.md` (generated), `DESIGN.md` (decisions and targets), `PLAYTEST.md` (the human playtest kit). |
 
-## Commands
+### Commands
 
 ```bash
 npm install            # once; jsdom for the UI tests
@@ -39,11 +54,11 @@ npm run golden         # re-snapshot print cards after an intentional card chang
 npm run export:cards   # exports/: 825 × 1125 singles (300 dpi, bleed), manifest.csv, upload zip
 npm run export:pdf     # exports/detect-the-dwellers-pnp.pdf: the eight duplex sheets, 16 Letter pages
 npm run proof:cmyk     # exports/cmyk_proof/: the singles through CMYK and back, plus a palette ΔE report (macOS sips)
-npm run serve          # build and serve the chapter dice (d6) prototype on localhost:8080
+npm run serve          # build and serve the d6 game on localhost:8080
 npm run serve:classic  # serve dist/ (the d20 game) on localhost:8080
 ```
 
-## Making a change
+### Making a change (d20)
 
 A rule or card change usually touches several places. Work through them in order:
 
@@ -56,7 +71,7 @@ A rule or card change usually touches several places. Work through them in order
 7. **Docs.** `npm run cards`, and update `docs/RULES.md` (and `docs/DESIGN.md` if it's a design decision).
 8. **`npm test`** must pass. The balance gate fails if any mode drifts out of its band.
 
-## Invariants
+### Invariants (d20)
 
 - **72 cards exactly:** 15 alarms, 18 situations (9 of them story cards with a Recon line), 3 bosses, 5 analysts, 16 kit (8 types × 2), 4 HP trackers, 2 double-sided references, 9 markers (6 Came back, Next alarm, Round, Once per fight) on the eighth sheet. Changing the count changes the sheet layout.
 - **One starting HP per difficulty, at every player count.** Fix crew-size spread through scaling, not HP tables.

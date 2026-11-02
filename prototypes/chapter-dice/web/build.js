@@ -6,7 +6,8 @@
 const fs = require('fs'), path = require('path');
 const D = require('../../../data/cards.json');
 const { fonts } = require('../../../deck/render');
-const ART = require('../../../data/art.json'), PRINT = require('../../../data/art-print.json');
+const ART = { ...require('../../../data/art.json'), ...require('../art/art.json') }, // + the consumables' scenes (../art/scenes.js)
+  PRINT = require('../../../data/art-print.json');
 const { CARD_CSS, MOB_IDS, BOSS_ID, SIT_IDS, ANALYST_IDS, artKeys } = require('../cards');
 
 const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8');

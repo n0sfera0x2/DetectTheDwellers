@@ -94,8 +94,8 @@ const RESPERK = process.env.RESPERK || 'stand', SOAPERK = process.env.SOAPERK ||
 // BASES lists which alarms have it: spray (once a round, reroll one more die), druid (comebacks don't hit on
 // arrival), mailer (the highest-Damage alarm deals 1 less), imp (on point rolls one more die), wyrmling (add 1 to
 // every row roll), mimic (after every won fight, heal 3 split across the crew). BASEPICK=always|never|bot.
-const BASE = process.env.BASE !== '0', BASEPICK = process.env.BASEPICK || 'bot', BASEDICE = +(process.env.BASEDICE || 4);
-const BASES = (process.env.BASES || 'spray,druid,mailer,imp,wyrmling,mimic').split(',');
+const BASE = process.env.BASE !== '0', BASEPICK = process.env.BASEPICK || 'bot', BASEDICE = +(process.env.BASEDICE || 3); // 3 since 2026-11-01 (was 4)
+const BASES = (process.env.BASES || 'imp,druid,wyrmling,mimic').split(','); // since 2026-11-01 the Mailer and Sprayer have no Baseline line
 const aug = (G, id) => G.aug && G.aug.some(a => a.id === id && G.tray.includes(a.host));
 // Items (2026-10-31, ITEMS=new default): the kit deck is items. Agents are passive (always on while held); consumables
 // are used once. Each analyst holds 2 (the Soarcerer 3); solo holds 4. Deck: 6 agents (Triage, Containment ×2;
@@ -105,11 +105,15 @@ const aug = (G, id) => G.aug && G.aug.some(a => a.id === id && G.tray.includes(a
 const USE = NEWITEMS && process.env.TWOSIDED !== '1' ? { triage: 'surge', enrich: 'intel', contain: 'isolate', recover: 'coffee' } : { triage: 'triage', enrich: 'enrich', contain: 'contain', recover: 'recover' };
 const AGENTS = ['triage', 'enrich', 'contain', 'recover'], isAgent = t => AGENTS.includes(t);
 const KIT = NEWITEMS ? (process.env.KITJSON ? JSON.parse(process.env.KITJSON) : ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', 'surge', 'surge', 'intel', 'intel', 'isolate', 'isolate', 'coffee', 'coffee', 'freeze', 'freeze']) : ['triage', 'enrich', 'contain', 'recover'];
-const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : 2 * G.n) + (on(G, 'SOA') && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
-// Each item has a holder (G.trayK, parallel to G.tray): 2 slots each (the Soarcerer 3), solo 4. PERSONAL=1 (default
-// with ITEMS=new): Triage rolls for its holder, Containment cuts what reaches its holder, Recovery heals its holder.
-const PERSONAL = NEWITEMS && process.env.PERSONAL !== '0';
-const slotsK = (G, k) => G.n === 1 ? slotsOf(G) : 2 + (G.team[k] === 'SOA' && process.env.SOASLOT !== '0' ? 1 : 0);
+const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : CREWSLOTS * G.n) + (on(G, 'SOA') && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
+// Each item has a holder (G.trayK, parallel to G.tray): 2 slots each (the Soarcerer 3), solo 4. Since 2026-11-01 agents
+// work for the whole crew (Containment cuts the highest-Damage alarm for everyone, Recovery heals the crew, Enrichment
+// turns any crew die) and TRIAGE=crew: a Triage Agent's holder rolls one more of their own dice. PERSONAL=1: the old
+// personal agents (Triage rolls an agent die for its holder, Containment cuts what reaches its holder, Recovery heals it).
+const TRIAGE = process.env.TRIAGE || (NEWITEMS ? 'crew' : 'agent'); // crew: the holder's own die (it can pair, guard and hit the boss); agent: an agent die
+const CREWSLOTS = +(process.env.CREWSLOTS || 2); // agent slots per player in a crew
+const PERSONAL = NEWITEMS && process.env.PERSONAL === '1'; // crew-wide agents since 2026-11-01; PERSONAL=1: agents work only for their holder
+const slotsK = (G, k) => G.n === 1 ? slotsOf(G) : CREWSLOTS + (G.team[k] === 'SOA' && process.env.SOASLOT !== '0' ? 1 : 0);
 // CONSFREE=1: consumables don't take a slot (slots hold agents); you keep any number of consumables.
 const CONSFREE = NEWITEMS && process.env.CONSFREE !== '0';
 const held = (G, k) => G.trayK.filter((x, i) => x === k && !(CONSFREE && !isAgent(G.tray[i]))).length;
@@ -181,13 +185,15 @@ function roll(G) {
   if (G.sys === 'n6') {
     const raw = [];
     G.team.forEach((id, k) => { const nd = (G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0)) + (k === G.point && aug(G, 'imp') ? 1 : 0); for (let i = 0; i < nd; i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : DOUBLES[id] }); });
+    if (TRIAGE === 'crew') G.team.forEach((id, k) => { for (let i = 0; i < activeK(G, 'triage', k); i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : DOUBLES[id] }); });
     // DBLMODE=pair (proposal, 2026-10-31): no number is a double by itself; two of your own dice showing the same
     // number are a double (they take two of it, as they would anyway, or together they guard).
     if (process.env.DBLMODE === 'pair') raw.forEach(r => { r.dbl = process.env.PAIR6 === '1' ? [6] : []; }); // PAIR6=1: a 6 is a double on its own too
     if (REROLL !== '0') rerolls(G, raw);
     if (process.env.DBLMODE === 'pair') for (let i = 0; i < raw.length; i++) { const j = raw.findIndex((r, x) => x > i && r.k === raw[i].k && r.v === raw[i].v && !r.paired && !raw[i].paired); if (j > 0 && !(process.env.PAIR6 === '1' && raw[i].v === 6)) { raw[i].dbl = [raw[i].v]; raw[i].paired = true; raw.splice(j, 1); } }
+    if (process.env.PAIRADD !== '0') /* since 2026-10-31: two of your own dice showing the same number are a double */ for (let i = 0; i < raw.length; i++) { const r = raw[i]; if (!r.crew || r.dbl.includes(r.v) || G.cond[r.k].rattled) continue; const j = raw.findIndex((x, y) => y > i && x.crew && x.k === r.k && x.v === r.v && !x.dbl.includes(x.v)); if (j > 0) { raw[i] = { ...r, dbl: [r.v] }; raw.splice(j, 1); G.stats.pairs = (G.stats.pairs || 0) + 1; } }
     if (process.env.RATTLED !== 'fight') G.cond.forEach(c => { c.rattled = false; }); // Rattled lasts one roll
-    if (PERSONAL) G.team.forEach((_, k) => { for (let i = 0; i < activeK(G, 'triage', k); i++) raw.push({ k, crew: false, v: 1 + d6(G), dbl: DOUBLES.AGENT }); });
+    if (TRIAGE === 'crew') { /* rolled with the crew dice, above */ } else if (PERSONAL) G.team.forEach((_, k) => { for (let i = 0; i < activeK(G, 'triage', k); i++) raw.push({ k, crew: false, v: 1 + d6(G), dbl: DOUBLES.AGENT }); });
     else for (let i = 0; i < active(G, 'triage'); i++) raw.push({ k: G.point, crew: false, v: 1 + d6(G), dbl: DOUBLES.AGENT });
     return choose(G, raw);
   }
@@ -266,6 +272,7 @@ function matchAt(G, d, m, need, wild) {
   const adj = NEAR && ((id === 'HUN' && m.back) || (id === 'RES' && m === top(G)));
   return adj ? need.findIndex(x => Math.abs(x - v) === 1) : -1;
 }
+const GUARDANY = process.env.GUARDANY !== '0'; // since 2026-10-31: a guard covers any player (skill gap 16 → 27 pts at 2p)
 const top = G => G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0];
 const canGuard = (G, d) => d.crew && (G.sys === 'd20' ? d.r >= D.guard.min && d.r < (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18) : d.f[1] === 2 && !d.half && !d.noguard);
 const autoBlock = (G, d) => G.sys === 'd20' && d.crew && d.r >= (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18);
@@ -307,7 +314,7 @@ function allocations(G, dice) {
         plan.push([i, m, useE]); rec(i + 1, nl, nb, enrichUsed || useE, plan); plan.pop();
       }
     }
-    if (canGuard(G, d) && !blocks[d.k]) { const nb = blocks.slice(); nb[d.k] = true; plan.push([i, 'guard']); rec(i + 1, left, nb, enrichUsed, plan); plan.pop(); any = true; }
+    if (canGuard(G, d)) for (const t of GUARDANY ? G.team.map((_, k) => k) : [d.k]) if (!blocks[t]) { const nb = blocks.slice(); nb[t] = true; plan.push([i, 'guard']); rec(i + 1, left, nb, enrichUsed, plan); plan.pop(); any = true; }
     const nb = blocks.slice(); if (autoBlock(G, d)) nb[d.k] = true;
     plan.push([i, 'idle', any]); rec(i + 1, left, nb, enrichUsed, plan); plan.pop();
   };
@@ -324,7 +331,7 @@ function greedy(G, dice) {
     let best = { s: score(G, left, blocks), left, blocks };
     for (const m of G.play) { const L = left.get(m); if (!L.n) continue; const h = G.sys === 'd20' ? Math.min(options(G, d, m), L.n) : options(G, d, { ...m, need: L.need }, false); if (!h) continue;
       const nl = new Map(left); nl.set(m, takeHits(G, m, L, d, h, false)); const sc = score(G, nl, blocks); if (sc > best.s) best = { s: sc, left: nl, blocks }; }
-    if (canGuard(G, d) && !blocks[d.k]) { const nb = blocks.slice(); nb[d.k] = true; const sc = score(G, left, nb); if (sc > best.s) best = { s: sc, left, blocks: nb, g: true }; }
+    if (canGuard(G, d)) for (const t of GUARDANY ? G.team.map((_, k) => k) : [d.k]) if (!blocks[t]) { const nb = blocks.slice(); nb[t] = true; const sc = score(G, left, nb); if (sc > best.s) best = { s: sc, left, blocks: nb, g: true }; }
     if (best.g) guarded.add(d); left = best.left; blocks = best.blocks;
   }
   return [{ plan: [], left, blocks, score: score(G, left, blocks), greedy: true }];
@@ -346,7 +353,7 @@ function score(G, left, blocks) {
 }
 
 function fight(G, mobs) {
-  G.play = []; G.engUsed = false; G.resUsed = false; G.patUsed = false; G.soaKeep = SOAPERK === 'keep' && on(G, 'SOA'); mobs.forEach(m => enter(G, m)); let round = 0;
+  G.play = []; G.engUsed = false; G.resUsed = false; G.patUsed = false; G.soaKeep = (SOAPERK === 'keep' || G.n === 1 && process.env.SOASOLOKEEP === '1') && on(G, 'SOA'); G.soaRoll = G.n === 1 && (process.env.SOASOLOKEEP || 'roll') === 'roll' && on(G, 'SOA'); mobs.forEach(m => enter(G, m)); let round = 0;
   while (!G.over && G.play.length) {
     round++; G.stats.rounds++; if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rowRoll(G, true)) enter(G, b); if (G.over) return;
     const boss = G.play.some(m => m.boss);
@@ -394,13 +401,14 @@ function fight(G, mobs) {
   if (aug(G, 'mimic')) spread(G, +(process.env.BASEHEAL || 5));
   if (PERSONAL) G.team.forEach((_, k) => { G.hp[k] = Math.min(G.max, G.hp[k] + activeK(G, 'recover', k) * D.recoverHeal); });
   else spread(G, G.tray.filter(x => x === 'recover').length * (D.recoverHeal + (on(G, 'PAT') && (PATPERK !== 'nudge' || process.env.PATREC === '1') ? D.perks.PAT.recover : 0)));
-  draw(G, (process.env.DRAWS ? (G.n === 1 ? +process.env.DRAWS.split(',')[0] : +process.env.DRAWS.split(',')[1] * (process.env.DRAWPER === '1' ? G.n : 1)) : G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) : 0) + (G.bonusDraw || 0)); G.bonusDraw = 0;
+  draw(G, (process.env.DRAWS ? (G.n === 1 ? +process.env.DRAWS.split(',')[0] : +process.env.DRAWS.split(',')[1] * (process.env.DRAWPER === '1' ? G.n : 1)) : G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) + (G.n === 1 ? +(process.env.SOASOLODRAW || 0) : 0) : 0) + (G.bonusDraw || 0)); G.bonusDraw = 0;
 }
 function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hp.indexOf(Math.min(...G.hp)); if (G.hp[k] >= G.max) return; G.hp[k]++; } }
 function burn(G, t) {
   if (G.aug && !G.soaKeep) { const i = G.aug.findIndex(a => a.host === t); if (i >= 0 && G.tray.filter(x => x === t).length <= 1) G.aug.splice(i, 1); }
   G.stats.used = G.stats.used || {}; G.stats.used[t] = (G.stats.used[t] || 0) + 1;
-  if (G.soaKeep) { G.soaKeep = false; G.stats.kept = (G.stats.kept || 0) + 1; } else { dropItem(G, G.tray.indexOf(t)); G.discard.push(t); }
+  const lucky = G.soaRoll && !isAgent(t) && DOUBLES.SOA.includes(1 + d6(G)); // SOASOLOKEEP=roll: a double (2 or 6) keeps it
+  if (lucky) G.stats.kept = (G.stats.kept || 0) + 1; else if (G.soaKeep) { G.soaKeep = false; G.stats.kept = (G.stats.kept || 0) + 1; } else { dropItem(G, G.tray.indexOf(t)); G.discard.push(t); }
   if (t === USE.contain) for (const m of G.play.slice()) { if (m.boss) { m.left = Math.max(1, m.left - 1); if (m.need) m.need.pop(); continue; } m.left--; if (m.need) m.need.pop(); if (!m.left) { G.play = G.play.filter(x => x !== m); if (m.back < 1 || (G.sys === 'n6' && PERSIST === 'always')) G.row.push(m); } }
   if (t === USE.recover) spread(G, D.recoverBurn);
 }
@@ -445,7 +453,7 @@ function situation(G) {
 function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
-  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with
+  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with (2 since 2026-11-01)
   const sits = SIT && G.sys === 'n6';
   for (let f = 0; !G.over; f++) {
     G.point = G.hp.indexOf(Math.max(...G.hp));
@@ -454,7 +462,7 @@ function play(sys, team, opt) {
     if (m && G.runNext) { G.row.push(m); G.stats.ran++; m = G.feed.pop(); } G.runNext = false;
     const boss = !m; if (boss) { m = G.boss; G.stats.boss = 1; }
     if (BASE && m && !boss && !m.back && BASES.includes(m.id) && (BASEPICK === 'always' || BASEPICK === 'bot' && Math.min(...G.hp) >= G.max * +(process.env.BASEHP || 0.8))) {
-      const v = 7 - numbersFor(m.id, 1)[0], nb = BASEDICE + (process.env.BASEPLUS === '0' ? 0 : Math.max(0, G.n - XFROM)); m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }
+      const v = 7 - numbersFor(m.id, 1)[0], nb = BASEDICE + (process.env.BASEPLUS !== '1' ? 0 : Math.max(0, G.n - XFROM)); m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }
     if (G.addSix) { m.need.push(...Array(G.addSix).fill(6)); m.left += G.addSix; G.addSix = 0; }
     const back = rowRoll(G, !boss); if (G.over) break;
     fight(G, [m, ...G.pending, ...back]); G.pending = [];

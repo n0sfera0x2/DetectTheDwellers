@@ -1,5 +1,5 @@
-// Paper prototype for the chapter dice test: one printable PDF with the rules sheet and 61 cut-out cards (15 alarms,
-// 3 bosses, 4 analysts, 16 items, a dice reference, the shift tracker, 18 situations, 3 conditions). The dice are standard pip d6s with exact numbers: no stickers.
+// Paper prototype for the chapter dice test: one printable PDF with the rules sheet and 63 cut-out cards (15 alarms,
+// 3 bosses, 6 analysts, 16 items, a dice reference, the shift tracker, 18 situations, 3 conditions). The dice are standard pip d6s with exact numbers: no stickers.
 // Numbers come from the sim's tuned run (see ../README.md) and the game's data, so paper and sim agree.
 // Usage: node prototypes/chapter-dice/paper/build.js  →  prototypes/chapter-dice/paper/chapter-dice-paper.{html,pdf}
 const fs = require('fs'), path = require('path');
@@ -28,8 +28,8 @@ const rules = `<section class="page rules">
 <li>Set out the shift tracker: a coin on a box marks anything used once a round or once a fight.</li>
 </ol>
 <h2>Threat dice</h2>
-<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. <b>4 players:</b> add the card’s <b>+</b> die (a 6).</p>
-<p class="ex3"><span>Card</span>${[1, 2, 2, 3].map(n => P(n, 20)).join('')}<b>+</b>${P(6, 16)}<span>per player past 3</span></p>
+<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. <b>3 or 4 players:</b> add the card’s <b>+</b> die (a 6) per player past 2.</p>
+<p class="ex3"><span>Card</span>${[1, 2, 2, 3].map(n => P(n, 20)).join('')}<b>+</b>${P(6, 16)}<span>per player past 2</span></p>
 <h2>A flip</h2>
 <ol>
 <li>Pick who’s on point. They stay on point through any situations until the next fight ends.</li>
@@ -42,7 +42,7 @@ const rules = `<section class="page rules">
 </div>
 <div>
 <h2>Baseline it</h2>
-<p>A newly flipped alarm with a <b>Baseline</b> line (never a comeback) can be baselined: set the 3 dice on that line too. Beat it with them all and the agents have learned it: slide it under an agent someone holds, so only its blue <b>tuck band</b> shows below. That agent gains the band’s trait (<b>Twin</b>, <b>Ghost</b>, <b>Scramble</b> or <b>Repair</b>), so pick the agent with care. Tucked, the alarm is <b>off the row</b>. Discard that agent and the alarm goes back on the row. No agents: set it aside until one is drawn.</p>
+<p>A newly flipped alarm with a <b>tuck band</b> can be baselined (a comeback too, with one more die): set the band’s 3 dice as well. Beat it with them all and slide it under an agent someone holds, so only its band shows. That agent gains the band’s <b>trait</b>. An agent holds <b>two</b> at most, and with two it’s <b>upgraded</b> (its card says how). Tucked, the alarm is <b>off the row</b>; discard the agent and it goes back on the row. No agents: set it aside until one is drawn.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>

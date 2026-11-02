@@ -21,10 +21,10 @@
   // ---- Art helpers (as ui/ui.js): scenes fill their frame; analyst thumbnails crop to the analyst and their screen ----
   const slice = svg => { const s = String(svg || ''); return /^<svg[^>]*preserveAspectRatio=/.test(s) ? s.replace(/preserveAspectRatio="[^"]*"/, 'preserveAspectRatio="xMidYMid slice"') : s.replace('<svg', '<svg preserveAspectRatio="xMidYMid slice"'); };
   const crop = (svg, vb) => vb ? slice(svg).replace(/viewBox="[^"]*"/, `viewBox="${vb}"`) : slice(svg);
-  const THUMB = { HUN: '40 14 120 80', RES: '60 6 135 90', ENG: '34 10 120 80', SOA: '45 4 135 90' };
+  const THUMB = { HUN: '40 14 120 80', RES: '60 6 135 90', ENG: '34 10 120 80', SOA: '45 4 135 90', FOR: '30 0 140 92', LEAD: '30 0 135 92' };
   const SQUARE = id => THUMB[id].replace(/ \d+ \d+$/, ' 90 90');
-  const SHORT = { HUN: 'Hunter', RES: 'Resp.', ENG: 'Eng.', SOA: 'Soar.' };
-  const STYLE = { HUN: 'Ends persistence', RES: 'Tanks the big hitter', ENG: 'Rolls hot', SOA: 'Runs the automation' };
+  const SHORT = { HUN: 'Hunter', RES: 'Resp.', ENG: 'Eng.', SOA: 'Soar.', FOR: 'Foren.', LEAD: 'Lead' };
+  const STYLE = { HUN: 'Ends persistence', RES: 'Tanks the big hitter', ENG: 'Rolls hot', SOA: 'Runs the automation', FOR: 'Reads the feed', LEAD: 'Runs the room' };
   const ic = p => `<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
   const ICON = { check: ic('<path d="M3 8.5l3.2 3L13 4.5"/>'), shield: ic('<path d="M8 1.8l5 2v4c0 3.2-2.2 5.3-5 6.4-2.8-1.1-5-3.2-5-6.4v-4z"/>') };
   const SPK = on => ic(`<path d="M2 6h3l4-3v10l-4-3H2z"/>${on ? '<path d="M11.5 5.5a3.5 3.5 0 010 5"/><path d="M13.5 3.5a6.5 6.5 0 010 9"/>' : '<path d="M11 6l4 4M15 6l-4 4"/>'}`);
@@ -178,7 +178,8 @@
   const ITEM_DID = { triage: ['Triage Agents', 'dice taken or guarded'], contain: ['Containment Agents', 'damage stopped'], recover: ['Recovery Agents', 'HP healed'],
     enrich: ['Enrichment Agent', 'turned dice put to work'], surge: ['Surge Playbook', 'dice taken or guarded'], intel: ['Threat Intel Feed', 'wild takes'],
     isolate: ['Isolation Script', 'threat dice removed'], coffee: ['Shift Coffee', 'HP healed'], freeze: ['Change Freeze', 'row rolls skipped'],
-    twin: ['Twin', 'extra dice put to work and damage stopped'], ghost: ['Ghost', 'arrival damage stopped'], scramble: ['Scramble', 'comebacks kept on the row'], repair: ['Repair', 'HP healed'] };
+    twin: ['Twin', 'extra dice put to work and damage stopped'], ghost: ['Ghost', 'arrival damage stopped'], scramble: ['Scramble', 'comebacks kept on the row'], repair: ['Repair', 'HP healed'],
+    spotlight: ['Spotlight', 'dice made doubles'], slip: ['Slip', 'hits dodged'], ticket: ['Golden ticket', 'dice turned'], momentum: ['Momentum', 'extra dice rolled'], persist: ['Persist', 'knockouts stopped'], siphon: ['Siphon', 'HP healed'], callback: ['Callback', 'amber dice rerolled'] };
   const itemsDid = G => Object.entries(G.stats.items || {}).filter(([, n]) => n > 0).map(([t, n]) => ({ t, n, name: ITEM_DID[t][0], what: ITEM_DID[t][1] }));
   // ---- Copy result -----------------------------------------------------------------------------------------------
   function resultLine() {
@@ -282,7 +283,7 @@
       lines.push(`<span><b class="num">${E.left(m)}</b> of ${m.hits} dice left · hits for <b class="num">${dmg}</b>${dmg !== m.dmg ? ` <span class="hot">(${dmg > m.dmg ? '+' : ''}${dmg - m.dmg})</span>` : ''}</span>`);
       if (G.stand === m.uid) lines.push('<span class="safe">Stood down by the Responder: it deals nothing this round</span>');
       else if (inc) lines.push(inc.to.length ? `<span class="hot">At round end: ${inc.dmg} to ${inc.to.map(k => esc(nm(G.team[k]))).join(', ')}</span>` : '<span class="safe">At round end: blocked</span>');
-      if (E.canBaseline(G, m)) lines.push(`<button class="btn s cy" type="button" data-a="baseline" data-u="${m.uid}" data-k="base${m.uid}" aria-label="Baseline ${esc(m.name)}: set ${A.BASE_N} more dice">Baseline it <kbd>B</kbd></button>`);
+      if (E.canBaseline(G, m)) lines.push(`<button class="btn s cy" type="button" data-a="baseline" data-u="${m.uid}" data-k="base${m.uid}" aria-label="Baseline ${esc(m.name)}: set ${E.baseCost(G, m)} more dice">Baseline it <kbd>B</kbd></button>`);
       if (m.based) lines.push(`<span>Baselining: beat every die, the ${A.baseDie(m.id)}s too, and the agents learn it</span>`);
       if (E.canStand(G)) lines.push(`<button class="btn s cy" type="button" data-a="stand" data-u="${m.uid}" data-k="stand${m.uid}" aria-label="Responder: stand ${esc(m.name)} down, it deals no damage this round">Stand it down</button>`);
     }
@@ -301,6 +302,7 @@
         <span class="fd-art" aria-hidden="true">${slice(ART.back)}</span><span class="fd-t" aria-hidden="true">${boss ? 'The boss' : 'Detect the<br>Dwellers'}</span>
         <span class="fd-b" aria-hidden="true"><b>${boss ? '05:59 · last fight' : `${pl(G.feed.length, 'card')} in the feed`}</b><span>${boss ? 'Bring it on' : 'Flip'}</span></span></button></div>
       <div class="pd-side">${G.fight ? `<p class="status">${G.fight ? '<b>Fight won.</b> ' : ''}${boss ? 'The feed is empty. The boss is next.' : `${pl(al, 'alarm')} and ${pl(si, 'situation')} left in the feed, shuffled, then the boss.`}</p>` : '<p class="status"><b>22:00. The shift starts.</b> Pick who’s on point, then flip the top card of the feed. Alarms and situations are shuffled together.</p>'}
+        ${E.canPeek(G) ? '<p><button class="btn cy" type="button" data-a="peek" data-k="peek">Forensics: look at the top card</button></p>' : ''}${G.peeked && G.feed[0] === G.peeked ? `<div class="t-peekc"><div class="t-slot" data-card="${G.peeked.sit ? 'sit:' + G.peeked.sit : cardKey(G.peeked)}">${G.peeked.sit ? A.sitCard(G.peeked.sit) : cardFor(G.peeked)}</div><div><p class="meta">Forensics: the top card. Only you have seen it.${G.peeked.sit ? '' : ' Read in advance, it sets one fewer threat die.'}</p>${G.peeked.sit ? '<button class="btn" type="button" data-a="bury" data-k="bury">Put it on the bottom</button>' : ''}</div></div>` : ''}
         <div class="pd-point"><h2 class="sech">On point</h2><div class="acards" role="group" aria-label="On point">${G.team.map((id, k) => { const on = G.point === k;
           return `<button class="acard${on ? ' on' : ''}" type="button" data-a="point" data-n="${k}" data-k="point${k}" aria-pressed="${on}"><i class="tab" aria-hidden="true"></i><span class="scr">${crop(ART[id], THUMB[id])}</span><b class="nm">${esc(nm(id))}</b><span class="phud${on ? ' c' : ''}">${on ? 'On point · 2 dice' : `${G.hp[k]}/${G.max} HP`}</span></button>`; }).join('')}</div>
         <p class="meta">On point rolls two dice${G.n === 1 ? '' : ' and takes Targeted hits'}.</p></div></div></div>`;
@@ -316,7 +318,7 @@
     else if (G.phase === 'sit' || (G.phase === 'flip' && G.sitDone)) body = vSit();
     else if (G.phase === 'flip') body = vFlipDesk();
     else if (G.phase === 'tuck') { const a = G.tuck[0], m = dataMob(a.id);
-      body = `<div class="t-tuckp"><div class="t-slot" data-card="mob:${a.id}">${A.mobCard(m)}<span class="t-stamp beat">Baselined</span></div><div class="sb"><h2 class="sech a">The agents learned it</h2><p class="status"><b>${esc(a.name)}</b> is baselined. Tuck it under an agent someone holds, below. That agent gains <b>${esc(A.traitName(a.id))}</b>: ${esc(A.BASE[a.id].replace(/^\w+: /, ''))} Pick the agent with care: discarding it loses the trait.</p><p class="meta">Tucked, it is off the persistence row. If that agent is discarded, it slides out and goes back on the row.</p></div></div>`; }
+      body = `<div class="t-tuckp"><div class="t-slot" data-card="mob:${a.id}">${A.mobCard(m)}<span class="t-stamp beat">Baselined</span></div><div class="sb"><h2 class="sech a">The agents learned it</h2><p class="status"><b>${esc(a.name)}</b> is baselined. Tuck it under an agent someone holds, below. That agent gains <b>${esc(A.traitName(a.id))}</b>: ${esc(A.BASE[a.id].replace(/^[^:]+: /, ''))} Pick the agent with care: discarding it loses the trait.</p><p class="meta">Tucked, it is off the persistence row. If that agent is discarded, it slides out and goes back on the row.</p></div></div>`; }
     else if (G.phase === 'deal') body = vDeal();
     return `<section class="table" aria-label="The fight">${head}${bans ? `<div class="bans">${bans}</div>` : ''}${body}${vAgents()}</section>`;
   }
@@ -355,7 +357,9 @@
     const groups = G.team.map((id, k) => {
       const ag = G.agents[k], slots = E.slotsOf(G, k), hand = G.hand[k], swap = top && E.dealFull(G, k) && UI.dealTo === k;
       const cards = ag.map(c => `<div class="t-kslot${swap ? ' swap' : ''}" data-card="agent:${c.t}" data-kuid="${c.uid}">${A.agentCard(c.t)}${tucked(c)}${under(c)}
-        <div class="row"><span class="run">${swap ? 'Swap?' : 'Holding'}</span>${tucking ? `<button class="btn s cy" type="button" data-a="tuck" data-u="${c.uid}" data-k="tuck${c.uid}" aria-label="Tuck ${esc(G.tuck[0].name)} under ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])}">Tuck it here</button>`
+        <div class="row"><span class="run">${swap ? 'Swap?' : 'Holding'}</span>${tucking ? `<button class="btn s cy" type="button" data-a="tuck" data-u="${c.uid}" data-k="tuck${c.uid}"${E.upgraded(G, c.uid) ? ' disabled' : ''} aria-label="Tuck ${esc(G.tuck[0].name)} under ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])}">${E.upgraded(G, c.uid) ? 'Full' : 'Tuck it here'}</button>`
+          : UI.moving && E.canMove(G) ? (G.aug.some(a => a.id === UI.moving && a.host !== c.uid) && !E.upgraded(G, c.uid) ? `<button class="btn s cy" type="button" data-a="moveto" data-u="${c.uid}" data-k="moveto${c.uid}">Move it here</button>` : '')
+          : G.phase === 'flip' && E.canMove(G) ? G.aug.filter(a => a.host === c.uid).map(a => `<button class="btn s" type="button" data-a="move" data-id="${a.id}" data-k="move${a.id}">Move ${esc(A.traitName(a.id))}</button>`).join('')
           : swap ? `<button class="btn s warn" type="button" data-a="drop" data-n="${k}" data-u="${c.uid}" data-k="drop${c.uid}" aria-label="Discard ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])} for the new ${esc(E.KIT_NAME[top.t])}">Discard it</button>` : ''}</div></div>`).join('');
       const empty = Array.from({ length: Math.max(0, slots - ag.length) }, () => `<div class="t-kslot open"><div class="t-kempty">Agent slot</div>${anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''}<div class="row"><span class="run">Empty</span></div></div>`).join('');
       const hcards = hand.map(c => { const can = E.canUse(G, c.t);
@@ -454,6 +458,10 @@
         ${d && E.canReroll(G, d) ? `<button class="btn" data-a="reroll" data-k="reroll">Reroll it <kbd>X</kbd></button>` : ''}${G.rerolled ? `<span class="inc rr">Rerolls left: ${G.team.map((id, k) => G.rerolled[k] ? '' : esc(SHORT[id])).filter(Boolean).join(', ') || 'none'}</span>` : ''}
         ${sel && t.eng ? `<button class="btn cy" data-a="eng" data-k="eng" aria-label="Engineer: turn this die to its opposite side, ${7 - d.n}">Opposite side (→ ${7 - d.n}) <kbd>O</kbd></button>` : ''}
         ${sel && t.focus ? `<span class="inc">Focused: turn to…</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s cy" data-a="focus" data-n="${n}" data-k="focus${n}" aria-label="Focused: turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
+        ${d && E.canSpot(G, d) ? `<button class="btn cy" data-a="spot" data-k="spot">Spotlight: make it a double</button>` : ''}
+        ${d && E.canTicket(G, d) ? `<span class="inc">Golden ticket: turn to…</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s cy" data-a="ticket" data-n="${n}" data-k="ticket${n}" aria-label="Golden ticket: turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
+        ${d && E.canHand(G, d) ? `<span class="inc">Hand it to…</span>${G.team.map((id, k) => k === d.k ? '' : `<button class="btn s cy" data-a="hand" data-n="${k}" data-k="hand${k}">${esc(nm(id))}</button>`).join('')}` : ''}
+        ${G.team.map((id, k) => E.canSlip(G, k) ? G.play.filter(m => E.left(m)).map(m => `<button class="btn s cy" data-a="slip" data-n="${k}" data-u="${m.uid}" data-k="slip${k}${m.uid}">Slip: ${esc(m.name)} misses ${esc(SHORT[id])}</button>`).join('') : '').join('')}
         ${sel && t.enrich ? `<span class="inc">${esc(SHORT[G.team[d.k]])}’s Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
         <span class="inc grow dk">${incText()}</span>
         <button class="btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <kbd>U</kbd></button>
@@ -569,6 +577,14 @@
     if (a === 'sit') { act(() => E.resolveSit(G, b.dataset.o, b.dataset.n ? +b.dataset.n : undefined)); if (!UI.err && G.sit) say(G.sit.text); return focusKey(G.phase === 'flip' ? 'sitflip' : ''); }
     if (a === 'focus') { const i = UI.sel; act(() => E.focus(G, i, +b.dataset.n)); return focusKey('die' + i); }
     if (a === 'eng') { const i = UI.sel; act(() => E.engTurn(G, i)); return focusKey('die' + i); }
+    if (a === 'spot') { const i = UI.sel; act(() => E.spotlight(G, i)); return focusKey('die' + i); }
+    if (a === 'ticket') { const i = UI.sel; act(() => E.ticket(G, i, +b.dataset.n)); return focusKey('die' + i); }
+    if (a === 'hand') { const i = UI.sel; act(() => E.hand(G, i, +b.dataset.n)); return focusKey('die' + i); }
+    if (a === 'slip') { act(() => E.slip(G, +b.dataset.n, b.dataset.u)); return focusKey('end'); }
+    if (a === 'peek') { act(() => E.peek(G)); return focusKey('bury'); }
+    if (a === 'bury') { act(() => E.bury(G)); return focusKey('flip'); }
+    if (a === 'move') { UI.moving = b.dataset.id; return render(); }
+    if (a === 'moveto') { const id = UI.moving; UI.moving = null; act(() => E.moveTuck(G, id, b.dataset.u)); return focusKey('flip'); }
     if (a === 'baseline') { act(() => E.baseline(G, b.dataset.u)); return focusKey('roll'); }
     if (a === 'tuck') { act(() => E.tuck(G, b.dataset.u)); return focusKey(G.phase === 'flip' ? 'flip' : ''); }
     if (a === 'stand') { act(() => E.stand(G, b.dataset.u)); return focusKey('end'); }

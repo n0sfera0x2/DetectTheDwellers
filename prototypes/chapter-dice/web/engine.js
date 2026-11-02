@@ -34,7 +34,7 @@
   function rng(seed) { let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   const shuffle = (a, r) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const clone = x => JSON.parse(JSON.stringify(x));
-  const nameOf = id => D.classes.find(c => c.id === id).name;
+  const nameOf = id => CARDS.cls(id).name; // the game data's analysts, plus review 2's Forensics and Shift Lead (cards.js)
 
   // ---- Setup ------------------------------------------------------------------------------------------------
   // The modes (2026-11-02): one situation deck holds all 15 alarms and 18 situations. Quick Shift deals 8 of the 24
@@ -61,11 +61,11 @@
       // The item deck (cards.js ITEM_DECK), each card a { uid, t }. Drawn items wait in G.deal until someone takes them.
       kit: shuffle(CARDS.ITEM_DECK.map((t, i) => ({ uid: 'k' + (i + 1), t })), r), discard: [], deal: [], dealNext: 'flip',
       agents: team.map(() => []), hand: team.map(() => []), freeze: false,
-      sit: null, sitDone: false, badgeSkip: false, pending: [], mute: 0, bonusDraw: 0, engUsed: false, resUsed: false, stand: null, aug: [], tuck: [], flipped: null, augReroll: false,
+      sit: null, sitDone: false, badgeSkip: false, once: { slip: {}, ticket: {}, move: false }, spotUsed: team.map(() => 0), slipOn: [], handed: false, pending: [], mute: 0, bonusDraw: 0, engUsed: false, resUsed: false, stand: null, aug: [], tuck: [], flipped: null, augReroll: false,
       cond: team.map(() => ({ rattled: false, exposed: false, focused: false })),
       point: 0, phase: 'flip', fight: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
       over: false, win: false, log: [], rows: [], lastRow: null, drawn: [], beaten: [],
-      stats: { rounds: 0, back: 0, flips: 0, guards: 0, used: {}, gone: 0, healed: 0, sits: 0, items: { triage: 0, contain: 0, recover: 0, enrich: 0, surge: 0, intel: 0, isolate: 0, coffee: 0, freeze: 0, twin: 0, ghost: 0, scramble: 0, repair: 0 } } };
+      stats: { rounds: 0, back: 0, flips: 0, guards: 0, used: {}, gone: 0, healed: 0, sits: 0, items: { triage: 0, contain: 0, recover: 0, enrich: 0, surge: 0, intel: 0, isolate: 0, coffee: 0, freeze: 0, twin: 0, ghost: 0, scramble: 0, repair: 0, spotlight: 0, slip: 0, ticket: 0, momentum: 0, persist: 0, siphon: 0, callback: 0 } } };
     const si = startItems(n, mode);
     say(G, `Shift starts: ${team.map(nameOf).join(' + ')} at ${hp} HP. ${n === 1 ? 'You draw' : 'The crew draws'} ${si === 1 ? 'an item' : si + ' items'}.`);
     draw(G, si); toDeal(G, 'flip');
@@ -77,7 +77,8 @@
   const left = m => m.off.filter(x => !x).length;
   const remaining = m => m.slots.filter((s, i) => !m.off[i]);
   // Agent slots: 2 each (the Soarcerer 3). Solo: 4 (the Soarcerer 5). Same as sim.js slotsK.
-  const slotsOf = (G, k) => (G.n === 1 ? 4 : 2) + (G.team[k] === 'SOA' ? 1 : 0);
+  // Since review 2 the Soarcerer's ability is baselining, not a slot (sim.js SOAPERK=auto).
+  const slotsOf = (G, k) => G.n === 1 ? 4 : 2;
   // How many agents of type t player k holds (every player's, without k). A Twin agent (the Grifter's trait) counts as two.
   // The Rogue AI: while it's in play, agents and their traits do nothing.
   const aiUp = G => G.play.some(m => m.boss && m.kw === 'ai');
@@ -85,7 +86,14 @@
   // Traits by name (two alarms carry each): on one agent card, and across every held agent. Stacked traits add up.
   const traitsOn = (G, uid, name) => G.aug.filter(a => a.host === uid && CARDS.traitName(a.id) === name).length;
   const traitCount = (G, name) => aiUp(G) ? 0 : G.aug.filter(a => a.host && CARDS.traitName(a.id) === name && G.agents.some(h => h.some(c => c.uid === a.host))).length;
-  const weight = (G, uid) => 1 + traitsOn(G, uid, 'Twin');
+  const cardOf = (G, uid) => G.agents.flat().find(c => c.uid === uid);
+  const tuckedOn = (G, uid) => G.aug.filter(a => a.host === uid).length;
+  // Two tucked alarms (the cap) upgrade the agent: Triage rolls one more, Enrichment one more turn, Containment cuts 1
+  // more, Recovery heals 2 more (cards.js AGENT, sim.js UPGRADE).
+  const upgraded = (G, uid) => tuckedOn(G, uid) >= CARDS.TUCK_CAP;
+  const weight = (G, uid) => { const c = cardOf(G, uid); return 1 + traitsOn(G, uid, 'Twin') + (c && upgraded(G, uid) && (c.t === 'triage' || c.t === 'enrich') ? 1 : 0); };
+  // The players holding agents that carry a trait: [{ k, uid, a }] (none while the Rogue AI is up).
+  const traitHolders = (G, name) => aiUp(G) ? [] : G.aug.filter(a => a.host && CARDS.traitName(a.id) === name).map(a => ({ k: G.agents.findIndex(h => h.some(c => c.uid === a.host)), uid: a.host, a })).filter(x => x.k >= 0);
   // Every held agent with its holder: [{ c, k }].
   const heldAgents = G => G.agents.flatMap((a, k) => a.map(c => ({ c, k })));
   const on = (G, id) => G.team.includes(id);
@@ -106,6 +114,9 @@
   function hurt(G, k, n, why) {
     if (n <= 0 || G.over) return;
     G.hp[k] = Math.max(0, G.hp[k] - n); say(G, `${nameOf(G.team[k])} takes ${n} (${why}). ${G.hp[k]} HP left.`, 'hurt');
+    // Persist: once, anyone about to drop to 0 stays at 1; then the tucked card leaves the game.
+    const ps = !G.hp[k] && traitHolders(G, 'Persist')[0];
+    if (ps) { G.hp[k] = 1; G.aug = G.aug.filter(a => a !== ps.a); if (ps.a.mob) G.gone.push(ps.a.mob); G.stats.items.persist++; say(G, `Persist: ${nameOf(G.team[k])} stays at 1 HP. ${ps.a.name} leaves the game.`, 'kit'); }
     if (!G.hp[k]) { G.over = true; G.win = false; G.phase = 'over'; say(G, `${nameOf(G.team[k])} is down. The shift is lost.`, 'end'); }
   }
   // Heal n HP one at a time onto whoever is lowest, never above the start.
@@ -167,7 +178,10 @@
   function rollRow(G, strike, why) {
     if (!G.row.length) return [];
     if (G.freeze) { G.freeze = false; G.stats.frozen = (G.stats.frozen || 0) + 1; G.stats.items.freeze++; say(G, `Change Freeze: no row roll (${why}).`, 'row'); return []; }
-    const plus = traitCount(G, 'Scramble'), pair = [1 + d6(G), 1 + d6(G)], roll = pair[0] + pair[1] + plus, back = G.row.filter(m => roll <= m.top);
+    const plus = traitCount(G, 'Scramble'), pair = [1 + d6(G), 1 + d6(G)];
+    // Callback: reroll one amber die (the page rerolls the lower one when it is 3 or less: a higher sum keeps more on the row).
+    let called = null; if (traitHolders(G, 'Callback').length && Math.min(...pair) <= 3) { const j = pair[0] <= pair[1] ? 0 : 1, was = pair[j]; pair[j] = 1 + d6(G); called = [was, pair[j]]; G.stats.items.callback++; }
+    const roll = pair[0] + pair[1] + plus, back = G.row.filter(m => roll <= m.top);
     G.row = G.row.filter(m => !back.includes(m));
     back.forEach(m => { m.off = Array(m.hits).fill(false); m.offStack = []; m.back++; m.up = 0; });
     G.stats.back += back.length;
@@ -178,7 +192,9 @@
     const rec = { roll, pair, plus, why, back: back.map(m => m.name), strikes: strikes.map(m => ({ name: m.name, dmg: dmgOf(G, m) })), seq: G.rows.length + 1, fight: G.fight, round: G.round };
     G.rows.push(rec); G.lastRow = rec;
     say(G, `Row roll ${pair.join(' + ')}${plus ? ' + 1 (Scramble)' : ''} = ${roll} (${why}): ${back.length ? back.map(m => m.name).join(', ') + (back.length > 1 ? ' come back.' : ' comes back.') : 'nothing comes back.'}`, 'row');
-    for (const m of strikes) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m), `${m.name} arrives`));
+    if (called) say(G, `Callback: rerolled the ${called[0]}, now a ${called[1]}.`, 'kit');
+    // The Responder in the crew: arrival hits deal the Responder's crewmates 1 less.
+    for (const m of strikes) G.team.forEach((id, k) => hurt(G, k, dmgOf(G, m) - (on(G, 'RES') && id !== 'RES' ? 1 : 0), `${m.name} arrives`));
     return back;
   }
   function enter(G, m) {
@@ -199,11 +215,13 @@
     if (G.phase !== 'flip') fail('Not time to flip.');
     if (sitDue(G)) return revealSit(G);
     G.fight++; G.round = 0; G.stats.flips++; G.play = []; G.beaten = []; G.sit = null; G.sitDone = false; G.resUsed = false; G.stand = null;
+    G.once = { slip: {}, ticket: {}, move: false }; // once-a-fight trait uses (Slip, Golden ticket) and the Soarcerer's move
     const pend = G.pending; G.pending = [];
     if (G.feed.length) {
       const m = G.feed.shift();
       // Fell back (The Badge That Wasn’t): this alarm goes straight on the row, unfought. No fight, no row roll, no draw.
       if (G.badgeSkip) { G.badgeSkip = false; G.pending = pend; G.row.push(m); G.stats.skipped = (G.stats.skipped || 0) + 1; G.phase = 'flip'; say(G, `Flip ${G.fight}: ${m.name}. You fell back: it goes straight on the row, unfought (back on 2–${m.top}).`, 'flip'); return G; }
+      if (m.fewer && m.slots.length > 1) { m.cut1 = m.slots.pop(); m.off.pop(); m.hits--; say(G, `${m.name} sets one fewer threat die (Forensics read it first).`, 'mob'); } m.fewer = false;
       muteOn(G, m); G.flipped = m.uid; say(G, `Flip ${G.fight}: ${m.name}. ${nameOf(G.team[G.point])} is on point.`, 'flip');
       const back = rollRow(G, true, 'the flip'); if (G.over) return G;
       enter(G, m); [...pend, ...back].forEach(b => enter(G, b));
@@ -222,16 +240,19 @@
     if (G.nextPlus) { m.plus = G.nextPlus; G.nextPlus = 0; say(G, `${m.name} gets +${m.plus} Damage this fight (The CEO’s Inbox).`, 'mob'); }
   }
   // Extra dice for this visit only (Pager Storm's 6, the Baseline dice) leave when it is beaten: a comeback has its printed dice.
-  const unmute = m => { m.plus = 0; const k = (m.muted || 0) + (m.based || 0); if (!k) return; m.slots.splice(-k); m.off.splice(-k); m.offStack = m.offStack.filter(p => p < m.slots.length); m.hits -= k; m.muted = 0; m.based = 0; };
+  const unmute = m => { m.plus = 0; const k = (m.muted || 0) + (m.based || 0); if (k) { m.slots.splice(-k); m.off.splice(-k); m.offStack = m.offStack.filter(p => p < m.slots.length); m.hits -= k; m.muted = 0; m.based = 0; }
+    if (m.cut1 != null) { m.slots.push(m.cut1); m.off.push(false); m.hits++; m.cut1 = null; } }; // Forensics' missing die is back for a comeback
 
   // ---- Baselining ----------------------------------------------------------------------------------------------
   // Before the first roll, on point may baseline the alarm just flipped (never a comeback or the boss): it sets the
   // four dice on its Baseline line, at every crew size. Beat it with them and it tucks under an agent.
-  const canBaseline = (G, m) => !!m && G.phase === 'roll' && G.round === 0 && m.uid === G.flipped && !m.back && !m.boss && !m.based && !!CARDS.BASE[m.id] && G.play.includes(m);
+  // Review 2: a comeback can be baselined too, with one more Baseline die; the Soarcerer makes it 2 (a comeback 3).
+  const baseCost = (G, m) => (on(G, 'SOA') ? 2 : CARDS.BASE_N) + (m.back ? 1 : 0);
+  const canBaseline = (G, m) => !!m && G.phase === 'roll' && G.round === 0 && (m.uid === G.flipped || m.back > 0) && !m.boss && !m.based && !!CARDS.BASE[m.id] && G.play.includes(m);
   function baseline(G, uid) {
     const m = findMob(G, uid); if (!m) fail('That alarm isn’t in the fight.');
-    if (!canBaseline(G, m)) fail(G.round > 0 || G.phase !== 'roll' ? 'Baseline it before the first roll.' : m.back ? 'A comeback can’t be baselined.' : m.based ? 'It is already being baselined.' : 'Only the alarm just flipped can be baselined.');
-    const v = CARDS.baseDie(m.id), k = CARDS.BASE_N;
+    if (!canBaseline(G, m)) fail(G.round > 0 || G.phase !== 'roll' ? 'Baseline it before the first roll.' : m.based ? 'It is already being baselined.' : 'Only the alarm just flipped can be baselined.');
+    const v = CARDS.baseDie(m.id), k = baseCost(G, m);
     for (let i = 0; i < k; i++) { m.slots.push(v); m.off.push(false); } m.hits += k; m.based = k; G.stats.baselines = (G.stats.baselines || 0) + 1;
     say(G, `${nameOf(G.team[G.point])} baselines ${m.name}: ${k} more dice, all ${v}s. Beat it with them and the agents learn it.`, 'mob');
     return G;
@@ -240,8 +261,10 @@
   function tuck(G, uid) {
     if (G.phase !== 'tuck' || !G.tuck.length) fail('Nothing to tuck.');
     const h = heldAgents(G).find(x => x.c.uid === uid); if (!h) fail('Pick an agent someone holds.');
+    if (tuckedOn(G, uid) >= CARDS.TUCK_CAP) fail(`That agent already holds ${CARDS.TUCK_CAP} tucked alarms.`);
     const a = G.tuck.shift(), c = h.c; G.aug.push({ ...a, host: c.uid }); G.stats.baselined = (G.stats.baselined || 0) + 1;
     say(G, `${a.name} is baselined: it tucks under ${nameOf(G.team[h.k])}’s ${KIT_NAME[c.t]}. ${CARDS.BASE[a.id]}`, 'kit');
+    if (on(G, 'SOA')) { const got = draw(G, 1); say(G, `The Soarcerer automates it: drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing'}.`, 'kit'); }
     if (!G.tuck.length) toDeal(G, 'flip');
     return G;
   }
@@ -266,12 +289,13 @@
   // Resolve the situation: opt is the option ('stay'/'run', 'ride'/'mute', 'grab'/'leave', 'dig'/'leave' with n
   // dice 1–4, 'ok', 'heal'/'agent'). The outcome stays on G.sit for the page: { opt, n, dice, won, text }.
   const SIT_OPTS = { insider: ['stay', 'run'], pager: ['ride', 'mute'], usb: ['grab', 'leave'], chatter: ['dig', 'leave'], lateral: ['ok'], patch: ['heal', 'agent'],
-    travel: ['ok'], coffee: ['ok'], blast: ['all', 'point'], ciso: ['ok'], intel: ['ok'], pentest: ['ok'], budget: ['ok'], ceo: ['quarantine', 'letride'], change: ['ok'], ioc: ['ok'], honey: ['ok'], vendor: ['ok'] };
+    travel: ['chase', 'leave'], coffee: ['round', 'shot'], blast: ['all', 'point'], ciso: ['ok'], intel: ['ok'], pentest: ['runit', 'resched'], budget: ['tools', 'training'], ceo: ['quarantine', 'letride'], change: ['ok'], ioc: ['ok'], honey: ['ok'], vendor: ['rotate', 'cutoff'] };
   function resolveSit(G, opt, n) {
     if (G.phase !== 'sit') fail('No situation to resolve.');
     const S = G.sit, p = G.point, who = nameOf(G.team[p]);
     if (!SIT_OPTS[S.id].includes(opt)) fail('Not an option on this situation.');
     if (opt === 'run' && !alarmsLeft(G)) fail('No alarm left in the feed: you can’t fall back.');
+    if (opt === 'resched' && !G.hand.some(h => h.length)) fail('Nobody holds a consumable to discard.');
     if (opt === 'dig' && !(n >= 1 && n <= 4 && n === Math.floor(n))) fail('Dig in with 1 to 4 dice.');
     let text = '', dice = null, won = null;
     if (opt === 'stay') { gain(G, p, 'exposed'); G.bonusDraw = 1; text = `${who} holds the room and takes Exposed. Win the next fight: draw an item.`; }
@@ -294,6 +318,14 @@
     else if (opt === 'leave') text = 'Left it alone. Nothing happens.';
     const everyone = (n, why) => { if (n > 0) { G.hp = G.hp.map(h => Math.min(G.max, h + n)); G.stats.healed += n * G.n; } else G.team.forEach((_, k) => hurt(G, k, -n, why)); };
     const nm = sitName(S.id);
+    // Review 2: five situations became choices. The old event paths still resolve the main option.
+    if ({ chase: 'travel', runit: 'pentest', rotate: 'vendor' }[opt] === S.id) opt = 'ok';
+    if (opt === 'resched') { const j = G.hand.findIndex(h => h.length); if (j < 0) fail('Nobody holds an item to discard.'); const c = G.hand[j].shift(); G.discard.push(c); text = `Rescheduled: ${nameOf(G.team[j])} discards the ${KIT_NAME[c.t]}.`; say(G, text, 'sit'); }
+    if (opt === 'round') { everyone(2); text = `Passed it round: everyone heals 2. ${hpLine(G)} HP.`; say(G, text, 'sit'); }
+    if (opt === 'shot') { const lo = G.hp.indexOf(Math.min(...G.hp)), h = Math.min(5, G.max - G.hp[lo]); G.hp[lo] += h; G.stats.healed += h; text = `Double shot: ${nameOf(G.team[lo])} heals ${h}. ${hpLine(G)} HP.`; say(G, text, 'sit'); }
+    if (opt === 'tools') { const got = draw(G, 2); text = `Tools: drew ${got.map(c => KIT_NAME[c.t]).join(' and ') || 'nothing'}.`; say(G, text, 'sit'); }
+    if (opt === 'training') { const got = draw(G, 1); everyone(2); text = `Training: drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing'}, and everyone heals 2. ${hpLine(G)} HP.`; say(G, text, 'sit'); }
+    if (opt === 'cutoff') { text = `Cut them off: ${who} loses 3 HP, and the row stays put.`; say(G, text, 'sit'); hurt(G, p, 3, nm); }
     if (opt === 'ok' && S.id !== 'lateral') {
       if (S.id === 'travel' || S.id === 'ciso') { dice = rollN(G, 2); const t = dice[0] + dice[1]; won = S.id === 'travel' ? t >= 7 : t >= 6; text = `${who} rolls ${dice.join(' + ')} = ${t}.`; say(G, text, 'sit');
         if (S.id === 'travel') { if (won) { const got = draw(G, 1); text += ` Drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing'}.`; } else { hurt(G, p, 2, nm); text += ` ${who} loses 2 HP.`; } }
@@ -316,7 +348,7 @@
     }
     if (opt === 'heal') { G.hp = G.hp.map(h => Math.min(G.max, h + 3)); text = `Took a breather: everyone heals 3. ${hpLine(G)} HP.`; }
     if (opt === 'agent') { const got = draw(G, 1); text = `Raided the supply closet: drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing, the deck is empty'}. ${who} loses 1 HP.`; say(G, text, 'sit'); hurt(G, p, 1, 'the supply closet'); }
-    if (!['ride', 'grab', 'dig', 'agent', 'all', 'point', 'quarantine', 'letride'].includes(opt) && !(opt === 'ok' && S.id !== 'lateral')) say(G, text, 'sit');
+    if (!['ride', 'grab', 'dig', 'agent', 'all', 'point', 'quarantine', 'letride', 'resched', 'round', 'shot', 'tools', 'training', 'cutoff'].includes(opt) && !(opt === 'ok' && S.id !== 'lateral')) say(G, text, 'sit');
     Object.assign(S, { opt, n: opt === 'dig' ? n : null, dice, won, text, done: true }); G.sitDone = true;
     if (G.over) return G;
     return toDeal(G, 'flip');
@@ -330,16 +362,18 @@
     const dice = [];
     G.team.forEach((id, k) => {
       const nd = G.n === 1 ? D.soloDice : k === G.point ? 2 : 1;
-      for (let i = 0; i < nd; i++) { const crewDie = G.n === 1 && i === D.soloDice - 1; dice.push({ k, crew: true, src: crewDie ? 'crew' : 'own', ...pipDie(1 + d6(G), crewDie ? 'CREW' : id) }); }
+      for (let i = 0; i < nd; i++) { const crewDie = G.n === 1 && i === nd - 1; dice.push({ k, crew: true, src: crewDie ? 'crew' : 'own', ...pipDie(1 + d6(G), crewDie ? 'CREW' : id) }); }
     });
     // Each Triage Agent: its holder rolls one more of their own dice (it pairs, guards, rerolls and hits the boss like
     // any of theirs); kuid ties the die to its card (it sits under that card).
     if (!aiUp(G)) G.agents.forEach((a, k) => a.filter(c => c.t === 'triage').forEach(c => { for (let j = weight(G, c.uid); j > 0; j--) dice.push({ k, crew: true, src: 'triage', kuid: c.uid, twin: j > 1, ...pipDie(1 + d6(G), G.team[k]) }); }));
+    // Momentum: from round 2 of a fight, each holder rolls one more of their own dice.
+    if (G.round >= 2) traitHolders(G, 'Momentum').forEach(({ k }) => { dice.push({ k, crew: true, src: 'momentum', ...pipDie(1 + d6(G), G.team[k]) }); G.stats.items.momentum++; });
     dice.forEach((d, i) => { d.i = i; d.used = null; d.takes = []; d.turned = false; });
     // Rattled: that player's dice in this roll have no doubles (they stay single if turned later). Then it's gone.
     dice.forEach(d => { if (d.crew && G.cond[d.k].rattled) { d.rattled = true; d.dbl = false; } });
     G.cond.forEach((c, k) => { if (c.rattled) { c.rattled = false; say(G, `${nameOf(G.team[k])} rolled Rattled: no doubles. Rattled is discarded.`, 'sit'); } });
-    G.dice = dice; G.augReroll = aug(G, 'spray'); G.rerolled = G.team.map(() => false); G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = [];
+    G.dice = dice; G.augReroll = aug(G, 'spray'); G.rerolled = G.team.map(() => false); G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = []; G.spotUsed = G.team.map(() => 0); G.handed = false; G.slipOn = []; G.leadReroll = G.n === 1 && on(G, 'LEAD'); // the solo Shift Lead: one more reroll
     G.roundDmg = {}; G.play.forEach(m => { G.roundDmg[m.uid] = dmgOf(G, m); });
     G.phase = 'assign';
     say(G, `Round ${G.round}: rolled ${dice.map(faceText).join(', ')}.`, 'roll');
@@ -361,7 +395,8 @@
     return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
   // The Hunter's 1s (own or the solo crew die) match any number on any alarm. Not a double: never on an Evasive alarm.
-  const hunts = (G, d) => d.crew && G.team[d.k] === 'HUN' && d.n === 1;
+  // Review 2: the Hunter's 1s are wild on a comeback (an alarm that came back), not on a fresh one.
+  const hunts = (G, d, m) => d.crew && G.team[d.k] === 'HUN' && d.n === 1 && !!m && m.back > 0;
   // A guard covers anyone (2026-10-31): any one player who isn't blocking yet, the guarder or a crewmate.
   const canGuard = (G, d) => !!d && d.crew && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && G.blocks.some(b => !b);
   // Who a guard could cover now: every player not yet blocking.
@@ -369,7 +404,7 @@
   // Pairs (2026-10-31): two of a player's own unused crew dice (their own, or the solo crew die) showing the same number
   // pair into one double. Not an agent die, a Surge Playbook die, a die turned by the Engineer, a die that is already a
   // double, or while Rattled. The pair counts as two dice showing that number (it takes two) or guards, never both.
-  const pairable = d => !!d && d.crew && (d.src === 'own' || d.src === 'crew' || d.src === 'triage') && !d.used && !(d.takes || []).length && !d.dbl && !d.flipped && !d.rattled && !d.paired;
+  const pairable = d => !!d && d.crew && (d.src === 'own' || d.src === 'crew' || d.src === 'triage' || d.src === 'momentum') && !d.used && !(d.takes || []).length && !d.dbl && !d.flipped && !d.rattled && !d.paired;
   const canPair = (G, a, b) => G.phase === 'assign' && a !== b && pairable(a) && pairable(b) && a.k === b.k && a.n === b.n;
   // Every pair the crew could make right now: [[i, j], ...], i < j, each die in one pair at most.
   function pairs(G) {
@@ -452,14 +487,14 @@
   }
   // Reroll: once a round each player may reroll one of their own dice (crew dice they rolled, the solo crew die, and
   // their Surge Playbook dice), before it is used or turned. It can't be undone.
-  const canReroll = (G, d) => !!d && G.phase === 'assign' && d.crew && !d.used && !(d.takes || []).length && !d.turned && !d.flipped && d.paired == null && (!(G.rerolled || [])[d.k] || G.augReroll);
+  const canReroll = (G, d) => !!d && G.phase === 'assign' && d.crew && !d.used && !(d.takes || []).length && !d.turned && !d.flipped && d.paired == null && (!(G.rerolled || [])[d.k] || G.augReroll || G.leadReroll);
   function reroll(G, di) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di]; if (!d) fail('No such die.');
     if (!d.crew) fail('Agent dice can’t be rerolled.'); if (d.used || d.takes.length) fail('That die is already used.'); if (d.turned || d.flipped) fail('A turned die can’t be rerolled.');
     if (d.paired != null) fail('Undo the pair first.');
-    if (G.rerolled[d.k] && !G.augReroll) fail(`${nameOf(G.team[d.k])} has already rerolled this round.`);
-    const extra = G.rerolled[d.k]; if (extra) G.augReroll = false; // the Password Sprayer baseline: one more reroll a round
+    if (G.rerolled[d.k] && !G.augReroll && !G.leadReroll) fail(`${nameOf(G.team[d.k])} has already rerolled this round.`);
+    const extra = G.rerolled[d.k]; if (extra) { if (G.augReroll) G.augReroll = false; else G.leadReroll = false; } // the Password Sprayer baseline: one more reroll a round
     const was = d.n; d.n = 1 + d6(G); d.dbl = dieDbl(G, d, d.n); G.rerolled[d.k] = true; G.undo = [];
     G.stats.rerolls = (G.stats.rerolls || 0) + 1;
     say(G, `${dieOwner(G, d)} rerolls a ${was}: ${faceText(d)}${extra ? ' (Password Sprayer baseline)' : ''}.`, 'roll');
@@ -477,6 +512,51 @@
     G.undo.push(snap(G)); d.from = d.n; d.n = n; d.turned = true; d.enriched = true; G.enrichLeft--;
     say(G, `Enrichment Agent turns ${dieOwner(G, d)}’s die from ${d.from} to ${faceText(d)}.`, 'kit');
     return G;
+  }
+  // ---- Review 2: trait actions and the new analysts ------------------------------------------------------------
+  const usesLeft = (G, name, k, used) => traitHolders(G, name).filter(h => h.k === k).length - (used[k] || 0);
+  // Spotlight: once a round per trait, one of its holder's dice counts as a double.
+  const canSpot = (G, d) => !!d && G.phase === 'assign' && d.crew && !d.dbl && !d.used && !(d.takes || []).length && usesLeft(G, 'Spotlight', d.k, G.spotUsed || []) > 0;
+  function spotlight(G, di) {
+    const d = G.dice[di]; if (!canSpot(G, d)) fail('No Spotlight for that die.');
+    G.undo.push(snap(G)); d.dbl = true; d.spot = true; G.spotUsed[d.k]++; G.stats.items.spotlight++;
+    say(G, `Spotlight: ${dieOwner(G, d)}’s ${d.n} counts as a double.`, 'kit'); return G;
+  }
+  // Golden ticket: once a fight per trait, turn one of its holder's dice to any number (it reads as that number).
+  const canTicket = (G, d) => !!d && G.phase === 'assign' && d.crew && !d.used && !(d.takes || []).length && d.paired == null && usesLeft(G, 'Golden ticket', d.k, G.once.ticket) > 0;
+  function ticket(G, di, n) {
+    const d = G.dice[di]; if (!canTicket(G, d)) fail('No Golden ticket for that die.');
+    if (!(n >= 1 && n <= 6) || n !== Math.floor(n)) fail('Pick a number from 1 to 6.');
+    G.undo = []; G.once.ticket[d.k] = (G.once.ticket[d.k] || 0) + 1; d.from = d.n; d.n = n; d.dbl = dieDbl(G, d, n); d.focused = true; G.stats.items.ticket++;
+    say(G, `Golden ticket: ${dieOwner(G, d)}’s die turns from ${d.from} to ${faceText(d)}.`, 'kit'); return G;
+  }
+  // Slip: once a fight per trait, one alarm's hit misses its holder this round (pick it before the round ends).
+  const canSlip = (G, k) => G.phase === 'assign' && usesLeft(G, 'Slip', k, G.once.slip) > 0;
+  function slip(G, k, uid) {
+    if (!canSlip(G, k)) fail('No Slip left for that player this fight.'); const m = findMob(G, uid); if (!m || !left(m)) fail('Pick an alarm still in the fight.');
+    G.undo = []; G.once.slip[k] = (G.once.slip[k] || 0) + 1; G.slipOn.push({ k, uid }); G.stats.items.slip++;
+    say(G, `Slip: ${m.name}’s hit will miss ${nameOf(G.team[k])} this round.`, 'kit'); return G;
+  }
+  // The Shift Lead: once a round, give one of their dice to a crewmate; it uses the crewmate's doubles.
+  const canHand = (G, d) => !!d && G.n > 1 && G.phase === 'assign' && on(G, 'LEAD') && !G.handed && d.crew && d.k === G.team.indexOf('LEAD') && !d.used && !(d.takes || []).length && d.paired == null;
+  function hand(G, di, k) {
+    const d = G.dice[di]; if (!canHand(G, d)) fail('The Shift Lead can’t hand that die.'); if (!(k >= 0 && k < G.n) || k === d.k) fail('Hand it to a crewmate.');
+    G.undo.push(snap(G)); d.k = k; d.src = 'own'; d.dbl = dieDbl(G, d, d.n); d.handed = true; G.handed = true; G.stats.handed = (G.stats.handed || 0) + 1;
+    say(G, `The Shift Lead hands a ${faceText(d)} to ${nameOf(G.team[k])}.`, 'kit'); return G;
+  }
+  // Forensics: before each flip, look at the top card of the feed; you may put it on the bottom.
+  const flipIx = G => G.feedTotal - G.feed.length;
+  const canPeek = G => G.phase === 'flip' && on(G, 'FOR') && G.feed.length > 1 && G.peekAt !== flipIx(G);
+  function peek(G) { if (!canPeek(G)) fail('Forensics has looked already.'); G.peekAt = flipIx(G); G.peeked = G.feed[0]; if (!G.peeked.sit) G.peeked.fewer = true;
+    say(G, `Forensics looks at the top card: ${G.peeked.sit ? sitName(G.peeked.sit) : G.peeked.name + '. Read in advance, it sets one fewer threat die'}.`, 'sit'); return G; }
+  function bury(G) { if (G.phase !== 'flip' || !G.peeked || G.feed[0] !== G.peeked) fail('Look at the top card first.'); if (!G.peeked.sit) fail('Forensics buries situations only: an alarm it read sets one fewer die instead.'); G.feed.push(G.feed.shift()); say(G, `Forensics buries ${G.peeked.sit ? sitName(G.peeked.sit) : G.peeked.name} at the bottom of the feed.`, 'sit'); G.peeked = null; G.stats.buried = (G.stats.buried || 0) + 1; return G; }
+  // The Soarcerer: once a fight, move a tucked alarm to another agent (not a full one).
+  const canMove = G => on(G, 'SOA') && !G.over && !(G.once && G.once.move) && G.aug.some(a => a.host);
+  function moveTuck(G, id, toUid) {
+    if (!canMove(G)) fail('The Soarcerer has moved a tucked alarm this fight already.');
+    const a = G.aug.find(x => x.id === id && x.host); if (!a) fail('That alarm isn’t tucked.'); const to = cardOf(G, toUid); if (!to || to.uid === a.host) fail('Pick another agent someone holds.');
+    if (tuckedOn(G, toUid) >= CARDS.TUCK_CAP) fail('That agent is full.');
+    a.host = toUid; if (!G.once) G.once = {}; G.once.move = true; say(G, `The Soarcerer moves ${a.name} under the ${KIT_NAME[to.t]}.`, 'kit'); return G;
   }
   // Focused: once, after rolling, turn one of your own crew dice to any number. It reads as its new number (a double
   // if that number is one of yours). Spends the Focused card; can't be undone.
@@ -532,6 +612,7 @@
     const cutBy = new Map();
     // Fileless: Containment cuts the highest-Damage alarm that isn't Fileless.
     for (let i = 0; i < running(G, 'contain'); i++) { const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (!t || t[1] <= 1) break; const c = Math.min(t[1] - 1, D.containCut); dm.set(t[0], t[1] - c); cutBy.set(t[0], (cutBy.get(t[0]) || 0) + c); }
+    if (!aiUp(G)) G.agents.flat().filter(c => c.t === 'contain' && upgraded(G, c.uid)).forEach(() => { const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) { dm.set(t[0], t[1] - 1); cutBy.set(t[0], (cutBy.get(t[0]) || 0) + 1); } }); // upgraded: 1 more
     if (aug(G, 'mailer')) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], t[1] - 1); } // the Mailer Daemon baseline
     for (const m of up) {
       const d = dm.get(m), pierce = m.kw === 'noblock'; let to = [], each = d;
@@ -539,6 +620,7 @@
       else if (m.kw === 'lowest') { const lo = Math.min(...G.hp); to = G.team.map((_, k) => k).filter(k => G.hp[k] === lo && (pierce || !blocks[k])); } // Stalker
       else to = G.team.map((_, k) => k).filter(k => pierce || !blocks[k]);
       const cut = (cutBy.get(m) || 0) * (m.kw === 'onpoint' ? 2 : 1);
+      to = to.filter(k => !(G.slipOn || []).some(x => x.k === k && x.uid === m.uid)); // Slip
       to.forEach(k => hits.push({ k, uid: m.uid, name: m.name, dmg: each, cut })); by.push({ uid: m.uid, name: m.name, dmg: each, base: dmgOf(G, m), cut, to });
     }
     const contain = G.team.map(() => 0); hits.forEach(h => { contain[h.k] += h.cut; });
@@ -561,8 +643,13 @@
     if (bb && bb.kw === 'apt' && !bb.rose) { bb.rose = true; bb.slots = CARDS.numbersFor('apt', 2); bb.off = [false, false]; bb.offStack = []; bb.hits = 2; bb.muted = 0; G.beaten = G.beaten.filter(u => u !== bb.uid);
       say(G, `${bb.name} is beaten, and comes straight back with 2 dice.`, 'mob'); if (MODES[G.mode].bossRow) { rollRow(G, true, `${bb.name} comes back`).forEach(b => enter(G, b)); if (G.over) return G; } }
     else if (bb) { G.over = true; G.win = true; G.phase = 'over'; say(G, `${G.boss.name} is beaten. You survived the night.`, 'end'); return G; }
+    // Siphon: each alarm the crew beats heals its holders 1.
+    beaten.filter(m => !m.boss).forEach(() => traitHolders(G, 'Siphon').forEach(({ k }) => { if (G.hp[k] < G.max) { G.hp[k]++; G.stats.items.siphon++; G.stats.healed++; } }));
+    if (beaten.some(m => !m.boss) && traitHolders(G, 'Siphon').length) say(G, 'Siphon heals its holder.', 'heal');
     for (const m of beaten) {
       if (m.boss) continue;
+      // The Hunter in the crew ends persistence: a beaten comeback leaves the game.
+      if (on(G, 'HUN') && m.back > 0 && !m.based && !G.once.hunt) { G.once.hunt = true; unmute(m); G.gone.push(m); G.stats.gone++; say(G, `${m.name} came back once too often: the Hunter ends it (once a fight). It leaves the game.`, 'beat'); continue; }
       // Every beaten mob goes back on the row, however often it has come back.
       // Baselined: the card tucks under an agent instead of going on the row (it can't be in two places).
       if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid, mob: m }); unmute(m); say(G, `${m.name} is beaten with its Baseline dice. It tucks under an agent, off the row.`, 'win'); continue; }
@@ -597,10 +684,12 @@
   function afterFight(G) {
     say(G, `Fight ${G.fight} won in ${G.round} round${G.round === 1 ? '' : 's'}.`, 'win');
     G.cond.forEach((c, k) => { if (c.exposed) { c.exposed = false; say(G, `${nameOf(G.team[k])} discards Exposed.`, 'sit'); } });
-    const rec = running(G, 'recover'); if (rec) G.stats.items.recover += spread(G, rec * D.recoverHeal, 'Recovery Agent'); // crew-wide since 2026-11-01
+    const rec = running(G, 'recover'), recUp = G.agents.flat().filter(c => c.t === 'recover' && upgraded(G, c.uid)).length * 2; if (rec) G.stats.items.recover += spread(G, rec * D.recoverHeal + recUp, 'Recovery Agent'); // crew-wide since 2026-11-01
     G.agents.forEach((a, k) => a.forEach(c => { const n = traitsOn(G, c.uid, 'Repair') * 2, h = Math.min(n, G.max - G.hp[k]); if (!n) return; G.hp[k] += h; G.stats.healed += h; G.stats.items.repair += h; say(G, `Repair: the ${KIT_NAME[c.t]} heals ${nameOf(G.team[k])} ${h}.`, 'heal'); }));
     draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + G.bonusDraw); G.bonusDraw = 0; // + Hold the room
     // With no agent held, a baselined alarm waits for the next agent dealt.
+    // Every held agent full (two tucked alarms each): the baselined alarm goes on the row instead, with no trait.
+    if (G.tuck.length && heldAgents(G).length && heldAgents(G).every(h => upgraded(G, h.c.uid))) { G.tuck.forEach(a => { G.row.push(a.mob); say(G, `${a.name} is baselined, but every agent already holds two: it goes on the row.`, 'kit'); }); G.tuck = []; }
     if (G.tuck.length && !heldAgents(G).length) { G.tuck.forEach(a => { G.aug.push({ ...a, host: null }); say(G, `${a.name} is baselined. Nobody holds an agent: it waits for the next agent dealt.`, 'kit'); }); G.tuck = []; }
     if (G.tuck.length) { G.dealNext = 'flip'; G.phase = 'tuck'; return G; }
     return toDeal(G, 'flip');
@@ -628,7 +717,7 @@
     if (t === 'freeze') return !G.freeze && (G.phase === 'flip' || G.round >= 1);
     return true;
   };
-  const soloKeep = (G, k) => G.n === 1 && G.team[k] === 'SOA';
+  const soloKeep = () => false; // the solo Soarcerer's keep roll went with the slot (review 2)
   // Use a consumable: by its uid, or by type (k: whose hand; else the first hand holding one).
   function use(G, uidOrType, k) {
     let who = -1, c = null;
@@ -663,6 +752,6 @@
     return G;
   }
 
-  return { aug, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, stand, canStand, hunts, roll, assign, guard, enrichTurn, unassign, endRound,
+  return { aug, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, canSpot, spotlight, canTicket, ticket, canSlip, slip, canHand, hand, canPeek, peek, bury, canMove, moveTuck, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, stand, canStand, hunts, roll, assign, guard, enrichTurn, unassign, endRound,
     give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

@@ -24,7 +24,7 @@ const pipDie = dbl => KEY.map((s, i) => [s, dbl.includes(i + 1) ? 2 : 1]);
 // Signature doubles (2026-10-31): each analyst has one number of their own, plus the 6 everyone has. Was three numbers
 // each (Hunter 1 2 6, Responder 3 4 6, Engineer 2 4 6): half of every analyst's faces, too swingy. Which number
 // goes where moved solo wins by a few points at most; the gaps come from the abilities.
-const DOUBLES = { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6], PAT: [3, 6], CREW: [6], AGENT: [6] };
+const DOUBLES = { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6], PAT: [3, 6], FOR: [5, 6], LEAD: [2, 6], CREW: [6], AGENT: [6] };
 const CUSTOM = process.env.DICE === 'custom';
 const CUSTOM_DICE = {
   HUN: [['D', 2], ['D', 2], ['D', 1], ['C', 1], ['E', 1], ['E', 2]],
@@ -88,7 +88,23 @@ const EVASIVE = process.env.EVASIVE || 'one';
 // place of the heals (healing after fights moved the Fixer under 1 pt; choose = heal or draw an agent, no gain).
 // ENGDBL=0: the die the Engineer turns counts as one die (ENG solo 64% → 59%). 'old' is each earlier perk.
 const NEWITEMS = (process.env.ITEMS || 'new') === 'new'; // the item deck (see KIT below)
-const RESPERK = process.env.RESPERK || 'stand', SOAPERK = process.env.SOAPERK || (NEWITEMS ? 'slot' : 'keep'), PATPERK = process.env.PATPERK || 'nudge';
+const RESPERK = process.env.RESPERK || 'stand', SOAPERK = process.env.SOAPERK || (NEWITEMS ? 'auto' : 'keep'), PATPERK = process.env.PATPERK || 'nudge';
+// Review 2 (2026-11-02). SOAPERK=auto (default): the Soarcerer is the baseline specialist: the crew's baselines set 2
+// dice, not 3 (and once a fight it may move a tucked alarm; the bot never does). SOAPERK=slot: one more agent slot.
+const SOAAUTO = SOAPERK === 'auto';
+// HUNEND=1 (default): with the Hunter in the crew, a beaten comeback leaves the game (the Hunter ends persistence).
+// RESARR=1 (default): with the Responder in the crew, arrival hits deal 1 less. BASEBACK=1 (default): a comeback can
+// be baselined, with one more Baseline die. FORPEEK=1 (default): Forensics looks at the top of the feed before each
+// flip and may put it on the bottom. Shift Lead: once a round, one of their dice goes to a crewmate (their doubles);
+// solo, one more die.
+// Tuning knobs (review 2): LEADSOLO=die|reroll|none (the solo Shift Lead), SOATUCK=1 (the Soarcerer draws an item when an
+// alarm tucks), FORCUT=1 (Forensics: an alarm it looks at sets one fewer die).
+// Defaults chosen in the review-2 tuning (solo spread 8 Quick, 9 Full): the solo Shift Lead rerolls one more die, the
+// Soarcerer draws on a tuck, Forensics cuts a die.
+const LEADSOLO = process.env.LEADSOLO || 'reroll', SOATUCK = process.env.SOATUCK !== '0', FORCUT = process.env.FORCUT !== '0';
+// HUNEND=once (default): once a fight, a beaten comeback leaves the game. RESARR=crew (default): arrivals deal the Responder's
+// crewmates 1 less ('1': everyone, 'once': the first arrival hit each fight).
+const HUNEND = process.env.HUNEND || 'once', RESARR = process.env.RESARR || 'crew', BASEBACK = process.env.BASEBACK !== '0', FORPEEK = process.env.FORPEEK !== '0';
 // Baselining (2026-10-31): every alarm prints a harder "Baseline it" condition. When it first flips, on point may set
 // BASEDICE more threat dice (its main number's opposite side, 7 − main). Beat it with them and it is baselined: it
 // tucks under an agent, which gains its ability while that agent stays in the tray (burning or discarding the agent
@@ -119,16 +135,23 @@ const aiUp = G => G.play.some(m => m.boss && m.kw === 'ai');
 // SOLORES=1: solo, the alarm the Responder stands down also loses a die (never its last). Tested in the 2026-11-02
 // review: +1 pt for the solo Responder, so not adopted.
 const SOLORES = process.env.SOLORES === '1';
-const TRAIT = process.env.TRAITSET === 'agent' ? { imp: 'twin', druid: 'stealth', wyrmling: 'relay', mimic: 'repair' } : { imp: 'twin', druid: 'ghost', wyrmling: 'scramble', mimic: 'repair', wraith: 'twin', specter: 'ghost', bat: 'scramble', leech: 'repair' };
+const TRAIT = process.env.TRAITSET === 'agent' ? { imp: 'twin', druid: 'stealth', wyrmling: 'relay', mimic: 'repair' } : process.env.TRAITSET === 'hybrid' ? { imp: 'twin', druid: 'ghost', wyrmling: 'scramble', mimic: 'repair', wraith: 'twin', specter: 'ghost', bat: 'scramble', leech: 'repair' }
+  // TRAITSET=v3 (default, 2026-11-02 review 2): eight traits, each the beaten alarm's own trick turned around.
+  : { imp: 'spotlight', druid: 'slip', specter: 'ticket', wyrmling: 'momentum', mimic: 'persist', leech: 'siphon', bat: 'callback', wraith: 'twin' };
+// CAP: traits one agent can hold (B3); UPGRADE=1: an agent with CAP traits also gets one step of its own number.
+const CAP = +(process.env.CAP || 2), UPGRADE = process.env.UPGRADE !== '0';
+const upgraded = (G, i) => UPGRADE && traitsOf(G, i).length >= 2;
 // Which agent the bot tucks each trait under, best first.
 const TUCK = { twin: process.env.TWINTO === 'contain' ? ['contain', 'triage', 'recover', 'enrich'] : ['triage', 'contain', 'recover', 'enrich'], stealth: ['triage', 'contain', 'recover', 'enrich'], relay: ['triage', 'contain', 'recover', 'enrich'], repair: ['recover', 'contain', 'triage', 'enrich'], ghost: ['enrich', 'recover', 'contain', 'triage'], scramble: ['enrich', 'recover', 'contain', 'triage'] };
 const traitsOf = (G, i) => (G.trayT && G.trayT[i]) || [];
 const has = (G, i, tr) => traitsOf(G, i).filter(x => x === tr).length;
-const weight = (G, i) => 1 + has(G, i, 'twin') + (process.env.LEVEL === '1' ? traitsOf(G, i).length : 0); // LEVEL=1: every tucked alarm also adds one
+const weight = (G, i) => 1 + has(G, i, 'twin') + (upgraded(G, i) && ['triage', 'enrich'].includes(G.tray[i]) ? 1 : 0) + (process.env.LEVEL === '1' ? traitsOf(G, i).length : 0); // LEVEL=1: every tucked alarm also adds one
 const traitN = (G, tr) => G.play && aiUp(G) ? 0 : G.tray.reduce((s, _, i) => s + has(G, i, tr), 0); // the Rogue AI turns traits off too
+// Returns true (tucked), 'full' (every agent holds CAP traits: the alarm goes on the row) or false (no agent: it waits).
 function tuckTrait(G, tr) {
-  for (const t of TUCK[tr]) { const i = G.tray.findIndex(x => x === t); if (i >= 0) { G.trayT[i].push(tr); return true; } }
-  return false;
+  const order = TUCK[tr] || ['triage', 'contain', 'recover', 'enrich'];
+  for (const t of order) { const i = G.tray.findIndex((x, j) => x === t && traitsOf(G, j).length < CAP); if (i >= 0) { G.trayT[i].push(tr); return true; } }
+  return G.tray.some(isAgent) ? 'full' : false;
 }
 // Items (2026-10-31, ITEMS=new default): the kit deck is items. Agents are passive (always on while held); consumables
 // are used once. Each analyst holds 2 (the Soarcerer 3); solo holds 4. Deck: 6 agents (Triage, Containment ×2;
@@ -138,7 +161,7 @@ function tuckTrait(G, tr) {
 const USE = NEWITEMS && process.env.TWOSIDED !== '1' ? { triage: 'surge', enrich: 'intel', contain: 'isolate', recover: 'coffee' } : { triage: 'triage', enrich: 'enrich', contain: 'contain', recover: 'recover' };
 const AGENTS = ['triage', 'enrich', 'contain', 'recover'], isAgent = t => AGENTS.includes(t);
 const KIT = NEWITEMS ? (process.env.KITJSON ? JSON.parse(process.env.KITJSON) : ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', 'surge', 'surge', 'intel', 'intel', 'isolate', 'isolate', 'coffee', 'coffee', 'freeze', 'freeze']) : ['triage', 'enrich', 'contain', 'recover'];
-const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : CREWSLOTS * G.n) + (on(G, 'SOA') && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
+const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : CREWSLOTS * G.n) + (on(G, 'SOA') && !SOAAUTO && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
 // Each item has a holder (G.trayK, parallel to G.tray): 2 slots each (the Soarcerer 3), solo 4. Since 2026-11-01 agents
 // work for the whole crew (Containment cuts the highest-Damage alarm for everyone, Recovery heals the crew, Enrichment
 // turns any crew die) and TRIAGE=crew: a Triage Agent's holder rolls one more of their own dice. PERSONAL=1: the old
@@ -146,7 +169,7 @@ const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : CRE
 const TRIAGE = process.env.TRIAGE || (NEWITEMS ? 'crew' : 'agent'); // crew: the holder's own die (it can pair, guard and hit the boss); agent: an agent die
 const CREWSLOTS = +(process.env.CREWSLOTS || 2); // agent slots per player in a crew
 const PERSONAL = NEWITEMS && process.env.PERSONAL === '1'; // crew-wide agents since 2026-11-01; PERSONAL=1: agents work only for their holder
-const slotsK = (G, k) => G.n === 1 ? slotsOf(G) : CREWSLOTS + (G.team[k] === 'SOA' && process.env.SOASLOT !== '0' ? 1 : 0);
+const slotsK = (G, k) => G.n === 1 ? slotsOf(G) : CREWSLOTS + (G.team[k] === 'SOA' && !SOAAUTO && process.env.SOASLOT !== '0' ? 1 : 0);
 // CONSFREE=1: consumables don't take a slot (slots hold agents); you keep any number of consumables.
 const CONSFREE = NEWITEMS && process.env.CONSFREE !== '0';
 const held = (G, k) => G.trayK.filter((x, i) => x === k && !(CONSFREE && !isAgent(G.tray[i])) && !has(G, i, 'stealth')).length;
@@ -160,7 +183,7 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 // Responder (vs the biggest hitter) match one higher or lower too. N6DICE: dice per analyst (on point +1).
 // Bigger crews (2026-10-30, clustered dice): one more threat die showing 6 per player past three. Past two (the
 // first exact-numbers rule) left 3p at 36% and 4p at 19% once doubles stopped taking "any one more".
-const XFROM = +(process.env.XFROM || 3);
+const XFROM = +(process.env.XFROM || 2); // review 2: one + die per player past 2 (was 3), as six analysts stack up in a crew of four
 const N6DICE = +(process.env.N6DICE || 1), N6SOLO = +(process.env.N6SOLO || 3);
 // Clustered dice (2026-10-30): each mob has a main number and its dice bunch around it, e.g. main 2 prints
 // 1 2 2 2 3. Repeats make a double on the main number (it counts as two of that number) worth the most. MAIN
@@ -208,14 +231,18 @@ const d20 = G => 1 + Math.floor(G.r() * 20), d6 = G => Math.floor(G.r() * 6);
 const on = (G, id) => G.team.includes(id);
 const active = (G, t) => G.play.some(m => m.boss && m.kw === 'ai') ? 0 : G.tray.reduce((s, x, i) => s + (x === t ? weight(G, i) : 0), 0);
 const dmgOf = (G, m) => (m.plus || 0) + (m.boss && m.kw === 'wyrm' && m.left > m.hits - 2 ? m.dmg + 2 : m.dmg + (m.kw === 'ramp' ? m.up : 0)); // plus: The CEO's Inbox
-function hurt(G, k, n) { if (n <= 0 || G.over) return; G.hp[k] = Math.max(0, G.hp[k] - n); if (!G.hp[k]) { G.over = true; G.win = false; } }
+function hurt(G, k, n) { if (n <= 0 || G.over) return; G.hp[k] = Math.max(0, G.hp[k] - n);
+  if (!G.hp[k] && G.trayT && !(G.play && aiUp(G))) { const i = G.tray.findIndex((_, j) => has(G, j, 'persist')); if (i >= 0) { G.trayT[i].splice(G.trayT[i].indexOf('persist'), 1); G.hp[k] = 1; G.stats.persist = (G.stats.persist || 0) + 1; } } // Persist: stay at 1
+  if (!G.hp[k]) { G.over = true; G.win = false; } }
 
 // Row roll: anything in range comes back at full hits; the two highest-Damage comebacks strike on arrival.
 function rollRow(G, strike) {
-  if (!G.row.length) return []; const two = G.sys !== 'd20' && ROW === '2d6', r = two ? 2 + d6(G) + d6(G) + (TRAITS ? traitN(G, 'scramble') : aug(G, 'wyrmling') ? 1 : 0) : d20(G), back = G.row.filter(m => two ? r <= rowTop(m.persist[1]) : r >= m.persist[0] && r <= m.persist[1]);
+  if (!G.row.length) return []; const two = G.sys !== 'd20' && ROW === '2d6';
+  let a1 = 1 + d6(G), a2 = 1 + d6(G); if (two && traitN(G, 'callback') && Math.min(a1, a2) <= 3) { if (a1 < a2) a1 = 1 + d6(G); else a2 = 1 + d6(G); G.stats.callback = (G.stats.callback || 0) + 1; } // Callback: reroll one amber die
+  const r = two ? a1 + a2 + (TRAITS ? traitN(G, 'scramble') : aug(G, 'wyrmling') ? 1 : 0) : d20(G), back = G.row.filter(m => two ? r <= rowTop(m.persist[1]) : r >= m.persist[0] && r <= m.persist[1]);
   G.row = G.row.filter(m => !back.includes(m)); back.forEach(m => { m.left = m.hits; m.need = needFor(G.sys, m, G.n); m.back++; m.up = 0; });
   G.stats.back += back.length;
-  if (strike && !aug(G, 'druid')) for (const m of back.slice().sort((a, b) => b.dmg - a.dmg).slice(0, 2)) G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m)));
+  if (strike && !aug(G, 'druid')) for (const m of back.slice().sort((a, b) => b.dmg - a.dmg).slice(0, 2)) { const cut = on(G, 'RES') && RESARR === '1' ? 1 : on(G, 'RES') && RESARR === 'once' && !G.resArr ? 99 : 0; if (cut === 99) G.resArr = true; G.team.forEach((id, k) => hurt(G, k, Math.max(0, dmgOf(G, m) - cut - (on(G, 'RES') && RESARR === 'crew' && id !== 'RES' ? 1 : 0)))); } // the Responder: arrival hits deal 1 less (RESARR=once: the first arrival hit each fight deals nothing)
   return back;
 }
 function enter(G, m) { G.play.push(m); if (m.kw === 'beacon') for (const b of rollRow(G, true)) enter(G, b); }
@@ -230,7 +257,14 @@ function roll(G) {
     // DBLMODE=pair (proposal, 2026-10-31): no number is a double by itself; two of your own dice showing the same
     // number are a double (they take two of it, as they would anyway, or together they guard).
     if (process.env.DBLMODE === 'pair') raw.forEach(r => { r.dbl = process.env.PAIR6 === '1' ? [6] : []; }); // PAIR6=1: a 6 is a double on its own too
+    // Momentum (from round 2) and the solo Shift Lead's extra die roll with the rest.
+    if (TRAITS && !aiUp(G) && (G.round || 0) >= 2) G.tray.forEach((_, i) => { const k = G.trayK[i]; for (let j = has(G, i, 'momentum'); j > 0; j--) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : DOUBLES[G.team[k]] }); });
+    if (G.n === 1 && on(G, 'LEAD') && LEADSOLO === 'die') raw.push({ k: 0, crew: true, v: 1 + d6(G), dbl: DOUBLES.LEAD });
     if (REROLL !== '0') rerolls(G, raw);
+    // Spotlight: once a round per trait, one of the holder's dice counts as a double.
+    if (TRAITS && !aiUp(G)) G.tray.forEach((_, i) => { const k = G.trayK[i]; for (let j = has(G, i, 'spotlight'); j > 0; j--) { const r = raw.find(x => x.k === k && x.crew && !x.dbl.includes(x.v)); if (r) r.dbl = [...r.dbl, r.v]; } });
+    // Shift Lead (crew): once a round, hand one die to a crewmate whose doubles include it.
+    if (G.n > 1 && on(G, 'LEAD')) { const L = G.team.indexOf('LEAD'), r = raw.find(x => x.k === L && x.crew && !x.dbl.includes(x.v)); const j = r && G.team.findIndex((id, k) => k !== L && DOUBLES[id].includes(r.v)); if (r && j >= 0) { r.k = j; r.dbl = G.cond[j].rattled ? [] : DOUBLES[G.team[j]]; G.stats.handed = (G.stats.handed || 0) + 1; } }
     if (process.env.DBLMODE === 'pair') for (let i = 0; i < raw.length; i++) { const j = raw.findIndex((r, x) => x > i && r.k === raw[i].k && r.v === raw[i].v && !r.paired && !raw[i].paired); if (j > 0 && !(process.env.PAIR6 === '1' && raw[i].v === 6)) { raw[i].dbl = [raw[i].v]; raw[i].paired = true; raw.splice(j, 1); } }
     if (process.env.PAIRADD !== '0') /* since 2026-10-31: two of your own dice showing the same number are a double */ for (let i = 0; i < raw.length; i++) { const r = raw[i]; if (!r.crew || r.dbl.includes(r.v) || G.cond[r.k].rattled) continue; const j = raw.findIndex((x, y) => y > i && x.crew && x.k === r.k && x.v === r.v && !x.dbl.includes(x.v)); if (j > 0) { raw[i] = { ...r, dbl: [r.v] }; raw.splice(j, 1); G.stats.pairs = (G.stats.pairs || 0) + 1; } }
     if (process.env.RATTLED !== 'fight') G.cond.forEach(c => { c.rattled = false; }); // Rattled lasts one roll
@@ -248,14 +282,14 @@ function rerolls(G, raw) {
   const dead = r => !r.dbl.includes(r.v) && !(hunts(G, r.k, r.v) && G.play.some(m => m.back)) && !G.play.some(m => m.need.includes(r.v) && m.kw !== 'hardened');
   const go = r => { if (r) { r.v = 1 + d6(G); G.stats.rerolls = (G.stats.rerolls || 0) + 1; } };
   // all: everyone may reroll one of their own dice once a round (a shared rule instead of two perks).
-  if (REROLL === 'all') { G.team.forEach((_, k) => go(raw.find(r => r.k === k && dead(r)))); if (aug(G, 'spray')) go(raw.find(dead)); if (G.n === 1) for (let i = traitN(G, 'relay'); i > 0; i--) go(raw.find(dead)); return; }
+  if (REROLL === 'all') { G.team.forEach((_, k) => go(raw.find(r => r.k === k && dead(r)))); if (G.n === 1 && on(G, 'LEAD') && LEADSOLO === 'reroll') go(raw.find(dead)); if (aug(G, 'spray')) go(raw.find(dead)); if (G.n === 1) for (let i = traitN(G, 'relay'); i > 0; i--) go(raw.find(dead)); return; }
   const h = G.team.indexOf('HUN'); if (h >= 0) go(raw.find(r => r.k === h && dead(r)));
   if (on(G, 'RES')) go(raw.find(dead));
 }
 // The Hunter's 1s are wild on a mob that has come back (PERKS=new).
 const hunts = (G, k, v) => NEWPERKS && G.sys === 'n6' && G.team[k] === 'HUN' && v === 1;
 // HUNANY=1: the Hunter's 1s match any number on any alarm, not only one that came back.
-const huntsAny = () => process.env.HUNANY !== '0'; // default since 2026-10-31 (+11 pts solo); HUNANY=0: came-back alarms only
+const huntsAny = () => process.env.HUNANY === '1'; // review 2: the Hunter's 1s are wild on comebacks only (HUNANY=1: any alarm) // default since 2026-10-31 (+11 pts solo); HUNANY=0: came-back alarms only
 // n6 choices made after the roll: the Engineer's opposite-face turn and a Focused player's any-number turn. The bot
 // tries each and keeps the best round (a Focused turn only when it gains FOCUSGAIN).
 function choose(G, raw) {
@@ -324,6 +358,7 @@ function incoming(G, blocks) {
   const dm = new Map(G.play.map(m => [m, dmgOf(G, m)]));
   // Fileless (2026-11-02, d6): Containment cuts the highest-Damage alarm that isn't Fileless.
   for (let i = 0; i < cut; i++) { const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], Math.max(1, t[1] - D.containCut)); }
+  if (!PERSONAL && !aiUp(G)) G.tray.forEach((x, i) => { if (x !== 'contain' || !upgraded(G, i)) return; const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], t[1] - 1); }); // upgraded: 1 more
   if (aug(G, 'mailer')) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], t[1] - 1); }
   for (const m of G.play) {
     const d = dm.get(m), pierce = m.kw === 'noblock';
@@ -340,7 +375,7 @@ function incoming(G, blocks) {
 // Returns the end states with the bot's score. The same scorer judges both systems.
 function allocations(G, dice) {
   if (Math.pow(G.play.length + 2, dice.length) > +(process.env.ENUM || 200000)) return greedy(G, dice);
-  const res = [], hasEnrich = G.sys !== 'd20' && active(G, 'enrich') > 0;
+  const res = [], hasEnrich = G.sys !== 'd20' && (active(G, 'enrich') > 0 || G.ticket > 0 && !aiUp(G)); // Golden ticket: a once-a-fight wild die
   const rec = (i, left, blocks, enrichUsed, plan) => {
     if (i === dice.length) { res.push({ plan: plan.slice(), left: new Map(left), blocks: blocks.slice(), score: score(G, left, blocks) }); return; }
     const d = dice[i]; let any = false;
@@ -396,9 +431,10 @@ function score(G, left, blocks) {
 
 function fight(G, mobs) {
   G.stats.fights = (G.stats.fights || 0) + 1;
-  G.play = []; G.engUsed = false; G.resUsed = false; G.patUsed = false; G.soaKeep = (SOAPERK === 'keep' || G.n === 1 && process.env.SOASOLOKEEP === '1') && on(G, 'SOA'); G.soaRoll = G.n === 1 && (process.env.SOASOLOKEEP || 'roll') === 'roll' && on(G, 'SOA'); mobs.forEach(m => enter(G, m)); let round = 0;
+  G.play = []; G.engUsed = false; G.resUsed = false; G.patUsed = false; G.soaKeep = (SOAPERK === 'keep' || G.n === 1 && process.env.SOASOLOKEEP === '1') && on(G, 'SOA'); G.soaRoll = G.n === 1 && !SOAAUTO && (process.env.SOASOLOKEEP || 'roll') === 'roll' && on(G, 'SOA');
+  G.ticket = TRAITS ? traitN(G, 'ticket') : 0; G.slipK = G.team.map((_, k) => G.tray.reduce((n, _, i) => n + (G.trayK[i] === k ? has(G, i, 'slip') : 0), 0)); G.resArr = false; G.hunEnded = false; mobs.forEach(m => enter(G, m)); let round = 0; // ticket and slip: once a fight
   while (!G.over && G.play.length) {
-    round++; G.stats.rounds++; if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rowRoll(G, true)) enter(G, b); if (G.over) return;
+    round++; G.round = round; G.stats.rounds++; if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rowRoll(G, true)) enter(G, b); if (G.over) return;
     const boss = G.play.some(m => m.boss);
     const free = G.soaKeep;
     const used = NEWITEMS && process.env.ITEMBOT !== 'old', dl = G.play.reduce((a, m) => a + m.left, 0); // consumables have no other use: spend them
@@ -420,15 +456,20 @@ function fight(G, mobs) {
     const full = all.filter(a => a.plan.every(p => p[1] !== 'idle' || !p[2]));
     if (full.length > 1 && full.reduce((a, b) => Math.max(a, b.score), -Infinity) - full.reduce((a, b) => Math.min(a, b.score), Infinity) > 0.5) G.stats.choice++;
     const pick = G.smart ? all.reduce((a, b) => b.score > a.score ? b : a) : full[Math.floor(G.r() * full.length)] || all[0];
+    if (G.ticket > 0 && !(active(G, 'enrich') > 0) && pick.plan && pick.plan.some(p => p[2] === true)) G.ticket--;
     for (const m of G.play) { const L = pick.left.get(m); m.left = L.n; m.need = L.need; }
     const beaten = G.play.filter(m => !m.left), alive = G.play.filter(m => m.left);
     for (const m of beaten) {
       if (m.boss) { if (m.kw === 'apt' && !m.rose) { m.rose = true; m.left = 2; m.need = G.sys === 'd6' ? ['D', 'C'] : G.sys === 'n6' ? numbersFor(m.id, 2) : null; alive.push(m); if (G.sys === 'n6' && BOSSROW !== 'none') rowRoll(G, true).forEach(b => alive.push(b)); continue; } G.over = true; G.win = true; return; }
       if (m.baselining) { m.baselining = false; G.stats.baselined = (G.stats.baselined || 0) + 1;
-        if (TRAITS) { if (!tuckTrait(G, TRAIT[m.id])) G.pendT.push(TRAIT[m.id]); } else { const host = G.tray.filter(isAgent).pop(); G.aug.push({ id: m.id, host: host || null, pend: !host }); }
+        if (TRAITS) { const t = tuckTrait(G, TRAIT[m.id]); if (t === 'full') { G.row.push(m); continue; } if (!t) G.pendT.push(TRAIT[m.id]); if (SOATUCK && on(G, 'SOA')) draw(G, 1); } else { const host = G.tray.filter(isAgent).pop(); G.aug.push({ id: m.id, host: host || null, pend: !host }); }
         if (process.env.BASEROW === 'out' || TUCKOUT) continue; } // TUCKOUT: tucked under its agent, so not on the row
+      if (G.sys === 'n6' && HUNEND !== '0' && on(G, 'HUN') && m.back > 0 && (HUNEND !== 'point' || G.team[G.point] === 'HUN') && (HUNEND !== 'once' || !G.hunEnded)) { G.hunEnded = true; G.stats.ended = (G.stats.ended || 0) + 1; continue; } // the Hunter ends persistence
       if (G.sys === 'n6' && PERSIST === 'always') { G.row.push(m); continue; }
       const gone = on(G, 'HUN') && m.back > 0; if (!gone && m.back < 1) G.row.push(m);
+    }
+    for (const m of beaten) if (!m.boss) G.tray.forEach((_, i) => { const n = has(G, i, 'siphon'); if (n && !aiUp(G)) { const k = G.trayK[i]; G.hp[k] = Math.min(G.max, G.hp[k] + n); } }); // Siphon
+    {
     }
     G.play = alive;
     const bo = G.play.find(m => m.boss);
@@ -444,6 +485,8 @@ function fight(G, mobs) {
       if (cut >= +(process.env.RESMIN || 6) || inc.some((x, k) => x >= G.hp[k])) { inc = best[1]; G.resUsed = true; G.stats.stand = (G.stats.stand || 0) + 1;
         if (SOLORES && G.n === 1 && best[0].left > 1) { best[0].left--; if (best[0].need) best[0].need.pop(); } }
     }
+    // Slip: once a fight per trait, the biggest hit on its holder misses (the bot saves it for a 3+ or lethal round).
+    if (TRAITS && !aiUp(G)) inc.forEach((x, k) => { if (G.slipK[k] > 0 && (x >= 3 || x >= G.hp[k])) { inc[k] = Math.max(0, x - Math.max(...G.play.map(m => dmgOf(G, m)))); G.slipK[k]--; G.stats.slip = (G.stats.slip || 0) + 1; } });
     inc.forEach((x, k) => hurt(G, k, x)); if (G.over) return;
     for (const m of G.play) { m.up++; if (m.kw === 'regen' && m.left < m.hits) { m.left++; if (m.need) m.need.push(G.sys === 'n6' ? slotsFor(m, G.n)[m.need.length] : symbolsFor(m.domain, m.hits)[m.need.length]); } }
   }
@@ -454,7 +497,7 @@ function fight(G, mobs) {
   if (aug(G, 'mimic')) spread(G, +(process.env.BASEHEAL || 5));
   G.tray.forEach((_, i) => { const k = G.trayK[i], h = has(G, i, 'repair') * 2; if (h) G.hp[k] = Math.min(G.max, G.hp[k] + h); }); // Repair
   if (PERSONAL) G.team.forEach((_, k) => { G.hp[k] = Math.min(G.max, G.hp[k] + activeK(G, 'recover', k) * D.recoverHeal); });
-  else spread(G, active(G, 'recover') * (D.recoverHeal + (on(G, 'PAT') && (PATPERK !== 'nudge' || process.env.PATREC === '1') ? D.perks.PAT.recover : 0)));
+  else spread(G, (aiUp(G) ? 0 : G.tray.filter((x, i) => x === 'recover' && upgraded(G, i)).length * 2) + active(G, 'recover') * (D.recoverHeal + (on(G, 'PAT') && (PATPERK !== 'nudge' || process.env.PATREC === '1') ? D.perks.PAT.recover : 0)));
   draw(G, (process.env.DRAWS ? (G.n === 1 ? +process.env.DRAWS.split(',')[0] : +process.env.DRAWS.split(',')[1] * (process.env.DRAWPER === '1' ? G.n : 1)) : G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) + (G.n === 1 ? +(process.env.SOASOLODRAW || 0) : 0) : 0) + (G.bonusDraw || 0)); G.bonusDraw = 0;
 }
 function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hp.indexOf(Math.min(...G.hp)); if (G.hp[k] >= G.max) return; G.hp[k]++; } }
@@ -479,6 +522,7 @@ function draw(G, n) {
 // One flips before every flip after the first (the boss's too), once who's on point is picked. Six cards, one each.
 const SITS = ['insider', 'pager', 'usb', 'chatter', 'lateral', 'patch'];
 // The full pool (2026-11-02): the production deck's 18 situations, 9 core and 9 story (story cards: Full Shift only).
+const FOR_BURY = ['ciso', 'pentest', 'vendor', 'lateral', 'ceo', 'change'];
 const SITS_CORE = ['travel', 'coffee', 'blast', 'patch', 'ciso', 'intel', 'pentest', 'pager', 'budget'];
 const SITS_STORY = ['insider', 'lateral', 'ceo', 'change', 'chatter', 'usb', 'ioc', 'honey', 'vendor'];
 const rollN = (G, n) => Array.from({ length: n }, () => 1 + d6(G));
@@ -508,18 +552,18 @@ function situation(G, s) {
   if (s === 'lateral') { pick = 'event'; G.pending.push(...rollRow(G, true)); } // Roll for the row now; comebacks join the next fight.
   const all = n => G.team.forEach((_, k) => { if (n < 0) hurt(G, k, -n); else G.hp[k] = Math.min(G.max, G.hp[k] + n); });
   const sum2 = () => rollN(G, 2).reduce((a, b) => a + b, 0);
-  if (s === 'travel') { pick = sum2() >= 7 ? 'won' : 'lost'; if (pick === 'won') draw(G, 1); else hurt(G, p, 2); } // on point rolls 2: 7+ draws an item; under, lose 2
-  if (s === 'coffee') { pick = 'event'; all(3); }
+  if (s === 'travel') { pick = f || (G.hp[p] > 4 ? 'chase' : 'leave'); if (pick === 'chase') { pick = sum2() >= 7 ? 'won' : 'lost'; if (pick === 'won') draw(G, 1); else hurt(G, p, 2); } } // chase it or let it go // on point rolls 2: 7+ draws an item; under, lose 2
+  if (s === 'coffee') { pick = f || (Math.max(...G.hp) - lo >= 4 ? 'one' : 'all'); if (pick === 'all') all(2); else { const k = G.hp.indexOf(lo); G.hp[k] = Math.min(G.max, G.hp[k] + 5); } } // everyone heals 2, or one heals 5
   if (s === 'blast') { pick = f || (G.n > 1 && G.hp[p] > 6 ? 'point' : 'all'); if (pick === 'all') all(-1); else { hurt(G, p, 3); if (!G.over) draw(G, +(process.env.BLASTDRAW ?? 1)); } } // on point takes 3 and draws an item
   if (s === 'ciso') { pick = sum2() >= 6 ? 'won' : 'lost'; if (pick === 'lost') hurt(G, p, 3); } // on point rolls 2: under 6 loses 3
   if (s === 'intel') { pick = 'event'; const t = G.row.slice().sort((a, b) => b.dmg - a.dmg)[0]; if (t) { G.row = G.row.filter(m => m !== t); G.stats.intel = (G.stats.intel || 0) + 1; } } // the biggest row alarm leaves the game
-  if (s === 'pentest') { pick = 'event'; G.team.forEach((_, k) => { if (1 + d6(G) <= 2) hurt(G, k, 2); }); } // everyone rolls 1: a 1 or 2 loses 2
-  if (s === 'budget') { pick = 'event'; draw(G, 2); }
+  if (s === 'pentest') { const cons = G.tray.findIndex(x => !isAgent(x)); pick = f || (cons >= 0 && lo <= 4 ? 'skip' : 'run'); if (pick === 'skip' && cons >= 0) G.discard.push(dropItem(G, cons)); else G.team.forEach((_, k) => { if (1 + d6(G) <= 2) hurt(G, k, 2); }); } // or discard an item to skip it
+  if (s === 'budget') { pick = f || (lo <= G.max - 3 ? 'training' : 'tools'); if (pick === 'tools') draw(G, 2); else { draw(G, 1); all(2); } } // tools: draw 2; training: draw 1, everyone heals 2
   if (s === 'ceo') { pick = f || (lo > 6 ? 'quarantine' : 'ride'); if (pick === 'quarantine') all(-2); else G.nextPlus = (G.nextPlus || 0) + 2; } // or the next alarm gets +2 Damage
   if (s === 'change') { pick = 'event'; G.addMain = (G.addMain || 0) + 1; } // the next alarm sets one more die, its main number
   if (s === 'ioc') { pick = 'event'; const t = G.row.slice().sort((a, b) => rowTop(b.persist[1]) - rowTop(a.persist[1]))[0]; if (t) { G.row = G.row.filter(m => m !== t); t.left = t.hits; t.need = needFor(G.sys, t, G.n); t.back++; t.up = 0; G.stats.back++; G.pending.push(t); } }
   if (s === 'honey') { pick = 'event'; all(2); }
-  if (s === 'vendor') { pick = 'event'; all(-2); if (!G.over) G.pending.push(...rollRow(G, true)); }
+  if (s === 'vendor') { pick = f || (G.row.length >= 2 && G.hp[p] > 5 ? 'contain' : 'take'); if (pick === 'contain') hurt(G, p, 3); else { all(-2); if (!G.over) G.pending.push(...rollRow(G, true)); } } // or on point takes 3 and no row roll
   if (s === 'patch') { // Take a breather (everyone heals 2) or raid the supply closet (draw an agent).
     pick = f || (lo <= G.max - 4 ? 'heal' : 'agent');
     if (pick === 'heal') G.hp = G.hp.map(h => Math.min(G.max, h + (SITV === 2 ? +(process.env.PATCHHEAL || 3) : 2))); else { draw(G, 1); hurt(G, p, +(process.env.PATCHCOST ?? 1)); } // SITV=2: heal 3; PATCHCOST: the raid costs on point HP
@@ -540,14 +584,18 @@ function play(sys, team, opt) {
   for (let f = 0; !G.over; f++) {
     G.point = G.hp.indexOf(Math.max(...G.hp));
     if (sits && FEED !== 'mixed' && f) { situation(G, G.sits.pop()); if (G.over) break; }
+    // Forensics: look at the top card; bury a heavy alarm when the crew is hurt, or a harmful situation.
+    if (FORPEEK && on(G, 'FOR') && G.feed.length > 1) { const t = G.feed[G.feed.length - 1], hurtx = Math.min(...G.hp) <= G.max * .6;
+      if (FORCUT && !t.sit) { t.fewer = 1; } else if (t.sit ? FOR_BURY.includes(t.sit) : t.dmg >= 4 && hurtx) { G.feed.unshift(G.feed.pop()); G.stats.buried = (G.stats.buried || 0) + 1; } }
     let m = G.feed.pop();
     if (m && m.sit) { situation(G, m.sit); if (G.over) break; continue; } // a situation card from the mixed feed
     const boss = !m; if (boss) { m = G.boss; G.stats.boss = 1; }
     if (!boss && G.badgeHit) { G.badgeHit = false; G.stats.ran++; G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m))); if (G.over) break; } // fell back (SITV=1)
     if (!boss && G.badgeSkip) { G.badgeSkip = false; G.stats.ran++; G.row.push(m); continue; } // fell back: on the row, unfought
     relay(G);
-    if (BASE && m && !boss && !m.back && BASES.includes(m.id) && (BASEPICK === 'always' || BASEPICK === 'bot' && Math.min(...G.hp) >= G.max * +(process.env.BASEHP || 0.8))) {
-      const v = 7 - numbersFor(m.id, 1)[0], nb = BASEDICE + (process.env.BASEPLUS !== '1' ? 0 : Math.max(0, G.n - XFROM)); m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }
+    if (BASE && m && !boss && (!m.back || BASEBACK) && BASES.includes(m.id) && (BASEPICK === 'always' || BASEPICK === 'bot' && Math.min(...G.hp) >= G.max * +(process.env.BASEHP || 0.8))) {
+      const v = 7 - numbersFor(m.id, 1)[0], nb = (SOAAUTO && on(G, 'SOA') ? 2 : BASEDICE) + (m.back ? 1 : 0) + (process.env.BASEPLUS !== '1' ? 0 : Math.max(0, G.n - XFROM)); m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }
+    if (m.fewer && m.left > 1) { m.need.pop(); m.left--; m.fewer = 0; } // Forensics read it first: one fewer die
     if (G.addSix) { m.need.push(...Array(G.addSix).fill(6)); m.left += G.addSix; G.addSix = 0; }
     if (G.addMain) { const v = numbersFor(m.id, 1)[0]; m.need.push(...Array(G.addMain).fill(v)); m.left += G.addMain; G.addMain = 0; } // Ghost in the Change Window
     if (G.nextPlus) { m.plus = G.nextPlus; G.nextPlus = 0; } // The CEO's Inbox: this visit only
@@ -558,10 +606,13 @@ function play(sys, team, opt) {
   return G;
 }
 
-module.exports = { SITS, play, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, ROWSHIFT, pipDie, rowTop, KEY, DOUBLES };
+// Every crew of the six analysts (2026-11-02 review 2: Forensics and Shift Lead): 6 solos, 15 pairs, 15 fours.
+function teams(ids = ANALYSTS) { const c = (a, n) => n === 0 ? [[]] : a.flatMap((x, i) => c(a.slice(i + 1), n - 1).map(r => [x, ...r])); return { 1: c(ids, 1), 2: c(ids, 2), 4: c(ids, 4) }; }
+const ANALYSTS = (process.env.ANALYSTS || 'HUN,RES,ENG,SOA,FOR,LEAD').split(',');
+module.exports = { SITS, play, teams, ANALYSTS, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, ROWSHIFT, pipDie, rowTop, KEY, DOUBLES };
 
 if (require.main === module) {
-  const N = +(process.env.N || 600), TEAMS = { 1: [['HUN'], ['RES'], ['ENG'], ['SOA']], 2: [['HUN', 'RES'], ['ENG', 'SOA'], ['HUN', 'ENG'], ['RES', 'SOA'], ['HUN', 'SOA'], ['RES', 'ENG']], 4: [['HUN', 'RES', 'ENG', 'SOA']] }; // the Fixer is gone (2026-10-31)
+  const N = +(process.env.N || 600), TEAMS = teams(); // the Fixer is gone (2026-10-31)
   const run = (sys, teams, hp, smart = true) => { let w = 0, rounds = 0, choice = 0, back = 0, early = 0, seed = 5; for (let g = 0; g < N; g++) { const G = play(sys, teams[g % teams.length], { hp, rnd: rng(seed++ * 2654435761), smart }); w += G.win; rounds += G.stats.rounds; choice += G.stats.choice; back += G.stats.back; early += !G.win && !G.stats.boss; } return { win: w / N, choice: choice / rounds, rounds: rounds / N, back: back / N, early: early / Math.max(1, N - w) }; };
   // Tune HP per system so the smart bot wins about half its two-player games: spreads only compare at equal odds.
   const tune = sys => { let lo = 5, hi = 200; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (run(sys, TEAMS[2], mid).win < 0.5) lo = mid; else hi = mid; } return hi; };
@@ -569,9 +620,9 @@ if (require.main === module) {
   for (const sys of (process.env.SYS || 'd20,n6').split(',')) {
     const hp = process.env.HP ? +process.env.HP : tune(sys); console.log(`\n== ${sys} · HP ${hp} ${process.env.HP ? '(set by HP)' : '(tuned to ~50% at 2p)'} ==`);
     for (const n of [1, 2, 4]) { const s = run(sys, TEAMS[n], hp), r = run(sys, TEAMS[n], hp, false); console.log(`${n}p  win ${pct(s.win)} | random placement ${pct(r.win)} (skill gap ${Math.round((s.win - r.win) * 100)} pts) | rounds with a real dice choice ${pct(s.choice)} | rounds ${s.rounds.toFixed(1)} | comebacks ${s.back.toFixed(1)} | losses before the boss ${pct(s.early)}`); }
-    const solo = ['HUN', 'RES', 'ENG', 'SOA'].map(id => [id, run(sys, [[id]], hp).win]);
+    const solo = ANALYSTS.map(id => [id, run(sys, [[id]], hp).win]);
     console.log('solo by analyst: ' + solo.map(([id, w]) => `${id} ${pct(w)}`).join(' · ') + `  (spread ${Math.round((Math.max(...solo.map(x => x[1])) - Math.min(...solo.map(x => x[1]))) * 100)} pts)`);
-    const ids = ['HUN', 'RES', 'ENG', 'SOA'], pairs = []; for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) pairs.push([[ids[i], ids[j]], run(sys, [[ids[i], ids[j]]], hp).win]);
+    const pairs = TEAMS[2].map(t => [t, run(sys, [t], hp).win]);
     pairs.sort((a, b) => a[1] - b[1]); console.log(`pairs: ${pct(pairs[0][1])} (${pairs[0][0].join('+')}) to ${pct(pairs[pairs.length - 1][1])} (${pairs[pairs.length - 1][0].join('+')})`);
   }
 }

@@ -8,7 +8,7 @@ const D = require('../../../data/cards.json');
 const { fonts } = require('../../../deck/render');
 const ART = { ...require('../../../data/art.json'), ...require('../art/art.json') }, // + the consumables' scenes (../art/scenes.js)
   PRINT = require('../../../data/art-print.json');
-const { CARD_CSS, MOB_IDS, BOSS_ID, BOSS_IDS, SIT_IDS, ANALYST_IDS, artKeys } = require('../cards');
+const { CARD_CSS, MOB_IDS, BOSS_ID, BOSS_IDS, SIT_IDS, ANALYST_IDS, ANALYST_ART, artKeys } = require('../cards');
 
 const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8');
 // Only what the prototype uses from the game data.
@@ -22,6 +22,8 @@ data.keywords = Object.fromEntries(Object.entries(D.keywords).map(([k, v]) => [k
 const ak = artKeys(), art = {};
 ak.art.forEach(k => { art[k] = ART[k]; }); ak.print.forEach(k => { art[k] = PRINT[k]; });
 art.hero = ART.hero; art.back = PRINT.back; art.win = (ART._win && ART._win[BOSS_ID]) || ART['win_' + BOSS_ID] || ART[BOSS_ID];
+// Review 2's analysts borrow portraits (cards.js ANALYST_ART): the page looks them up by analyst id.
+Object.entries(ANALYST_ART).forEach(([id, k]) => { art[id] = ART[k]; });
 // Each boss's win room (the random boss, 2026-11-02).
 BOSS_IDS.forEach(id => { art['win_' + id] = (ART._win && ART._win[id]) || ART['win_' + id] || ART[id]; });
 Object.entries(art).forEach(([k, v]) => { if (!v) throw new Error('missing art: ' + k); });

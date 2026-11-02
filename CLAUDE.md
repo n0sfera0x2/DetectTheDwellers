@@ -13,7 +13,7 @@ Detect the Dwellers: a co-op dice-and-card game (1–4 players) set on a cyberpu
 | `prototypes/chapter-dice/sim.js` | The bot and balance sim. `SYS=n6` is the d6 game; knobs in the README. |
 | `prototypes/chapter-dice/cards.js` | The card markup and per-card rules text, shared by paper and web (card parity). |
 | `prototypes/chapter-dice/web/` | The playable page: `engine.js` (DOM-free, seeded), `ui.js`, `ui.css`, `build.js`, `spec.js` (`node --test`). |
-| `prototypes/chapter-dice/paper/build.js` | The rules sheet and 61 cut-out cards as a PDF. |
+| `prototypes/chapter-dice/paper/build.js` | The rules sheet and 63 cut-out cards as a PDF. |
 
 A d6 rule change touches the sim, `web/engine.js`, `cards.js` (and the paper rules sheet), then the README: update **The rules now** and **Where it stands** (check the **Targets** table), and add a dated section under History.
 

@@ -68,9 +68,9 @@ test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (th
   // Solo starts with 2 items in both modes (four-analyst pass, 2026-11-03) and deals itself.
   const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
   assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 2); assert.equal(E.startItems(1, 'quick'), 2); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
-  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 2, 'Quick Shift solo starts with 2'); assert.equal(E.startItems(3, 'quick'), 2);
-  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), 2);
-  for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 2, team.length + 'p draws 2');
+  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 2, 'Quick Shift solo starts with 2'); assert.equal(E.startItems(3, 'quick'), 3, 'a crew of 3–4 draws 3');
+  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 3 : 2);
+  for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 3, team.length + 'p draws 3');
   assert.equal(CARDS.ITEM_DECK.length, 16);
 });
 test('scaling: a 6 per player past two (review 2); solo and 2 players play the printed dice', () => {
@@ -212,7 +212,7 @@ test('after a fight: every beaten alarm goes back to the row, comebacks too, wit
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, D.kitPerFight);
   // Since 2026-11-03 the Hunter no longer ends a comeback: it goes back on the row like any other.
   const H = fight(['HUN', 'ENG'], ['imp'], {}); const hi = mob(H, 'imp'); hi.back = 1; hi.off = hi.off.map(() => true); H.dice = []; E.endRound(H);
-  assert.ok(H.row.includes(hi)); assert.equal(H.gone.length, 0); assert.equal(CARDS.PERK.HUN, 'Your 1s match any number on a comeback or the boss.');
+  assert.ok(H.row.includes(hi)); assert.equal(H.gone.length, 0); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die.');
 });
 test('end of round: mobs hit back; Piercing ignores blocks; Targeted hits only on point, doubled', () => {
   const G = fight(['ENG', 'SOA'], ['spray', 'imp'], { dice: [[0, 6], [1, 6]], point: 1 }); // spray 1 pierces; imp 3 on point, doubled
@@ -250,13 +250,14 @@ test('Lockjaw +2 until it has lost two dice; Regen puts back the die it lost; Es
   assert.ok(H.log.some(l => /regenerates: its 6 goes back/.test(l.text)));
   assert.equal(E.dmgOf(H, mob(H, 'wyrmling')), 5);
 });
-test('roll: on point rolls two; solo rolls two of their own plus the crew die; a Triage Agent’s holder rolls one more of their own', () => {
+test('roll: on point rolls two (a Hunter on point three); solo rolls two of their own plus the crew die; a Triage Agent’s holder rolls one more of their own', () => {
   const G = newG({ team: ['HUN', 'RES'], seed: 9 }); G.agents = [[], [{ uid: 'k1', t: 'triage' }]]; G.point = 0; E.flip(G); if (G.phase === 'roll') E.roll(G);
-  assert.equal(G.dice.filter(d => d.k === 0 && d.src === 'own').length, 2); assert.equal(G.dice.filter(d => d.k === 1 && d.src === 'own').length, 1);
+  assert.equal(G.dice.filter(d => d.k === 0 && d.src === 'own').length, 3, 'the Hunter on point: one more'); assert.equal(G.dice.filter(d => d.k === 1 && d.src === 'own').length, 1);
   assert.ok(G.dice.every(d => d.crew), 'no agent dice any more');
   const ag = G.dice.filter(d => d.src === 'triage'); assert.equal(ag.length, 1); assert.equal(ag[0].k, 1, 'the holder’s die, not on point’s'); assert.equal(ag[0].kuid, 'k1');
   assert.equal(ag[0].dbl, CARDS.DOUBLES.RES.includes(ag[0].n), 'the holder’s doubles');
   assert.match(E.dieOwner(G, ag[0]), /Responder \(Triage Agent\)/);
+  const P = newG({ team: ['RES', 'HUN'], seed: 9 }); P.agents = [[], []]; P.point = 0; E.flip(P); if (P.phase === 'roll') E.roll(P); assert.equal(P.dice.filter(d => d.k === 1).length, 1, 'off point, the Hunter rolls one');
   const S = newG({ team: ['ENG'], seed: 9 }); S.agents = [[]]; E.flip(S); if (S.phase === 'roll') E.roll(S);
   assert.equal(S.dice.length, D.soloDice); assert.deepEqual(S.dice.map(d => d.src), ['own', 'own', 'crew']);
   for (const d of S.dice) assert.ok(d.n >= 1 && d.n <= 6);
@@ -321,7 +322,7 @@ test('the Soarcerer: their dice take Baseline dice whatever they show; the print
   const m = setSlots(mob(G, 'spray'), [4, 4, 3, 3, 3]); m.based = 3; // two printed 4s, three Baseline 3s
   assert.deepEqual(E.canHit(G, G.dice[0], m).slots, [2, 3, 4], 'a Soarcerer 1 takes a Baseline die'); assert.equal(E.canHit(G, G.dice[1], m), null, 'an Engineer 1 doesn’t');
   m.based = 0; assert.equal(E.canHit(G, G.dice[0], m), null, 'not baselining: exact numbers only');
-  assert.equal(CARDS.PERK.SOA, 'Your dice take Baseline dice, whatever number they show.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
+  assert.equal(CARDS.PERK.SOA, 'Any die you roll can take a Baseline die.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
 });
 test('Triage Agent: its holder rolls one more of their own dice every round, under its card; it pairs, guards, rerolls and hits the boss', () => {
   const G = fight(['HUN', 'RES'], ['spray', 'boss'], {}); setAgents(G, 1, ['triage', 'triage']); G.phase = 'roll'; G.round = 0; E.roll(G);
@@ -617,17 +618,10 @@ test('Focused: once, turn one of your own dice to any number; it reads as that n
   throwsRule(() => E.focus(G, 3, 4), /isn’t Focused/); // spent
   G.cond[0].focused = true; E.focus(G, 3, 4); assert.equal(G.dice[3].dbl, true, 'a Hunter 4 is a double'); assert.deepEqual(hitsOn(G, 3, s), [4, 4]);
 });
-test('Hunter: their 1s match any free die under a comeback or the boss, not a fresh alarm; not Evasive (a 1 isn’t a Hunter double)', () => {
-  const G = fight(['HUN', 'RES'], ['wyrmling', 'spray', 'druid'], { dice: [[0, 1], [1, 1], [0, 5]] });
-  const w = setSlots(mob(G, 'wyrmling'), [4, 5, 5]), s2 = setSlots(mob(G, 'spray'), [4, 4]), dr = setSlots(mob(G, 'druid'), [2, 3, 3]);
-  assert.deepEqual(hitsOn(G, 0, w), [], 'a fresh alarm: exact numbers only'); w.back = 1;
-  assert.deepEqual(hitsOn(G, 0, w), [4, 5, 5]); assert.ok(E.targets(G, 0).hits.filter(h => h.uid === w.uid).every(h => h.wild));
-  assert.deepEqual(hitsOn(G, 1, w), [], 'only the Hunter’s 1s');
-  assert.equal(G.dice[0].dbl, false); dr.back = 1; assert.deepEqual(hitsOn(G, 0, dr), [], 'Evasive: a Hunter 1 is single');
-  E.assign(G, 0, w.uid, 1); assert.ok(G.dice[0].used, 'one take'); assert.deepEqual(E.remaining(w), [4, 5]);
-  assert.deepEqual(hitsOn(G, 2, w), [5], 'the Hunter’s other numbers stay exact');
-  const B = fight(['HUN', 'RES'], ['boss'], { dice: [[0, 1]] }); assert.ok(E.canHit(B, B.dice[0], B.boss).wild, 'the boss too');
-  assert.equal(CARDS.PERK.HUN, 'Your 1s match any number on a comeback or the boss.');
+test('Hunter: no wild numbers; a Hunter 1 matches only a 1 (on point they roll one more die: see the roll test)', () => {
+  const G = fight(['HUN', 'RES'], ['wyrmling'], { dice: [[0, 1]] }); const w = setSlots(mob(G, 'wyrmling'), [1, 4, 5]); w.back = 1;
+  assert.deepEqual(hitsOn(G, 0, w), [1], 'a comeback: exact numbers'); const B = fight(['HUN', 'RES'], ['boss'], { dice: [[0, 1]] }); assert.ok(!E.canHit(B, B.dice[0], B.boss) || !E.canHit(B, B.dice[0], B.boss).wild, 'the boss: exact too');
+  assert.equal(E.hunts, undefined); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die.');
 });
 test('Engineer: once a round, turn one of their dice to its opposite side; it counts as one die', () => {
   const G = fight(['ENG', 'SOA'], ['spray'], { dice: [[0, 6], [0, 5], [1, 3]] }); G.rerolled = [false, false]; G.undo = [{}]; G.engUsed = false;
@@ -650,14 +644,14 @@ test('Engineer: once a round, turn one of their dice to its opposite side; it co
   E.roll(H); assert.equal(H.engUsed, false); E.engTurn(H, eng()[1]); assert.equal(H.stats.flipped, 2);
   assert.match(CARDS.PERK.ENG, /Once a round, turn one of your dice to its opposite side/);
 });
-test('Responder: the alarm with the highest Damage deals 1 less, after Containment', () => {
-  const G = fight(['RES', 'SOA'], ['spray', 'wyrmling'], {}), H = fight(['ENG', 'SOA'], ['spray', 'wyrmling'], {});
-  const top = E.incoming(H).by.slice().sort((a, b) => b.dmg - a.dmg)[0], got = E.incoming(G).by;
-  assert.equal(got.find(b => b.name === top.name).dmg, top.dmg - 1, 'the top hitter: 1 less');
-  for (const b of E.incoming(H).by) if (b.name !== top.name) assert.equal(got.find(x => x.name === b.name).dmg, b.dmg, 'the others: unchanged');
-  setAgents(G, 1, ['contain']); setAgents(H, 1, ['contain']); const c = E.incoming(H).by.slice().sort((a, b) => b.dmg - a.dmg)[0];
-  assert.equal(E.incoming(G).by.find(b => b.name === c.name).dmg, c.dmg - 1, 'stacks with Containment');
-  assert.equal(CARDS.PERK.RES, 'The alarm with the highest Damage deals 1 less.');
+test('Responder: their doubles can’t guard; instead a double heals anyone 5, spending it; nobody heals above the start', () => {
+  const G = fight(['RES', 'SOA'], ['spray'], { dice: [[0, 3], [0, 6], [0, 2], [1, 6]] }); G.hp = [3, 5]; // RES 3 and 6: doubles
+  assert.ok(!E.canGuard(G, G.dice[0])); assert.ok(!E.targets(G, 0).guard); throwsRule(() => E.guard(G, 0), /heal instead/);
+  assert.ok(E.canHeal(G, G.dice[0])); assert.ok(!E.canHeal(G, G.dice[2]), 'a single can’t'); assert.ok(!E.canHeal(G, G.dice[3]), 'nor a crewmate’s double');
+  assert.ok(E.canGuard(G, G.dice[3]), 'the Soarcerer still guards');
+  E.heal(G, 0, 1); assert.deepEqual(G.hp, [3, Math.min(G.max, 5 + CARDS.RES_HEAL)]); assert.equal(G.dice[0].used, 'heal'); assert.ok(!E.canHeal(G, G.dice[0]));
+  G.hp[1] = G.max - 1; E.heal(G, 1, 1); assert.equal(G.hp[1], G.max, 'capped at the start'); assert.match(G.log[G.log.length - 1].text, /heal Soarcerer 1/);
+  assert.equal(CARDS.RES_HEAL, 5); assert.equal(CARDS.PERK.RES, 'Your doubles can’t guard. Instead, a double heals anyone 5.');
 });
 test('Evasive: a double of its number takes two; a double of another number takes any one die and is spent', () => {
   const G = fight(['HUN', 'RES'], ['druid'], { dice: [[1, 6], [1, 3], [0, 5]] }), m = setSlots(mob(G, 'druid'), [2, 3, 3]);
@@ -748,28 +742,28 @@ test('two tucked alarms is the most an agent holds, and they upgrade it: Triage 
 });
 // ---- Guard anyone, pairs, the solo Soarcerer's keep roll, baselining at every crew size (sim.js GUARDANY, PAIRADD, SOASOLOKEEP) ----
 test('a guard covers anyone not blocking yet: a crewmate, or by default the guarder; never someone already blocking', () => {
-  const G = fight(['HUN', 'RES'], ['spray', 'imp'], { dice: [[0, 4], [0, 6], [1, 3]] }); // HUN 4, HUN 6, RES 3: all doubles
+  const G = fight(['HUN', 'ENG'], ['spray', 'imp'], { dice: [[0, 4], [0, 6], [1, 1]] }); // HUN 4, HUN 6, ENG 1: all doubles (a Responder double heals instead)
   assert.deepEqual(E.guardable(G), [0, 1]);
   E.guard(G, 0, 1); assert.deepEqual(G.blocks, [false, true]); assert.equal(G.dice[0].used, 'guard'); assert.equal(G.dice[0].guards, 1);
-  assert.match(G.log[G.log.length - 1].text, /^Hunter guards Responder with a 4 \(double\)/);
-  assert.ok(E.incoming(G).total[0] > 0 && E.incoming(G).total[1] === 1, 'the Responder is covered (only Piercing gets through)');
+  assert.match(G.log[G.log.length - 1].text, /^Hunter guards Engineer with a 4 \(double\)/);
+  assert.ok(E.incoming(G).total[0] > 0 && E.incoming(G).total[1] === 1, 'the Engineer is covered (only Piercing gets through)');
   // The Hunter is still open: their other double can guard, and by default it covers its own owner.
   assert.ok(E.canGuard(G, G.dice[1])); E.guard(G, 1); assert.deepEqual(G.blocks, [true, true]); assert.equal(G.dice[1].guards, 0);
   assert.match(G.log[G.log.length - 1].text, /^Hunter guards themselves with a 6/);
-  // Everyone is blocking: the Responder's double can't guard anyone.
+  // Everyone is blocking: the Engineer's double can't guard anyone.
   assert.ok(!E.canGuard(G, G.dice[2])); assert.ok(!E.targets(G, 2).guard); assert.deepEqual(E.guardable(G), []);
-  throwsRule(() => E.guard(G, 2), /Responder is already blocking/); throwsRule(() => E.guard(G, 2, 0), /Hunter is already blocking/);
+  throwsRule(() => E.guard(G, 2), /Engineer is already blocking/); throwsRule(() => E.guard(G, 2, 0), /Hunter is already blocking/);
   throwsRule(() => E.guard(G, 2, 7), /No such analyst/);
   // Undo the last guard: the Hunter is open again.
   E.unassign(G); assert.deepEqual(G.blocks, [false, true]); assert.ok(E.canGuard(G, G.dice[2]));
-  E.guard(G, 2, 0); assert.deepEqual(G.blocks, [true, true]); assert.match(G.log[G.log.length - 1].text, /^Responder guards Hunter/);
+  E.guard(G, 2, 0); assert.deepEqual(G.blocks, [true, true]); assert.match(G.log[G.log.length - 1].text, /^Engineer guards Hunter/);
   // A guarder whose own block is taken can still cover a crewmate.
-  const H = fight(['HUN', 'RES'], ['spray'], { dice: [[0, 4], [0, 6]] }); E.guard(H, 0); assert.ok(E.canGuard(H, H.dice[1])); E.guard(H, 1, 1); assert.deepEqual(H.blocks, [true, true]);
+  const H = fight(['HUN', 'ENG'], ['spray'], { dice: [[0, 4], [0, 6]] }); E.guard(H, 0); assert.ok(E.canGuard(H, H.dice[1])); E.guard(H, 1, 1); assert.deepEqual(H.blocks, [true, true]);
 });
 test('pairs: two of your own dice showing the same number make one double; it takes two, or it guards', () => {
-  const G = fight(['RES', 'SOA'], ['spray'], { dice: [[0, 5], [0, 5], [0, 4], [1, 5], ['agent', 5]] }); // RES doubles 3, 6: 5s are single
+  const G = fight(['ENG', 'SOA'], ['spray'], { dice: [[0, 5], [0, 5], [0, 4], [1, 5], ['agent', 5]] }); // ENG doubles 1, 6: 5s are single
   const s = setSlots(mob(G, 'spray'), [5, 5]);
-  assert.deepEqual(E.pairs(G), [[0, 1]], 'only the Responder’s two 5s');
+  assert.deepEqual(E.pairs(G), [[0, 1]], 'only the Engineer’s two 5s');
   throwsRule(() => E.assign(G, 0, s.uid, 0, 1), /Only a double/);
   E.pair(G, 0, 1); assert.equal(G.dice[0].dbl, true); assert.equal(G.dice[0].paired, 1); assert.equal(G.dice[1].used, 'pair'); assert.equal(E.takesLeft(G.dice[0]), 2);
   assert.match(G.log[G.log.length - 1].text, /pairs two 5s: a double 5/); assert.deepEqual(E.pairs(G), []);
@@ -781,15 +775,15 @@ test('pairs: two of your own dice showing the same number make one double; it ta
   // Or it guards (anyone).
   E.pair(G, 0, 1); assert.ok(E.canGuard(G, G.dice[0])); E.guard(G, 0, 1); assert.deepEqual(G.blocks, [false, true]); throwsRule(() => E.assign(G, 0, s.uid), /already used/);
   // Refused: different numbers, someone else's die, an agent die, a die that is already a double, a turned die.
-  const R = fight(['RES', 'ENG'], ['spray'], { dice: [[0, 5], [0, 4], [1, 5], ['agent', 5], [0, 3], [0, 3], [1, 2], [1, 2]] });
+  const R = fight(['SOA', 'ENG'], ['spray'], { dice: [[0, 5], [0, 4], [1, 5], ['agent', 5], [0, 2], [0, 2], [1, 2], [1, 2]] });
   throwsRule(() => E.pair(R, 0, 1), /same number/); throwsRule(() => E.pair(R, 0, 2), /your own/); throwsRule(() => E.pair(R, 0, 3), /Agent dice/);
   throwsRule(() => E.pair(R, 4, 5), /double already/); throwsRule(() => E.pair(R, 0, 0), /two dice/);
   R.engUsed = false; E.engTurn(R, 6); assert.equal(R.dice[6].n, 5); throwsRule(() => E.pair(R, 6, 7), /opposite side/);
   assert.deepEqual(E.pairs(R), [], 'nothing pairable left');
   // The solo crew die pairs with your own (it is yours); a Surge Playbook die doesn't.
-  const S = fight(['RES'], ['spray'], { dice: [[0, 2], [0, 5], [0, 2]] }); S.dice[2].src = 'crew';
+  const S = fight(['SOA'], ['spray'], { dice: [[0, 4], [0, 5], [0, 4]] }); S.dice[2].src = 'crew';
   assert.deepEqual(E.pairs(S), [[0, 2]]); E.pair(S, 0, 2); assert.equal(S.dice[0].dbl, true);
-  S.dice.push({ i: 3, k: 0, crew: true, src: 'surge', ...E.pipDie(5, 'RES'), used: null, takes: [], turned: false });
+  S.dice.push({ i: 3, k: 0, crew: true, src: 'surge', ...E.pipDie(5, 'SOA'), used: null, takes: [], turned: false });
   throwsRule(() => E.pair(S, 1, 3), /dice you rolled/);
 });
 test('pairs: not while Rattled (that roll has no doubles)', () => {
@@ -1006,7 +1000,7 @@ test('page: Guard asks who to cover when more than one player is open; with one 
   const w = load(8), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
   click('[data-a="start"]'); pageDeal(w); alarmFirst(w); click('[data-a="flip"]'); if (w.CDUI.UI.G.phase === 'roll') click('[data-a="roll"]');
   const G = w.CDUI.UI.G; assert.equal(G.phase, 'assign');
-  const own = G.dice.filter(x => x.k === 0 && x.crew).map(x => x.i); assert.equal(own.length, 2);
+  const own = G.dice.filter(x => x.k === 0 && x.crew).map(x => x.i); assert.equal(own.length, 3, 'the Hunter on point rolls three');
   own.forEach(i => { G.dice[i] = { ...G.dice[i], ...E.pipDie(6, G.team[0]), used: null, takes: [], turned: false }; });
   w.CDUI.UI.sel = own[0]; w.CDUI.render();
   assert.match(d.querySelector('[data-a="guard"]').textContent, /Guard…/);

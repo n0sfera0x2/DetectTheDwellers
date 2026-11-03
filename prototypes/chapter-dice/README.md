@@ -1,6 +1,6 @@
 # Detect the Dwellers: chapter dice (d6)
 
-**Status:** this is the game. Chapter dice replaced the d20 system as the design direction on 2026-10-31. The d20 build (`src/`, `data/`, `ui/`, `deck/`, `sim/`) is legacy: it still builds and tests, but new design work happens here. The rules below are current as of [four analysts, one line each](#four-analysts-one-line-each-2026-11-03) (2026-11-03), on top of the squeeze (bosses hit for 5, alarms hit harder from the fourth fight, the push) and review 2 (eight agent traits, six analysts, choices on situations) and the full pool (one situation deck, Quick and Full Shift, three bosses). The sim (`SYS=n6`), the paper prototype and the web version all play them.
+**Status:** this is the game. Chapter dice replaced the d20 system as the design direction on 2026-10-31. The d20 build (`src/`, `data/`, `ui/`, `deck/`, `sim/`) is legacy: it still builds and tests, but new design work happens here. The rules below are current as of [the analysts, second pass](#the-analysts-second-pass-2026-11-03) (2026-11-03), on top of the squeeze (bosses hit for 5, alarms hit harder from the fourth fight, the push) and review 2 (eight agent traits, six analysts, choices on situations) and the full pool (one situation deck, Quick and Full Shift, three bosses). The sim (`SYS=n6`), the paper prototype and the web version all play them.
 
 This folder is still prototype code. Under the repo's prototype rules it gets rewritten to production standards before it replaces the d20 build; it isn't extended into production in place. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
@@ -13,9 +13,9 @@ This folder is still prototype code. Under the repo's prototype rules it gets re
 | Mode | Feed | HP | Solo starts with | Boss |
 | --- | --- | --- | --- | --- |
 | **Quick Shift** | deal 8 from the 24 core cards (alarms and core situations) | 9 | 2 items | its core ability only |
-| **Full Shift** | deal 11 core cards and 3 story cards, shuffled together (14) | 13 | 2 items | its core ability and its **Full Shift** row trigger |
+| **Full Shift** | deal 11 core cards and 3 story cards, shuffled together (14) | 12 | 2 items | its core ability and its **Full Shift** row trigger |
 
-One boss, drawn at random, goes face down under the feed. A crew draws 2 items. The number of alarms in a feed varies: about 4.3 in Quick, 6 in Full.
+One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 3). The number of alarms in a feed varies: about 4.3 in Quick, 6 in Full.
 
 **A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (3 or 4 players add the card's + die, a 6, per player past 2). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll and no arrival hits.
 
@@ -73,14 +73,14 @@ The Full Shift trigger rolls the row at round end (the Operator's when it comes 
 
 ### Analysts (4)
 
-One passive line each since 2026-11-03; only the Engineer's turn needs a coin. The Responder's cut works for the whole crew while it's in play. Forensics and the Shift Lead (review 2) were cut.
+One line each since 2026-11-03; no wild numbers. Only the Engineer's turn needs a coin. Forensics and the Shift Lead (review 2) were cut.
 
 | Analyst | Doubles | Ability |
 | --- | --- | --- |
-| Hunter | 4, 6 | Your 1s match any number on a comeback or the boss. |
-| Responder | 3, 6 | The alarm with the highest Damage deals 1 less. |
+| Hunter | 4, 6 | On point, you roll one more die. |
+| Responder | 3, 6 | Your doubles can’t guard. Instead, a double heals anyone 5. |
 | Engineer | 1, 6 | Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. |
-| Soarcerer | 2, 6 | Your dice take Baseline dice, whatever number they show. |
+| Soarcerer | 2, 6 | Any die you roll can take a Baseline die. |
 
 ### Items (16)
 
@@ -131,18 +131,18 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-03 (four analysts). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a push on offer.
+Bot sims, `SYS=n6 N=600`, 2026-11-03 (the analysts, second pass). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a push on offer.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 3 HP or less) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 48% | 17 pts | 37% | 84% | 12.6 | 3.2 | 59% | 49% |
-| Quick, 2p | 55% | 21 pts | 43% | 82% | 9.8 | 2.3 | 52% | 36% |
-| Quick, 4p | 52% | 28 pts | 53% | 89% | 8.7 | 2.0 | 53% | 35% |
-| Full, 1p | 49% | 18 pts | 38% | 85% | 15.8 | 6.0 | 49% | 29% |
-| Full, 2p | 57% | 21 pts | 42% | 83% | 12.4 | 4.5 | 49% | 21% |
-| Full, 4p | 51% | 29 pts | 44% | 88% | 11.3 | 4.1 | 54% | 20% |
+| Quick, 1p | 51% | 19 pts | 40% | 87% | 12.6 | 3.2 | 52% | 47% |
+| Quick, 2p | 57% | 22 pts | 55% | 88% | 9.9 | 2.4 | 52% | 43% |
+| Quick, 4p | 51% | 28 pts | 48% | 90% | 8.9 | 2.0 | 49% | 36% |
+| Full, 1p | 49% | 22 pts | 42% | 88% | 15.3 | 5.8 | 49% | 36% |
+| Full, 2p | 58% | 26 pts | 51% | 87% | 12.4 | 4.3 | 45% | 27% |
+| Full, 4p | 53% | 25 pts | 39% | 90% | 11.1 | 3.6 | 53% | 27% |
 
-Solo by analyst: Quick Hunter 47%, Responder 49%, Engineer 50%, Soarcerer 51%; Full 50 / 45 / 49 / 52%. Pairs (600 games each): Quick 52% (Hunter + Soarcerer) to 59% (Responder + Engineer); Full 52% (Hunter + Engineer, Hunter + Soarcerer) to 59% (Hunter + Responder, Responder + Soarcerer).
+Solo by analyst: Quick Hunter 56%, Responder 47%, Engineer 50%, Soarcerer 51%; Full 54 / 48 / 45 / 50%. Pairs (600 games each): Quick 53% (Responder + Soarcerer) to 65% (Hunter + Responder); Full 50% (Engineer + Soarcerer) to 64% (Hunter + Responder).
 
 ### Targets
 
@@ -150,26 +150,26 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 48 / 55 / 52% (solo just under) | 49 / 57 / 51% (solo just under) | the mode's HP, one point at a time; solo: starting items |
-| Spread across crew sizes | 10 points or less | 7 | 8 | solo: starting items; 3–4p: the + die (per player past 2) |
-| Solo spread across analysts | 10 points or less | 4 | 7 | the analyst's ability, not their doubles |
-| Pairs, lowest to highest | within 15 points | 52–59% (7) | 52–59% (7) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 17 / 21 / 28 (solo misses) | 18 / 21 / 29 (solo misses) | more decisions per roll |
-| Rounds with a real decision | 60% or more | 84 / 82 / 89% | 85 / 83 / 88% | the push; its cost |
-| Rounds with a real dice choice | 40% or more | 37 / 43 / 53% (solo misses) | 38 / 42 / 44% (solo misses) | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 59 / 52 / 53% | 49 / 49 / 54% | the boss's Damage; the threat timing (`ESC`) |
-| Wins with a scare | 30% or more | 49 / 36 / 35% | 29 / 21 / 20% (misses) | the threat; HP; healing (`HEALX`) |
-| Comebacks per shift | 3–6 | 3.2 / 2.3 / 2.0 (crews miss) | 6.0 / 4.5 / 4.1 | the row numbers; the feed size |
-| Baselining worth doing | always beats never | +20 / +8 / +20 | +26 / +19 / +33 | the Baseline dice and the traits |
+| Win rate, every crew size | 50–60% | 51 / 57 / 51% | 49 / 58 / 53% (solo just under) | the mode's HP, one point at a time; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 6 | 9 | solo: starting items; 3–4p: the setup item (the + die is printed) |
+| Solo spread across analysts | 10 points or less | 9 | 9 | the analyst's ability, not their doubles |
+| Pairs, lowest to highest | within 15 points | 53–65% (12) | 50–64% (14) | the Hunter's pairs (strongest) |
+| Skill gap (smart − random) | 20 points or more | 19 / 22 / 28 (solo just misses) | 22 / 26 / 25 | more decisions per roll |
+| Rounds with a real decision | 60% or more | 87 / 88 / 90% | 88 / 87 / 90% | the push; its cost |
+| Rounds with a real dice choice | 40% or more | 40 / 55 / 48% | 42 / 51 / 39% (4p just misses) | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 52 / 52 / 49% | 49 / 45 / 53% | the boss's Damage; the threat timing (`ESC`) |
+| Wins with a scare | 30% or more | 47 / 43 / 36% | 36 / 27 / 27% (crews miss) | the threat; HP; healing (`HEALX`) |
+| Comebacks per shift | 3–6 | 3.2 / 2.4 / 2.0 (crews miss) | 5.8 / 4.3 / 3.6 | the row numbers; the feed size |
+| Baselining worth doing | always beats never | +21 / +6 / +17 | +34 / +16 / +23 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
-| The boss is a climax (Full) | beating it once there: 75% or less | 69 / 72 / 70% | 66 / 72 / 69% | its row marks (`BOSSSTEPS`) |
+| The boss is a climax (Full) | beating it once there: 75% or less | 69 / 74 / 67% | 65 / 72 / 70% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
 
-- **Full Shift at HP 13 is safe too often:** only 20–29% of wins have someone at 3 HP or less. HP 13 was what brought 4-player crews back into the band (45% at HP 12); a crew-size fix that doesn't touch the printed + die would let HP come down.
-- **The push still costs solo about 4 points with this bot** (Quick 52% without it, 48% with; Full 53% / 49%). A player who never pushes is no worse off; the bot undervalues HP late in a shift.
-- **Quick Shift crews still see few comebacks** (2.3 / 2.0).
-- **Solo skill gap** is 17–18: Spotlight, Slip, Golden ticket and the push are player decisions the bot plays simply.
+- **The Hunter is the strongest analyst** (solo 54–56%, and both top pairs). One more die on point is worth more than the others' lines; if a table agrees, try "on point, roll one more die; it can't be a double".
+- **The push costs 2-player crews 3–7 points with this bot** (Quick 64% without it, 57% with; Full 61% / 58%). A player who never pushes is no worse off; the bot undervalues HP late in a shift.
+- **Full Shift crews have few scares** (27% of wins). HP 12 is what keeps 2p in the band.
+- **Quick Shift crews still see few comebacks** (2.4 / 2.0).
 - Paper tuck: up to two tucked alarms per agent, band under band. Untested at a table.
 - No human has played these rules yet. Teach time, play time and whether matching feels better than adding all need a table.
 
@@ -183,7 +183,7 @@ Against the d20 baseline (600 games per case, 2026-10-30): the d20 had a real di
 
 ```bash
 SYS=n6 HP=9 node prototypes/chapter-dice/sim.js                # Quick Shift (the default MODE) at its HP, 600 games per case (a few minutes)
-MODE=full SYS=n6 HP=13 node prototypes/chapter-dice/sim.js      # Full Shift at its HP
+MODE=full SYS=n6 HP=12 node prototypes/chapter-dice/sim.js      # Full Shift at its HP
 SYS=n6 node prototypes/chapter-dice/sim.js             # the current rules, HP tuned to ~50% at 2p
 node prototypes/chapter-dice/sim.js                    # the legacy d20 baseline and chapter dice side by side
 SYS=d6 node prototypes/chapter-dice/sim.js             # the earlier symbol d6 system (1–2 Detect, 3–4 Contain, 5–6 Eradicate)
@@ -204,6 +204,9 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `PUSH`, `PUSHMIN`, `PUSHGAIN` | n6 push (default on; `PUSH=0` off): the bot pushes above `PUSHMIN` HP (4) when the reroll's average gain beats `PUSHGAIN` (6) |
 | `HEALX` | scales the after-fight heals (default 1) |
 | `QSOLO` | items a solo player starts with (default 2) |
+| `START34` | extra setup items for a crew of 3 or 4 (default 1) |
+| `HUNNEW`, `HUNWILD` | the Hunter: `die` (default: on point, one more die); `triple`, `fewer`, `fewer2`, `immune` were tried; `HUNWILD=1` brings back the wild 1s |
+| `RESHEAL` | what a Responder double heals with `RESNEW=heal` (default 5); `RESNEW=healor` lets it guard too |
 | `ANALYSTS` | the analyst pool crews are drawn from (default `HUN,RES,ENG,SOA`; `FOR` and `LEAD` still run) |
 | `HUNANY`, `HUNBOSS`, `HUNEND` | the Hunter's 1s: wild on any alarm (`HUNANY=1`), on the boss too (`HUNBOSS`, default on), and the old once-a-fight comeback removal (`HUNEND=once`, default off) |
 | `RESNEW`, `RESPERK`, `RESARR` | the Responder: `RESNEW=top` (default) cuts the highest-Damage alarm by 1; the old stand (`RESPERK=stand`) and arrival cut (`RESARR=crew`) are off |
@@ -314,6 +317,34 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### The analysts, second pass (2026-11-03)
+
+The owner's notes on the first pass: still no to the Hunter's wild 1s (on comebacks and the boss was still a wild 1); the Responder should swap guarding for healing; the Engineer stays; the Soarcerer's rule is right but its text was unclear.
+
+#### What changed
+
+| Analyst | First pass | Now |
+| --- | --- | --- |
+| Hunter | Your 1s match any number on a comeback or the boss. | On point, you roll one more die. |
+| Responder | The alarm with the highest Damage deals 1 less. | Your doubles can’t guard. Instead, a double heals anyone 5. |
+| Soarcerer | Your dice take Baseline dice, whatever number they show. | Any die you roll can take a Baseline die. (Same rule.) |
+
+Full Shift HP 12 (was 13). A crew of 3 or 4 draws 3 items at setup, not 2: without the Responder's guard, 4-player crews fell 9–15 points behind 2-player crews, and the + die on the alarm cards is printed, so the fix went on the rules sheet.
+
+#### What was tried (`SYS=n6`, 400 games a row; solo Quick / Full)
+
+| Variant | Hunter | Responder | Notes |
+| --- | --- | --- | --- |
+| Hunter: comebacks return with one fewer die | 41 / 46 | | Quick Shift has 2–3 comebacks a shift: too few to carry an ability |
+| Hunter: comebacks deal you no damage | 75 / 87 | | comebacks are where solo damage comes from |
+| Hunter: two fewer dice on comebacks | 41 / 47 | | |
+| Hunter: a double of yours counts as three | 45 / 45 | | |
+| **Hunter: on point, one more die (kept)** | **56 / 58** | | |
+| Responder: doubles heal 2 or 3 instead of guarding | | 30–41 / 32–40 | a guard blocks a whole round |
+| Responder: doubles heal 4 instead of guarding | | 44 / 48 | |
+| Responder: doubles may heal 2 or 3 instead of guarding (guard kept) | | 61–67 / 65–68 | the strongest analyst by far |
+| **Responder: doubles heal 5 instead of guarding, 3–4p draw 3 at setup (kept, 600 games)** | **56 / 54** | **47 / 48** | 2p 57 / 58%, 4p 51 / 53% |
 
 ### Four analysts, one line each (2026-11-03)
 

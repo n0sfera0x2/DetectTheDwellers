@@ -22,7 +22,8 @@
   const HP = 10; // starting HP (2026-11-01): crew-wide agents, Triage as a crew die, 3-die baselining; ~53% at 1p, 56% at 2p, 55% at 4p in the sim
   const START_ITEMS = { solo: 2, crew: 2 }; // items drawn at setup: solo 2 (since 2026-11-01), a crew of 2–4 draws 2
   // Quick Shift solo starts with 1 (2026-11-02: solo ran 12 points ahead of a crew in the short feed).
-  const startItems = (n, mode = 'full') => n === 1 ? (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew;
+  // A crew of 3 or 4 draws one more (2026-11-03: the Responder's doubles no longer guard, and 4p fell 9–15 points behind 2p).
+  const startItems = (n, mode = 'full') => n === 1 ? (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 1 : 0);
   // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   // A crew die's double after it changes number: its owner's doubles (the solo crew die: a 6), none if rolled Rattled.
@@ -41,8 +42,8 @@
   // core cards (8 since 2026-11-02: 6 left too few comebacks); Full Shift deals 3 story cards and 11 core. The boss is drawn from three; its row trigger is Full Shift
   // only. Same deals as sim.js MODE, DEALQ, DEALF and STORYF.
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
-  // with one passive line each (same day): Quick HP 9, Full HP 13, solo starts with 2 items in both.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 9, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 13, soloItems: 2, bossRow: true } };
+  // with one passive line each (same day): Quick HP 9, Full HP 12, solo starts with 2 items in both, a crew of 3–4 with 3.
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 9, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 12, soloItems: 2, bossRow: true } };
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -363,7 +364,8 @@
     if (G.round > 1) { const back = rollRow(G, true, `round ${G.round}`); back.forEach(b => enter(G, b)); if (G.over) return G; }
     const dice = [];
     G.team.forEach((id, k) => {
-      const nd = G.n === 1 ? D.soloDice : k === G.point ? 2 : 1;
+      // The Hunter (2026-11-03): on point, one more of their own dice (solo: one more own die, the crew die stays last).
+      const nd = (G.n === 1 ? D.soloDice : k === G.point ? 2 : 1) + (id === 'HUN' && k === G.point ? 1 : 0);
       for (let i = 0; i < nd; i++) { const crewDie = G.n === 1 && i === nd - 1; dice.push({ k, crew: true, src: crewDie ? 'crew' : 'own', ...pipDie(1 + d6(G), crewDie ? 'CREW' : id) }); }
     });
     // Each Triage Agent: its holder rolls one more of their own dice (it pairs, guards, rerolls and hits the boss like
@@ -390,19 +392,28 @@
     if (m.kw === 'hardened' && !d.dbl) return null;               // Evasive: only a double hits it
     const free = m.slots.map((v, i) => i).filter(i => !m.off[i]);
     // Evasive: a double of another number takes out any one die (and is spent). Not after its first take.
-    if (m.kw === 'hardened' && !G.wildAll && !hunts(G, d, m) && !free.some(i => m.slots[i] === d.n)) return d.takes.length ? null : { slots: free, near: [], wild: true, dbl: false, evade: true };
-    if (G.wildAll || hunts(G, d, m)) return { slots: free, near: [], wild: true, dbl: d.dbl };
+    if (m.kw === 'hardened' && !G.wildAll && !free.some(i => m.slots[i] === d.n)) return d.takes.length ? null : { slots: free, near: [], wild: true, dbl: false, evade: true };
+    if (G.wildAll) return { slots: free, near: [], wild: true, dbl: d.dbl };
     // The Soarcerer (2026-11-03): their dice take Baseline dice (the last m.based slots), whatever number they show.
     const base = d.crew && G.team[d.k] === 'SOA' && m.based ? free.filter(i => i >= m.slots.length - m.based && m.slots[i] !== d.n) : [];
     const exact = [...free.filter(i => m.slots[i] === d.n), ...base], near = []; // no one-higher-or-lower matches in this test
     if (!exact.length && !near.length) return null;
     return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
-  // The Hunter's 1s (own or the solo crew die) match any number on a comeback or the boss. Not a double: never on an
-  // Evasive alarm.
-  const hunts = (G, d, m) => d.crew && G.team[d.k] === 'HUN' && d.n === 1 && !!m && (m.back > 0 || !!m.boss); // a comeback or the boss (2026-11-03)
-  // A guard covers anyone (2026-10-31): any one player who isn't blocking yet, the guarder or a crewmate.
-  const canGuard = (G, d) => !!d && d.crew && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && G.blocks.some(b => !b);
+  // A guard covers anyone (2026-10-31): any one player who isn't blocking yet, the guarder or a crewmate. The
+  // Responder's doubles heal instead (2026-11-03).
+  const resDie = (G, d) => !!d && d.crew && G.team[d.k] === 'RES';
+  const canGuard = (G, d) => !!d && d.crew && !resDie(G, d) && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && G.blocks.some(b => !b);
+  // The Responder: a double of theirs can't guard; instead it heals anyone 5 (CARDS.RES_HEAL), right away. Like a guard,
+  // it spends the whole double. Can't be undone.
+  const canHeal = (G, d) => G.phase === 'assign' && resDie(G, d) && !d.flipped && !d.used && !(d.takes || []).length && d.dbl;
+  function heal(G, di, target) {
+    const d = G.dice[di]; if (!canHeal(G, d)) fail('Only an unused Responder double heals.');
+    const t = target == null ? d.k : target; if (!(t >= 0 && t < G.n && t === Math.floor(t))) fail('No such analyst.');
+    const h = Math.min(CARDS.RES_HEAL, G.max - G.hp[t]); d.used = 'heal'; G.hp[t] += h; G.stats.healed += h; G.stats.resHeal = (G.stats.resHeal || 0) + h; G.undo = [];
+    say(G, `${nameOf(G.team[d.k])} spends a ${faceText(d)} to heal ${t === d.k ? 'themselves' : nameOf(G.team[t])} ${h}. ${hpLine(G)} HP.`, 'heal');
+    return G;
+  }
   // Who a guard could cover now: every player not yet blocking.
   const guardable = G => G.team.map((_, k) => k).filter(k => !G.blocks[k]);
   // Pairs (2026-10-31): two of a player's own unused crew dice (their own, or the solo crew die) showing the same number
@@ -463,7 +474,7 @@
     const d = G.dice[di]; if (!d) fail('No such die.');
     if (!d.crew) fail('Agent dice can’t guard.'); if (d.used || d.takes.length) fail('That die is already used.');
     if (d.flipped) fail('A die turned to its opposite side can’t guard.');
-    if (!d.dbl) fail('Only a double can guard.');
+    if (!d.dbl) fail('Only a double can guard.'); if (resDie(G, d)) fail('The Responder’s doubles heal instead of guarding.');
     const t = target == null ? d.k : target;
     if (!(t >= 0 && t < G.n && t === Math.floor(t))) fail('No such analyst.');
     if (G.blocks[t]) fail(`${nameOf(G.team[t])} is already blocking.`);
@@ -602,8 +613,6 @@
     for (let i = 0; i < running(G, 'contain'); i++) { const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (!t || t[1] <= 1) break; const c = Math.min(t[1] - 1, D.containCut); dm.set(t[0], t[1] - c); cutBy.set(t[0], (cutBy.get(t[0]) || 0) + c); }
     if (!aiUp(G)) G.agents.flat().filter(c => c.t === 'contain' && upgraded(G, c.uid)).forEach(() => { const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) { dm.set(t[0], t[1] - 1); cutBy.set(t[0], (cutBy.get(t[0]) || 0) + 1); } }); // upgraded: 1 more
     if (aug(G, 'mailer')) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], t[1] - 1); } // the Mailer Daemon baseline
-    // The Responder (2026-11-03): the alarm with the highest Damage deals 1 less, after Containment.
-    if (on(G, 'RES')) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 0) { dm.set(t[0], t[1] - 1); cutBy.set(t[0], (cutBy.get(t[0]) || 0) + 1); } }
     for (const m of up) {
       const d = dm.get(m), pierce = m.kw === 'noblock'; let to = [], each = d;
       if (m.kw === 'onpoint') { each = d * 2; if (pierce || !blocks[G.point]) to = [G.point]; }
@@ -742,6 +751,6 @@
     return G;
   }
 
-  return { aug, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, canSpot, spotlight, canTicket, ticket, canSlip, slip, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, hunts, roll, assign, guard, enrichTurn, unassign, endRound,
-    give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canPush, push, threat, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
+  return { aug, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, canSpot, spotlight, canTicket, ticket, canSlip, slip, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
+    give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canHeal, heal, canPush, push, threat, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

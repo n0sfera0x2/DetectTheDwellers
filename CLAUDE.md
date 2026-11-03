@@ -6,7 +6,7 @@ Guidance for Claude Code working in this repo.
 
 Detect the Dwellers: a co-op dice-and-card game (1–4 players) set on a cyberpunk SOC night shift.
 
-**The game is the d6 chapter dice system** (since 2026-10-31), in `prototypes/chapter-dice/`. Its README opens with the current rules, card set, sim numbers and open items; read that first. Design reviews, sims and balance work target it (`SYS=n6 HP=9 node prototypes/chapter-dice/sim.js` for Quick Shift, `MODE=full SYS=n6 HP=13` for Full), not the d20 build. It is still prototype code: under `.claude/rules/prototype-code.md` it gets rewritten to production standards before it replaces the d20 build, and it must not edit files outside `prototypes/` unless the user asks.
+**The game is the d6 chapter dice system** (since 2026-10-31), in `prototypes/chapter-dice/`. Its README opens with the current rules, card set, sim numbers and open items; read that first. Design reviews, sims and balance work target it (`SYS=n6 HP=9 node prototypes/chapter-dice/sim.js` for Quick Shift, `MODE=full SYS=n6 HP=12` for Full), not the d20 build. It is still prototype code: under `.claude/rules/prototype-code.md` it gets rewritten to production standards before it replaces the d20 build, and it must not edit files outside `prototypes/` unless the user asks.
 
 | Path | What it is |
 | --- | --- |

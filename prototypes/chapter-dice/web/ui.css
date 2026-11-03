@@ -43,7 +43,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .btn::before,.btn::after{content:"";position:absolute;z-index:-1;clip-path:var(--ch);transition:background-color .15s}
 .btn::before{inset:0;background:var(--bd)}.btn::after{inset:1px;background:var(--fill)}
 .btn:hover:not(:disabled){--fill:var(--s3)}.btn:active:not(:disabled){transform:translateY(1px)}
-.btn:disabled{cursor:not-allowed;--tx:var(--off);--bd:rgba(243,233,226,.16)}
+.btn:disabled,.btn.cy:disabled{cursor:not-allowed;--tx:var(--off);--bd:rgba(243,233,226,.16)}
 .btn.p{--bd:var(--cy);--fill:var(--cy);--tx:#04141a}.btn.p:hover:not(:disabled){--fill:#8DEEFF;--bd:#8DEEFF}
 .btn.cy{--bd:var(--cl);--tx:var(--cy)}.btn.cy:hover:not(:disabled){--fill:rgba(56,225,255,.12)}
 .btn.warn{--bd:var(--fl);--fill:var(--fl);--tx:#160904}.btn.warn:hover:not(:disabled){--fill:#FF7A52;--bd:#FF7A52}

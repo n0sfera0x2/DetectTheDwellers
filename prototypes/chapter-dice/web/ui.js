@@ -24,7 +24,7 @@
   const THUMB = { HUN: '40 14 120 80', RES: '60 6 135 90', ENG: '34 10 120 80', SOA: '45 4 135 90' };
   const SQUARE = id => THUMB[id].replace(/ \d+ \d+$/, ' 90 90');
   const SHORT = { HUN: 'Hunter', RES: 'Resp.', ENG: 'Eng.', SOA: 'Soar.' };
-  const STYLE = { HUN: 'Wild 1s', RES: 'Tanks the big hitter', ENG: 'Rolls hot', SOA: 'Runs the automation' };
+  const STYLE = { HUN: 'Rolls deep', RES: 'Patches the crew', ENG: 'Rolls hot', SOA: 'Runs the automation' };
   const ic = p => `<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
   const ICON = { check: ic('<path d="M3 8.5l3.2 3L13 4.5"/>'), shield: ic('<path d="M8 1.8l5 2v4c0 3.2-2.2 5.3-5 6.4-2.8-1.1-5-3.2-5-6.4v-4z"/>') };
   const SPK = on => ic(`<path d="M2 6h3l4-3v10l-4-3H2z"/>${on ? '<path d="M11.5 5.5a3.5 3.5 0 010 5"/><path d="M13.5 3.5a6.5 6.5 0 010 9"/>' : '<path d="M11 6l4 4M15 6l-4 4"/>'}`);
@@ -384,7 +384,7 @@
   }
   function vBrief(m) {
     const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null, dm = !m.boss && dataMob(m.id);
-    const perks = (G.team.includes('HUN') ? ' Hunter’s 1s match any number on any alarm (not Evasive: a 1 isn’t a Hunter double).' : '') + (G.team.includes('ENG') ? ' Engineer: once a round, turn a die to its opposite side.' : '');
+    const perks = (G.team.includes('HUN') ? ' Hunter on point: one more die.' : '') + (G.team.includes('RES') ? ' Responder: a double heals anyone 5 instead of guarding.' : '') + (G.team.includes('SOA') ? ' Soarcerer: any die takes a Baseline die.' : '') + (G.team.includes('ENG') ? ' Engineer: once a round, turn a die to its opposite side.' : '');
     const rows = [['c', 'To hit', 'A die takes one die under it showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards anyone (you or a crewmate). Two of your own dice showing the same number pair up as a double.' + perks],
       ['f', m.boss ? 'Boss' : 'Keyword', m.boss ? '+2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`],
       ['f', 'Round end', (!E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`)
@@ -441,7 +441,7 @@
       else if (d && !d.used && d.takes.length) hint = `<b>${esc(E.dieOwner(G, d))}: double ${d.n}, one more ${d.n} to place.</b> ${t.hits.length ? 'Tap another matching die, under this alarm or another.' : `No ${d.n} left to take.`} Or pick another die.`;
       else if (!d) hint = (G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under an alarm. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.') + (G.dice.some(x => E.canFocus(G, x)) ? ' Focused: pick one of your dice to turn it to any number.' : '') + (G.dice.some(x => E.canEng(G, x)) ? ' Engineer: pick one of your dice to turn it to its opposite side (once a round).' : '') + (G.hand.some(h => h.some(c => E.canUse(G, c.t))) ? ' Items in hand: <b>Use</b> one on the mat.' : '') + prHint;
       else if (d.used) hint = 'That die is used. <b>Undo</b> to take it back.';
-      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one alarm or two, <b>or Guard</b> anyone.` : 'Tap a glowing die under an alarm that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') + (t.hits.some(h => h.evade) ? ' <b>Evasive:</b> this double isn’t its number, so it takes any one of its dice and is spent.' : '') + (t.hits.some(h => h.wild && !h.evade) && !G.wildAll ? ' <b>Hunter’s 1:</b> it matches any die under any alarm (not an Evasive one).' : '') : (d.dbl && t.guard ? `Nothing it can hit. <b>Guard</b> anyone with it.` : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it?</b>' : ''}`)}${prs.some(p => p.includes(d.i)) ? prHint : ''}${t.focus ? ' <b>Focused:</b> turn it to any number.' : ''}${t.eng ? ` <b>Engineer:</b> turn it to its opposite side, a ${7 - d.n} (it counts as one die then).` : ''}${d.rattled ? ' Rattled: no doubles this roll.' : ''}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
+      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one alarm or two,${(E.canHeal(G, d) ? ' <b>or Heal</b> anyone ' + A.RES_HEAL : ' <b>or Guard</b> anyone')}.` : 'Tap a glowing die under an alarm that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') + (t.hits.some(h => h.evade) ? ' <b>Evasive:</b> this double isn’t its number, so it takes any one of its dice and is spent.' : '') : (E.canHeal(G, d) ? `Nothing it can hit. <b>Heal</b> anyone ${A.RES_HEAL} with it.` : d.dbl && t.guard ? `Nothing it can hit. <b>Guard</b> anyone with it.` : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it?</b>' : ''}`)}${prs.some(p => p.includes(d.i)) ? prHint : ''}${t.focus ? ' <b>Focused:</b> turn it to any number.' : ''}${t.eng ? ` <b>Engineer:</b> turn it to its opposite side, a ${7 - d.n} (it counts as one die then).` : ''}${d.rattled ? ' Rattled: no doubles this roll.' : ''}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
       const ag = G.dice.filter(x => x.kuid).length;
       // Pair: a control right after the second of two matching dice, in the tray.
@@ -451,6 +451,7 @@
         <div class="acts">
         ${picking ? `<span class="t-gpick" role="group" aria-label="Guard who"><span class="inc">Guard who?</span>${E.guardable(G).map(k => `<button class="btn cy grdb" type="button" data-a="guardfor" data-n="${k}" data-k="gfor${k}">${ICON.shield}${esc(nm(G.team[k]))}${k === d.k ? ' (you)' : ''} <kbd>${k + 1}</kbd></button>`).join('')}<button class="btn s" type="button" data-a="guardx" data-k="guardx">Cancel</button></span>`
           : sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard${G.n > 1 && E.guardable(G).length > 1 ? '…' : ''} <kbd>G</kbd></button>` : ''}
+        ${sel && E.canHeal(G, d) ? `<span class="t-gpick" role="group" aria-label="Heal who"><span class="inc">Heal ${A.RES_HEAL}:</span>${G.team.map((id, k) => `<button class="btn cy" type="button" data-a="heal" data-n="${k}" data-k="heal${k}"${G.hp[k] >= G.max ? ' disabled' : ''}>${esc(nm(id))}${k === d.k ? ' (you)' : ''}</button>`).join('')}</span>` : ''}
         ${d && E.canReroll(G, d) ? `<button class="btn" data-a="reroll" data-k="reroll">Reroll it <kbd>X</kbd></button>` : ''}${d && E.canPush(G, d) ? `<button class="btn" data-a="push" data-k="push" aria-label="Push: take 1 damage to reroll this die">Push: take 1, reroll <kbd>Z</kbd></button>` : ''}${G.rerolled ? `<span class="inc rr">Rerolls left: ${G.team.map((id, k) => G.rerolled[k] ? '' : esc(SHORT[id])).filter(Boolean).join(', ') || 'none'}</span>` : ''}
         ${sel && t.eng ? `<button class="btn cy" data-a="eng" data-k="eng" aria-label="Engineer: turn this die to its opposite side, ${7 - d.n}">Opposite side (→ ${7 - d.n}) <kbd>O</kbd></button>` : ''}
         ${sel && t.focus ? `<span class="inc">Focused: turn to…</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s cy" data-a="focus" data-n="${n}" data-k="focus${n}" aria-label="Focused: turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
@@ -582,6 +583,7 @@
     if (a === 'slot') return tapSlot(b.dataset.u, +b.dataset.p);
     if (a === 'guard') return doGuard();
     if (a === 'guardfor') return guardFor(+b.dataset.n);
+    if (a === 'heal') { const i = UI.sel; UI.sel = null; act(() => E.heal(G, i, +b.dataset.n)); return focusKey('end'); }
     if (a === 'guardx') { UI.guarding = null; render(); return focusKey('guard'); }
     if (a === 'pair') { const i = +b.dataset.i; doPair(i, +b.dataset.j); return focusKey('die' + i); }
     if (a === 'reroll') { const i = UI.sel; act(() => E.reroll(G, i)); return focusKey('die' + i); }

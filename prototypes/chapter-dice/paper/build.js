@@ -8,7 +8,7 @@ const { fonts } = require('../../../deck/render');
 const { launch, fontsReady } = require('../../../deck/browser');
 const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, tracker, mobs: cardMobs, boss, BOSS_IDS, ANALYST_IDS, AGENT_IDS, ITEM_DECK, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
 
-const OUT = __dirname, HP = 13; // Full Shift starting HP (Quick: 9), 2026-11-03 four analysts; the numbers are in the README
+const OUT = __dirname, HP = 12; // Full Shift starting HP (Quick: 9), 2026-11-03 four analysts; the numbers are in the README
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
@@ -21,10 +21,10 @@ const rules = `<section class="page rules">
 <p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
 <h2>Setup</h2>
 <ol>
-<li>Pick the shift. <b>Quick:</b> everyone starts at <b>9 HP</b>. <b>Full:</b> <b>13 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
+<li>Pick the shift. <b>Quick:</b> everyone starts at <b>9 HP</b>. <b>Full:</b> <b>12 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
 <li>The <b>situation deck</b> is the 15 alarms and 18 situations. Set the 9 <b>story</b> situations aside and shuffle the rest. <b>Quick:</b> deal 8. <b>Full:</b> deal 11, add 3 story cards, shuffle the 14. That’s the <b>feed</b>.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
-<li>Shuffle the 16 items: the item deck. The crew draws 2, solo too.</li>
+<li>Shuffle the 16 items: the item deck. The crew draws 2 (3 or 4 players: 3), solo 2.</li>
 <li>Set out the shift tracker: coin a box for anything once a round or fight (a push: a second coin); clear it as that ends.</li>
 </ol>
 <h2>Threat dice</h2>

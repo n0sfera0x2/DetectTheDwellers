@@ -429,3 +429,4 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .t-dk .chip{font-size:12px;border:1px solid rgba(243,233,226,.18);padding:2px 6px}.t-dk .chip.ag{color:var(--cy,#3ee0ff)}.t-dk .slots{font-size:11px;opacity:.6}
 @media (max-width:700px){.t-steps{flex-wrap:wrap}.t-steps li{flex:1 1 45%}}
 .t-now{font-size:16px;line-height:1.4;margin:0 0 10px}.t-now .sech{margin-right:8px}
+.lede2{font-size:clamp(15px,1.2vw,17px);line-height:1.5;max-width:56ch;margin:0 0 10px;opacity:.9}

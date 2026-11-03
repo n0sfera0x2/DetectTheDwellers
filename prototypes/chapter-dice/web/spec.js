@@ -866,7 +866,7 @@ test('page: a 2-player game clicked through to the end screen, items dealt and u
   assert.doesNotMatch(d.body.innerHTML, /players add/i);
   assert.ok(sawRow, 'a row roll was shown'); assert.ok(sits > 0, 'situations flipped between fights'); assert.ok(bases > 0, 'an alarm baselined'); assert.ok(tucks > 0, 'and tucked under a held agent');
     assert.match(d.querySelector('.t-end h2').textContent, /Shift (survived|lost)/);
-  assert.match(w.CDUI.resultLine(), /chapter dice prototype/); assert.match(w.CDUI.resultLine(), /items used: /);
+  assert.match(w.CDUI.resultLine(), /^Detect the Dwellers/); assert.match(w.CDUI.resultLine(), /items used: /);
   // What the items did: the end screen lists every item type that did something, with its count.
   const did = Object.entries(G.stats.items).filter(([, n]) => n > 0); assert.ok(did.length > 0, 'the items did something');
   assert.match(d.querySelector('.t-end .did h3').textContent, /What your items did/); assert.equal(d.querySelectorAll('.t-end .did li').length, did.length);

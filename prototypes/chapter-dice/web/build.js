@@ -37,7 +37,7 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#07060A">
-<title>Chapter Dice Table</title>
+<title>Detect the Dwellers</title>
 <style>${fonts()}
 ${CARD_CSS}
 ${read('ui.css')}</style>

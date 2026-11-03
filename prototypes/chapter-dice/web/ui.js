@@ -180,7 +180,7 @@
   // ---- Copy result -----------------------------------------------------------------------------------------------
   function resultLine() {
     const G = UI.G, burns = Object.entries(G.stats.used).map(([t, n]) => `${t} ${n}`).join(', ');
-    return ['Detect the Dwellers · chapter dice prototype', `${G.team.map(nm).join(' + ')} (${G.n}p)`, `${G.max} HP`,
+    return ['Detect the Dwellers', `${G.team.map(nm).join(' + ')} (${G.n}p)`, `${G.max} HP`,
       `${G.win ? 'Win' : 'Loss'}${G.win ? '' : ` in fight ${G.fight}${G.bossOut ? ' (boss)' : ''}`}`, mmss((UI.end || Date.now()) - UI.start),
       `${pl(G.stats.rounds, 'round')}, ${pl(G.stats.back, 'comeback')}, ${pl(G.stats.guards, 'guard')}`, `lowest HP ${Math.min(...G.hp)}/${G.max}`,
       `items used: ${burns || 'none'}`, `items did: ${itemsDid(G).map(x => `${x.t} ${x.n}`).join(', ') || 'nothing'}`, `seed ${UI.seed}`].join(' | ');
@@ -202,11 +202,11 @@
         <span class="pk-t"><span class="pk-h"><span class="nm">${esc(nm(id))}</span><span class="style">${esc(STYLE[id])}</span></span><span class="dbl"><span class="phud">Doubles</span>${dbls(id)}</span><span class="pk-perk">${esc(A.PERK[id])}</span></span>
         <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
     return `<div class="wrap"><div class="intro-grid">
-      <section class="hero"><span class="art">${slice(ART.hero)}</span><p class="meta c">Chapter dice · d6 prototype</p><h1 class="logo">Detect the Dwellers</h1>
+      <section class="hero"><span class="art">${slice(ART.hero)}</span><p class="meta c">Co-op · 1–4 players · one night in the SOC</p><h1 class="logo">Detect the Dwellers</h1>
         <p class="lede"><b>22:00.</b> The SOC is yours until dawn, and the alarms are already going off. Something is moving 40 GB out the door. Something else is trying every password in the building. Knock one down and it comes back. Hold the line until <b>06:00</b>, because at 05:59 the real attack lands.</p>
         <p class="lede2"><b>Roll. Match. Survive.</b> Every alarm sets dice under its card. Knock them out with dice showing the same number before it hits back. Beat one the hard way and your agents learn its trick. Every shift deals a new night, and a different boss waits at the bottom.</p>
         <p class="t-note"><b>Tuned for 1–4 players,</b> co-op. A Quick Shift takes about 20 minutes.</p>
-        <p class="meta">Same cards as the paper prototype. <button class="lnk" type="button" data-a="cards" data-k="cards">See all ${A.mobs().length + A.BOSS_IDS.length + 2 + A.ANALYST_IDS.length + A.AGENT_IDS.length + A.CONS_IDS.length + A.SIT_IDS.length + A.COND_IDS.length} cards</button></p></section>
+        <p class="meta">Same cards as the print-and-play deck. <button class="lnk" type="button" data-a="cards" data-k="cards">See all ${A.mobs().length + A.BOSS_IDS.length + 2 + A.ANALYST_IDS.length + A.AGENT_IDS.length + A.CONS_IDS.length + A.SIT_IDS.length + A.COND_IDS.length} cards</button></p></section>
       <section class="setup panel" aria-labelledby="crew-h"><h2 class="sech" id="crew-h">Crew · ${n} of 4</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>
         <p class="meta">One analyst per player, up to 4. Tap to add or drop.</p>
         <h2 class="sech" id="mode-h">Shift</h2><div class="modes" role="group" aria-labelledby="mode-h">${Object.entries(E.MODES).map(([k, M]) => `<button type="button" class="shiftm${UI.setup.mode === k ? ' on' : ''}" data-a="mode" data-m="${k}" data-k="mode${k}" aria-pressed="${UI.setup.mode === k}"><b>${M.label}</b><span class="meta">${MODE_SUB[k]}</span></button>`).join('')}</div>
@@ -227,7 +227,7 @@
       return `<div class="pc${k === G.point ? ' on' : ''}" data-hp="${k}"><div class="pc-h">${k === G.point ? '<i class="dot" aria-hidden="true"></i>' : ''}<span class="nm">${esc(nm(id))}</span><span class="hpn"><b class="num">${hp}</b><span class="of">/${G.max}</span></span></div>${vConds(k)}
         <span class="hpbar${hp / G.max <= .35 ? ' low' : ''}" aria-hidden="true"><i style="transform:scaleX(${after / G.max})"></i>${n ? `<i class="inci" style="transform:translateX(${after / G.max * 100}%) scaleX(${(hp - after) / G.max})"></i>` : ''}</span>${incl}</div>`;
     }).join('');
-    return `<div class="gtop"><header class="top"><span class="brand">Detect the Dwellers<small>Chapter dice</small></span>
+    return `<div class="gtop"><header class="top"><span class="brand">Detect the Dwellers<small>Night shift</small></span>
       <div class="feed"><span class="fline"><time class="clk" data-clock>${clockNow()}</time><span class="meta c">${label}</span></span><span class="feedbar" aria-hidden="true">${bar}</span></div>
       <nav class="tbtns">${soundBtn()}<button class="btn s" type="button" data-a="cards" data-k="cards" aria-pressed="${UI.cards}">Cards</button><button class="btn s" type="button" data-a="log" data-k="log" aria-pressed="${UI.drawer === 'log'}">Log</button><button class="btn s" type="button" data-a="quit" data-k="quit">New</button></nav></header>
       <div class="crew" style="--n:${G.n}" aria-label="Crew HP">${crew}</div></div>`;
@@ -501,7 +501,7 @@
   function vGallery() {
     if (!UI.cards) return '';
     const all = [...A.mobs().map(m => ['mob:' + m.id, A.mobCard(m)]), ...A.BOSS_IDS.map(id => ['boss:' + id, A.bossCard(A.boss(id))]), ['legend', A.legend], ['tracker', A.tracker], ...A.ANALYST_IDS.map(id => ['analyst:' + id, A.analystCard(id)]), ...[...A.AGENT_IDS, ...A.CONS_IDS].map(t => ['agent:' + t, A.agentCard(t)]), ...A.SIT_IDS.map(id => ['sit:' + id, A.sitCard(id)]), ...A.COND_IDS.map(id => ['cond:' + id, A.condCard(id)])];
-    return `<div class="t-gallery" role="dialog" aria-label="All cards"><div class="in"><div class="lh"><h2 class="sech">Every card in the prototype · the same markup as the paper PDF</h2><button class="btn s" data-a="cards" data-k="cardsx">Close <kbd>Esc</kbd></button></div>
+    return `<div class="t-gallery" role="dialog" aria-label="All cards"><div class="in"><div class="lh"><h2 class="sech">Every card · the same as the print-and-play deck</h2><button class="btn s" data-a="cards" data-k="cardsx">Close <kbd>Esc</kbd></button></div>
       <div class="grid">${all.map(([k, h]) => `<div class="t-gslot" data-card="${k}">${h}</div>`).join('')}</div></div></div>`;
   }
   // The boss reveal (as ui/ui.js): the boss card scans in over the table, with the one thing worth knowing.
@@ -524,7 +524,7 @@
     const roster = G.team.map((id, k) => `<li class="${!G.win && k === down ? 'down' : ''}"><span class="art">${crop(ART[id], SQUARE(id))}</span><span><span class="nm">${esc(nm(id))}</span><br><span class="num">${G.hp[k]}/${G.max}</span> <span class="meta">HP</span></span></li>`).join('');
     return `<div class="t-end" role="dialog" aria-label="Shift over"><div class="end">
       <article class="endcard ${G.win ? 'win' : 'loss'}"><div class="ec-art"><span class="art">${slice(artSvg)}</span><span class="stamp" aria-hidden="true">${G.win ? 'Contained' : 'Flatlined'}</span></div>
-        <div class="ec-bd"><p class="meta ${G.win ? 'c' : 'f'}">Chapter dice · d6 prototype · ${G.n}p · ${G.max} HP</p>
+        <div class="ec-bd"><p class="meta ${G.win ? 'c' : 'f'}">${esc(E.MODES[G.mode].label)} · ${G.n}p · ${G.max} HP</p>
           <h2 class="logo" tabindex="-1">${G.win ? 'Shift survived' : 'Shift lost'}</h2>
           ${G.win ? `<p class="lede"><time class="clk dawn">06:00</time> You made it to dawn. ${esc(G.boss.name)} is beaten. Everybody walks out.</p>`
             : `<p class="cause"><time class="clk">${clockNow()}</time> The shift fell in ${G.bossOut ? 'the boss fight' : `fight ${G.fight}`}${who ? `: <b>${esc(who)}</b> took the ${esc(nm(G.team[down >= 0 ? down : 0]))} to 0 HP` : ''}.</p>`}

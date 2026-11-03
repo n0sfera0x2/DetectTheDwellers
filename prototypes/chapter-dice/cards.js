@@ -112,7 +112,7 @@
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
     SOA: 'Any die you roll is a double for baselining: it takes two Baseline dice.',
   };
-  const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'standard d6')}<div class="nm">${cls(id).name}</div>
+  const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'on shift')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
   <div class="note">A double counts as two dice showing its number, or guards you.</div><div class="perk">${PERK[id]}</div></div>`;
   // Items (2026-10-31): the deck is items. Agents are passive: each player holds 2 (the Soarcerer 3; solo 4, or 5).

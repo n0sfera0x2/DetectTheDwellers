@@ -13,8 +13,8 @@ const OUT = __dirname, HP = 17; // Full Shift starting HP (Quick: 12), 2026-11-0
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
 const rules = `<section class="page rules">
-<h1>Detect the Dwellers · Chapter dice test</h1>
-<p class="lede">Match exact numbers on standard d6s. A fresh feed every shift, then the boss. 1–4 players.</p>
+<h1>Detect the Dwellers</h1>
+<p class="lede">One night in the SOC. Match the numbers, hold the line, beat the boss at 05:59. 1–4 players, co-op.</p>
 <div class="cols">
 <div>
 <h2>You need</h2>
@@ -60,7 +60,7 @@ const rules = `<section class="page rules">
 <p>Beat the boss and you’ve survived the night. Anyone at 0 HP and the shift is lost.</p>
 </div>
 </div>
-<p class="foot">Prototype only; numbers from the sim of 2026-11-03. Record who played, time, win or loss, every rule played wrong.</p>
+<p class="foot">Playtest build; numbers from the sim of 2026-11-03. Record who played, time, win or loss, every rule played wrong.</p>
 </section>`;
 
 // ---- Cards (2.5 × 3.5 in, nine to a page): the markup lives in ../cards.js, shared with the web prototype ----
@@ -76,7 +76,7 @@ h1{font-weight:700;font-size:22px;margin:0 0 6px;text-transform:uppercase;letter
 .ex3{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:11.5px!important;background:#F6F2EC;border:1px solid #D8CEC3;padding:5px 8px}.rules li svg,.rules p svg{vertical-align:-3px}
 .page.cards{padding:0.25in 0.5in}.cards .grid{display:grid;grid-template-columns:repeat(3,2.5in);grid-auto-rows:3.5in;gap:0;justify-content:center;margin-top:0}
 ${CARD_CSS}`;
-const html = `<!doctype html><html><head><meta charset="utf-8"><title>Chapter dice paper prototype</title><style>${css}</style></head><body>${rules}${pages.join('')}</body></html>`;
+const html = `<!doctype html><html><head><meta charset="utf-8"><title>Detect the Dwellers: print and play</title><style>${css}</style></head><body>${rules}${pages.join('')}</body></html>`;
 fs.writeFileSync(path.join(OUT, 'chapter-dice-paper.html'), html);
 
 (async () => {

@@ -1,0 +1,37 @@
+# Publishes the d6 chapter dice playtest to GitHub Pages: the playable page (one self-contained file) and the
+# print-and-play PDF. Both are built locally and committed; this only copies them into the site.
+name: Playtest site
+on:
+  push:
+    branches: [main]
+    paths:
+      - prototypes/chapter-dice/web/index.html
+      - prototypes/chapter-dice/paper/chapter-dice-paper.pdf
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp prototypes/chapter-dice/web/index.html _site/index.html
+          cp prototypes/chapter-dice/paper/chapter-dice-paper.pdf _site/detect-the-dwellers-print-and-play.pdf
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

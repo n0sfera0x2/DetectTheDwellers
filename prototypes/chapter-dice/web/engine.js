@@ -42,8 +42,9 @@
   // core cards (8 since 2026-11-02: 6 left too few comebacks); Full Shift deals 3 story cards and 11 core. The boss is drawn from three; its row trigger is Full Shift
   // only. Same deals as sim.js MODE, DEALQ, DEALF and STORYF.
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
-  // with one passive line each (same day): Quick HP 9, Full HP 12, solo starts with 2 items in both, a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 9, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 12, soloItems: 2, bossRow: true } };
+  // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 17 (Full) against a threat of +1 per 2
+  // fights won (up to +2); solo starts with 1 item in Quick, 2 in Full; a crew of 3–4 with 3.
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 12, soloItems: 1, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 17, soloItems: 2, bossRow: true } };
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -102,8 +103,8 @@
   const on = (G, id) => G.team.includes(id);
   // Damage right now: Lockjaw +2 until it has lost two dice; Escalating +1 per round it stayed up.
   // The CEO's Inbox (plus): +2 for one visit.
-  // Threat: once THREAT_AFTER fights are won, every alarm (not the boss) hits 1 harder for the rest of the shift.
-  const threat = G => (G.won || 0) >= CARDS.THREAT_AFTER ? 1 : 0;
+  // Threat: every THREAT_AFTER fights won, every alarm (not the boss) hits 1 harder, up to THREAT_MAX.
+  const threat = G => Math.min(CARDS.THREAT_MAX, Math.floor((G.won || 0) / CARDS.THREAT_AFTER));
   const dmgOf = (G, m) => (m.plus || 0) + (m.boss ? 0 : threat(G)) + (m.boss ? m.dmg + (m.kw === 'wyrm' && left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0));
   const d6 = G => Math.floor(G.r() * 6);
   const BOSS_STEPS = CARDS.BOSS_STEPS;
@@ -394,16 +395,18 @@
     // Evasive: a double of another number takes out any one die (and is spent). Not after its first take.
     if (m.kw === 'hardened' && !G.wildAll && !free.some(i => m.slots[i] === d.n)) return d.takes.length ? null : { slots: free, near: [], wild: true, dbl: false, evade: true };
     if (G.wildAll) return { slots: free, near: [], wild: true, dbl: d.dbl };
-    // The Soarcerer (2026-11-03): their dice take Baseline dice (the last m.based slots), whatever number they show.
-    const base = d.crew && G.team[d.k] === 'SOA' && m.based ? free.filter(i => i >= m.slots.length - m.based && m.slots[i] !== d.n) : [];
-    const exact = [...free.filter(i => m.slots[i] === d.n), ...base], near = []; // no one-higher-or-lower matches in this test
+    // The Soarcerer (2026-11-03): any of their dice is a double for baselining. It takes Baseline dice (the last m.based
+    // slots) whatever number it shows, two of them. A second take it earned that way (d.baseTwo) goes only on Baseline dice.
+    const base = soaBase(G, d, m) ? free.filter(i => i >= m.slots.length - m.based) : [];
+    if (d.baseTwo && d.takes.length) return base.length ? { slots: base, near: [], wild: true, dbl: true } : null;
+    const exact = [...new Set([...free.filter(i => m.slots[i] === d.n), ...base])], near = []; // no one-higher-or-lower matches in this test
     if (!exact.length && !near.length) return null;
     return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
-  // A guard covers anyone (2026-10-31): any one player who isn't blocking yet, the guarder or a crewmate. The
-  // Responder's doubles heal instead (2026-11-03).
+  // A guard covers only the player who rolled it (2026-11-03; it covered anyone from 2026-10-31). The Responder's
+  // doubles heal instead.
   const resDie = (G, d) => !!d && d.crew && G.team[d.k] === 'RES';
-  const canGuard = (G, d) => !!d && d.crew && !resDie(G, d) && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && G.blocks.some(b => !b);
+  const canGuard = (G, d) => !!d && d.crew && !resDie(G, d) && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && !G.blocks[d.k];
   // The Responder: a double of theirs can't guard; instead it heals anyone 5 (CARDS.RES_HEAL), right away. Like a guard,
   // it spends the whole double. Can't be undone.
   const canHeal = (G, d) => G.phase === 'assign' && resDie(G, d) && !d.flipped && !d.used && !(d.takes || []).length && d.dbl;
@@ -414,7 +417,7 @@
     say(G, `${nameOf(G.team[d.k])} spends a ${faceText(d)} to heal ${t === d.k ? 'themselves' : nameOf(G.team[t])} ${h}. ${hpLine(G)} HP.`, 'heal');
     return G;
   }
-  // Who a guard could cover now: every player not yet blocking.
+  // Who a guard could cover now: every player not yet blocking (each covers only themselves).
   const guardable = G => G.team.map((_, k) => k).filter(k => !G.blocks[k]);
   // Pairs (2026-10-31): two of a player's own unused crew dice (their own, or the solo crew die) showing the same number
   // pair into one double. Not an agent die, a Surge Playbook die, a die turned by the Engineer, a die that is already a
@@ -429,7 +432,10 @@
     return out;
   }
   // How many takes a die has left: a double counts as two dice showing its number.
-  const takesLeft = d => !d || d.used ? 0 : (d.dbl ? 2 : 1) - (d.takes || []).length;
+  const takesLeft = d => !d || d.used ? 0 : (d.dbl || d.baseTwo ? 2 : 1) - (d.takes || []).length;
+  // A Soarcerer die against an alarm being baselined; isBase: slot p is one of its Baseline dice.
+  const soaBase = (G, d, m) => !!d && d.crew && G.team[d.k] === 'SOA' && !!m && m.based > 0;
+  const isBase = (m, p) => p >= m.slots.length - (m.based || 0);
   // Every legal use of a die, for the UI's slot highlights and for tests.
   function targets(G, di) {
     const d = G.dice[di]; if (!d || G.phase !== 'assign') return { hits: [], guard: false, enrich: false };
@@ -452,8 +458,9 @@
     const o = canHit(G, d, m); if (!o) fail(cantWhy(G, d, m));
     if (p == null) p = o.slots[0];
     if (!o.slots.includes(p)) fail(m.off[p] ? 'That die is already taken.' : `A ${d.n} can’t take the ${m.slots[p]} under ${m.name}.`);
+    const two = !d.dbl && soaBase(G, d, m) && isBase(m, p) && (q == null || isBase(m, q)); // the Soarcerer's double for baselining
     if (q != null) { if (takesLeft(d) < 2 || o.evade) fail('Only a double takes two.'); if (!moreSlots(G, d, m, p).includes(q)) fail(`A ${d.n} can’t take the ${m.slots[q]} under ${m.name}.`); }
-    G.undo.push(snap(G));
+    G.undo.push(snap(G)); if (two && !d.takes.length) d.baseTwo = true; // after the snapshot, so undo clears it
     const took = [m.slots[p]]; take(m, p); d.takes.push({ uid, p });
     if (q != null) { took.push(m.slots[q]); take(m, q); d.takes.push({ uid, p: q }); }
     if (o.evade || !takesLeft(d)) d.used = { uid, slots: d.takes.map(t => t.p) };
@@ -476,7 +483,7 @@
     if (d.flipped) fail('A die turned to its opposite side can’t guard.');
     if (!d.dbl) fail('Only a double can guard.'); if (resDie(G, d)) fail('The Responder’s doubles heal instead of guarding.');
     const t = target == null ? d.k : target;
-    if (!(t >= 0 && t < G.n && t === Math.floor(t))) fail('No such analyst.');
+    if (!(t >= 0 && t < G.n && t === Math.floor(t))) fail('No such analyst.'); if (t !== d.k) fail('A double guards only the player who rolled it.');
     if (G.blocks[t]) fail(`${nameOf(G.team[t])} is already blocking.`);
     G.undo.push(snap(G)); d.used = 'guard'; d.guards = t; G.blocks[t] = true;
     say(G, `${nameOf(G.team[d.k])} guards ${t === d.k ? 'themselves' : nameOf(G.team[t])} with a ${faceText(d)}: ${t === d.k ? 'blocking' : `${nameOf(G.team[t])} blocks`} this round.`, 'guard');
@@ -681,7 +688,7 @@
   // agent (phase 'tuck'), then the drawn items are dealt (phase 'deal'), then the next flip.
   function afterFight(G) {
     say(G, `Fight ${G.fight} won in ${G.round} round${G.round === 1 ? '' : 's'}.`, 'win');
-    G.won = (G.won || 0) + 1; if (G.won === CARDS.THREAT_AFTER) say(G, `Fight ${G.won} won: the threat rises. Alarms deal 1 more Damage for the rest of the shift (not the boss).`, 'mob');
+    const was = threat(G); G.won = (G.won || 0) + 1; if (threat(G) > was) say(G, `Fight ${G.won} won: the threat rises. Alarms deal ${threat(G)} more Damage for the rest of the shift (not the boss).`, 'mob');
     G.cond.forEach((c, k) => { if (c.exposed) { c.exposed = false; say(G, `${nameOf(G.team[k])} discards Exposed.`, 'sit'); } });
     const rec = running(G, 'recover'), recUp = G.agents.flat().filter(c => c.t === 'recover' && upgraded(G, c.uid)).length * 2; if (rec) G.stats.items.recover += spread(G, rec * D.recoverHeal + recUp, 'Recovery Agent'); // crew-wide since 2026-11-01
     G.agents.forEach((a, k) => a.forEach(c => { const n = traitsOn(G, c.uid, 'Repair') * 2, h = Math.min(n, G.max - G.hp[k]); if (!n) return; G.hp[k] += h; G.stats.healed += h; G.stats.items.repair += h; say(G, `Repair: the ${KIT_NAME[c.t]} heals ${nameOf(G.team[k])} ${h}.`, 'heal'); }));

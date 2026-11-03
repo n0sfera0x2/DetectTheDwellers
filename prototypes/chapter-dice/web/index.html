@@ -592,11 +592,11 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     HUN: 'On point, you roll one more die.',
     RES: 'Your doubles can’t guard. Instead, a double heals anyone 5.',
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
-    SOA: 'Any die you roll can take a Baseline die.',
+    SOA: 'Any die you roll is a double for baselining: it takes two Baseline dice.',
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'standard d6')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
-  <div class="note">A double counts as two dice showing its number, or guards anyone.</div><div class="perk">${PERK[id]}</div></div>`;
+  <div class="note">A double counts as two dice showing its number, or guards you.</div><div class="perk">${PERK[id]}</div></div>`;
   // Items (2026-10-31): the deck is items. Agents are passive: each player holds 2 (the Soarcerer 3; solo 4, or 5).
   // Since 2026-11-01 they work for the whole crew, and Triage rolls one more die of its holder's own. Consumables
   // don't take a slot: keep them in hand and use each once. [name, rule, art key].
@@ -620,7 +620,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   const legend = `<div class="card ref am">${tab}${hd('Reference', 'every die')}<div class="nm">Dice</div>
   <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
-  <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards anyone.</div>
+  <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards you.</div>
   <div class="note">The solo crew die: only a ${pip(6, 14)}. <b>Two of yours on one number: a double.</b></div>
   <div class="note"><b>Once a round, reroll one of your own dice.</b> <b>Push:</b> take 1 to reroll one more (not at 1 HP).</div>
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
@@ -631,7 +631,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   const box = t => `<span class="bx">${t}</span>`;
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
 
-  <div class="trow"><b>Threat: fights won</b>${[1, 2, 3].map(n => box(n)).join('')}${box('Alarms +1')}</div>
+  <div class="trow"><b>Threat: fights won</b>${box(1)}${box('2: alarms +1')}${box(3)}${box('4: alarms +2')}</div>
   <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Twin')}</div>
   <div class="trow"><b>This fight</b>${box('Hold the room: +1 item')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
@@ -685,8 +685,9 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   const ITEM_DECK = ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', ...CONS_IDS.flatMap(t => [t, t])];
   const mobs = () => MOB_IDS.map(id => D.mobs.find(m => m.id === id));
   // The squeeze (2026-11-03): every boss hits for 5, not the data's 9 (one unguarded round no longer ends the shift), and
-  // from the fourth fight on alarms hit 1 harder (THREAT_AFTER fights won). PUSH_COST: a second reroll a round costs 1 HP.
-  const BOSS_DMG = 5, THREAT_AFTER = 3, PUSH_COST = 1, RES_HEAL = 5; // RES_HEAL: a Responder double heals this much
+  // alarms hit 1 harder for every THREAT_AFTER fights won, up to THREAT_MAX (since the HP rise, 2026-11-03: +1 after 2
+  // won, +2 after 4). PUSH_COST: a second reroll a round costs 1 HP.
+  const BOSS_DMG = 5, THREAT_AFTER = 2, THREAT_MAX = 2, PUSH_COST = 1, RES_HEAL = 5; // RES_HEAL: a Responder double heals this much
   const boss = (id = BOSS_ID) => ({ ...D.bosses.find(b => b.id === id), dmg: BOSS_DMG });
 
   // The card face CSS, shared by print and web. Page and sheet layout stay in each build.
@@ -727,7 +728,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:9px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { BOSS_DMG, THREAT_AFTER, PUSH_COST, RES_HEAL, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });
 </script>
@@ -775,8 +776,9 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   // core cards (8 since 2026-11-02: 6 left too few comebacks); Full Shift deals 3 story cards and 11 core. The boss is drawn from three; its row trigger is Full Shift
   // only. Same deals as sim.js MODE, DEALQ, DEALF and STORYF.
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
-  // with one passive line each (same day): Quick HP 9, Full HP 12, solo starts with 2 items in both, a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 9, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 12, soloItems: 2, bossRow: true } };
+  // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 17 (Full) against a threat of +1 per 2
+  // fights won (up to +2); solo starts with 1 item in Quick, 2 in Full; a crew of 3–4 with 3.
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 12, soloItems: 1, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 17, soloItems: 2, bossRow: true } };
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -835,8 +837,8 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   const on = (G, id) => G.team.includes(id);
   // Damage right now: Lockjaw +2 until it has lost two dice; Escalating +1 per round it stayed up.
   // The CEO's Inbox (plus): +2 for one visit.
-  // Threat: once THREAT_AFTER fights are won, every alarm (not the boss) hits 1 harder for the rest of the shift.
-  const threat = G => (G.won || 0) >= CARDS.THREAT_AFTER ? 1 : 0;
+  // Threat: every THREAT_AFTER fights won, every alarm (not the boss) hits 1 harder, up to THREAT_MAX.
+  const threat = G => Math.min(CARDS.THREAT_MAX, Math.floor((G.won || 0) / CARDS.THREAT_AFTER));
   const dmgOf = (G, m) => (m.plus || 0) + (m.boss ? 0 : threat(G)) + (m.boss ? m.dmg + (m.kw === 'wyrm' && left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0));
   const d6 = G => Math.floor(G.r() * 6);
   const BOSS_STEPS = CARDS.BOSS_STEPS;
@@ -1127,16 +1129,18 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     // Evasive: a double of another number takes out any one die (and is spent). Not after its first take.
     if (m.kw === 'hardened' && !G.wildAll && !free.some(i => m.slots[i] === d.n)) return d.takes.length ? null : { slots: free, near: [], wild: true, dbl: false, evade: true };
     if (G.wildAll) return { slots: free, near: [], wild: true, dbl: d.dbl };
-    // The Soarcerer (2026-11-03): their dice take Baseline dice (the last m.based slots), whatever number they show.
-    const base = d.crew && G.team[d.k] === 'SOA' && m.based ? free.filter(i => i >= m.slots.length - m.based && m.slots[i] !== d.n) : [];
-    const exact = [...free.filter(i => m.slots[i] === d.n), ...base], near = []; // no one-higher-or-lower matches in this test
+    // The Soarcerer (2026-11-03): any of their dice is a double for baselining. It takes Baseline dice (the last m.based
+    // slots) whatever number it shows, two of them. A second take it earned that way (d.baseTwo) goes only on Baseline dice.
+    const base = soaBase(G, d, m) ? free.filter(i => i >= m.slots.length - m.based) : [];
+    if (d.baseTwo && d.takes.length) return base.length ? { slots: base, near: [], wild: true, dbl: true } : null;
+    const exact = [...new Set([...free.filter(i => m.slots[i] === d.n), ...base])], near = []; // no one-higher-or-lower matches in this test
     if (!exact.length && !near.length) return null;
     return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
-  // A guard covers anyone (2026-10-31): any one player who isn't blocking yet, the guarder or a crewmate. The
-  // Responder's doubles heal instead (2026-11-03).
+  // A guard covers only the player who rolled it (2026-11-03; it covered anyone from 2026-10-31). The Responder's
+  // doubles heal instead.
   const resDie = (G, d) => !!d && d.crew && G.team[d.k] === 'RES';
-  const canGuard = (G, d) => !!d && d.crew && !resDie(G, d) && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && G.blocks.some(b => !b);
+  const canGuard = (G, d) => !!d && d.crew && !resDie(G, d) && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && !G.blocks[d.k];
   // The Responder: a double of theirs can't guard; instead it heals anyone 5 (CARDS.RES_HEAL), right away. Like a guard,
   // it spends the whole double. Can't be undone.
   const canHeal = (G, d) => G.phase === 'assign' && resDie(G, d) && !d.flipped && !d.used && !(d.takes || []).length && d.dbl;
@@ -1147,7 +1151,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     say(G, `${nameOf(G.team[d.k])} spends a ${faceText(d)} to heal ${t === d.k ? 'themselves' : nameOf(G.team[t])} ${h}. ${hpLine(G)} HP.`, 'heal');
     return G;
   }
-  // Who a guard could cover now: every player not yet blocking.
+  // Who a guard could cover now: every player not yet blocking (each covers only themselves).
   const guardable = G => G.team.map((_, k) => k).filter(k => !G.blocks[k]);
   // Pairs (2026-10-31): two of a player's own unused crew dice (their own, or the solo crew die) showing the same number
   // pair into one double. Not an agent die, a Surge Playbook die, a die turned by the Engineer, a die that is already a
@@ -1162,7 +1166,10 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     return out;
   }
   // How many takes a die has left: a double counts as two dice showing its number.
-  const takesLeft = d => !d || d.used ? 0 : (d.dbl ? 2 : 1) - (d.takes || []).length;
+  const takesLeft = d => !d || d.used ? 0 : (d.dbl || d.baseTwo ? 2 : 1) - (d.takes || []).length;
+  // A Soarcerer die against an alarm being baselined; isBase: slot p is one of its Baseline dice.
+  const soaBase = (G, d, m) => !!d && d.crew && G.team[d.k] === 'SOA' && !!m && m.based > 0;
+  const isBase = (m, p) => p >= m.slots.length - (m.based || 0);
   // Every legal use of a die, for the UI's slot highlights and for tests.
   function targets(G, di) {
     const d = G.dice[di]; if (!d || G.phase !== 'assign') return { hits: [], guard: false, enrich: false };
@@ -1185,8 +1192,9 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     const o = canHit(G, d, m); if (!o) fail(cantWhy(G, d, m));
     if (p == null) p = o.slots[0];
     if (!o.slots.includes(p)) fail(m.off[p] ? 'That die is already taken.' : `A ${d.n} can’t take the ${m.slots[p]} under ${m.name}.`);
+    const two = !d.dbl && soaBase(G, d, m) && isBase(m, p) && (q == null || isBase(m, q)); // the Soarcerer's double for baselining
     if (q != null) { if (takesLeft(d) < 2 || o.evade) fail('Only a double takes two.'); if (!moreSlots(G, d, m, p).includes(q)) fail(`A ${d.n} can’t take the ${m.slots[q]} under ${m.name}.`); }
-    G.undo.push(snap(G));
+    G.undo.push(snap(G)); if (two && !d.takes.length) d.baseTwo = true; // after the snapshot, so undo clears it
     const took = [m.slots[p]]; take(m, p); d.takes.push({ uid, p });
     if (q != null) { took.push(m.slots[q]); take(m, q); d.takes.push({ uid, p: q }); }
     if (o.evade || !takesLeft(d)) d.used = { uid, slots: d.takes.map(t => t.p) };
@@ -1209,7 +1217,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     if (d.flipped) fail('A die turned to its opposite side can’t guard.');
     if (!d.dbl) fail('Only a double can guard.'); if (resDie(G, d)) fail('The Responder’s doubles heal instead of guarding.');
     const t = target == null ? d.k : target;
-    if (!(t >= 0 && t < G.n && t === Math.floor(t))) fail('No such analyst.');
+    if (!(t >= 0 && t < G.n && t === Math.floor(t))) fail('No such analyst.'); if (t !== d.k) fail('A double guards only the player who rolled it.');
     if (G.blocks[t]) fail(`${nameOf(G.team[t])} is already blocking.`);
     G.undo.push(snap(G)); d.used = 'guard'; d.guards = t; G.blocks[t] = true;
     say(G, `${nameOf(G.team[d.k])} guards ${t === d.k ? 'themselves' : nameOf(G.team[t])} with a ${faceText(d)}: ${t === d.k ? 'blocking' : `${nameOf(G.team[t])} blocks`} this round.`, 'guard');
@@ -1414,7 +1422,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   // agent (phase 'tuck'), then the drawn items are dealt (phase 'deal'), then the next flip.
   function afterFight(G) {
     say(G, `Fight ${G.fight} won in ${G.round} round${G.round === 1 ? '' : 's'}.`, 'win');
-    G.won = (G.won || 0) + 1; if (G.won === CARDS.THREAT_AFTER) say(G, `Fight ${G.won} won: the threat rises. Alarms deal 1 more Damage for the rest of the shift (not the boss).`, 'mob');
+    const was = threat(G); G.won = (G.won || 0) + 1; if (threat(G) > was) say(G, `Fight ${G.won} won: the threat rises. Alarms deal ${threat(G)} more Damage for the rest of the shift (not the boss).`, 'mob');
     G.cond.forEach((c, k) => { if (c.exposed) { c.exposed = false; say(G, `${nameOf(G.team[k])} discards Exposed.`, 'sit'); } });
     const rec = running(G, 'recover'), recUp = G.agents.flat().filter(c => c.t === 'recover' && upgraded(G, c.uid)).length * 2; if (rec) G.stats.items.recover += spread(G, rec * D.recoverHeal + recUp, 'Recovery Agent'); // crew-wide since 2026-11-01
     G.agents.forEach((a, k) => a.forEach(c => { const n = traitsOn(G, c.uid, 'Repair') * 2, h = Math.min(n, G.max - G.hp[k]); if (!n) return; G.hp[k] += h; G.stats.healed += h; G.stats.items.repair += h; say(G, `Repair: the ${KIT_NAME[c.t]} heals ${nameOf(G.team[k])} ${h}.`, 'heal'); }));
@@ -1649,12 +1657,8 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   }
   // A double with a take left stays selected for its second number; any other die moves on to the next one.
   function doAssign(di, uid, p, q) { UI.more = null; act(() => E.assign(UI.G, di, uid, p, q)); if (!UI.err) { if (!(E.takesLeft(UI.G.dice[di]) && E.targets(UI.G, di).hits.length)) nextDie(); render(); } }
-  // Guard: a guard covers anyone not blocking yet. One choice left: guard them directly; else ask who (UI.guarding).
-  function doGuard() {
-    UI.more = null; const i = UI.sel, open = E.guardable(UI.G);
-    if (open.length > 1 && UI.guarding !== i) { UI.guarding = i; UI.msg = ''; render(); return focusKey('gfor' + (open.includes(UI.G.dice[i].k) ? UI.G.dice[i].k : open[0])); }
-    guardFor(open.length === 1 ? open[0] : UI.G.dice[i].k);
-  }
+  // Guard: a double guards only the player who rolled it (2026-11-03).
+  function doGuard() { UI.more = null; guardFor(UI.G.dice[UI.sel].k); }
   function guardFor(k) { const i = UI.sel; UI.guarding = null; act(() => E.guard(UI.G, i, k)); if (!UI.err) { nextDie(); render(); } }
   function doPair(i, j) { UI.guarding = null; act(() => E.pair(UI.G, i, j)); if (!UI.err) { UI.sel = i; render(); } }
   // Tap a threat die under a card: the selected die takes it (the engine says why not). A double takes two, one tap each.
@@ -1697,7 +1701,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
         <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
     return `<div class="wrap"><div class="intro-grid">
       <section class="hero"><span class="art">${slice(ART.hero)}</span><p class="meta c">Chapter dice · d6 prototype</p><h1 class="logo">Detect the Dwellers</h1>
-        <p class="lede">The night shift with standard d6s instead of d20 sums. Each alarm card prints the dice to set under it. Roll, and a die takes out one under an alarm showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards anyone. Two of your own dice showing the same number pair up as a double. Every shift deals a different feed from one deck of alarms and situations, and one of three bosses waits underneath. The shift starts at 22:00; take the boss at 05:59 and make it to 06:00.</p>
+        <p class="lede">The night shift with standard d6s instead of d20 sums. Each alarm card prints the dice to set under it. Roll, and a die takes out one under an alarm showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards you. Two of your own dice showing the same number pair up as a double. Every shift deals a different feed from one deck of alarms and situations, and one of three bosses waits underneath. The shift starts at 22:00; take the boss at 05:59 and make it to 06:00.</p>
         <p class="t-note"><b>Tuned for 1–4 players.</b> A crew of 4 adds each card’s + die; solo to 3 players set the printed dice. Win a fight and draw items: agents work for the whole crew, consumables are used once.</p>
         <p class="meta">Same cards as the paper prototype. <button class="lnk" type="button" data-a="cards" data-k="cards">See all ${A.mobs().length + A.BOSS_IDS.length + 2 + A.ANALYST_IDS.length + A.AGENT_IDS.length + A.CONS_IDS.length + A.SIT_IDS.length + A.COND_IDS.length} cards</button></p></section>
       <section class="setup panel" aria-labelledby="crew-h"><h2 class="sech" id="crew-h">Crew · ${n} of 4</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>
@@ -1711,7 +1715,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     const G = UI.G, fighting = G.phase === 'assign' || G.phase === 'roll', inc = fighting ? E.incoming(G) : null;
     const between = G.phase === 'flip' || G.phase === 'deal' || G.phase === 'sit' || G.phase === 'tuck';
     const F = flipped(G), T = G.feedTotal;
-    const label = (G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · card ${F} of ${T}` : between ? (G.feed.length ? `Next: card ${F + 1} of ${T}` : 'Next: the boss') : `Fight ${G.fight} · card ${F} of ${T} · round ${G.round || 1}`) + (E.threat(G) && !G.bossOut ? ' · Threat +1' : '');
+    const label = (G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · card ${F} of ${T}` : between ? (G.feed.length ? `Next: card ${F + 1} of ${T}` : 'Next: the boss') : `Fight ${G.fight} · card ${F} of ${T} · round ${G.round || 1}`) + (E.threat(G) && !G.bossOut ? ` · Threat +${E.threat(G)}` : '');
     const now = G.bossOut ? T : between && G.phase !== 'sit' ? -1 : F - 1, next = !G.bossOut && (G.phase === 'flip' || G.phase === 'deal') ? F : -1;
     const bar = [...Array(T)].map((_, i) => `<i class="${i < F && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === T ? ' next' : ''}"></i>`;
     const crew = G.team.map((id, k) => {
@@ -1875,7 +1879,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   function vBrief(m) {
     const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null, dm = !m.boss && dataMob(m.id);
     const perks = (G.team.includes('HUN') ? ' Hunter on point: one more die.' : '') + (G.team.includes('RES') ? ' Responder: a double heals anyone 5 instead of guarding.' : '') + (G.team.includes('SOA') ? ' Soarcerer: any die takes a Baseline die.' : '') + (G.team.includes('ENG') ? ' Engineer: once a round, turn a die to its opposite side.' : '');
-    const rows = [['c', 'To hit', 'A die takes one die under it showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards anyone (you or a crewmate). Two of your own dice showing the same number pair up as a double.' + perks],
+    const rows = [['c', 'To hit', 'A die takes one die under it showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards you. Two of your own dice showing the same number pair up as a double.' + perks],
       ['f', m.boss ? 'Boss' : 'Keyword', m.boss ? '+2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`],
       ['f', 'Round end', (!E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`)
         + (G.cond.some(c => c.exposed) ? ` Exposed: anyone hit takes 1 more (${G.team.filter((_, k) => G.cond[k].exposed).map(id => esc(nm(id))).join(', ')}).` : '')],
@@ -1931,7 +1935,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
       else if (d && !d.used && d.takes.length) hint = `<b>${esc(E.dieOwner(G, d))}: double ${d.n}, one more ${d.n} to place.</b> ${t.hits.length ? 'Tap another matching die, under this alarm or another.' : `No ${d.n} left to take.`} Or pick another die.`;
       else if (!d) hint = (G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under an alarm. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.') + (G.dice.some(x => E.canFocus(G, x)) ? ' Focused: pick one of your dice to turn it to any number.' : '') + (G.dice.some(x => E.canEng(G, x)) ? ' Engineer: pick one of your dice to turn it to its opposite side (once a round).' : '') + (G.hand.some(h => h.some(c => E.canUse(G, c.t))) ? ' Items in hand: <b>Use</b> one on the mat.' : '') + prHint;
       else if (d.used) hint = 'That die is used. <b>Undo</b> to take it back.';
-      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one alarm or two,${(E.canHeal(G, d) ? ' <b>or Heal</b> anyone ' + A.RES_HEAL : ' <b>or Guard</b> anyone')}.` : 'Tap a glowing die under an alarm that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') + (t.hits.some(h => h.evade) ? ' <b>Evasive:</b> this double isn’t its number, so it takes any one of its dice and is spent.' : '') : (E.canHeal(G, d) ? `Nothing it can hit. <b>Heal</b> anyone ${A.RES_HEAL} with it.` : d.dbl && t.guard ? `Nothing it can hit. <b>Guard</b> anyone with it.` : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it?</b>' : ''}`)}${prs.some(p => p.includes(d.i)) ? prHint : ''}${t.focus ? ' <b>Focused:</b> turn it to any number.' : ''}${t.eng ? ` <b>Engineer:</b> turn it to its opposite side, a ${7 - d.n} (it counts as one die then).` : ''}${d.rattled ? ' Rattled: no doubles this roll.' : ''}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
+      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one alarm or two,${(E.canHeal(G, d) ? ' <b>or Heal</b> anyone ' + A.RES_HEAL : ' <b>or Guard</b> yourself')}.` : 'Tap a glowing die under an alarm that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') + (t.hits.some(h => h.evade) ? ' <b>Evasive:</b> this double isn’t its number, so it takes any one of its dice and is spent.' : '') : (E.canHeal(G, d) ? `Nothing it can hit. <b>Heal</b> anyone ${A.RES_HEAL} with it.` : d.dbl && t.guard ? `Nothing it can hit. <b>Guard</b> yourself with it.` : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it?</b>' : ''}`)}${prs.some(p => p.includes(d.i)) ? prHint : ''}${t.focus ? ' <b>Focused:</b> turn it to any number.' : ''}${t.eng ? ` <b>Engineer:</b> turn it to its opposite side, a ${7 - d.n} (it counts as one die then).` : ''}${d.rattled ? ' Rattled: no doubles this roll.' : ''}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
       const ag = G.dice.filter(x => x.kuid).length;
       // Pair: a control right after the second of two matching dice, in the tray.
@@ -1940,7 +1944,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
       ctl = `<div class="t-dice" role="group" aria-label="Crew dice">${G.dice.filter(x => !x.kuid).map(x => dieHtml(x, G.dice.length) + (pairAt.has(x.i) ? pairBtn(x.i) : '')).join('')}${ag ? `<span class="t-agnote">+ ${ag} agent ${ag === 1 ? 'die' : 'dice'} under ${ag === 1 ? 'its card' : 'their cards'}</span>` : ''}</div>
         <div class="acts">
         ${picking ? `<span class="t-gpick" role="group" aria-label="Guard who"><span class="inc">Guard who?</span>${E.guardable(G).map(k => `<button class="btn cy grdb" type="button" data-a="guardfor" data-n="${k}" data-k="gfor${k}">${ICON.shield}${esc(nm(G.team[k]))}${k === d.k ? ' (you)' : ''} <kbd>${k + 1}</kbd></button>`).join('')}<button class="btn s" type="button" data-a="guardx" data-k="guardx">Cancel</button></span>`
-          : sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard${G.n > 1 && E.guardable(G).length > 1 ? '…' : ''} <kbd>G</kbd></button>` : ''}
+          : sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard <kbd>G</kbd></button>` : ''}
         ${sel && E.canHeal(G, d) ? `<span class="t-gpick" role="group" aria-label="Heal who"><span class="inc">Heal ${A.RES_HEAL}:</span>${G.team.map((id, k) => `<button class="btn cy" type="button" data-a="heal" data-n="${k}" data-k="heal${k}"${G.hp[k] >= G.max ? ' disabled' : ''}>${esc(nm(id))}${k === d.k ? ' (you)' : ''}</button>`).join('')}</span>` : ''}
         ${d && E.canReroll(G, d) ? `<button class="btn" data-a="reroll" data-k="reroll">Reroll it <kbd>X</kbd></button>` : ''}${d && E.canPush(G, d) ? `<button class="btn" data-a="push" data-k="push" aria-label="Push: take 1 damage to reroll this die">Push: take 1, reroll <kbd>Z</kbd></button>` : ''}${G.rerolled ? `<span class="inc rr">Rerolls left: ${G.team.map((id, k) => G.rerolled[k] ? '' : esc(SHORT[id])).filter(Boolean).join(', ') || 'none'}</span>` : ''}
         ${sel && t.eng ? `<button class="btn cy" data-a="eng" data-k="eng" aria-label="Engineer: turn this die to its opposite side, ${7 - d.n}">Opposite side (→ ${7 - d.n}) <kbd>O</kbd></button>` : ''}

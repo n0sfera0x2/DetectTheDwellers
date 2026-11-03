@@ -110,11 +110,11 @@
     HUN: 'On point, you roll one more die.',
     RES: 'Your doubles can’t guard. Instead, a double heals anyone 5.',
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
-    SOA: 'Any die you roll can take a Baseline die.',
+    SOA: 'Any die you roll is a double for baselining: it takes two Baseline dice.',
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'standard d6')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
-  <div class="note">A double counts as two dice showing its number, or guards anyone.</div><div class="perk">${PERK[id]}</div></div>`;
+  <div class="note">A double counts as two dice showing its number, or guards you.</div><div class="perk">${PERK[id]}</div></div>`;
   // Items (2026-10-31): the deck is items. Agents are passive: each player holds 2 (the Soarcerer 3; solo 4, or 5).
   // Since 2026-11-01 they work for the whole crew, and Triage rolls one more die of its holder's own. Consumables
   // don't take a slot: keep them in hand and use each once. [name, rule, art key].
@@ -138,7 +138,7 @@
   const legend = `<div class="card ref am">${tab}${hd('Reference', 'every die')}<div class="nm">Dice</div>
   <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
-  <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards anyone.</div>
+  <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards you.</div>
   <div class="note">The solo crew die: only a ${pip(6, 14)}. <b>Two of yours on one number: a double.</b></div>
   <div class="note"><b>Once a round, reroll one of your own dice.</b> <b>Push:</b> take 1 to reroll one more (not at 1 HP).</div>
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
@@ -149,7 +149,7 @@
   const box = t => `<span class="bx">${t}</span>`;
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
 
-  <div class="trow"><b>Threat: fights won</b>${[1, 2, 3].map(n => box(n)).join('')}${box('Alarms +1')}</div>
+  <div class="trow"><b>Threat: fights won</b>${box(1)}${box('2: alarms +1')}${box(3)}${box('4: alarms +2')}</div>
   <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Twin')}</div>
   <div class="trow"><b>This fight</b>${box('Hold the room: +1 item')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
@@ -203,8 +203,9 @@
   const ITEM_DECK = ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', ...CONS_IDS.flatMap(t => [t, t])];
   const mobs = () => MOB_IDS.map(id => D.mobs.find(m => m.id === id));
   // The squeeze (2026-11-03): every boss hits for 5, not the data's 9 (one unguarded round no longer ends the shift), and
-  // from the fourth fight on alarms hit 1 harder (THREAT_AFTER fights won). PUSH_COST: a second reroll a round costs 1 HP.
-  const BOSS_DMG = 5, THREAT_AFTER = 3, PUSH_COST = 1, RES_HEAL = 5; // RES_HEAL: a Responder double heals this much
+  // alarms hit 1 harder for every THREAT_AFTER fights won, up to THREAT_MAX (since the HP rise, 2026-11-03: +1 after 2
+  // won, +2 after 4). PUSH_COST: a second reroll a round costs 1 HP.
+  const BOSS_DMG = 5, THREAT_AFTER = 2, THREAT_MAX = 2, PUSH_COST = 1, RES_HEAL = 5; // RES_HEAL: a Responder double heals this much
   const boss = (id = BOSS_ID) => ({ ...D.bosses.find(b => b.id === id), dmg: BOSS_DMG });
 
   // The card face CSS, shared by print and web. Page and sheet layout stay in each build.
@@ -245,6 +246,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:9px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { BOSS_DMG, THREAT_AFTER, PUSH_COST, RES_HEAL, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });

@@ -127,7 +127,7 @@ const TRAITS = process.env.TRAITS !== '0';
 // boss) deal 1 more per box, up to ESCMAX (default 3 and 1: from the fourth fight, +1). HEALX scales the after-fight heals.
 // PUSH (default on, PUSH=0 off): once a round, after the free reroll, a player may take 1 damage to reroll one more of
 // their own dice, never at 1 HP. The bot pushes when the reroll's average gain beats PUSHGAIN, above PUSHMIN HP.
-const BOSSDMG = process.env.BOSSDMG || '5', ESC = +(process.env.ESC ?? 3), ESCMAX = +(process.env.ESCMAX || 1), HEALX = +(process.env.HEALX || 1);
+const BOSSDMG = process.env.BOSSDMG || '5', ESC = +(process.env.ESC ?? 2), ESCMAX = +(process.env.ESCMAX || 2), HEALX = +(process.env.HEALX || 1);
 const PUSH = process.env.PUSH !== '0', PUSHMIN = +(process.env.PUSHMIN || 4);
 const heat = G => ESC && G.sys === 'n6' ? Math.min(ESCMAX, Math.floor((G.stats.fights || 0) / ESC)) : 0;
 // TUCKOUT=1 (default, 2026-11-02 review): the baselined alarm card slides under its agent, so it leaves the row while
@@ -148,14 +148,15 @@ const TRAIT = process.env.TRAITSET === 'agent' ? { imp: 'twin', druid: 'stealth'
   : { imp: 'spotlight', druid: 'slip', specter: 'ticket', wyrmling: 'momentum', mimic: 'persist', leech: 'siphon', bat: 'callback', wraith: 'twin' };
 // CAP: traits one agent can hold (B3); UPGRADE=1: an agent with CAP traits also gets one step of its own number.
 const CAP = +(process.env.CAP || 2), UPGRADE = process.env.UPGRADE !== '0';
-// SOANEW (2026-11-03): wildbase (default) = the Soarcerer's dice take Baseline dice whatever they show; up1 = an agent
+// SOANEW (2026-11-03): wilddbl (default) = each of the Soarcerer's dice takes two Baseline dice whatever it shows;
+// wildbase = one; up1 = an agent
 // the Soarcerer holds is upgraded with one tucked alarm; pair5 = the Soarcerer's 2s and 5s match each other. RESNEW: top = the highest-Damage alarm deals 1 less to everyone; self = every
 // hit deals the Responder 1 less.
 // HUNNEW (proposal, 2026-11-03): fewer = with the Hunter in the crew, a comeback returns with one fewer die; immune =
 // comebacks deal the Hunter no damage. RESNEW=heal: the Responder's doubles can't guard; a double may instead heal
 // anyone RESHEAL (default 2) right away.
 const HUNNEW = process.env.HUNNEW ?? 'die', RESHEAL = +(process.env.RESHEAL || 5); // defaults since 2026-11-03: HUNNEW die (on point, one more die; also triple, fewer, fewer2, immune), RESNEW heal 5
-const SOANEW = process.env.SOANEW ?? 'wildbase', RESNEW = process.env.RESNEW ?? 'heal'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
+const SOANEW = process.env.SOANEW ?? 'wilddbl', RESNEW = process.env.RESNEW ?? 'heal'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
 const upgraded = (G, i) => UPGRADE && traitsOf(G, i).length >= (SOANEW === 'up1' && G.team[G.trayK ? G.trayK[i] || 0 : 0] === 'SOA' ? 1 : 2);
 // Which agent the bot tucks each trait under, best first.
 const TUCK = { twin: process.env.TWINTO === 'contain' ? ['contain', 'triage', 'recover', 'enrich'] : ['triage', 'contain', 'recover', 'enrich'], stealth: ['triage', 'contain', 'recover', 'enrich'], relay: ['triage', 'contain', 'recover', 'enrich'], repair: ['recover', 'contain', 'triage', 'enrich'], ghost: ['enrich', 'recover', 'contain', 'triage'], scramble: ['enrich', 'recover', 'contain', 'triage'] };
@@ -338,7 +339,10 @@ function choose(G, raw) {
 // n6: roll one die into the list. A double counts as two dice showing that number: two entries, the second with
 // half: 1 and pair pointing at the first. The pair guards as one (the first half guards; the second then sits out).
 function n6die(G, dice, k, crew, dbl, v = 1 + d6(G)) {
-  if (!dbl.includes(v)) { dice.push({ k, crew, f: [v, 1] }); return; }
+  // SOANEW=wilddbl: while an alarm is being baselined, each of the Soarcerer's dice takes two Baseline dice, any number
+  // (a second entry that can only take Baseline dice).
+  const sb = SOANEW === 'wilddbl' && crew && G.team[k] === 'SOA' && G.play && G.play.some(m => m.baselining);
+  if (!dbl.includes(v)) { const a = { k, crew, f: [v, 1] }; dice.push(a); if (sb) dice.push({ k, crew, f: [v, 1], half: 1, pair: a, baseOnly: true }); return; }
   const a = { k, crew, f: [v, 2], half: 0 }; dice.push(a, { k, crew, f: [v, 2], half: 1, pair: a });
   if (HUNNEW === 'triple' && crew && G.team[k] === 'HUN') dice.push({ k, crew, f: [v, 2], half: 2, pair: a }); // HUNNEW=triple: a Hunter double counts as three
 }
@@ -369,13 +373,15 @@ function matchAt(G, d, m, need, wild) {
   if (m.kw === 'hardened' && EVASIVE === 'one' && !need.includes(d.f[0])) return need.length && !d.half ? 0 : -1;
   if (wild || d.wildAll || (d.crew && (m.back || huntsAny() || (process.env.HUNBOSS !== '0' && m.boss)) && hunts(G, d.k, v))) return need.length ? 0 : -1;
   // SOANEW=wildbase: any of the Soarcerer's dice takes a Baseline die, whatever it shows.
-  if (SOANEW === 'wildbase' && id === 'SOA' && m.baselining) { const j = need.indexOf(7 - numbersFor(m.id, 1)[0]); if (j >= 0) return j; }
+  if (d.baseOnly && !m.baselining) return -1;
+  if (d.baseOnly) { const j = need.indexOf(7 - numbersFor(m.id, 1)[0]); return j; }
+  if ((SOANEW === 'wildbase' || SOANEW === 'wilddbl') && id === 'SOA' && m.baselining) { const j = need.indexOf(7 - numbersFor(m.id, 1)[0]); if (j >= 0) return j; }
   const i = need.indexOf(v); if (i >= 0) return i;
   if (SOANEW === 'pair5' && id === 'SOA' && (v === 2 || v === 5)) { const j = need.indexOf(7 - v); if (j >= 0) return j; }
   const adj = NEAR && ((id === 'HUN' && m.back) || (id === 'RES' && m === top(G)));
   return adj ? need.findIndex(x => Math.abs(x - v) === 1) : -1;
 }
-const GUARDANY = process.env.GUARDANY !== '0'; // since 2026-10-31: a guard covers any player (skill gap 16 → 27 pts at 2p)
+const GUARDANY = process.env.GUARDANY === '1'; // 2026-10-31 to 2026-11-03 a guard covered any player; now only its owner (GUARDANY=1: anyone)
 const top = G => G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0];
 const resHeals = (G, d) => (RESNEW === 'heal' || RESNEW === 'healor') && G.sys === 'n6' && d.crew && G.team[d.k] === 'RES' && d.f[1] === 2 && !d.half && !d.noguard;
 const canGuard = (G, d) => d.crew && !(RESNEW === 'heal' && resHeals(G, d)) && (G.sys === 'd20' ? d.r >= D.guard.min && d.r < (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18) : d.f[1] === 2 && !d.half && !d.noguard);
@@ -614,7 +620,7 @@ function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
   if (G.n >= 3 && NEWITEMS) draw(G, +(process.env.START34 ?? 1)); // START34: extra setup items for a crew of 3 or 4 (1 since 2026-11-03)
-  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with (2 since the four-analyst pass, 2026-11-03)
+  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || (MODE === 'quick' ? 1 : 2)) - 1); // QSOLO: items a solo player starts with (Quick 1, Full 2 since the HP rise, 2026-11-03)
   const sits = SIT && G.sys === 'n6';
   for (let f = 0; !G.over; f++) {
     G.point = G.hp.indexOf(Math.max(...G.hp));

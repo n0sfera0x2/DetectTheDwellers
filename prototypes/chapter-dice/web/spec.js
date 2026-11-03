@@ -65,11 +65,11 @@ test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (th
   const G = E.newGame({ team: ['HUN', 'RES'], seed: 3 });
   assert.equal(G.hp[0], E.MODES.quick.hp); assert.equal(E.newGame({ team: ['HUN', 'RES'], seed: 3, mode: 'full' }).hp[0], E.MODES.full.hp);
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, 2); assert.equal(G.kit.length, CARDS.ITEM_DECK.length - 2);
-  // Solo starts with 2 items in both modes (four-analyst pass, 2026-11-03) and deals itself.
+  // Solo starts with 2 items in Full Shift and 1 in Quick (the HP rise, 2026-11-03) and deals itself.
   const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
-  assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 2); assert.equal(E.startItems(1, 'quick'), 2); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
-  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 2, 'Quick Shift solo starts with 2'); assert.equal(E.startItems(3, 'quick'), 3, 'a crew of 3–4 draws 3');
-  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 3 : 2);
+  assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 2); assert.equal(E.startItems(1, 'quick'), 1); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
+  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 1, 'Quick Shift solo starts with 1'); assert.equal(E.startItems(3, 'quick'), 3, 'a crew of 3–4 draws 3');
+  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 1); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 3 : 2);
   for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 3, team.length + 'p draws 3');
   assert.equal(CARDS.ITEM_DECK.length, 16);
 });
@@ -229,11 +229,11 @@ test('push: after their reroll, a player may take 1 to reroll one more of their 
   E.reroll(G, 2); assert.ok(!E.canPush(G, G.dice[2])); throwsRule(() => E.push(G, 2), /at 1 HP/);
   assert.match(CARDS.legend, /Push:<\/b> take 1 to reroll one more/);
 });
-test('threat: once three fights are won, alarms (not the boss) deal 1 more; bosses hit for 5', () => {
+test('threat: alarms (not the boss) deal 1 more after 2 fights won, 2 more after 4; bosses hit for 5', () => {
   const G = fight(['HUN', 'RES'], ['spray'], {}), m = mob(G, 'spray'), base = E.dmgOf(G, m);
   G.won = CARDS.THREAT_AFTER - 1; assert.equal(E.dmgOf(G, m), base); assert.equal(E.threat(G), 0);
-  G.won = CARDS.THREAT_AFTER; assert.equal(E.dmgOf(G, m), base + 1); assert.equal(E.dmgOf(G, Object.assign({}, G.boss, { kw: 'ai' })), CARDS.BOSS_DMG);
-  assert.ok(CARDS.BOSS_IDS.every(id => CARDS.boss(id).dmg === CARDS.BOSS_DMG)); assert.match(CARDS.tracker, /Threat: fights won.*Alarms \+1/);
+  G.won = CARDS.THREAT_AFTER; assert.equal(E.dmgOf(G, m), base + 1); G.won = 2 * CARDS.THREAT_AFTER; assert.equal(E.dmgOf(G, m), base + 2); G.won = 9; assert.equal(E.threat(G), CARDS.THREAT_MAX); assert.equal(E.dmgOf(G, Object.assign({}, G.boss, { kw: 'ai' })), CARDS.BOSS_DMG);
+  assert.ok(CARDS.BOSS_IDS.every(id => CARDS.boss(id).dmg === CARDS.BOSS_DMG)); assert.match(CARDS.tracker, /Threat: fights won.*2: alarms \+1.*4: alarms \+2/);
   // Winning a fight counts toward it.
   const H = fight(['HUN', 'RES'], ['spray'], { dice: [[0, 1], [0, 1]] }), s2 = setSlots(mob(H, 'spray'), [1]); E.assign(H, 0, s2.uid, slotOf(s2, 1)); E.endRound(H);
   assert.equal(H.won, 1);
@@ -321,8 +321,10 @@ test('the Soarcerer: their dice take Baseline dice whatever they show; the print
   assert.equal(E.baseCost(G, { back: 0 }), CARDS.BASE_N); assert.equal(E.baseCost(G, { back: 1 }), CARDS.BASE_N + 1);
   const m = setSlots(mob(G, 'spray'), [4, 4, 3, 3, 3]); m.based = 3; // two printed 4s, three Baseline 3s
   assert.deepEqual(E.canHit(G, G.dice[0], m).slots, [2, 3, 4], 'a Soarcerer 1 takes a Baseline die'); assert.equal(E.canHit(G, G.dice[1], m), null, 'an Engineer 1 doesn’t');
+  E.assign(G, 0, m.uid, 2); assert.equal(E.takesLeft(G.dice[0]), 1, 'a double for baselining: one more'); assert.deepEqual(E.canHit(G, G.dice[0], m).slots, [3, 4], 'Baseline dice only');
+  E.assign(G, 0, m.uid, 3); assert.ok(G.dice[0].used); E.unassign(G); E.unassign(G); assert.ok(!G.dice[0].baseTwo, 'undo clears it');
   m.based = 0; assert.equal(E.canHit(G, G.dice[0], m), null, 'not baselining: exact numbers only');
-  assert.equal(CARDS.PERK.SOA, 'Any die you roll can take a Baseline die.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
+  assert.equal(CARDS.PERK.SOA, 'Any die you roll is a double for baselining: it takes two Baseline dice.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
 });
 test('Triage Agent: its holder rolls one more of their own dice every round, under its card; it pairs, guards, rerolls and hits the boss', () => {
   const G = fight(['HUN', 'RES'], ['spray', 'boss'], {}); setAgents(G, 1, ['triage', 'triage']); G.phase = 'roll'; G.round = 0; E.roll(G);
@@ -741,24 +743,15 @@ test('two tucked alarms is the most an agent holds, and they upgrade it: Triage 
   throwsRule(() => E.tuck(T, 'a1-0'), /already holds 2/); assert.match(CARDS.agentCard('contain'), /Two alarms tucked under it/);
 });
 // ---- Guard anyone, pairs, the solo Soarcerer's keep roll, baselining at every crew size (sim.js GUARDANY, PAIRADD, SOASOLOKEEP) ----
-test('a guard covers anyone not blocking yet: a crewmate, or by default the guarder; never someone already blocking', () => {
-  const G = fight(['HUN', 'ENG'], ['spray', 'imp'], { dice: [[0, 4], [0, 6], [1, 1]] }); // HUN 4, HUN 6, ENG 1: all doubles (a Responder double heals instead)
-  assert.deepEqual(E.guardable(G), [0, 1]);
-  E.guard(G, 0, 1); assert.deepEqual(G.blocks, [false, true]); assert.equal(G.dice[0].used, 'guard'); assert.equal(G.dice[0].guards, 1);
-  assert.match(G.log[G.log.length - 1].text, /^Hunter guards Engineer with a 4 \(double\)/);
-  assert.ok(E.incoming(G).total[0] > 0 && E.incoming(G).total[1] === 1, 'the Engineer is covered (only Piercing gets through)');
-  // The Hunter is still open: their other double can guard, and by default it covers its own owner.
-  assert.ok(E.canGuard(G, G.dice[1])); E.guard(G, 1); assert.deepEqual(G.blocks, [true, true]); assert.equal(G.dice[1].guards, 0);
-  assert.match(G.log[G.log.length - 1].text, /^Hunter guards themselves with a 6/);
-  // Everyone is blocking: the Engineer's double can't guard anyone.
-  assert.ok(!E.canGuard(G, G.dice[2])); assert.ok(!E.targets(G, 2).guard); assert.deepEqual(E.guardable(G), []);
-  throwsRule(() => E.guard(G, 2), /Engineer is already blocking/); throwsRule(() => E.guard(G, 2, 0), /Hunter is already blocking/);
-  throwsRule(() => E.guard(G, 2, 7), /No such analyst/);
-  // Undo the last guard: the Hunter is open again.
-  E.unassign(G); assert.deepEqual(G.blocks, [false, true]); assert.ok(E.canGuard(G, G.dice[2]));
-  E.guard(G, 2, 0); assert.deepEqual(G.blocks, [true, true]); assert.match(G.log[G.log.length - 1].text, /^Engineer guards Hunter/);
-  // A guarder whose own block is taken can still cover a crewmate.
-  const H = fight(['HUN', 'ENG'], ['spray'], { dice: [[0, 4], [0, 6]] }); E.guard(H, 0); assert.ok(E.canGuard(H, H.dice[1])); E.guard(H, 1, 1); assert.deepEqual(H.blocks, [true, true]);
+test('a guard covers only the player who rolled it (2026-11-03); never twice', () => {
+  const G = fight(['HUN', 'ENG'], ['spray', 'imp'], { dice: [[0, 4], [0, 6], [1, 1]] }); // HUN 4, HUN 6, ENG 1: all doubles
+  throwsRule(() => E.guard(G, 0, 1), /only the player who rolled it/);
+  E.guard(G, 0); assert.deepEqual(G.blocks, [true, false]); assert.equal(G.dice[0].used, 'guard'); assert.equal(G.dice[0].guards, 0);
+  assert.match(G.log[G.log.length - 1].text, /^Hunter guards themselves with a 4/);
+  assert.ok(!E.canGuard(G, G.dice[1]), 'the Hunter is already blocking'); throwsRule(() => E.guard(G, 1), /Hunter is already blocking/);
+  assert.ok(E.canGuard(G, G.dice[2])); E.guard(G, 2); assert.deepEqual(G.blocks, [true, true]);
+  E.unassign(G); assert.deepEqual(G.blocks, [true, false]); assert.ok(E.canGuard(G, G.dice[2]));
+  assert.match(CARDS.legend, /guards you/);
 });
 test('pairs: two of your own dice showing the same number make one double; it takes two, or it guards', () => {
   const G = fight(['ENG', 'SOA'], ['spray'], { dice: [[0, 5], [0, 5], [0, 4], [1, 5], ['agent', 5]] }); // ENG doubles 1, 6: 5s are single
@@ -772,8 +765,8 @@ test('pairs: two of your own dice showing the same number make one double; it ta
   // Undo restores the pair, then the two dice.
   E.unassign(G); assert.equal(E.left(s), 2); assert.equal(G.dice[0].paired, 1); assert.equal(G.dice[0].dbl, true);
   E.unassign(G); assert.equal(G.dice[0].dbl, false); assert.equal(G.dice[0].paired, undefined); assert.equal(G.dice[1].used, null); assert.deepEqual(E.pairs(G), [[0, 1]]);
-  // Or it guards (anyone).
-  E.pair(G, 0, 1); assert.ok(E.canGuard(G, G.dice[0])); E.guard(G, 0, 1); assert.deepEqual(G.blocks, [false, true]); throwsRule(() => E.assign(G, 0, s.uid), /already used/);
+  // Or it guards (its owner).
+  E.pair(G, 0, 1); assert.ok(E.canGuard(G, G.dice[0])); E.guard(G, 0); assert.deepEqual(G.blocks, [true, false]); throwsRule(() => E.assign(G, 0, s.uid), /already used/);
   // Refused: different numbers, someone else's die, an agent die, a die that is already a double, a turned die.
   const R = fight(['SOA', 'ENG'], ['spray'], { dice: [[0, 5], [0, 4], [1, 5], ['agent', 5], [0, 2], [0, 2], [1, 2], [1, 2]] });
   throwsRule(() => E.pair(R, 0, 1), /same number/); throwsRule(() => E.pair(R, 0, 2), /your own/); throwsRule(() => E.pair(R, 0, 3), /Agent dice/);
@@ -996,26 +989,17 @@ test('page: a situation flips on the mat, its choice resolves, its condition sho
   assert.ok(!d.querySelector('.t-sit .t-slot.faceup'), 'no card turned face up beside it');
 });
 
-test('page: Guard asks who to cover when more than one player is open; with one left it guards them directly', { skip: !JSDOM && 'jsdom not installed' }, () => {
+test('page: Guard covers the player who rolled the double, straight away; undo takes it back', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(8), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
   click('[data-a="start"]'); pageDeal(w); alarmFirst(w); click('[data-a="flip"]'); if (w.CDUI.UI.G.phase === 'roll') click('[data-a="roll"]');
   const G = w.CDUI.UI.G; assert.equal(G.phase, 'assign');
-  const own = G.dice.filter(x => x.k === 0 && x.crew).map(x => x.i); assert.equal(own.length, 3, 'the Hunter on point rolls three');
+  const own = G.dice.filter(x => x.k === 0 && x.crew).map(x => x.i);
   own.forEach(i => { G.dice[i] = { ...G.dice[i], ...E.pipDie(6, G.team[0]), used: null, takes: [], turned: false }; });
   w.CDUI.UI.sel = own[0]; w.CDUI.render();
-  assert.match(d.querySelector('[data-a="guard"]').textContent, /Guard…/);
-  click('[data-a="guard"]'); assert.equal(G.dice[own[0]].used, null, 'asks first');
-  const picks = [...d.querySelectorAll('[data-a="guardfor"]')]; assert.deepEqual(picks.map(b => +b.dataset.n), [0, 1]);
-  assert.match(picks[0].textContent, /Hunter \(you\)/); assert.match(picks[1].textContent, /Responder/); assert.match(d.querySelector('.dock .status').textContent, /guard who\?/);
-  assert.ok(!d.querySelector('[data-a="guard"]'), 'the picker replaces the Guard button');
-  click('[data-a="guardx"]'); assert.ok(!d.querySelector('[data-a="guardfor"]'), 'Cancel closes it'); click('[data-a="guard"]');
-  click('[data-a="guardfor"][data-n="1"]'); assert.equal(G.blocks.join(), 'false,true'); assert.equal(G.dice[own[0]].guards, 1);
-  assert.match(d.querySelector(`[data-k="die${own[0]}"]`).textContent, /Guard Resp/);
-  assert.ok(G.log.some(l => /Hunter guards Responder/.test(l.text)));
-  // One player left open: Guard covers them directly.
-  w.CDUI.UI.sel = own[1]; w.CDUI.render(); assert.doesNotMatch(d.querySelector('[data-a="guard"]').textContent, /…/);
-  click('[data-a="guard"]'); assert.equal(G.blocks.join(), 'true,true'); assert.ok(!d.querySelector('[data-a="guardfor"]'));
-  click('[data-a="undo"]'); assert.equal(G.blocks.join(), 'false,true');
+  assert.doesNotMatch(d.querySelector('[data-a="guard"]').textContent, /…/); assert.ok(!d.querySelector('[data-a="guardfor"]'), 'no picker');
+  click('[data-a="guard"]'); assert.equal(G.blocks.join(), 'true,false'); assert.equal(G.dice[own[0]].guards, 0);
+  w.CDUI.UI.sel = own[1]; w.CDUI.render(); assert.ok(!d.querySelector('[data-a="guard"]'), 'already blocking: no second guard');
+  click('[data-a="undo"]'); assert.equal(G.blocks.join(), 'false,false');
 });
 
 test('page: two matching dice show a Pair control in the tray and the hint; pairing makes a double; undo splits it', { skip: !JSDOM && 'jsdom not installed' }, () => {

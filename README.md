@@ -1,61 +1,50 @@
 # Detect the Dwellers
 
-**A co-op dice-and-card game about surviving a SOC night shift.** One to four analysts work through a feed of situations in a rain-soaked megacity, fight the alarms crawling out of the network, and face a boss at the end of the shift. Beaten alarms never really die: they wait in the persistence row and come back swinging.
+**22:00. The SOC is yours until dawn, and the alarms are already going off.** A co-op dice-and-card game for 1–4 players. Work through a feed of alarms and situations in a rain-soaked megacity, knock the alarms down before they hit back, and hold the line until 06:00. Beaten alarms never really die: they wait on the persistence row and come back swinging. At 05:59 the boss arrives.
 
 An original game by Binary Defense.
 
-**The game is played with standard d6s** (the chapter dice system, since 2026-10-31). Its rules, cards, sim, print-and-play sheet and web version live in [`prototypes/chapter-dice/`](prototypes/chapter-dice/README.md). Start there.
+- **Play in the browser:** https://n0sfera0x2.github.io/DetectTheDwellers/ (one page, works offline once loaded)
+- **Print and play:** [detect-the-dwellers-print-and-play.pdf](https://n0sfera0x2.github.io/DetectTheDwellers/detect-the-dwellers-print-and-play.pdf), a rules sheet and 61 cards to cut out (8 Letter pages)
 
-- **61 cards, standard d6s in four colours, a few coins.** 1–4 players, four analysts to pick from. Quick Shift (8 cards, HP 12) or Full Shift (14 cards, HP 17), dealt fresh every shift from one situation deck, with one of three bosses.
-- **You need:** crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber for the row, about 16 threat dice, and coins.
+## What you need
 
-The repo also still holds the **legacy d20 build** (72 cards, 10 d20s): its engine, web page, print deck, exports and balance sims. It builds and passes its tests, but new design work goes into the d6 game. When the d6 game is rewritten to production standards, it replaces the d20 build.
-
-## Quick start
-
-```bash
-npm install
-npm run build      # legacy d20: playable page + print deck into dist/
-npm test           # legacy d20: engine, print deck, headless UI, balance gate
-npm run serve      # build and play the d6 game at http://localhost:8080
-npm run serve:classic  # play the legacy d20 game at http://localhost:8080
-npm run export:cards   # legacy d20: 300 dpi singles with bleed + manifest + zip, in exports/
-npm run export:pdf     # legacy d20: print-and-play PDF, in exports/
-npm run proof:cmyk     # legacy d20: CMYK soft proof of the exports (macOS), in exports/cmyk_proof/
-```
-
-The d6 game's paper prototype: `node prototypes/chapter-dice/paper/build.js` writes `prototypes/chapter-dice/paper/chapter-dice-paper.pdf` (a rules sheet and 38 cut-out cards). The bullets below are the legacy d20 build.
-
-- **Play:** open `dist/index.html` in a browser. It's a single file and works offline.
-- **Print:** open `dist/deck/index.html`. Print each sheet's fronts, then its backs on the reverse: 100% scale, duplex, flip on the long edge.
-- **Print preview:** open `dist/deck/preview.html` to check every card against its bleed, trim and safe-zone guides, one at a time, as a grid, or on its sheet.
-- **Print shop:** `npm run export:cards` writes one 825 × 1125 PNG per distinct card (2.75 × 3.75 in at 300 dpi, 1/8 in bleed) to `exports/cards_singles/`, a shared `card_back.png`, `exports/manifest.csv` with copy counts (kit cards print 2 each, the HP tracker 4, the Came back marker 6), and a zip of the lot for MakePlayingCards or The Game Crafter.
-- **Print-and-play PDF:** `npm run export:pdf` writes `exports/detect-the-dwellers-pnp.pdf`, 16 Letter pages (eight sheets; the eighth is the markers), each fronts page followed by its backs. Print duplex at 100%, flip on the long edge.
+The 61 cards, standard dice in four colours, and a few coins: crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, about 16 threat dice, and coins for HP and the shift tracker. 1–4 players, four analysts to pick from. Quick Shift (8 cards, 12 HP, about 20 minutes) or Full Shift (14 cards, 17 HP, about 35 minutes), dealt fresh every shift from one situation deck, with one of three bosses waiting underneath.
 
 ## How it plays
 
-**The d6 game:** pick who's on point and flip the top card of the feed, where alarms and situations are shuffled together. An alarm: set its threat dice under the card. Everyone rolls a d6 (on point rolls two) and each die takes out a threat die showing exactly its number. Your analyst's doubles count as two dice, or guard a crewmate. Whatever's left hits back. Win a fight and draw items: passive agents that work for the whole crew, and one-shot consumables. Baseline an alarm and it slides under an agent, which gains the trait on its tuck band. The boss pulls the row as it weakens. Beaten alarms go on the row and roll to come back. Full rules: [prototypes/chapter-dice/README.md](prototypes/chapter-dice/README.md#the-rules-now).
+Pick who's on point and flip the top card of the feed. A situation asks you to choose. An alarm sets threat dice under its card. Everyone rolls (on point rolls two), and each die takes out a threat die showing exactly its number. A double counts as two dice, or guards you. Once a round you may take 1 damage to reroll a die. Whatever's left hits back.
 
-**The legacy d20 game:** pick who's on point, flip a situation, and roll for the persistence row. Alarms start fights: everyone rolls a d20 (on point rolls two), assigns dice to alarms they beat, and whatever's left hits back. Win a fight and draw an AI agent for the crew, which you can keep running or burn once for a big effect. Anyone at 0 HP and the shift is lost.
+Win a fight and draw items: agents that work for the whole crew every round, and consumables you use once. Baseline an alarm (beat it with three more dice) and it slides under an agent, which learns the trait on its tuck band. Beaten alarms go on the row and roll to come back. Full rules: [game/README.md](game/README.md#the-rules-now).
 
-Legacy d20 rules: [docs/RULES.md](docs/RULES.md) · every card: [docs/CARDS.md](docs/CARDS.md) · design and balance: [docs/DESIGN.md](docs/DESIGN.md)
+## Feedback
+
+After each game, send back who played and which analysts, Quick or Full Shift, how long it took, win or loss and roughly when it was lost, and any rule you played wrong. The playtest kit is in [docs/PLAYTEST.md](docs/PLAYTEST.md).
+
+## Run it locally
+
+```bash
+npm install                            # once
+npm run serve                          # build the page and play it at http://localhost:8080
+node game/paper/build.js               # the print-and-play PDF: game/paper/chapter-dice-paper.pdf
+node --test game/web/spec.js           # the game's tests
+SYS=n6 HP=12 node game/sim.js          # the balance sim (Quick Shift); MODE=full HP=17 for Full
+```
 
 ## Repo map
 
 | Path | |
 | --- | --- |
-| `prototypes/chapter-dice/` | **The d6 game:** rules, cards, sim, paper prototype, web version |
-| `data/cards.json` | Legacy d20: every card and number (the d6 game reads alarm names, flavour, Damage and art from it) |
-| `src/engine.js` | Legacy d20 rules engine |
-| `ui/` | Legacy d20 playable page |
-| `deck/` | Legacy d20 print deck generator |
-| `sim/` | Legacy d20 balance bot and reports |
-| `test/` | Tests |
+| `game/` | **The game:** rules and history (`README.md`), cards, sim, web page, print-and-play PDF |
+| `data/` | Card data and art the game reads (alarm names, flavour, Damage, scenes) |
+| `tools/ink/` | The Ink & Static art generators |
+| `docs/PLAYTEST.md` | The playtest kit |
+| `.github/workflows/pages.yml` | Publishes the page and the PDF to GitHub Pages |
+
+The other folders (`src/`, `ui/`, `sim/`, `deck/`, `scripts/`, `test/`) hold an older build. `npm test` still runs its suites.
 
 Working with Claude Code? Start with [CLAUDE.md](CLAUDE.md).
 
 ## Status
 
-**The d6 game:** rules as of 2026-11-03 (bosses hit for 5, a threat that climbs, the push, four analysts with one line each and no wild numbers). A double guards only its owner; a reroll costs 1 HP (once a round); agents and consumables share 4 item slots. Bot sims win 56% / 49% / 46% (Quick Shift, HP 12) and 50% / 45% / 48% (Full Shift, HP 17) at 1 / 2 / 4 players, with an 18–24 point gap between smart and random play and a real decision in 94–97% of rounds. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. No human table yet; a playtest is next. Details in [prototypes/chapter-dice/README.md](prototypes/chapter-dice/README.md#where-it-stands).
-
-**Legacy d20 build:** rules v29: solo plays the printed two-player numbers (no −2 hits) and rolls three dice; a solo Quick Shift starts with one agent; the web cards show hits exactly as printed. (v28: every alarm's comeback range is 3 wider (more comebacks); HP 62/47/39, Quick Shift 39, First Shift 26. v27: Second wind is gone (it was a flat buff, not a comeback); HP 58/43/35, Quick Shift 36, First Shift 25; every card's text prints at 7.5 pt or more; a CMYK soft proof (`npm run proof:cmyk`) and a playtest kit (`docs/PLAYTEST.md`). v26: Pack is gone (it made players dig through the deck); HP 54/40/32, Quick Shift 32. v25: Guard (a crew die showing 14+ can block instead of hitting); Pack alarms (removed in v26); Second wind (the first time anyone drops to 10 HP or less, the crew draws a kit card, once per shift); First Shift brings the Banshee back on flip 2; First Shift HP 23; 4-player alarm hits printed + 3. v24: solo play draws one kit card per won fight (crews still draw two), with solo alarms at printed − 2 hits and solo bosses at base hits. v23: core rules (First Shift, Quick Shift) and advanced modules (Full Shift: story cards, boss row triggers); the kit deck reshuffles its discards when it runs out; a marker sheet (Came back × 6, Next alarm, Round, Once per fight) makes 72 cards on eight sheets; components are 6 crew d20s, 3 agent d20s, 1 amber row d20 and coins; analyst retune (Hunter +3, Responder +3 boss included, Fixer heals 5 after every fight); boss hits +1/+3/+4/+6; HP 60/48/38, Quick Shift 37, First Shift 29. v22: every analyst has a perk and an agent link that makes one kind of AI agent better for the whole crew (solo win rates now 48–54% in Full Shift, down from 40–73%); boss hits by crew size +1/+2/+4/+6, printed on the boss cards; alarm hits by crew size −1/0/+2/+4; HP 58/47/38, Quick Shift 40, First Shift 32; Full and Quick Shift draw a random boss, First Shift always Lockjaw; 63 cards on seven duplex sheets. v21: nine story cards whose With Recon line replaces the outcome when a Recon Agent is running; the Recon burn pulls a card from the feed for good; every boss has a trigger that rolls for the row; HP 64/52/41, Quick Shift 40, First Shift 31. v20: comebacks return at full hits (the two highest-Damage per roll still hit on arrival); two kit cards per won fight and a crew tray of five; stronger agents, with the Hunt Agent hunting comebacks; tougher bosses (+2 hits, +2 damage); alarm hits by crew size −1/0/+1/+2; HP 70/60/47, Quick Shift 37, First Shift 25, on a two-coin tens-and-ones tracker. v19: arrival-hit cap, tougher alarms, the 22:00–06:00 shift. v18: per-alarm comeback ranges, chaining Beacons. v17: keywords, First Shift, dual-mode kit.) Balance is tuned against a bot; human playtests come next. The art is placeholder vector art pending a commissioned illustrator. Not for distribution until counsel review and a trademark search are done.
+Rules as of 2026-11-03: four analysts with one line each, a double guards only its owner, a reroll costs 1 HP (once a round), and agents and consumables share 4 item slots. Bot sims (600 games per crew size) win 56% / 49% / 46% in Quick Shift and 50% / 45% / 48% in Full Shift at 1 / 2 / 4 players, with an 18–24 point gap between smart and random play and a real decision in 94–97% of rounds. No human table yet: a playtest is next. Details in [game/README.md](game/README.md#where-it-stands).

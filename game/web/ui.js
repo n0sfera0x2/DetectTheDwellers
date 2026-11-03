@@ -1,8 +1,8 @@
-// Chapter dice web prototype: the page script. Renders the engine state (CDEngine) with the shared paper card
+// Detect the Dwellers: the page script. Renders the engine state (CDEngine) with the shared paper card
 // markup (CDCards) and adds live state around the cards: the threat dice set under each card (taken ones turned
 // aside), slot highlights for the selected die, stamps, and the motion and sound of the real game (ui/ui.js): cards
 // flip in, comebacks get a Back stamp, a beaten mob goes down, dice tumble and land, short Web Audio stings.
-// Nothing is drawn on a card face. Throwaway prototype code, inlined into web/index.html by web/build.js.
+// Nothing is drawn on a card face. Inlined into web/index.html by web/build.js.
 (function () {
   const E = window.CDEngine, A = window.CDCards, D = window.CD_DATA, ART = window.CD_ART || {};
   const app = document.getElementById('app'), live = document.getElementById('live');

@@ -1,4 +1,4 @@
-// Chapter dice prototype: the same cut-down shift played several ways, to decide whether d6s (Escape the Dark
+// Detect the Dwellers balance sim: the same shift played several ways, to decide whether d6s (Escape the Dark
 // Castle's chapter dice) beat the current d20 + bonus ≥ Defense system.
 //   d20: today's rules. Hit = d20 + bonus ≥ Defense; 18–20 is two hits and blocks; a 14+ crew die can guard.
 //   n6 (default, exact numbers, 2026-10-30): the mob card prints the dice to set under it, clustered round a main
@@ -8,8 +8,8 @@
 //        a row of symbols (DICE=custom: the custom symbol dice before that).
 // Shared: the real mobs, bosses, keywords, damage, persistence row ranges, kit economy, one bot brain that scores
 // every legal dice allocation the same way in every system.
-// Throwaway: nothing in src/, data/ or ui/ reads this. Usage: node prototypes/chapter-dice/sim.js
-const D = require('../../data/cards.json');
+// Throwaway: nothing in src/, data/ or ui/ reads this. Usage: node game/sim.js
+const D = require('../data/cards.json');
 
 const SYM = ['D', 'C', 'E']; // Detect, Contain, Eradicate
 // A mob's symbol row: its main response first. Domain sets the mix (identity is found, network is cut off...).
@@ -206,7 +206,7 @@ const XFROM = +(process.env.XFROM || 2); // review 2: one + die per player past 
 const N6DICE = +(process.env.N6DICE || 1), N6SOLO = +(process.env.N6SOLO || 3);
 // Clustered dice (2026-10-30): each mob has a main number and its dice bunch around it, e.g. main 2 prints
 // 1 2 2 2 3. Repeats make a double on the main number (it counts as two of that number) worth the most. MAIN
-// spreads the prototype's six mobs and the boss across the faces; any other mob takes a main from its id.
+// spreads the first six mobs and the boss across the faces; any other mob takes a main from its id.
 // Self-contained: web/build.js lifts this function into the page.
 function numbersFor(id, n) {
   // Since the full pool (2026-11-02): every alarm and boss has a main, spread so each face is the main of 2–3 alarms.

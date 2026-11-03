@@ -17,7 +17,7 @@
     "balance": "node sim/check.js",
     "golden": "node scripts/update-golden.js",
     "test": "node --test && node sim/check.js",
-    "serve": "node prototypes/chapter-dice/web/build.js && npx --yes http-server prototypes/chapter-dice/web -p 8080 -c-1",
+    "serve": "node game/web/build.js && npx --yes http-server game/web -p 8080 -c-1",
     "serve:classic": "npx --yes http-server dist -p 8080 -c-1"
   },
   "devDependencies": {

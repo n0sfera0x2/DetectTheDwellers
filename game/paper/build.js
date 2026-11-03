@@ -1,11 +1,11 @@
-// Paper prototype for the chapter dice test: one printable PDF with the rules sheet and 61 cut-out cards (15 alarms,
+// The print-and-play PDF: one printable file with the rules sheet and 61 cut-out cards (15 alarms,
 // 3 bosses, 4 analysts, 16 items, a dice reference, the shift tracker, 18 situations, 3 conditions). The dice are standard pip d6s with exact numbers: no stickers.
 // Numbers come from the sim's tuned run (see ../README.md) and the game's data, so paper and sim agree.
-// Usage: node prototypes/chapter-dice/paper/build.js  →  prototypes/chapter-dice/paper/chapter-dice-paper.{html,pdf}
+// Usage: node game/paper/build.js  →  game/paper/chapter-dice-paper.{html,pdf}
 const fs = require('fs'), path = require('path');
-const D = require('../../../data/cards.json');
-const { fonts } = require('../../../deck/render');
-const { launch, fontsReady } = require('../../../deck/browser');
+const D = require('../../data/cards.json');
+const { fonts } = require('../../deck/render');
+const { launch, fontsReady } = require('../../deck/browser');
 const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, tracker, mobs: cardMobs, boss, BOSS_IDS, ANALYST_IDS, AGENT_IDS, ITEM_DECK, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
 
 const OUT = __dirname, HP = 17; // Full Shift starting HP (Quick: 12), 2026-11-03 four analysts; the numbers are in the README
@@ -63,7 +63,7 @@ const rules = `<section class="page rules">
 <p class="foot">Playtest build; numbers from the sim of 2026-11-03. Record who played, time, win or loss, every rule played wrong.</p>
 </section>`;
 
-// ---- Cards (2.5 × 3.5 in, nine to a page): the markup lives in ../cards.js, shared with the web prototype ----
+// ---- Cards (2.5 × 3.5 in, nine to a page): the markup lives in ../cards.js, shared with the web page ----
 const cards = [...cardMobs().map(mobCard), ...BOSS_IDS.map(id => bossCard(boss(id))), legend, tracker, ...ANALYST_IDS.map(analystCard), ...ITEM_DECK.map(agentCard), ...SIT_IDS.map(sitCard), ...COND_IDS.map(condCard)];
 const pages = []; for (let i = 0; i < cards.length; i += 9) pages.push(`<section class="page cards"><div class="grid">${cards.slice(i, i + 9).join('')}</div></section>`);
 

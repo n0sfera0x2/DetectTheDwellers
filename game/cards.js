@@ -1,11 +1,11 @@
-// Shared card markup for the chapter dice prototype. The paper build (paper/build.js) prints these cards and the
+// Shared card markup for Detect the Dwellers. The paper build (paper/build.js) prints these cards and the
 // web build (web/build.js) puts the very same markup on the table, so a card reads identically in both.
 // Works in Node (require) and in the browser (inlined by web/build.js with a data object as D and the scenes it
 // needs as CD_ART). The cards wear the real game's Ink & Static look (deck/cards.js): paper ground, a cut-corner frame
 // in the card's accent, a solid tab, and the art set in as a dark screen of fixed height per card type.
-// Throwaway prototype code: nothing outside prototypes/ may import this.
+// The web page and the print-and-play PDF both build from it.
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../data/cards.json'), require('./sim').numbersFor, { ...require('../../data/art.json'), ...require('./art/art.json') }, require('../../data/art-print.json')); // art/art.json: the consumables' own scenes (art/scenes.js)
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../data/cards.json'), require('./sim').numbersFor, { ...require('../data/art.json'), ...require('./art/art.json') }, require('../data/art-print.json')); // art/art.json: the consumables' own scenes (art/scenes.js)
   else root.CDCards = factory(root.CD_DATA, root.CD_NUMBERS, root.CD_ART || {}, root.CD_ART || {});
 })(typeof self !== 'undefined' ? self : this, function (D, numbersFor, ART, PRINT) {
   const C = { bg: '#F6F2EC', ink: '#1A1418', mut: '#5A4B43', rule: '#D8CEC3', cy: '#005F73', fl: '#FF5A2A', ex: '#A8360F', E: '#A8360F', am: '#8A4510' };
@@ -195,7 +195,7 @@
   };
   const condCard = id => `<div class="card cond ${id === 'focused' ? 'cy' : ''}">${tab}${hd('Condition', id === 'focused' ? 'keep it' : 'bad')}<div class="nm">${COND[id][0]}</div><div class="ctext">${COND[id][1]}</div></div>`;
 
-  // The prototype's card set: six alarms, the Lockjaw Syndicate, four analysts, 16 items (6 agents, 10 consumables).
+  // The first card set: six alarms, the Lockjaw Syndicate, four analysts, 16 items (6 agents, 10 consumables).
   // Since 2026-11-02 the whole production pool: 15 alarms and 3 bosses.
   const MOB_IDS = D.mobs.map(m => m.id), BOSS_IDS = D.bosses.map(b => b.id);
   const BOSS_ID = 'wyrm', ANALYST_IDS = ['HUN', 'RES', 'ENG', 'SOA'], AGENT_IDS = ['triage', 'enrich', 'contain', 'recover'], CONS_IDS = ['surge', 'intel', 'isolate', 'coffee', 'freeze'];

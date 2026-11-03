@@ -1,17 +1,17 @@
-// Builds the chapter dice web prototype: ONE self-contained page, web/index.html, that runs from file://.
+// Builds the game's web page: ONE self-contained page, web/index.html, that runs from file://.
 // Inlines the game data it needs, the mob dice (sim.js numbersFor), the shared card markup (../cards.js), the engine
 // (engine.js), the page script (ui.js), the fonts (deck/render.js) and the Ink & Static scenes it shows (data/art.json,
 // data/art-print.json): the cards' scenes from cards.js artKeys() (mobs, boss, analysts, items: agents and consumables, situations), plus the page's own (hero, win, card back).
-// Usage: node prototypes/chapter-dice/web/build.js
+// Usage: node game/web/build.js
 const fs = require('fs'), path = require('path');
-const D = require('../../../data/cards.json');
-const { fonts } = require('../../../deck/render');
-const ART = { ...require('../../../data/art.json'), ...require('../art/art.json') }, // + the consumables' scenes (../art/scenes.js)
-  PRINT = require('../../../data/art-print.json');
+const D = require('../../data/cards.json');
+const { fonts } = require('../../deck/render');
+const ART = { ...require('../../data/art.json'), ...require('../art/art.json') }, // + the consumables' scenes (../art/scenes.js)
+  PRINT = require('../../data/art-print.json');
 const { CARD_CSS, MOB_IDS, BOSS_ID, BOSS_IDS, SIT_IDS, ANALYST_IDS, ANALYST_ART, artKeys } = require('../cards');
 
 const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8');
-// Only what the prototype uses from the game data.
+// Only what the game uses from the shared data.
 const keys = ['mobAdd', 'bossAdd', 'kitPerFight', 'kitSolo', 'containCut', 'recoverHeal', 'recoverBurn', 'soloDice'];
 // The four analysts only (the Fixer is gone).
 const data = { classes: D.classes.filter(c => ANALYST_IDS.includes(c.id)).map(c => ({ id: c.id, name: c.name })), mobs: D.mobs.filter(m => MOB_IDS.includes(m.id)), bosses: D.bosses.filter(b => BOSS_IDS.includes(b.id)),
@@ -54,4 +54,4 @@ window.CD_ART = ${safe(JSON.stringify(art))};</script>
 </html>
 `;
 fs.writeFileSync(path.join(__dirname, 'index.html'), html);
-console.log(`wrote prototypes/chapter-dice/web/index.html (${Math.round(html.length / 1024)} KB)`);
+console.log(`wrote game/web/index.html (${Math.round(html.length / 1024)} KB)`);

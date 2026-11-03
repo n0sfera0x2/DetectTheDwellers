@@ -1,10 +1,10 @@
-// Chapter dice prototype: Ink & Static scenes for the five consumable item cards (cons_*), drawn with the
+// Detect the Dwellers: Ink & Static scenes for the five consumable item cards (cons_*), drawn with the
 // shared ink-kit in the hand of the kit_* familiars (tools/ink/crew/scenes.js). Cyan spot throughout.
 // Writes art.json next to this file as a flat { key: svg } object.
-// Usage: node prototypes/chapter-dice/art/scenes.js
+// Usage: node game/art/scenes.js
 'use strict';
 const fs = require('fs'), path = require('path');
-const kit = require('../../../tools/ink/ink-kit');
+const kit = require('../../tools/ink/ink-kit');
 const { CYAN, PAPER, soft, rot } = kit;
 const INK = '#07060A';
 const n1 = v => (Math.round(v * 10) / 10).toString();

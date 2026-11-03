@@ -1,4 +1,4 @@
-// Chapter dice web prototype: the rules engine. DOM-free and deterministic given a seeded rng (opt.rnd or opt.seed).
+// Detect the Dwellers: the rules engine. DOM-free and deterministic given a seeded rng (opt.rnd or opt.seed).
 // Plays exactly the paper rules sheet (../paper/build.js): the human assigns dice, the engine checks and resolves.
 // Exact numbers (2026-10-30): every die is a standard pip d6, { n: 1–6, dbl }. A mob's hits are the threat dice set
 // under its card (../cards.js slotsFor); a rolled die takes out one showing exactly its number. A double counts as two
@@ -14,9 +14,9 @@
 // Solo, the Soarcerer rolls a die on every consumable used and keeps it on a 2 or 6 (SOASOLOKEEP=roll). Solo starts with
 // 1 item (QSOLO). Baselining sets 4 dice at every crew size. Crew-wide agents (2026-11-01): Triage rolls one more die
 // of its holder's own, Containment, Recovery and Enrichment work for the whole crew; baselining costs 3 dice and only
-// the four heavier alarms can be baselined; solo starts with 2 items; HP 10. Throwaway prototype code.
+// the four heavier alarms can be baselined; solo starts with 2 items; HP 10.
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../../data/cards.json'), require('../cards'));
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../data/cards.json'), require('../cards'));
   else root.CDEngine = factory(root.CD_DATA, root.CDCards);
 })(typeof self !== 'undefined' ? self : this, function (D, CARDS) {
   const HP = 10; // starting HP (2026-11-01): crew-wide agents, Triage as a crew die, 3-die baselining; ~53% at 1p, 56% at 2p, 55% at 4p in the sim

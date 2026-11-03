@@ -1,8 +1,6 @@
-# Detect the Dwellers: chapter dice (d6)
+# Detect the Dwellers
 
-**Status:** this is the game. Chapter dice replaced the d20 system as the design direction on 2026-10-31. The d20 build (`src/`, `data/`, `ui/`, `deck/`, `sim/`) is legacy: it still builds and tests, but new design work happens here. The rules below are current as of [one reroll rule, shared item slots, a clearer page](#one-reroll-rule-shared-item-slots-a-clearer-page-2026-11-03) (2026-11-03), on top of guards for yourself and the analysts' second pass and the squeeze (bosses hit for 5, alarms hit harder from the fourth fight, the push) and review 2 (eight agent traits, six analysts, choices on situations) and the full pool (one situation deck, Quick and Full Shift, three bosses). The sim (`SYS=n6`), the paper prototype and the web version all play them.
-
-This folder is still prototype code. Under the repo's prototype rules it gets rewritten to production standards before it replaces the d20 build; it isn't extended into production in place. **Next step:** a table playtest (`docs/PLAYTEST.md`).
+**Status:** the rules below are current as of [one reroll rule, shared item slots, a clearer page](#one-reroll-rule-shared-item-slots-a-clearer-page-2026-11-03) (2026-11-03). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
 ## The rules now
 
@@ -172,23 +170,17 @@ What the sim should hold after any rule change, and what to turn when it misses.
 - Paper tuck: up to two tucked alarms per agent, band under band. Untested at a table.
 - No human has played these rules yet. Teach time, play time and whether matching feels better than adding all need a table.
 
-## Hypothesis
-
-Matching exact numbers on d6s makes more rounds a real decision than the d20's add-and-compare (d20 + bonus ≥ Defense), without making skill matter less or the analysts less even. Standard d6s are also easier to source for a physical release than d20s or custom dice.
-
-Against the d20 baseline (600 games per case, 2026-10-30): the d20 had a real dice choice in 46 / 49 / 57% of rounds at 1p / 2p / 4p and a skill gap of 16–28 points. Chapter dice today: 38 / 42 / 52% and 18–26 points. Analysts are more even than in the d20. Choice and skill are now level with the d20 or a little under, since the crew-wide agents pass made items stronger. The choice half of the hypothesis isn't proven yet.
-
 ## How to run
 
 ```bash
-SYS=n6 HP=12 node prototypes/chapter-dice/sim.js               # Quick Shift (the default MODE) at its HP, 600 games per case (a few minutes)
-MODE=full SYS=n6 HP=17 node prototypes/chapter-dice/sim.js      # Full Shift at its HP
-SYS=n6 node prototypes/chapter-dice/sim.js             # the current rules, HP tuned to ~50% at 2p
-node prototypes/chapter-dice/sim.js                    # the legacy d20 baseline and chapter dice side by side
-SYS=d6 node prototypes/chapter-dice/sim.js             # the earlier symbol d6 system (1–2 Detect, 3–4 Contain, 5–6 Eradicate)
-node prototypes/chapter-dice/web/build.js              # web/index.html, one self-contained file
-node prototypes/chapter-dice/paper/build.js            # paper/chapter-dice-paper.pdf
-node --test prototypes/chapter-dice/web/spec.js        # engine rules, jsdom click-through, card parity
+SYS=n6 HP=12 node game/sim.js               # Quick Shift (the default MODE) at its HP, 600 games per case (a few minutes)
+MODE=full SYS=n6 HP=17 node game/sim.js      # Full Shift at its HP
+SYS=n6 node game/sim.js             # the current rules, HP tuned to ~50% at 2p
+node game/sim.js                    # the legacy d20 baseline and chapter dice side by side
+SYS=d6 node game/sim.js             # the earlier symbol d6 system (1–2 Detect, 3–4 Contain, 5–6 Eradicate)
+node game/web/build.js              # web/index.html, one self-contained file
+node game/paper/build.js            # paper/chapter-dice-paper.pdf
+node --test game/web/spec.js        # engine rules, jsdom click-through, card parity
 npm run serve                                          # build and serve the web version on localhost:8080
 ```
 
@@ -234,23 +226,23 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 
 Nothing in `src/`, `data/` or `ui/` reads this folder. This folder reads the alarm names, flavour, Damage, keywords and comeback ranges from `data/cards.json`, and the art from `data/art.json` and `data/art-print.json`.
 
-## Paper prototype
+## Print and play
 
-`node prototypes/chapter-dice/paper/build.js` writes `paper/chapter-dice-paper.pdf` (and the HTML it prints from). Letter pages, printed at 100%:
+`node game/paper/build.js` writes `paper/chapter-dice-paper.pdf` (and the HTML it prints from). Letter pages, printed at 100%:
 
 1. **Rules:** the one-page rules sheet, both modes.
 2. **Cards:** the 61 cards above, 2.5 × 3.5 in, printed single-sided with dashed cut lines.
 
 **Test plan:** play it with 2 players using the cold-read script in `docs/PLAYTEST.md`. Record teach time, play time, W and R tags, every rule played wrong, and whether the table would play again. A side-by-side against the legacy d20 Quick Shift is optional now that d6 is the direction.
 
-## Web prototype
+## Web version
 
-A playable web version of the paper prototype, for playtests without the physical bits.
+The same game in the browser, for playtests without the physical bits.
 
 ```bash
-node prototypes/chapter-dice/web/build.js              # writes web/index.html (one self-contained file)
-open prototypes/chapter-dice/web/index.html            # double-click works too: file://, no server
-node --test prototypes/chapter-dice/web/spec.js        # engine rules, jsdom click-through, card parity
+node game/web/build.js              # writes web/index.html (one self-contained file)
+open game/web/index.html            # double-click works too: file://, no server
+node --test game/web/spec.js        # engine rules, jsdom click-through, card parity
 ```
 
 Add `?seed=123` to the URL to replay a shift.
@@ -739,7 +731,7 @@ Sim knobs: `ITEMS=old` (two-sided agents, shared tray), `CONSFREE=0` (consumable
 
 ### Alarms and baselining (2026-10-31)
 
-NightBeacon CMD theming: the enemies are **alarms** (player-facing text across the prototype and the main game; code still says mob), and a fight with two or more in play is a **multi-alarm** fight (the web fight header says so). The story for the new choice: the agents are learning the environment.
+NightBeacon CMD theming: the enemies are **alarms** (player-facing text everywhere; code still says mob), and a fight with two or more in play is a **multi-alarm** fight (the web fight header says so). The story for the new choice: the agents are learning the environment.
 
 #### The rules now
 
@@ -1138,14 +1130,14 @@ What the numbers say:
 ### Caveats (custom symbol dice, history)
 
 - **These are bot results.** Whether matching symbols feels better than adding numbers is a question only a table can answer.
-- **Crew-size scaling isn't tuned for d6.** Four players win only 27%, and solo beats two players. The prototype reuses the d20 extra-hits tables. With d6 those tables become "add N symbols for each analyst," which is a separate tuning job.
+- **Crew-size scaling isn't tuned for d6.** Four players win only 27%, and solo beats two players. It reused the d20 extra-hits tables. With d6 those tables become "add N symbols for each analyst," which is a separate tuning job.
 - **The Engineer's identity blurs.** Three doubles was the Engineer's whole thing, and the tuned Hunter and Responder dice now have three too. A d6 Engineer needs a new hook, for example agent dice that can roll doubles.
 - **Situations aren't modelled.** The challenge cards ("roll 10+") would need d6 versions.
-- **Components.** It needs 5 custom analyst dice, a balanced crew die and an agent die, plus symbol rows on every mob card. Blank d6s with stickers will do for a prototype.
+- **Components.** It needs 5 custom analyst dice, a balanced crew die and an agent die, plus symbol rows on every mob card. Blank d6s with stickers would do for a first test.
 
 ### Recommendation (custom symbol dice, history)
 
-Go to a paper prototype:
+Go to a paper test:
 
 - **Dice:** sticker sheets for 5 analyst dice, 1 crew die and 1 agent die, using the tuned faces above.
 - **Cards:** 6 mob cards and 1 boss with symbol rows.

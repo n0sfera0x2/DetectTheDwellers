@@ -1,10 +1,10 @@
-// Chapter dice web prototype tests: node --test prototypes/chapter-dice/web/spec.js
+// Detect the Dwellers tests (engine, page, card parity): node --test game/web/spec.js
 // Engine rules, then (if jsdom is installed) a headless click-through of the built page and a card parity check.
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
 const E = require('./engine');
 const CARDS = require('../cards');
-const D = require('../../../data/cards.json');
+const D = require('../../data/cards.json');
 const SIM = require('../sim');
 
 // ---- Fixtures: a game with chosen mobs in the fight and chosen dice ------------------------------------------------
@@ -278,7 +278,7 @@ test('cards: the dice strip along the bottom, no symbols, no “players add”; 
   assert.doesNotMatch(all, /any one more/); assert.match(CARDS.legend, /Hits back:/); assert.match(CARDS.legend, /sum is at most its number/);
 });
 test('cards carry the game’s Ink & Static scenes: mob by id, boss print scene, analyst portrait, item scene', () => {
-  const ART = { ...require('../../../data/art.json'), ...require('../art/art.json') }, PRINT = require('../../../data/art-print.json');
+  const ART = { ...require('../../data/art.json'), ...require('../art/art.json') }, PRINT = require('../../data/art-print.json');
   const scene = html => { const m = /<div class="art">([\s\S]*?<\/svg>)<\/div>/.exec(html); assert.ok(m, 'art panel'); return m[1]; };
   for (const m of CARDS.mobs()) { const h = CARDS.mobCard(m); assert.equal(scene(h), ART[m.id], m.id); assert.ok(h.indexOf('class="art"') < h.indexOf('class="nm"'), 'art on top'); }
   assert.equal(scene(CARDS.bossCard(CARDS.boss())), PRINT['boss_' + CARDS.BOSS_ID].replace(/\{\{SID\}\}/g, 'cd'));
@@ -794,7 +794,7 @@ test('baselining sets 3 dice at every crew size, 4 players too (the alarm’s ow
   }
 });
 // ---- The built page in jsdom -------------------------------------------------------------------------------------
-let JSDOM = null; try { ({ JSDOM } = require('../../../node_modules/jsdom')); } catch (e) { /* jsdom not installed */ }
+let JSDOM = null; try { ({ JSDOM } = require('../../node_modules/jsdom')); } catch (e) { /* jsdom not installed */ }
 const PAGE = path.join(__dirname, 'index.html');
 let built = false;
 const load = seed => {

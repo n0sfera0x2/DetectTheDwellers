@@ -1,4 +1,4 @@
-/* Chapter dice web prototype: the night table, in the real game's look (ui/head.html, Ink & Static): the same tokens,
+/* Detect the Dwellers web page: the night table, in the real game's look (ui/head.html, Ink & Static): the same tokens,
    chamfered buttons and panels, the paper cards set on a dark desk, the dice tray, and its motion. Card faces use the
    shared paper card CSS (../cards.js CARD_CSS); this file only places them and adds live state around them.
    Motion animates transform, opacity and filter only. */

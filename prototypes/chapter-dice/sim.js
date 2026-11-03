@@ -62,7 +62,7 @@ const NEAR = process.env.NEAR === '1';
 // REROLL (n6): 'all' (default, 2026-10-30) lets every player reroll one of their own dice once a round. 'perks'
 // gives it to the Hunter (own dice) and the Responder (any crew die) only: solo spread 25 pts, rejected. '0' off.
 // The bot rerolls a die that can't do anything.
-const REROLL = process.env.REROLL || 'all';
+const REROLL = process.env.REROLL || 'hpround'; // since 2026-11-03: once a round, take 1 to reroll (all: the old free reroll)
 // Situations (n6, 2026-10-30): SIT=1 (default) flips a situation card before every flip after the first, the boss's
 // included. SIT=0 turns them off. SITPICK forces options to test whether a choice is real: SITPICK=insider:run,chatter:0.
 // Conditions: Rattled (no doubles next fight), Exposed (+1 damage each round anything hits you next fight), Focused
@@ -127,8 +127,8 @@ const TRAITS = process.env.TRAITS !== '0';
 // boss) deal 1 more per box, up to ESCMAX (default 3 and 1: from the fourth fight, +1). HEALX scales the after-fight heals.
 // PUSH (default on, PUSH=0 off): once a round, after the free reroll, a player may take 1 damage to reroll one more of
 // their own dice, never at 1 HP. The bot pushes when the reroll's average gain beats PUSHGAIN, above PUSHMIN HP.
-const BOSSDMG = process.env.BOSSDMG || '5', ESC = +(process.env.ESC ?? 2), ESCMAX = +(process.env.ESCMAX || 2), HEALX = +(process.env.HEALX || 1);
-const PUSH = process.env.PUSH !== '0', PUSHMIN = +(process.env.PUSHMIN || 4);
+const BOSSDMG = process.env.BOSSDMG || '5', ESC = +(process.env.ESC ?? 3), ESCMAX = +(process.env.ESCMAX || 1), HEALX = +(process.env.HEALX || 1);
+const PUSH = process.env.PUSH === '1', PUSHMIN = +(process.env.PUSHMIN || 4);
 const heat = G => ESC && G.sys === 'n6' ? Math.min(ESCMAX, Math.floor((G.stats.fights || 0) / ESC)) : 0;
 // TUCKOUT=1 (default, 2026-11-02 review): the baselined alarm card slides under its agent, so it leaves the row while
 // tucked (a discarded agent puts it back on the row; agents are never discarded by the bot). TUCKOUT=0: it also goes on the row.
@@ -155,7 +155,7 @@ const CAP = +(process.env.CAP || 2), UPGRADE = process.env.UPGRADE !== '0';
 // HUNNEW (proposal, 2026-11-03): fewer = with the Hunter in the crew, a comeback returns with one fewer die; immune =
 // comebacks deal the Hunter no damage. RESNEW=heal: the Responder's doubles can't guard; a double may instead heal
 // anyone RESHEAL (default 2) right away.
-const HUNNEW = process.env.HUNNEW ?? 'die', RESHEAL = +(process.env.RESHEAL || 5); // defaults since 2026-11-03: HUNNEW die (on point, one more die; also triple, fewer, fewer2, immune), RESNEW heal 5
+const HUNNEW = process.env.HUNNEW ?? 'dieplain', RESHEAL = +(process.env.RESHEAL || 5); // defaults since 2026-11-03: HUNNEW die (on point, one more die; also triple, fewer, fewer2, immune), RESNEW heal 5
 const SOANEW = process.env.SOANEW ?? 'wilddbl', RESNEW = process.env.RESNEW ?? 'heal'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
 const upgraded = (G, i) => UPGRADE && traitsOf(G, i).length >= (SOANEW === 'up1' && G.team[G.trayK ? G.trayK[i] || 0 : 0] === 'SOA' ? 1 : 2);
 // Which agent the bot tucks each trait under, best first.
@@ -180,17 +180,17 @@ function tuckTrait(G, tr) {
 const USE = NEWITEMS && process.env.TWOSIDED !== '1' ? { triage: 'surge', enrich: 'intel', contain: 'isolate', recover: 'coffee' } : { triage: 'triage', enrich: 'enrich', contain: 'contain', recover: 'recover' };
 const AGENTS = ['triage', 'enrich', 'contain', 'recover'], isAgent = t => AGENTS.includes(t);
 const KIT = NEWITEMS ? (process.env.KITJSON ? JSON.parse(process.env.KITJSON) : ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', 'surge', 'surge', 'intel', 'intel', 'isolate', 'isolate', 'coffee', 'coffee', 'freeze', 'freeze']) : ['triage', 'enrich', 'contain', 'recover'];
-const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : CREWSLOTS * G.n) + (on(G, 'SOA') && !SOAAUTO && SOAPERK !== 'none' && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
+const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 6) : CREWSLOTS * G.n) + (on(G, 'SOA') && !SOAAUTO && SOAPERK !== 'none' && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
 // Each item has a holder (G.trayK, parallel to G.tray): 2 slots each (the Soarcerer 3), solo 4. Since 2026-11-01 agents
 // work for the whole crew (Containment cuts the highest-Damage alarm for everyone, Recovery heals the crew, Enrichment
 // turns any crew die) and TRIAGE=crew: a Triage Agent's holder rolls one more of their own dice. PERSONAL=1: the old
 // personal agents (Triage rolls an agent die for its holder, Containment cuts what reaches its holder, Recovery heals it).
 const TRIAGE = process.env.TRIAGE || (NEWITEMS ? 'crew' : 'agent'); // crew: the holder's own die (it can pair, guard and hit the boss); agent: an agent die
-const CREWSLOTS = +(process.env.CREWSLOTS || 2); // agent slots per player in a crew
+const CREWSLOTS = +(process.env.CREWSLOTS || 4); // item slots per player in a crew (4 since 2026-11-03)
 const PERSONAL = NEWITEMS && process.env.PERSONAL === '1'; // crew-wide agents since 2026-11-01; PERSONAL=1: agents work only for their holder
 const slotsK = (G, k) => G.n === 1 ? slotsOf(G) : CREWSLOTS + (G.team[k] === 'SOA' && !SOAAUTO && SOAPERK !== 'none' && process.env.SOASLOT !== '0' ? 1 : 0);
 // CONSFREE=1: consumables don't take a slot (slots hold agents); you keep any number of consumables.
-const CONSFREE = NEWITEMS && process.env.CONSFREE !== '0';
+const CONSFREE = NEWITEMS && process.env.CONSFREE === '1'; // since 2026-11-03 consumables take slots (CONSFREE=1: the old hand)
 const held = (G, k) => G.trayK.filter((x, i) => x === k && !(CONSFREE && !isAgent(G.tray[i])) && !has(G, i, 'stealth')).length;
 const activeK = (G, t, k) => G.play.some(m => m.boss && m.kw === 'ai') ? 0 : G.tray.reduce((s, x, i) => s + (x === t && G.trayK[i] === k ? weight(G, i) : 0), 0);
 function dropItem(G, i) { const [t] = G.tray.splice(i, 1); G.trayK.splice(i, 1); if (G.trayT) G.trayT.splice(i, 1); return t; }
@@ -271,7 +271,7 @@ function roll(G) {
   const dice = [];
   if (G.sys === 'n6') {
     const raw = [];
-    G.team.forEach((id, k) => { const nd = (G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0)) + (k === G.point && aug(G, 'imp') ? 1 : 0) + (HUNNEW === 'die' && id === 'HUN' && k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : DOUBLES[id] }); });
+    G.team.forEach((id, k) => { const nd = (G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0)) + (k === G.point && aug(G, 'imp') ? 1 : 0) + ((HUNNEW === 'die' || HUNNEW === 'dieplain') && id === 'HUN' && k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : HUNNEW === 'dieplain' && id === 'HUN' && k === G.point && i === 0 ? [] : DOUBLES[id] }); }); // dieplain: the Hunter's extra die is never a double
     if (TRIAGE === 'crew') G.team.forEach((id, k) => { for (let i = 0; i < activeK(G, 'triage', k); i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : DOUBLES[id] }); });
     // DBLMODE=pair (proposal, 2026-10-31): no number is a double by itself; two of your own dice showing the same
     // number are a double (they take two of it, as they would anyway, or together they guard).
@@ -301,6 +301,12 @@ function rerolls(G, raw) {
   const dead = r => !r.dbl.includes(r.v) && !(hunts(G, r.k, r.v) && G.play.some(m => m.back)) && !G.play.some(m => m.need.includes(r.v) && m.kw !== 'hardened');
   const go = r => { if (r) { r.v = 1 + d6(G); G.stats.rerolls = (G.stats.rerolls || 0) + 1; } };
   // all: everyone may reroll one of their own dice once a round (a shared rule instead of two perks).
+  // REROLL=hpfight (proposal, 2026-11-03): no free rerolls and no push; once a fight, each player may take 1 damage to
+  // reroll one of their own dice (never at 1 HP). The bot uses the push's value test (PUSHGAIN, PUSHMIN).
+  if (REROLL === 'hpfight' || REROLL === 'hpround') { G.rrFight = (REROLL === 'hpfight' && G.rrFight) || G.team.map(() => false); /* hpround: once a round */ G.team.forEach((_, k) => { if (G.rrFight[k] || G.hp[k] <= 1) return; const r = raw.find(x => x.k === k && x.crew && dead(x)); if (!r) return; G.offered = true;
+      const best = rs => { const d = []; rs.forEach(x => n6die(G, d, x.k, x.crew, x.dbl, x.v)); return allocations(G, d).reduce((a, b) => Math.max(a, b.score), -Infinity); };
+      const keep = best(raw), gain = [1, 2, 3, 4, 5, 6].reduce((t, v) => t + best(raw.map(x => x === r ? { ...x, v } : x)), 0) / 6 - keep;
+      if (G.smart ? G.hp[k] > PUSHMIN && gain > +(process.env.PUSHGAIN || 6) : G.r() < 0.5) { hurt(G, k, 1); go(r); G.rrFight[k] = true; G.stats.push = (G.stats.push || 0) + 1; } }); return; }
   if (REROLL === 'all') { G.team.forEach((_, k) => go(raw.find(r => r.k === k && dead(r)))); if (G.n === 1 && on(G, 'LEAD') && LEADSOLO === 'reroll') go(raw.find(dead)); if (aug(G, 'spray')) go(raw.find(dead)); if (G.n === 1) for (let i = traitN(G, 'relay'); i > 0; i--) go(raw.find(dead));
     if (PUSH && G.sys === 'n6' && G.play.length) G.team.forEach((_, k) => { const r = raw.find(x => x.k === k && x.crew && dead(x)); if (!r || G.hp[k] <= 1) return; G.stats.pushOffer = (G.stats.pushOffer || 0) + 1; G.offered = true;
       // The bot pushes when the reroll's average gain beats the HP: best round over the six faces, against keeping it.
@@ -469,7 +475,7 @@ function score(G, left, blocks) {
 }
 
 function fight(G, mobs) {
-  G.play = []; G.engUsed = false; G.resUsed = false; G.patUsed = false; G.soaKeep = (SOAPERK === 'keep' || G.n === 1 && process.env.SOASOLOKEEP === '1') && on(G, 'SOA'); G.soaRoll = G.n === 1 && !SOAAUTO && (process.env.SOASOLOKEEP || 'roll') === 'roll' && on(G, 'SOA');
+  G.play = []; G.rrFight = null; G.engUsed = false; G.resUsed = false; G.patUsed = false; G.soaKeep = (SOAPERK === 'keep' || G.n === 1 && process.env.SOASOLOKEEP === '1') && on(G, 'SOA'); G.soaRoll = G.n === 1 && !SOAAUTO && (process.env.SOASOLOKEEP || 'roll') === 'roll' && on(G, 'SOA');
   G.ticket = TRAITS ? traitN(G, 'ticket') : 0; G.slipK = G.team.map((_, k) => G.tray.reduce((n, _, i) => n + (G.trayK[i] === k ? has(G, i, 'slip') : 0), 0)); G.resArr = false; G.hunEnded = false; mobs.forEach(m => enter(G, m)); let round = 0; // ticket and slip: once a fight
   while (!G.over && G.play.length) {
     round++; G.round = round; G.stats.rounds++; if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rowRoll(G, true)) enter(G, b); if (G.over) return;
@@ -620,7 +626,7 @@ function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
   if (G.n >= 3 && NEWITEMS) draw(G, +(process.env.START34 ?? 1)); // START34: extra setup items for a crew of 3 or 4 (1 since 2026-11-03)
-  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || (MODE === 'quick' ? 1 : 2)) - 1); // QSOLO: items a solo player starts with (Quick 1, Full 2 since the HP rise, 2026-11-03)
+  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with (2)
   const sits = SIT && G.sys === 'n6';
   for (let f = 0; !G.over; f++) {
     G.point = G.hp.indexOf(Math.max(...G.hp));

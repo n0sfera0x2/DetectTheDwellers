@@ -107,7 +107,7 @@
   }
   const PERK = {
     // One passive line each since 2026-11-03, nothing to track but the Engineer's turn. Same as sim.js.
-    HUN: 'On point, you roll one more die.',
+    HUN: 'On point, you roll one more die. It’s never a double.',
     RES: 'Your doubles can’t guard. Instead, a double heals anyone 5.',
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
     SOA: 'Any die you roll is a double for baselining: it takes two Baseline dice.',
@@ -140,7 +140,7 @@
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
   <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards you.</div>
   <div class="note">The solo crew die: only a ${pip(6, 14)}. <b>Two of yours on one number: a double.</b></div>
-  <div class="note"><b>Once a round, reroll one of your own dice.</b> <b>Push:</b> take 1 to reroll one more (not at 1 HP).</div>
+  <div class="note"><b>Once a round, take 1 to reroll one of your own dice</b> (not at 1 HP).</div>
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
   <div class="note">Row: 2 amber dice; back if the sum is at most its number.</div></div>`;
 
@@ -149,8 +149,8 @@
   const box = t => `<span class="bx">${t}</span>`;
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
 
-  <div class="trow"><b>Threat: fights won</b>${box(1)}${box('2: alarms +1')}${box(3)}${box('4: alarms +2')}</div>
-  <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Twin')}</div>
+  <div class="trow"><b>Threat: fights won</b>${box(1)}${box(2)}${box('3: alarms +1')}</div>
+  <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Twin')}</div>
   <div class="trow"><b>This fight</b>${box('Hold the room: +1 item')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
   <div class="note"><b>Escalating:</b> a coin on it each round. <b>Regen:</b> line up taken dice; it puts back the last.</div></div>`;
@@ -203,9 +203,9 @@
   const ITEM_DECK = ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', ...CONS_IDS.flatMap(t => [t, t])];
   const mobs = () => MOB_IDS.map(id => D.mobs.find(m => m.id === id));
   // The squeeze (2026-11-03): every boss hits for 5, not the data's 9 (one unguarded round no longer ends the shift), and
-  // alarms hit 1 harder for every THREAT_AFTER fights won, up to THREAT_MAX (since the HP rise, 2026-11-03: +1 after 2
-  // won, +2 after 4). PUSH_COST: a second reroll a round costs 1 HP.
-  const BOSS_DMG = 5, THREAT_AFTER = 2, THREAT_MAX = 2, PUSH_COST = 1, RES_HEAL = 5; // RES_HEAL: a Responder double heals this much
+  // alarms hit 1 harder for every THREAT_AFTER fights won, up to THREAT_MAX (2026-11-03: +1 once 3 are won; +1 per 2 up to
+  // +2 was tried with more HP, and took the scares out). PUSH_COST: a reroll costs 1 HP (once a round).
+  const BOSS_DMG = 5, THREAT_AFTER = 3, THREAT_MAX = 1, PUSH_COST = 1, RES_HEAL = 5; // RES_HEAL: a Responder double heals this much
   const boss = (id = BOSS_ID) => ({ ...D.bosses.find(b => b.id === id), dmg: BOSS_DMG });
 
   // The card face CSS, shared by print and web. Page and sheet layout stay in each build.

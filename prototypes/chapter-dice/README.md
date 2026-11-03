@@ -1,6 +1,6 @@
 # Detect the Dwellers: chapter dice (d6)
 
-**Status:** this is the game. Chapter dice replaced the d20 system as the design direction on 2026-10-31. The d20 build (`src/`, `data/`, `ui/`, `deck/`, `sim/`) is legacy: it still builds and tests, but new design work happens here. The rules below are current as of [guards for yourself, more HP](#guards-for-yourself-more-hp-2026-11-03) (2026-11-03), on top of the analysts' second pass and the squeeze (bosses hit for 5, alarms hit harder from the fourth fight, the push) and review 2 (eight agent traits, six analysts, choices on situations) and the full pool (one situation deck, Quick and Full Shift, three bosses). The sim (`SYS=n6`), the paper prototype and the web version all play them.
+**Status:** this is the game. Chapter dice replaced the d20 system as the design direction on 2026-10-31. The d20 build (`src/`, `data/`, `ui/`, `deck/`, `sim/`) is legacy: it still builds and tests, but new design work happens here. The rules below are current as of [one reroll rule, shared item slots, a clearer page](#one-reroll-rule-shared-item-slots-a-clearer-page-2026-11-03) (2026-11-03), on top of guards for yourself and the analysts' second pass and the squeeze (bosses hit for 5, alarms hit harder from the fourth fight, the push) and review 2 (eight agent traits, six analysts, choices on situations) and the full pool (one situation deck, Quick and Full Shift, three bosses). The sim (`SYS=n6`), the paper prototype and the web version all play them.
 
 This folder is still prototype code. Under the repo's prototype rules it gets rewritten to production standards before it replaces the d20 build; it isn't extended into production in place. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
@@ -12,7 +12,7 @@ This folder is still prototype code. Under the repo's prototype rules it gets re
 
 | Mode | Feed | HP | Solo starts with | Boss |
 | --- | --- | --- | --- | --- |
-| **Quick Shift** | deal 8 from the 24 core cards (alarms and core situations) | 12 | 1 item | its core ability only |
+| **Quick Shift** | deal 8 from the 24 core cards (alarms and core situations) | 12 | 2 items | its core ability only |
 | **Full Shift** | deal 11 core cards and 3 story cards, shuffled together (14) | 17 | 2 items | its core ability and its **Full Shift** row trigger |
 
 One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 3). The number of alarms in a feed varies: about 4.3 in Quick, 6 in Full.
@@ -22,7 +22,7 @@ One boss, drawn at random, goes face down under the feed. A crew draws 2 items (
 **A fight round.**
 
 1. **Row.** From the second round on, roll the row first.
-2. **Roll.** Everyone rolls one crew die; on point rolls two. Solo rolls two of their own plus the crew die. Each Triage Agent's holder rolls one more of their own dice. Once a round, each player may reroll one of their own dice. **Push:** after that, a player may take 1 damage to reroll one more of their own dice, once a round, never at 1 HP (a second coin on their reroll box).
+2. **Roll.** Everyone rolls one crew die; on point rolls two. Solo rolls two of their own plus the crew die. Each Triage Agent's holder rolls one more of their own dice. **Once a round, each player may take 1 damage to reroll one of their own dice**, never at 1 HP (a coin on their box of the shift tracker).
 3. **Match.** A die takes out one threat die showing exactly its number.
 4. **Hits back.** Every alarm with dice left hits everyone who isn't blocking, for its Damage. An alarm with no dice left is beaten.
 
@@ -32,10 +32,10 @@ One boss, drawn at random, goes face down under the feed. A crew draws 2 items (
 
 **Baseline it.** A newly flipped alarm with a tuck band, or a comeback with one (one more die), can be baselined; never the boss. Set the band's 3 dice too, all showing its main number's opposite side. Beat it with all of them and slide it under an agent someone holds, so only its blue **tuck band** shows below the agent card. That agent gains the band's **trait**; most traits work for the agent's **holder**, so which agent (and whose) matters. An agent holds **two** at most, and with two it is **upgraded** (its card says how: Triage rolls one more, Enrichment one more turn, Containment cuts 1 more, Recovery heals 2 more). Once every agent is full, a baselined alarm goes on the row with no trait. Tucked, the alarm is **off the row** (a card can't be in two places). Discard that agent and the alarm goes back on the row. No agents: set it aside until the next one is drawn.
 
-**After a fight.** Coin the next **Threat** box on the shift tracker. From 2 fights won, every alarm (not the boss) deals 1 more Damage; from 4, 2 more. Draw 2 items (solo 1) and decide who takes each.
+**After a fight.** Coin the next **Threat** box on the shift tracker. Once 3 fights are won, every alarm (not the boss) deals 1 more Damage for the rest of the shift. Draw 2 items (solo 1) and decide who takes each.
 
-- **Agents** are passive and work for the whole crew. Each player holds 2 (solo 4). Full? Discard one to take another.
-- **Consumables** don't take a slot. Keep them in hand and use each once.
+- **Agents** are passive and work for the whole crew. **Consumables** are used once.
+- Both take a slot: each player holds **4 items** (solo 6). Full? Discard one to take another. There is no hand.
 
 ### Alarms (15)
 
@@ -77,7 +77,7 @@ One line each since 2026-11-03; no wild numbers. Only the Engineer's turn needs 
 
 | Analyst | Doubles | Ability |
 | --- | --- | --- |
-| Hunter | 4, 6 | On point, you roll one more die. |
+| Hunter | 4, 6 | On point, you roll one more die. It’s never a double. |
 | Responder | 3, 6 | Your doubles can’t guard. Instead, a double heals anyone 5. |
 | Engineer | 1, 6 | Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. |
 | Soarcerer | 2, 6 | Any die you roll is a double for baselining: it takes two Baseline dice. |
@@ -131,18 +131,18 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-03 (guards for yourself, more HP). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a push on offer.
+Bot sims, `SYS=n6 N=600`, 2026-11-03 (one reroll rule, shared item slots). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 3 HP or less) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 52% | 21 pts | 40% | 87% | 13.5 | 3.3 | 58% | 31% |
-| Quick, 2p | 60% | 21 pts | 52% | 87% | 10.0 | 2.3 | 48% | 22% |
-| Quick, 4p | 54% | 19 pts | 43% | 90% | 8.6 | 1.9 | 47% | 22% |
-| Full, 1p | 55% | 22 pts | 41% | 88% | 16.1 | 5.8 | 41% | 14% |
-| Full, 2p | 57% | 16 pts | 48% | 87% | 12.7 | 4.4 | 32% | 15% |
-| Full, 4p | 51% | 18 pts | 34% | 90% | 10.8 | 3.5 | 46% | 13% |
+| Quick, 1p | 56% | 22 pts | 39% | 94% | 15.3 | 3.5 | 51% | 26% |
+| Quick, 2p | 49% | 20 pts | 50% | 95% | 10.5 | 2.5 | 56% | 27% |
+| Quick, 4p | 46% | 24 pts | 50% | 97% | 9.2 | 1.9 | 54% | 25% |
+| Full, 1p | 50% | 21 pts | 40% | 95% | 18.9 | 6.8 | 39% | 15% |
+| Full, 2p | 45% | 18 pts | 49% | 95% | 13.4 | 4.9 | 44% | 16% |
+| Full, 4p | 48% | 22 pts | 43% | 97% | 11.4 | 3.6 | 60% | 13% |
 
-Solo by analyst: Quick Hunter 59%, Responder 50%, Engineer 50%, Soarcerer 55%; Full 58 / 47 / 52 / 55%. Pairs (600 games each): Quick 56% (Engineer + Soarcerer) to 63% (Hunter + Engineer); Full 52% (Engineer + Soarcerer) to 63% (Hunter + Engineer).
+Solo by analyst: Quick Hunter 57%, Responder 52%, Engineer 58%, Soarcerer 58%; Full 56 / 47 / 54 / 48%. Pairs (600 games each): Quick 47% (Engineer + Soarcerer) to 51% (Responder + Engineer); Full 43% (Hunter + Soarcerer, Engineer + Soarcerer) to 49% (Responder + Engineer).
 
 ### Targets
 
@@ -150,26 +150,25 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 52 / 60 / 54% | 55 / 57 / 51% | the mode's HP, one point at a time; solo: starting items; 3–4p: their setup item |
-| Spread across crew sizes | 10 points or less | 8 | 6 | solo: starting items; 3–4p: the setup item (the + die is printed) |
-| Solo spread across analysts | 10 points or less | 9 | 11 (misses) | the analyst's ability, not their doubles |
-| Pairs, lowest to highest | within 15 points | 56–63% (7) | 52–63% (11) | the Hunter's pairs (strongest) |
-| Skill gap (smart − random) | 20 points or more | 21 / 21 / 19 (4p just misses) | 22 / 16 / 18 (crews miss) | more decisions per roll |
-| Rounds with a real decision | 60% or more | 87 / 87 / 90% | 88 / 87 / 90% | the push; its cost |
-| Rounds with a real dice choice | 40% or more | 40 / 52 / 43% | 41 / 48 / 34% (4p misses) | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 58 / 48 / 47% | 41 / 32 / 46% (2p misses) | the boss's Damage; the threat timing (`ESC`) |
-| Wins with a scare | 30% or more | 31 / 22 / 22% (crews miss) | 14 / 15 / 13% (misses) | the threat; HP; healing (`HEALX`) |
-| Comebacks per shift | 3–6 | 3.3 / 2.3 / 1.9 (crews miss) | 5.8 / 4.4 / 3.5 | the row numbers; the feed size |
-| Baselining worth doing | always beats never | +18 / 0 / +13 (2p misses) | +30 / +10 / +20 | the Baseline dice and the traits |
+| Win rate, every crew size | 50–60% | 56 / 49 / 46% (crews a little under) | 50 / 45 / 48% (crews a little under) | the mode's HP, one point at a time; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 10 | 5 | solo: starting items; 3–4p: the setup item (the + die is printed) |
+| Solo spread across analysts | 10 points or less | 6 | 9 | the analyst's ability, not their doubles |
+| Pairs, lowest to highest | within 15 points | 47–51% (4) | 43–49% (6) | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 22 / 20 / 24 | 21 / 18 / 22 (2p just misses) | more decisions per roll |
+| Rounds with a real decision | 60% or more | 94 / 95 / 97% | 95 / 95 / 97% | the reroll; its cost |
+| Rounds with a real dice choice | 40% or more | 39 / 50 / 50% (solo just misses) | 40 / 49 / 43% | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 51 / 56 / 54% | 39 / 44 / 60% (solo just misses) | the boss's Damage; the threat timing (`ESC`) |
+| Wins with a scare | 30% or more | 26 / 27 / 25% (misses) | 15 / 16 / 13% (misses) | the threat; HP; healing (`HEALX`) |
+| Comebacks per shift | 3–6 | 3.5 / 2.5 / 1.9 (crews miss) | 6.8 / 4.9 / 3.6 (solo just over) | the row numbers; the feed size |
+| Baselining worth doing | always beats never | +20 / +5 / +13 | +25 / +23 / +25 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
-| The boss is a climax (Full) | beating it once there: 75% or less | 72 / 74 / 69% | 67 / 66 / 66% | its row marks (`BOSSSTEPS`) |
+| The boss is a climax (Full) | beating it once there: 75% or less | 73 / 69 / 65% | 62 / 59 / 70% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
 
-- **More HP took the scares out**, most of all in Full Shift: only 13–15% of wins have someone at 3 HP or less (it was 27–36% at HP 12 and 9), and 2-player Full Shift losses now mostly come at the boss (68%). The squeeze had moved danger into the shift; at HP 17 the shift is safe again until the boss. If a table agrees, lower Full HP and keep the threat; or keep the HP and make the boss's row pulls hit harder.
-- **Baselining isn't worth it for a 2-player Quick crew** (always and never both 61%). With 12 HP, the cost (3 more dice) is cheap but so is not bothering.
-- **The Hunter is the strongest analyst** (solo 58–59%, in both top pairs).
-- **Quick Shift crews still see few comebacks** (2.3 / 1.9).
+- **Crews sit a few points under the band** (Quick 2p 49%, 4p 46%; Full 2p 45%), and solo above them in Quick (56%). One HP more for everyone, or a third setup item for 2 players, are the next things to try.
+- **Few scares** (13–27% of wins). The HP that the reroll's cost called for keeps crews safe until late.
+- **Quick Shift crews still see few comebacks** (2.5 / 1.9).
 - Paper tuck: up to two tucked alarms per agent, band under band. Untested at a table.
 - No human has played these rules yet. Teach time, play time and whether matching feels better than adding all need a table.
 
@@ -317,6 +316,37 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### One reroll rule, shared item slots, a clearer page (2026-11-03)
+
+The owner's asks: simplify the dice (what prompts a reroll?), make consumables take item slots (no hand), and make the page clearer. Also asked: what happens to a baselined alarm with no agent to tuck under? It waits beside the shift, face up and off the row, with its trait doing nothing, and slides under the next agent anyone takes; with every agent held already full (two tucked), it goes back on the row with no trait. Unchanged.
+
+#### What changed
+
+| Change | Detail |
+| --- | --- |
+| One reroll rule | "Once a round, take 1 to reroll one of your own dice" (never at 1 HP) replaces the free reroll and the push. The tracker's reroll boxes are now one per player. |
+| Items share the slots | Agents and consumables both take a slot: 4 a player (solo 6). Dealing to a full player discards any item of theirs, or keeps the new one out. |
+| Threat back to +1 once 3 fights are won | +1 per 2 fights (up to +2) needed so much HP that the scares went. |
+| HP | Quick 12, Full 17; solo starts with 2 items in both modes. |
+| Hunter | "On point, you roll one more die. It's never a double." In solo you're always on point, and with rerolls costing HP the extra die was worth the most there (solo 59%). |
+| The page | A step strip (Row, Roll, Match, Hits back) lights the current step; a "What now" panel says what to do in a line, with the rules folded under a Rules button (and a "What now" line above a multi-alarm fight); each row alarm shows its chance to come back on a roll ("Back on 2–3 · 8% a roll"); each player's items sit in the dock beside the dice, consumables with Use. |
+
+#### What was tried (`SYS=n6`, 400 games a row, 1p / 2p / 4p)
+
+| Variant | Quick (HP 12) | Full (HP 17) |
+| --- | --- | --- |
+| Before | 51 / 60 / 54% | 57 / 56 / 52% |
+| Reroll: 1 HP, once a fight (the owner's first idea) | 42 / 47 / 41%, real decision in 76–95% of rounds | 47 / 48 / 43% |
+| Reroll: 1 HP, once a round (kept) | 43 / 47 / 42%, 93–97% | 45 / 48 / 40% |
+| Free reroll each round, no push | 54 / 62 / 51%, 33–49% | 60 / 59 / 51% |
+| Consumables in slots, 2 each (solo 4) | 44 / 31 / 52% | 41 / 25 / 43% |
+| Consumables in slots, 3 each (solo 5) | 48 / 46 / 55% | 45 / 34 / 52% |
+| Consumables in slots, 4 each (solo 6) (kept) | 50 / 58 / 55% | 56 / 53 / 52% |
+| Both kept, then HP 13–14 / 18–19 | 46–53%, scares 16–27% | 42–48%, scares 5–20% |
+| Both kept, threat back to +1 once 3 are won | 49 / 50 / 49% at HP 12 | 51 / 50 / 49% at HP 16 |
+
+The Hunter's plain extra die and solo's second item then evened the solo analysts (Quick 41–59% to 52–58%), and Full went to HP 17.
 
 ### Guards for yourself, more HP (2026-11-03)
 

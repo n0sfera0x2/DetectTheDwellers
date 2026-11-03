@@ -418,5 +418,3 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 .shiftm b{font-family:var(--disp,inherit);text-transform:uppercase;letter-spacing:.06em}
 .shiftm:hover{border-color:var(--cy)}.shiftm[aria-pressed="true"]{border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy);background:#0E1A1F}.shiftm[aria-pressed="true"] b{color:var(--cy)}
 @media (max-width:560px){.modes{grid-template-columns:1fr}}
-/* Forensics' look at the top card (review 2): the card beside the bury button. */
-.t-peekc{display:flex;gap:12px;align-items:flex-start;margin:8px 0}.t-peekc .t-slot{--z:.55}

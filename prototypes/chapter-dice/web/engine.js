@@ -34,15 +34,15 @@
   function rng(seed) { let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   const shuffle = (a, r) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const clone = x => JSON.parse(JSON.stringify(x));
-  const nameOf = id => CARDS.cls(id).name; // the game data's analysts, plus review 2's Forensics and Shift Lead (cards.js)
+  const nameOf = id => CARDS.cls(id).name; // the analyst's name, from the shared cards
 
   // ---- Setup ------------------------------------------------------------------------------------------------
   // The modes (2026-11-02): one situation deck holds all 15 alarms and 18 situations. Quick Shift deals 8 of the 24
   // core cards (8 since 2026-11-02: 6 left too few comebacks); Full Shift deals 3 story cards and 11 core. The boss is drawn from three; its row trigger is Full Shift
   // only. Same deals as sim.js MODE, DEALQ, DEALF and STORYF.
-  // The squeeze (2026-11-03): Quick HP 8, and solo starts with 3 items (Quick) or 4 (Full), against bosses that hit for
-  // 5, alarms that hit 1 harder from the fourth fight, and the push.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 8, soloItems: 3, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 10, soloItems: 4, bossRow: true } };
+  // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
+  // with one passive line each (same day): Quick HP 9, Full HP 13, solo starts with 2 items in both.
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 9, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 13, soloItems: 2, bossRow: true } };
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -63,7 +63,7 @@
       // The item deck (cards.js ITEM_DECK), each card a { uid, t }. Drawn items wait in G.deal until someone takes them.
       kit: shuffle(CARDS.ITEM_DECK.map((t, i) => ({ uid: 'k' + (i + 1), t })), r), discard: [], deal: [], dealNext: 'flip',
       agents: team.map(() => []), hand: team.map(() => []), freeze: false,
-      sit: null, sitDone: false, badgeSkip: false, once: { slip: {}, ticket: {}, move: false }, spotUsed: team.map(() => 0), slipOn: [], handed: false, pending: [], mute: 0, bonusDraw: 0, engUsed: false, resUsed: false, stand: null, aug: [], tuck: [], flipped: null, augReroll: false,
+      sit: null, sitDone: false, badgeSkip: false, once: { slip: {}, ticket: {} }, spotUsed: team.map(() => 0), slipOn: [], pending: [], mute: 0, bonusDraw: 0, engUsed: false, aug: [], tuck: [], flipped: null, augReroll: false,
       cond: team.map(() => ({ rattled: false, exposed: false, focused: false })),
       point: 0, phase: 'flip', fight: 0, won: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
       over: false, win: false, log: [], rows: [], lastRow: null, drawn: [], beaten: [],
@@ -198,7 +198,7 @@
     say(G, `Row roll ${pair.join(' + ')}${plus ? ' + 1 (Scramble)' : ''} = ${roll} (${why}): ${back.length ? back.map(m => m.name).join(', ') + (back.length > 1 ? ' come back.' : ' comes back.') : 'nothing comes back.'}`, 'row');
     if (called) say(G, `Callback: rerolled the ${called[0]}, now a ${called[1]}.`, 'kit');
     // The Responder in the crew: arrival hits deal the Responder's crewmates 1 less.
-    for (const m of strikes) G.team.forEach((id, k) => hurt(G, k, dmgOf(G, m) - (on(G, 'RES') && id !== 'RES' ? 1 : 0), `${m.name} arrives`));
+    for (const m of strikes) G.team.forEach((id, k) => hurt(G, k, dmgOf(G, m), `${m.name} arrives`));
     return back;
   }
   function enter(G, m) {
@@ -218,14 +218,13 @@
   function flip(G) {
     if (G.phase !== 'flip') fail('Not time to flip.');
     if (sitDue(G)) return revealSit(G);
-    G.fight++; G.round = 0; G.stats.flips++; G.play = []; G.beaten = []; G.sit = null; G.sitDone = false; G.resUsed = false; G.stand = null;
+    G.fight++; G.round = 0; G.stats.flips++; G.play = []; G.beaten = []; G.sit = null; G.sitDone = false;
     G.once = { slip: {}, ticket: {}, move: false }; // once-a-fight trait uses (Slip, Golden ticket) and the Soarcerer's move
     const pend = G.pending; G.pending = [];
     if (G.feed.length) {
       const m = G.feed.shift();
       // Fell back (The Badge That Wasn’t): this alarm goes straight on the row, unfought. No fight, no row roll, no draw.
       if (G.badgeSkip) { G.badgeSkip = false; G.pending = pend; G.row.push(m); G.stats.skipped = (G.stats.skipped || 0) + 1; G.phase = 'flip'; say(G, `Flip ${G.fight}: ${m.name}. You fell back: it goes straight on the row, unfought (back on 2–${m.top}).`, 'flip'); return G; }
-      if (m.fewer && m.slots.length > 1) { m.cut1 = m.slots.pop(); m.off.pop(); m.hits--; say(G, `${m.name} sets one fewer threat die (Forensics read it first).`, 'mob'); } m.fewer = false;
       muteOn(G, m); G.flipped = m.uid; say(G, `Flip ${G.fight}: ${m.name}. ${nameOf(G.team[G.point])} is on point.`, 'flip');
       const back = rollRow(G, true, 'the flip'); if (G.over) return G;
       enter(G, m); [...pend, ...back].forEach(b => enter(G, b));
@@ -245,13 +244,13 @@
   }
   // Extra dice for this visit only (Pager Storm's 6, the Baseline dice) leave when it is beaten: a comeback has its printed dice.
   const unmute = m => { m.plus = 0; const k = (m.muted || 0) + (m.based || 0); if (k) { m.slots.splice(-k); m.off.splice(-k); m.offStack = m.offStack.filter(p => p < m.slots.length); m.hits -= k; m.muted = 0; m.based = 0; }
-    if (m.cut1 != null) { m.slots.push(m.cut1); m.off.push(false); m.hits++; m.cut1 = null; } }; // Forensics' missing die is back for a comeback
+    };
 
   // ---- Baselining ----------------------------------------------------------------------------------------------
   // Before the first roll, on point may baseline the alarm just flipped (never a comeback or the boss): it sets the
   // four dice on its Baseline line, at every crew size. Beat it with them and it tucks under an agent.
   // Review 2: a comeback can be baselined too, with one more Baseline die; the Soarcerer makes it 2 (a comeback 3).
-  const baseCost = (G, m) => (on(G, 'SOA') ? 2 : CARDS.BASE_N) + (m.back ? 1 : 0);
+  const baseCost = (G, m) => CARDS.BASE_N + (m.back ? 1 : 0);
   const canBaseline = (G, m) => !!m && G.phase === 'roll' && G.round === 0 && (m.uid === G.flipped || m.back > 0) && !m.boss && !m.based && !!CARDS.BASE[m.id] && G.play.includes(m);
   function baseline(G, uid) {
     const m = findMob(G, uid); if (!m) fail('That alarm isn’t in the fight.');
@@ -268,7 +267,6 @@
     if (tuckedOn(G, uid) >= CARDS.TUCK_CAP) fail(`That agent already holds ${CARDS.TUCK_CAP} tucked alarms.`);
     const a = G.tuck.shift(), c = h.c; G.aug.push({ ...a, host: c.uid }); G.stats.baselined = (G.stats.baselined || 0) + 1;
     say(G, `${a.name} is baselined: it tucks under ${nameOf(G.team[h.k])}’s ${KIT_NAME[c.t]}. ${CARDS.BASE[a.id]}`, 'kit');
-    if (on(G, 'SOA')) { const got = draw(G, 1); say(G, `The Soarcerer automates it: drew ${got.length ? 'the ' + KIT_NAME[got[0].t] : 'nothing'}.`, 'kit'); }
     if (!G.tuck.length) toDeal(G, 'flip');
     return G;
   }
@@ -377,7 +375,7 @@
     // Rattled: that player's dice in this roll have no doubles (they stay single if turned later). Then it's gone.
     dice.forEach(d => { if (d.crew && G.cond[d.k].rattled) { d.rattled = true; d.dbl = false; } });
     G.cond.forEach((c, k) => { if (c.rattled) { c.rattled = false; say(G, `${nameOf(G.team[k])} rolled Rattled: no doubles. Rattled is discarded.`, 'sit'); } });
-    G.dice = dice; G.augReroll = aug(G, 'spray'); G.rerolled = G.team.map(() => false); G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = []; G.spotUsed = G.team.map(() => 0); G.handed = false; G.pushed = G.team.map(() => false); G.slipOn = []; G.leadReroll = G.n === 1 && on(G, 'LEAD'); // the solo Shift Lead: one more reroll
+    G.dice = dice; G.augReroll = aug(G, 'spray'); G.rerolled = G.team.map(() => false); G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = []; G.spotUsed = G.team.map(() => 0); G.pushed = G.team.map(() => false); G.slipOn = [];
     G.roundDmg = {}; G.play.forEach(m => { G.roundDmg[m.uid] = dmgOf(G, m); });
     G.phase = 'assign';
     say(G, `Round ${G.round}: rolled ${dice.map(faceText).join(', ')}.`, 'roll');
@@ -394,13 +392,15 @@
     // Evasive: a double of another number takes out any one die (and is spent). Not after its first take.
     if (m.kw === 'hardened' && !G.wildAll && !hunts(G, d, m) && !free.some(i => m.slots[i] === d.n)) return d.takes.length ? null : { slots: free, near: [], wild: true, dbl: false, evade: true };
     if (G.wildAll || hunts(G, d, m)) return { slots: free, near: [], wild: true, dbl: d.dbl };
-    const exact = free.filter(i => m.slots[i] === d.n), near = []; // no one-higher-or-lower matches in this test
+    // The Soarcerer (2026-11-03): their dice take Baseline dice (the last m.based slots), whatever number they show.
+    const base = d.crew && G.team[d.k] === 'SOA' && m.based ? free.filter(i => i >= m.slots.length - m.based && m.slots[i] !== d.n) : [];
+    const exact = [...free.filter(i => m.slots[i] === d.n), ...base], near = []; // no one-higher-or-lower matches in this test
     if (!exact.length && !near.length) return null;
     return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
-  // The Hunter's 1s (own or the solo crew die) match any number on any alarm. Not a double: never on an Evasive alarm.
-  // Review 2: the Hunter's 1s are wild on a comeback (an alarm that came back), not on a fresh one.
-  const hunts = (G, d, m) => d.crew && G.team[d.k] === 'HUN' && d.n === 1 && !!m && m.back > 0;
+  // The Hunter's 1s (own or the solo crew die) match any number on a comeback or the boss. Not a double: never on an
+  // Evasive alarm.
+  const hunts = (G, d, m) => d.crew && G.team[d.k] === 'HUN' && d.n === 1 && !!m && (m.back > 0 || !!m.boss); // a comeback or the boss (2026-11-03)
   // A guard covers anyone (2026-10-31): any one player who isn't blocking yet, the guarder or a crewmate.
   const canGuard = (G, d) => !!d && d.crew && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && G.blocks.some(b => !b);
   // Who a guard could cover now: every player not yet blocking.
@@ -491,14 +491,14 @@
   }
   // Reroll: once a round each player may reroll one of their own dice (crew dice they rolled, the solo crew die, and
   // their Surge Playbook dice), before it is used or turned. It can't be undone.
-  const canReroll = (G, d) => !!d && G.phase === 'assign' && d.crew && !d.used && !(d.takes || []).length && !d.turned && !d.flipped && d.paired == null && (!(G.rerolled || [])[d.k] || G.augReroll || G.leadReroll);
+  const canReroll = (G, d) => !!d && G.phase === 'assign' && d.crew && !d.used && !(d.takes || []).length && !d.turned && !d.flipped && d.paired == null && (!(G.rerolled || [])[d.k] || G.augReroll);
   function reroll(G, di) {
     if (G.phase !== 'assign') fail('Roll first.');
     const d = G.dice[di]; if (!d) fail('No such die.');
     if (!d.crew) fail('Agent dice can’t be rerolled.'); if (d.used || d.takes.length) fail('That die is already used.'); if (d.turned || d.flipped) fail('A turned die can’t be rerolled.');
     if (d.paired != null) fail('Undo the pair first.');
-    if (G.rerolled[d.k] && !G.augReroll && !G.leadReroll) fail(`${nameOf(G.team[d.k])} has already rerolled this round.`);
-    const extra = G.rerolled[d.k]; if (extra) { if (G.augReroll) G.augReroll = false; else G.leadReroll = false; } // the Password Sprayer baseline: one more reroll a round
+    if (G.rerolled[d.k] && !G.augReroll) fail(`${nameOf(G.team[d.k])} has already rerolled this round.`);
+    const extra = G.rerolled[d.k]; if (extra) G.augReroll = false; // the Password Sprayer baseline: one more reroll a round
     const was = d.n; d.n = 1 + d6(G); d.dbl = dieDbl(G, d, d.n); G.rerolled[d.k] = true; G.undo = [];
     G.stats.rerolls = (G.stats.rerolls || 0) + 1;
     say(G, `${dieOwner(G, d)} rerolls a ${was}: ${faceText(d)}${extra ? ' (Password Sprayer baseline)' : ''}.`, 'roll');
@@ -556,27 +556,6 @@
     G.undo = []; G.once.slip[k] = (G.once.slip[k] || 0) + 1; G.slipOn.push({ k, uid }); G.stats.items.slip++;
     say(G, `Slip: ${m.name}’s hit will miss ${nameOf(G.team[k])} this round.`, 'kit'); return G;
   }
-  // The Shift Lead: once a round, give one of their dice to a crewmate; it uses the crewmate's doubles.
-  const canHand = (G, d) => !!d && G.n > 1 && G.phase === 'assign' && on(G, 'LEAD') && !G.handed && d.crew && d.k === G.team.indexOf('LEAD') && !d.used && !(d.takes || []).length && d.paired == null;
-  function hand(G, di, k) {
-    const d = G.dice[di]; if (!canHand(G, d)) fail('The Shift Lead can’t hand that die.'); if (!(k >= 0 && k < G.n) || k === d.k) fail('Hand it to a crewmate.');
-    G.undo.push(snap(G)); d.k = k; d.src = 'own'; d.dbl = dieDbl(G, d, d.n); d.handed = true; G.handed = true; G.stats.handed = (G.stats.handed || 0) + 1;
-    say(G, `The Shift Lead hands a ${faceText(d)} to ${nameOf(G.team[k])}.`, 'kit'); return G;
-  }
-  // Forensics: before each flip, look at the top card of the feed; you may put it on the bottom.
-  const flipIx = G => G.feedTotal - G.feed.length;
-  const canPeek = G => G.phase === 'flip' && on(G, 'FOR') && G.feed.length > 1 && G.peekAt !== flipIx(G);
-  function peek(G) { if (!canPeek(G)) fail('Forensics has looked already.'); G.peekAt = flipIx(G); G.peeked = G.feed[0]; if (!G.peeked.sit) G.peeked.fewer = true;
-    say(G, `Forensics looks at the top card: ${G.peeked.sit ? sitName(G.peeked.sit) : G.peeked.name + '. Read in advance, it sets one fewer threat die'}.`, 'sit'); return G; }
-  function bury(G) { if (G.phase !== 'flip' || !G.peeked || G.feed[0] !== G.peeked) fail('Look at the top card first.'); if (!G.peeked.sit) fail('Forensics buries situations only: an alarm it read sets one fewer die instead.'); G.feed.push(G.feed.shift()); say(G, `Forensics buries ${G.peeked.sit ? sitName(G.peeked.sit) : G.peeked.name} at the bottom of the feed.`, 'sit'); G.peeked = null; G.stats.buried = (G.stats.buried || 0) + 1; return G; }
-  // The Soarcerer: once a fight, move a tucked alarm to another agent (not a full one).
-  const canMove = G => on(G, 'SOA') && !G.over && !(G.once && G.once.move) && G.aug.some(a => a.host);
-  function moveTuck(G, id, toUid) {
-    if (!canMove(G)) fail('The Soarcerer has moved a tucked alarm this fight already.');
-    const a = G.aug.find(x => x.id === id && x.host); if (!a) fail('That alarm isn’t tucked.'); const to = cardOf(G, toUid); if (!to || to.uid === a.host) fail('Pick another agent someone holds.');
-    if (tuckedOn(G, toUid) >= CARDS.TUCK_CAP) fail('That agent is full.');
-    a.host = toUid; if (!G.once) G.once = {}; G.once.move = true; say(G, `The Soarcerer moves ${a.name} under the ${KIT_NAME[to.t]}.`, 'kit'); return G;
-  }
   // Focused: once, after rolling, turn one of your own crew dice to any number. It reads as its new number (a double
   // if that number is one of yours). Spends the Focused card; can't be undone.
   const canFocus = (G, d) => !!d && G.phase === 'assign' && d.crew && !d.used && !(d.takes || []).length && d.paired == null && G.cond[d.k].focused;
@@ -603,16 +582,6 @@
     say(G, `${dieOwner(G, d)} turns a ${d.from} to its opposite side: ${faceText(d)}. It counts as one die.`, 'kit');
     return G;
   }
-  // The Responder: once a fight, after rolling, pick a mob in the fight: it deals no damage this round. Can't be undone.
-  const canStand = G => G.phase === 'assign' && on(G, 'RES') && !G.resUsed;
-  function stand(G, uid) {
-    if (G.phase !== 'assign') fail('Roll first.');
-    if (!on(G, 'RES')) fail('Only the Responder stands an alarm down.'); if (G.resUsed) fail('The Responder has stood an alarm down this fight already.');
-    const m = findMob(G, uid); if (!m || !left(m)) fail('Pick an alarm still in the fight.');
-    G.stand = m.uid; G.resUsed = true; G.undo = []; G.stats.stand = (G.stats.stand || 0) + 1;
-    say(G, `The Responder stands ${m.name} down: it deals no damage this round.`, 'kit');
-    return G;
-  }
   function unassign(G) {
     if (G.phase !== 'assign' || !G.undo.length) fail('Nothing to undo.');
     const s = G.undo.pop(); G.dice = s.dice; G.blocks = s.blocks; G.enrichLeft = s.enrichLeft;
@@ -625,7 +594,7 @@
   // Returns { total: per analyst, by: [{ uid, name, dmg, to: [k...] }] (per alarm, before Containment),
   // hits: [{ k, uid, name, dmg, cut }] (what reaches each analyst), contain: per analyst, exposed: [k...] }.
   function incoming(G, blocks = G.blocks) {
-    const total = G.team.map(() => 0), by = [], hits = [], up = G.play.filter(m => left(m) && m.uid !== G.stand); // a stood-down mob deals nothing
+    const total = G.team.map(() => 0), by = [], hits = [], up = G.play.filter(m => left(m));
     const dm = new Map(up.map(m => [m, dmgOf(G, m)]));
     // Containment Agent (crew-wide since 2026-11-01): per card, the highest-Damage alarm deals 2 less, never below 1.
     const cutBy = new Map();
@@ -633,6 +602,8 @@
     for (let i = 0; i < running(G, 'contain'); i++) { const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (!t || t[1] <= 1) break; const c = Math.min(t[1] - 1, D.containCut); dm.set(t[0], t[1] - c); cutBy.set(t[0], (cutBy.get(t[0]) || 0) + c); }
     if (!aiUp(G)) G.agents.flat().filter(c => c.t === 'contain' && upgraded(G, c.uid)).forEach(() => { const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) { dm.set(t[0], t[1] - 1); cutBy.set(t[0], (cutBy.get(t[0]) || 0) + 1); } }); // upgraded: 1 more
     if (aug(G, 'mailer')) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], t[1] - 1); } // the Mailer Daemon baseline
+    // The Responder (2026-11-03): the alarm with the highest Damage deals 1 less, after Containment.
+    if (on(G, 'RES')) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 0) { dm.set(t[0], t[1] - 1); cutBy.set(t[0], (cutBy.get(t[0]) || 0) + 1); } }
     for (const m of up) {
       const d = dm.get(m), pierce = m.kw === 'noblock'; let to = [], each = d;
       if (m.kw === 'onpoint') { each = d * 2; if (pierce || !blocks[G.point]) to = [G.point]; }
@@ -668,7 +639,6 @@
     for (const m of beaten) {
       if (m.boss) continue;
       // The Hunter in the crew ends persistence: a beaten comeback leaves the game.
-      if (on(G, 'HUN') && m.back > 0 && !m.based && !G.once.hunt) { G.once.hunt = true; unmute(m); G.gone.push(m); G.stats.gone++; say(G, `${m.name} came back once too often: the Hunter ends it (once a fight). It leaves the game.`, 'beat'); continue; }
       // Every beaten mob goes back on the row, however often it has come back.
       // Baselined: the card tucks under an agent instead of going on the row (it can't be in two places).
       if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid, mob: m }); unmute(m); say(G, `${m.name} is beaten with its Baseline dice. It tucks under an agent, off the row.`, 'win'); continue; }
@@ -687,7 +657,7 @@
     const allC = running(G, 'contain'), plainC = G.agents.flat().filter(c => c.t === 'contain').length;
     if (allC > plainC) I.twin += Math.round(inc.hits.reduce((s, h) => s + h.cut, 0) * (allC - plainC) / allC);
     inc.exposed.forEach(k => hurt(G, k, 1, 'Exposed'));
-    G.dice = []; G.undo = []; G.wildAll = false; G.blocks = G.team.map(() => false); G.stand = null;
+    G.dice = []; G.undo = []; G.wildAll = false; G.blocks = G.team.map(() => false);
     if (G.over) return G;
     for (const m of G.play) {
       m.up++;
@@ -709,7 +679,7 @@
     draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + G.bonusDraw); G.bonusDraw = 0; // + Hold the room
     // With no agent held, a baselined alarm waits for the next agent dealt.
     // Every held agent full (two tucked alarms each): the baselined alarm goes on the row instead, with no trait.
-    if (G.tuck.length && heldAgents(G).length && heldAgents(G).every(h => upgraded(G, h.c.uid))) { G.tuck.forEach(a => { G.row.push(a.mob); say(G, `${a.name} is baselined, but every agent already holds two: it goes on the row.`, 'kit'); }); G.tuck = []; }
+    if (G.tuck.length && heldAgents(G).length && heldAgents(G).every(h => tuckedOn(G, h.c.uid) >= CARDS.TUCK_CAP)) { G.tuck.forEach(a => { G.row.push(a.mob); say(G, `${a.name} is baselined, but every agent already holds two: it goes on the row.`, 'kit'); }); G.tuck = []; }
     if (G.tuck.length && !heldAgents(G).length) { G.tuck.forEach(a => { G.aug.push({ ...a, host: null }); say(G, `${a.name} is baselined. Nobody holds an agent: it waits for the next agent dealt.`, 'kit'); }); G.tuck = []; }
     if (G.tuck.length) { G.dealNext = 'flip'; G.phase = 'tuck'; return G; }
     return toDeal(G, 'flip');
@@ -772,6 +742,6 @@
     return G;
   }
 
-  return { aug, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, canSpot, spotlight, canTicket, ticket, canSlip, slip, canHand, hand, canPeek, peek, bury, canMove, moveTuck, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, stand, canStand, hunts, roll, assign, guard, enrichTurn, unassign, endRound,
+  return { aug, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, canSpot, spotlight, canTicket, ticket, canSlip, slip, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, hunts, roll, assign, guard, enrichTurn, unassign, endRound,
     give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canPush, push, threat, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

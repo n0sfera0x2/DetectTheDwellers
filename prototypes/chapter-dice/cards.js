@@ -26,15 +26,15 @@
   // analyst; every other die (the solo crew die, the Triage agent die) doubles only on a 6.
   // Same numbers as sim.js DOUBLES (web/spec.js checks they agree).
   // Signature doubles (2026-10-31): one number of your own plus the 6 everyone has.
-  const DOUBLES = { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6], FOR: [5, 6], LEAD: [2, 6], CREW: [6], AGENT: [6] };
+  const DOUBLES = { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6], CREW: [6], AGENT: [6] };
   const isDouble = (id, n) => (DOUBLES[id] || DOUBLES.CREW).includes(n);
   // The persistence row on 2d6: a row mob comes back if the sum is at most its number. The data's d20 ranges map by
   // tier (top 12+ → 5, 10–11 → 4, 8–9 → 3, 7 or less → 2): every beaten mob goes back to the row, so the odds sit
   // three lower than they did when a comeback was gone for good. Same as sim.js rowTop (ROWSHIFT 3).
   const rowTop = N => N >= 12 ? 5 : N >= 10 ? 4 : N >= 8 ? 3 : 2;
-  // The two analysts new in review 2 aren't in the game data: their names here, their portraits borrowed (Forensics: the
-  // magnifier scene fp; the Shift Lead: the retired PAT analyst's portrait) until they get their own.
-  const EXTRA_CLASSES = [{ id: 'FOR', name: 'Forensics' }, { id: 'LEAD', name: 'Shift Lead' }], ANALYST_ART = { FOR: 'fp', LEAD: 'PAT' };
+  // Analysts that aren't in the game data, with borrowed portraits. None since 2026-11-03 (Forensics and the Shift Lead
+  // were cut); the hooks stay for the next one.
+  const EXTRA_CLASSES = [], ANALYST_ART = {};
   const cls = id => D.classes.find(c => c.id === id) || EXTRA_CLASSES.find(c => c.id === id);
   // The dice printed on a mob or boss card: the base dice (sim.js numbersFor, clustered round the mob's main number,
   // printed low to high so they're quick to set out) and the + die a crew adds per player past three: always a 6.
@@ -106,14 +106,11 @@
   ${strip(diceFor(b, true), 24)}</div>`;
   }
   const PERK = {
-    // Review 2 (2026-11-02): the Hunter ends persistence, the Responder softens arrivals, the Soarcerer runs the
-    // baselines, and two new analysts: Forensics (the feed) and the Shift Lead (handing dice). Same as sim.js.
-    HUN: 'Your 1s match any number on a comeback. Once a fight, a comeback the crew beats leaves the game.',
-    RES: 'Once a fight, after you roll, pick an alarm: it deals no damage this round. Arrivals deal your crewmates 1 less.',
+    // One passive line each since 2026-11-03, nothing to track but the Engineer's turn. Same as sim.js.
+    HUN: 'Your 1s match any number on a comeback or the boss.',
+    RES: 'The alarm with the highest Damage deals 1 less.',
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
-    SOA: 'Baselining costs 2 dice, not 3. Each tuck draws an item. Once a fight, move a tucked alarm to another agent.',
-    FOR: 'Before each flip, look at the top card. An alarm sets one fewer threat die; anything else you may put on the bottom.',
-    LEAD: 'Once a round, give one of your dice to a crewmate: it uses their doubles. Solo: one more reroll a round.',
+    SOA: 'Your dice take Baseline dice, whatever number they show.',
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'standard d6')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
@@ -154,7 +151,7 @@
 
   <div class="trow"><b>Threat: fights won</b>${[1, 2, 3].map(n => box(n)).join('')}${box('Alarms +1')}</div>
   <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Twin')}</div>
-  <div class="trow"><b>This fight</b>${box('Responder stand')}${box('Hold the room: +1 item')}</div>
+  <div class="trow"><b>This fight</b>${box('Hold the room: +1 item')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
   <div class="note"><b>Escalating:</b> a coin on it each round. <b>Regen:</b> line up taken dice; it puts back the last.</div></div>`;
   // Situations (2026-10-30; shuffled into the feed with the alarms since 2026-11-02, the boss underneath). Who's on point is
@@ -201,7 +198,7 @@
   // The prototype's card set: six alarms, the Lockjaw Syndicate, four analysts, 16 items (6 agents, 10 consumables).
   // Since 2026-11-02 the whole production pool: 15 alarms and 3 bosses.
   const MOB_IDS = D.mobs.map(m => m.id), BOSS_IDS = D.bosses.map(b => b.id);
-  const BOSS_ID = 'wyrm', ANALYST_IDS = ['HUN', 'RES', 'ENG', 'SOA', 'FOR', 'LEAD'], AGENT_IDS = ['triage', 'enrich', 'contain', 'recover'], CONS_IDS = ['surge', 'intel', 'isolate', 'coffee', 'freeze'];
+  const BOSS_ID = 'wyrm', ANALYST_IDS = ['HUN', 'RES', 'ENG', 'SOA'], AGENT_IDS = ['triage', 'enrich', 'contain', 'recover'], CONS_IDS = ['surge', 'intel', 'isolate', 'coffee', 'freeze'];
   // The item deck, as sim.js KIT: Triage and Containment ×2, Enrichment and Recovery ×1, each consumable ×2.
   const ITEM_DECK = ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', ...CONS_IDS.flatMap(t => [t, t])];
   const mobs = () => MOB_IDS.map(id => D.mobs.find(m => m.id === id));

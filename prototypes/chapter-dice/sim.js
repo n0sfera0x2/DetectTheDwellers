@@ -88,7 +88,7 @@ const EVASIVE = process.env.EVASIVE || 'one';
 // place of the heals (healing after fights moved the Fixer under 1 pt; choose = heal or draw an agent, no gain).
 // ENGDBL=0: the die the Engineer turns counts as one die (ENG solo 64% → 59%). 'old' is each earlier perk.
 const NEWITEMS = (process.env.ITEMS || 'new') === 'new'; // the item deck (see KIT below)
-const RESPERK = process.env.RESPERK || 'stand', SOAPERK = process.env.SOAPERK || (NEWITEMS ? 'auto' : 'keep'), PATPERK = process.env.PATPERK || 'nudge';
+const RESPERK = process.env.RESPERK || 'none', SOAPERK = process.env.SOAPERK || (NEWITEMS ? 'none' : 'keep'), PATPERK = process.env.PATPERK || 'nudge';
 // Review 2 (2026-11-02). SOAPERK=auto (default): the Soarcerer is the baseline specialist: the crew's baselines set 2
 // dice, not 3 (and once a fight it may move a tucked alarm; the bot never does). SOAPERK=slot: one more agent slot.
 const SOAAUTO = SOAPERK === 'auto';
@@ -101,10 +101,10 @@ const SOAAUTO = SOAPERK === 'auto';
 // alarm tucks), FORCUT=1 (Forensics: an alarm it looks at sets one fewer die).
 // Defaults chosen in the review-2 tuning (solo spread 8 Quick, 9 Full): the solo Shift Lead rerolls one more die, the
 // Soarcerer draws on a tuck, Forensics cuts a die.
-const LEADSOLO = process.env.LEADSOLO || 'reroll', SOATUCK = process.env.SOATUCK !== '0', FORCUT = process.env.FORCUT !== '0';
+const LEADSOLO = process.env.LEADSOLO || 'reroll', SOATUCK = process.env.SOATUCK === '1', FORCUT = process.env.FORCUT !== '0';
 // HUNEND=once (default): once a fight, a beaten comeback leaves the game. RESARR=crew (default): arrivals deal the Responder's
 // crewmates 1 less ('1': everyone, 'once': the first arrival hit each fight).
-const HUNEND = process.env.HUNEND || 'once', RESARR = process.env.RESARR || 'crew', BASEBACK = process.env.BASEBACK !== '0', FORPEEK = process.env.FORPEEK !== '0';
+const HUNEND = process.env.HUNEND || '0', RESARR = process.env.RESARR || '0', BASEBACK = process.env.BASEBACK !== '0', FORPEEK = process.env.FORPEEK !== '0';
 // Baselining (2026-10-31): every alarm prints a harder "Baseline it" condition. When it first flips, on point may set
 // BASEDICE more threat dice (its main number's opposite side, 7 − main). Beat it with them and it is baselined: it
 // tucks under an agent, which gains its ability while that agent stays in the tray (burning or discarding the agent
@@ -148,7 +148,11 @@ const TRAIT = process.env.TRAITSET === 'agent' ? { imp: 'twin', druid: 'stealth'
   : { imp: 'spotlight', druid: 'slip', specter: 'ticket', wyrmling: 'momentum', mimic: 'persist', leech: 'siphon', bat: 'callback', wraith: 'twin' };
 // CAP: traits one agent can hold (B3); UPGRADE=1: an agent with CAP traits also gets one step of its own number.
 const CAP = +(process.env.CAP || 2), UPGRADE = process.env.UPGRADE !== '0';
-const upgraded = (G, i) => UPGRADE && traitsOf(G, i).length >= 2;
+// SOANEW (2026-11-03): wildbase (default) = the Soarcerer's dice take Baseline dice whatever they show; up1 = an agent
+// the Soarcerer holds is upgraded with one tucked alarm; pair5 = the Soarcerer's 2s and 5s match each other. RESNEW: top = the highest-Damage alarm deals 1 less to everyone; self = every
+// hit deals the Responder 1 less.
+const SOANEW = process.env.SOANEW ?? 'wildbase', RESNEW = process.env.RESNEW ?? 'top'; // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
+const upgraded = (G, i) => UPGRADE && traitsOf(G, i).length >= (SOANEW === 'up1' && G.team[G.trayK ? G.trayK[i] || 0 : 0] === 'SOA' ? 1 : 2);
 // Which agent the bot tucks each trait under, best first.
 const TUCK = { twin: process.env.TWINTO === 'contain' ? ['contain', 'triage', 'recover', 'enrich'] : ['triage', 'contain', 'recover', 'enrich'], stealth: ['triage', 'contain', 'recover', 'enrich'], relay: ['triage', 'contain', 'recover', 'enrich'], repair: ['recover', 'contain', 'triage', 'enrich'], ghost: ['enrich', 'recover', 'contain', 'triage'], scramble: ['enrich', 'recover', 'contain', 'triage'] };
 const traitsOf = (G, i) => (G.trayT && G.trayT[i]) || [];
@@ -158,6 +162,8 @@ const traitN = (G, tr) => G.play && aiUp(G) ? 0 : G.tray.reduce((s, _, i) => s +
 // Returns true (tucked), 'full' (every agent holds CAP traits: the alarm goes on the row) or false (no agent: it waits).
 function tuckTrait(G, tr) {
   const order = TUCK[tr] || ['triage', 'contain', 'recover', 'enrich'];
+  // SOANEW=up1: one tuck upgrades a Soarcerer's agent, so the bot tucks there first.
+  if (SOANEW === 'up1') for (const t of order) { const i = G.tray.findIndex((x, j) => x === t && G.team[G.trayK[j] || 0] === 'SOA' && !traitsOf(G, j).length); if (i >= 0) { G.trayT[i].push(tr); return true; } }
   for (const t of order) { const i = G.tray.findIndex((x, j) => x === t && traitsOf(G, j).length < CAP); if (i >= 0) { G.trayT[i].push(tr); return true; } }
   return G.tray.some(isAgent) ? 'full' : false;
 }
@@ -169,7 +175,7 @@ function tuckTrait(G, tr) {
 const USE = NEWITEMS && process.env.TWOSIDED !== '1' ? { triage: 'surge', enrich: 'intel', contain: 'isolate', recover: 'coffee' } : { triage: 'triage', enrich: 'enrich', contain: 'contain', recover: 'recover' };
 const AGENTS = ['triage', 'enrich', 'contain', 'recover'], isAgent = t => AGENTS.includes(t);
 const KIT = NEWITEMS ? (process.env.KITJSON ? JSON.parse(process.env.KITJSON) : ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', 'surge', 'surge', 'intel', 'intel', 'isolate', 'isolate', 'coffee', 'coffee', 'freeze', 'freeze']) : ['triage', 'enrich', 'contain', 'recover'];
-const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : CREWSLOTS * G.n) + (on(G, 'SOA') && !SOAAUTO && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
+const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : CREWSLOTS * G.n) + (on(G, 'SOA') && !SOAAUTO && SOAPERK !== 'none' && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
 // Each item has a holder (G.trayK, parallel to G.tray): 2 slots each (the Soarcerer 3), solo 4. Since 2026-11-01 agents
 // work for the whole crew (Containment cuts the highest-Damage alarm for everyone, Recovery heals the crew, Enrichment
 // turns any crew die) and TRIAGE=crew: a Triage Agent's holder rolls one more of their own dice. PERSONAL=1: the old
@@ -177,7 +183,7 @@ const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 4) : CRE
 const TRIAGE = process.env.TRIAGE || (NEWITEMS ? 'crew' : 'agent'); // crew: the holder's own die (it can pair, guard and hit the boss); agent: an agent die
 const CREWSLOTS = +(process.env.CREWSLOTS || 2); // agent slots per player in a crew
 const PERSONAL = NEWITEMS && process.env.PERSONAL === '1'; // crew-wide agents since 2026-11-01; PERSONAL=1: agents work only for their holder
-const slotsK = (G, k) => G.n === 1 ? slotsOf(G) : CREWSLOTS + (G.team[k] === 'SOA' && !SOAAUTO && process.env.SOASLOT !== '0' ? 1 : 0);
+const slotsK = (G, k) => G.n === 1 ? slotsOf(G) : CREWSLOTS + (G.team[k] === 'SOA' && !SOAAUTO && SOAPERK !== 'none' && process.env.SOASLOT !== '0' ? 1 : 0);
 // CONSFREE=1: consumables don't take a slot (slots hold agents); you keep any number of consumables.
 const CONSFREE = NEWITEMS && process.env.CONSFREE !== '0';
 const held = (G, k) => G.trayK.filter((x, i) => x === k && !(CONSFREE && !isAgent(G.tray[i])) && !has(G, i, 'stealth')).length;
@@ -356,8 +362,11 @@ function matchAt(G, d, m, need, wild) {
   if (m.kw === 'hardened' && EVASIVE === 'wild') return need.length ? 0 : -1;
   // EVASIVE=one: a double of another number still takes out one of its dice (the pair's second half can't).
   if (m.kw === 'hardened' && EVASIVE === 'one' && !need.includes(d.f[0])) return need.length && !d.half ? 0 : -1;
-  if (wild || d.wildAll || (d.crew && (m.back || huntsAny()) && hunts(G, d.k, v))) return need.length ? 0 : -1;
+  if (wild || d.wildAll || (d.crew && (m.back || huntsAny() || (process.env.HUNBOSS !== '0' && m.boss)) && hunts(G, d.k, v))) return need.length ? 0 : -1;
+  // SOANEW=wildbase: any of the Soarcerer's dice takes a Baseline die, whatever it shows.
+  if (SOANEW === 'wildbase' && id === 'SOA' && m.baselining) { const j = need.indexOf(7 - numbersFor(m.id, 1)[0]); if (j >= 0) return j; }
   const i = need.indexOf(v); if (i >= 0) return i;
+  if (SOANEW === 'pair5' && id === 'SOA' && (v === 2 || v === 5)) { const j = need.indexOf(7 - v); if (j >= 0) return j; }
   const adj = NEAR && ((id === 'HUN' && m.back) || (id === 'RES' && m === top(G)));
   return adj ? need.findIndex(x => Math.abs(x - v) === 1) : -1;
 }
@@ -374,11 +383,12 @@ function incoming(G, blocks) {
   for (let i = 0; i < cut; i++) { const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], Math.max(1, t[1] - D.containCut)); }
   if (!PERSONAL && !aiUp(G)) G.tray.forEach((x, i) => { if (x !== 'contain' || !upgraded(G, i)) return; const t = [...dm.entries()].filter(([m]) => m.kw !== 'noagent').sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], t[1] - 1); }); // upgraded: 1 more
   if (aug(G, 'mailer')) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t && t[1] > 1) dm.set(t[0], t[1] - 1); }
+  if (RESNEW === 'top' && on(G, 'RES')) { const t = [...dm.entries()].sort((a, b) => b[1] - a[1])[0]; if (t) dm.set(t[0], Math.max(0, t[1] - 1)); }
   for (const m of G.play) {
     const d = dm.get(m), pierce = m.kw === 'noblock';
     if (m.kw === 'onpoint') { if (pierce || !blocks[G.point]) { out[G.point] += d * 2; top1[G.point] = Math.max(top1[G.point], d * 2); } continue; }
     let ts = G.team.map((_, k) => k); if (m.kw === 'lowest') { const lo = Math.min(...G.hp); ts = ts.filter(k => G.hp[k] === lo); }
-    for (const k of ts) if (pierce || !blocks[k]) { out[k] += d; top1[k] = Math.max(top1[k], d); }
+    for (const k of ts) if (pierce || !blocks[k]) { const e = RESNEW === 'self' && G.team[k] === 'RES' ? Math.max(0, d - 1) : d; out[k] += e; top1[k] = Math.max(top1[k], e); }
   }
   // Personal Containment: what reaches its holder from their biggest hitter is 2 less per card, never below 1.
   if (PERSONAL && G.trayK) G.team.forEach((_, k) => { const c = activeK(G, 'contain', k); if (c && top1[k] > 1) out[k] -= Math.min(top1[k] - 1, c * D.containCut); });
@@ -593,7 +603,7 @@ function relay(G) {
 function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
-  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || (MODE === 'quick' ? 3 : MODE === 'full' ? 4 : 2)) - 1); // QSOLO: items a solo player starts with (since the squeeze, 2026-11-03: Quick 3, Full 4; classic 2)
+  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with (2 since the four-analyst pass, 2026-11-03)
   const sits = SIT && G.sys === 'n6';
   for (let f = 0; !G.over; f++) {
     G.point = G.hp.indexOf(Math.max(...G.hp));
@@ -622,7 +632,7 @@ function play(sys, team, opt) {
 
 // Every crew of the six analysts (2026-11-02 review 2: Forensics and Shift Lead): 6 solos, 15 pairs, 15 fours.
 function teams(ids = ANALYSTS) { const c = (a, n) => n === 0 ? [[]] : a.flatMap((x, i) => c(a.slice(i + 1), n - 1).map(r => [x, ...r])); return { 1: c(ids, 1), 2: c(ids, 2), 4: c(ids, 4) }; }
-const ANALYSTS = (process.env.ANALYSTS || 'HUN,RES,ENG,SOA,FOR,LEAD').split(',');
+const ANALYSTS = (process.env.ANALYSTS || 'HUN,RES,ENG,SOA').split(','); // Forensics and the Shift Lead cut 2026-11-03 (FOR, LEAD still run)
 module.exports = { SITS, play, teams, ANALYSTS, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, ROWSHIFT, pipDie, rowTop, KEY, DOUBLES };
 
 if (require.main === module) {

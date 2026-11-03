@@ -6,7 +6,7 @@ An original game by Binary Defense.
 
 **The game is played with standard d6s** (the chapter dice system, since 2026-10-31). Its rules, cards, sim, print-and-play sheet and web version live in [`prototypes/chapter-dice/`](prototypes/chapter-dice/README.md). Start there.
 
-- **63 cards, standard d6s in four colours, a few coins.** 1–4 players, six analysts to pick from. Quick Shift (8 cards, HP 9) or Full Shift (14 cards, HP 10), dealt fresh every shift from one situation deck, with one of three bosses.
+- **63 cards, standard d6s in four colours, a few coins.** 1–4 players, six analysts to pick from. Quick Shift (8 cards, HP 8) or Full Shift (14 cards, HP 10), dealt fresh every shift from one situation deck, with one of three bosses.
 - **You need:** crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber for the row, about 16 threat dice, and coins.
 
 The repo also still holds the **legacy d20 build** (72 cards, 10 d20s): its engine, web page, print deck, exports and balance sims. It builds and passes its tests, but new design work goes into the d6 game. When the d6 game is rewritten to production standards, it replaces the d20 build.

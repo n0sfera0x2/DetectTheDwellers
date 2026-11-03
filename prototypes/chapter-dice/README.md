@@ -1,6 +1,6 @@
 # Detect the Dwellers: chapter dice (d6)
 
-**Status:** this is the game. Chapter dice replaced the d20 system as the design direction on 2026-10-31. The d20 build (`src/`, `data/`, `ui/`, `deck/`, `sim/`) is legacy: it still builds and tests, but new design work happens here. The rules below are current as of [review 2](#review-2-eight-traits-six-analysts-real-choices-2026-11-02) (2026-11-02): eight agent traits, six analysts, choices on situations, on top of the full pool (one situation deck, Quick and Full Shift, three bosses). The sim (`SYS=n6`), the paper prototype and the web version all play them.
+**Status:** this is the game. Chapter dice replaced the d20 system as the design direction on 2026-10-31. The d20 build (`src/`, `data/`, `ui/`, `deck/`, `sim/`) is legacy: it still builds and tests, but new design work happens here. The rules below are current as of [the squeeze](#the-squeeze-push-threat-a-softer-boss-2026-11-03) (2026-11-03): bosses hit for 5, alarms hit harder from the fourth fight, and the push, on top of review 2 (eight agent traits, six analysts, choices on situations) and the full pool (one situation deck, Quick and Full Shift, three bosses). The sim (`SYS=n6`), the paper prototype and the web version all play them.
 
 This folder is still prototype code. Under the repo's prototype rules it gets rewritten to production standards before it replaces the d20 build; it isn't extended into production in place. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
@@ -12,8 +12,8 @@ This folder is still prototype code. Under the repo's prototype rules it gets re
 
 | Mode | Feed | HP | Solo starts with | Boss |
 | --- | --- | --- | --- | --- |
-| **Quick Shift** | deal 8 from the 24 core cards (alarms and core situations) | 9 | 1 item | its core ability only |
-| **Full Shift** | deal 11 core cards and 3 story cards, shuffled together (14) | 10 | 2 items | its core ability and its **Full Shift** row trigger |
+| **Quick Shift** | deal 8 from the 24 core cards (alarms and core situations) | 8 | 3 items | its core ability only |
+| **Full Shift** | deal 11 core cards and 3 story cards, shuffled together (14) | 10 | 4 items | its core ability and its **Full Shift** row trigger |
 
 One boss, drawn at random, goes face down under the feed. A crew draws 2 items. The number of alarms in a feed varies: about 4.3 in Quick, 6 in Full.
 
@@ -22,7 +22,7 @@ One boss, drawn at random, goes face down under the feed. A crew draws 2 items. 
 **A fight round.**
 
 1. **Row.** From the second round on, roll the row first.
-2. **Roll.** Everyone rolls one crew die; on point rolls two. Solo rolls two of their own plus the crew die. Each Triage Agent's holder rolls one more of their own dice. Once a round, each player may reroll one of their own dice.
+2. **Roll.** Everyone rolls one crew die; on point rolls two. Solo rolls two of their own plus the crew die. Each Triage Agent's holder rolls one more of their own dice. Once a round, each player may reroll one of their own dice. **Push:** after that, a player may take 1 damage to reroll one more of their own dice, once a round, never at 1 HP (a second coin on their reroll box).
 3. **Match.** A die takes out one threat die showing exactly its number.
 4. **Hits back.** Every alarm with dice left hits everyone who isn't blocking, for its Damage. An alarm with no dice left is beaten.
 
@@ -32,7 +32,7 @@ One boss, drawn at random, goes face down under the feed. A crew draws 2 items. 
 
 **Baseline it.** A newly flipped alarm with a tuck band, or a comeback with one (one more die), can be baselined; never the boss. Set the band's 3 dice too, all showing its main number's opposite side. Beat it with all of them and slide it under an agent someone holds, so only its blue **tuck band** shows below the agent card. That agent gains the band's **trait**; most traits work for the agent's **holder**, so which agent (and whose) matters. An agent holds **two** at most, and with two it is **upgraded** (its card says how: Triage rolls one more, Enrichment one more turn, Containment cuts 1 more, Recovery heals 2 more). Once every agent is full, a baselined alarm goes on the row with no trait. Tucked, the alarm is **off the row** (a card can't be in two places). Discard that agent and the alarm goes back on the row. No agents: set it aside until the next one is drawn.
 
-**After a fight.** Draw 2 items (solo 1) and decide who takes each.
+**After a fight.** Coin the next **Threat** box on the shift tracker. Once 3 fights are won, every alarm (not the boss) deals 1 more Damage for the rest of the shift. Draw 2 items (solo 1) and decide who takes each.
 
 - **Agents** are passive and work for the whole crew. Each player holds 2 (the Soarcerer 3; solo 4, a solo Soarcerer 5). Full? Discard one to take another.
 - **Consumables** don't take a slot. Keep them in hand and use each once.
@@ -61,13 +61,15 @@ Every alarm's dice come from `sim.js` `numbersFor`: a main number, repeated, wit
 
 ### Bosses (3, one drawn at random)
 
+Every boss hits for 5 (`cards.js` `BOSS_DMG`; the production data says 9, which against 8–10 HP made one unguarded round the end of the shift). The threat's +1 doesn't apply to bosses.
+
 The Full Shift trigger rolls the row at round end (the Operator's when it comes back; the AI's when a consumable is used); comebacks hit on arrival and join the fight. Quick Shift plays only the core ability.
 
 | Boss | Dice (1–3p) | Damage | Ability | Full Shift: roll the row |
 | --- | --- | --- | --- | --- |
-| The Lockjaw Syndicate | 2 2 3 3 3 3 3 4 | 9 | **Double extortion.** +2 Damage until it has lost two dice. | Down to 6, 4 and 2 dice: roll the row. |
-| The Persistent Operator | 1 1 2 2 2 2 2 3 | 9 | **Living off your network.** The first time you beat it, it comes back with 2 dice. | When it comes back, and down to 4 dice: roll the row. |
-| The Rogue AI | 4 5 5 5 5 5 6 | 9 | **Hostile takeover.** Agents and their traits do nothing while it’s in play. | Each consumable you use: roll the row (not Change Freeze). |
+| The Lockjaw Syndicate | 2 2 3 3 3 3 3 4 | 5 | **Double extortion.** +2 Damage until it has lost two dice. | Down to 6, 4 and 2 dice: roll the row. |
+| The Persistent Operator | 1 1 2 2 2 2 2 3 | 5 | **Living off your network.** The first time you beat it, it comes back with 2 dice. | When it comes back, and down to 4 dice: roll the row. |
+| The Rogue AI | 4 5 5 5 5 5 6 | 5 | **Hostile takeover.** Agents and their traits do nothing while it’s in play. | Each consumable you use: roll the row (not Change Freeze). |
 
 ### Analysts (6)
 
@@ -131,18 +133,18 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-02 (review 2). Every game deals its own feed and draws its own boss; crews are every combination of the six analysts.
+Bot sims, `SYS=n6 N=600`, 2026-11-03 (the squeeze). Every game deals its own feed and draws its own boss; crews are every combination of the six analysts. "Any real decision" counts a round with a real dice choice or a push on offer.
 
-| Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Rounds | Comebacks | Losses before the boss |
-| --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 53% | 20 pts | 38% | 14.7 | 3.4 | 56% |
-| Quick, 2p | 56% | 14 pts | 42% | 10.6 | 2.3 | 42% |
-| Quick, 4p | 56% | 27 pts | 50% | 9.9 | 1.7 | 33% |
-| Full, 1p | 57% | 22 pts | 37% | 16.9 | 5.3 | 50% |
-| Full, 2p | 61% | 17 pts | 39% | 12.6 | 3.8 | 44% |
-| Full, 4p | 63% | 29 pts | 41% | 12.5 | 3.0 | 48% |
+| Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 3 HP or less) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Quick, 1p | 53% | 19 pts | 37% | 84% | 12.1 | 2.8 | 58% | 46% |
+| Quick, 2p | 56% | 21 pts | 43% | 82% | 9.8 | 2.0 | 62% | 47% |
+| Quick, 4p | 59% | 31 pts | 53% | 89% | 9.1 | 1.6 | 53% | 40% |
+| Full, 1p | 52% | 18 pts | 36% | 84% | 14.5 | 5.0 | 41% | 42% |
+| Full, 2p | 55% | 16 pts | 40% | 83% | 11.6 | 3.5 | 51% | 39% |
+| Full, 4p | 60% | 30 pts | 41% | 88% | 11.6 | 2.9 | 49% | 33% |
 
-Solo by analyst: Quick Hunter 47%, Responder 55%, Engineer 52%, Soarcerer 52%, Forensics 49%, Shift Lead 55%; Full 59 / 56 / 54 / 58 / 50 / 54%. Pairs: Quick 49% (Hunter + Engineer) to 64% (Responder + Soarcerer); Full 53% (Engineer + Shift Lead) to 72% (Responder + Soarcerer).
+Solo by analyst: Quick Hunter 55%, Responder 52%, Engineer 50%, Soarcerer 54%, Forensics 52%, Shift Lead 52%; Full 58 / 50 / 53 / 56 / 48 / 50%. Pairs (300 games each): Quick 46% (Engineer + Shift Lead) to 61% (Soarcerer + Forensics); Full 47% (Engineer + Shift Lead) to 64% (Hunter + Soarcerer).
 
 ### Targets
 
@@ -150,23 +152,27 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 53 / 56 / 56% | 57 / 61 / 63% (2p, 4p a little over) | the mode's HP, one point at a time (Full at HP 9: 46% solo) |
-| Spread across crew sizes | 10 points or less | 3 | 6 | solo: starting items; 3–4p: the + die (now per player past 2) |
-| Solo spread across analysts | 10 points or less | 8 | 9 | the analyst's ability, not their doubles |
-| Pairs, lowest to highest | within 15 points | 49–64% (15) | 53–72% (19, misses) | the strongest pair's abilities (Responder + Soarcerer) |
-| Skill gap (smart − random) | 20 points or more | 20 / 14 / 27 (2p misses) | 22 / 17 / 29 (2p misses) | more decisions per roll |
-| Rounds with a real dice choice | 40% or more | 38 / 42 / 50% (solo misses) | 37 / 39 / 41% (solo, 2p miss) | solo: more of your own dice to place |
-| Losses before the boss | 60% or less | 56 / 42 / 33% | 50 / 44 / 48% | the boss's dice and Damage; HP |
-| Comebacks per shift | 3–6 | 3.4 / 2.3 / 1.7 (crews miss) | 5.3 / 3.8 / 3.0 | the row numbers; the feed size |
-| Baselining worth doing | always beats never | +26 / +2 / +20 | +32 / +13 / +35 | the Baseline dice and the traits |
-| Every situation choice is real | forced options within 4 points | within 3 (review 2 run, before the analyst tuning) | within 3 | the losing option's payoff |
-| The boss is a climax (Full) | beating it once there: 75% or less | — | not rerun this pass | its row marks (`BOSSSTEPS`) |
+| Win rate, every crew size | 50–60% | 53 / 56 / 59% | 52 / 55 / 60% | the mode's HP, one point at a time; solo: starting items |
+| Spread across crew sizes | 10 points or less | 6 | 8 | solo: starting items; 3–4p: the + die (now per player past 2) |
+| Solo spread across analysts | 10 points or less | 5 | 10 | the analyst's ability, not their doubles |
+| Pairs, lowest to highest | within 15 points | 46–61% (15) | 47–64% (17, misses) | the strongest pair's abilities (the Soarcerer's) |
+| Skill gap (smart − random) | 20 points or more | 19 / 21 / 31 (solo just misses) | 18 / 16 / 30 (1p, 2p miss) | more decisions per roll |
+| Rounds with a real decision | 60% or more (new, 2026-11-03) | 84 / 82 / 89% | 84 / 83 / 88% | the push; its cost |
+| Rounds with a real dice choice | 40% or more | 37 / 43 / 53% (solo misses) | 36 / 40 / 41% (solo misses) | solo: more of your own dice to place |
+| Losses before the boss | 40–60% (was "60% or less"; 2026-11-03: the boss shouldn't decide most shifts either) | 58 / 62 / 53% (2p a little over) | 41 / 51 / 49% | the boss's Damage; the threat timing (`ESC`) |
+| Wins with a scare | 30% or more (new, 2026-11-03) | 46 / 47 / 40% | 42 / 39 / 33% | the threat; healing (`HEALX`) |
+| Comebacks per shift | 3–6 | 2.8 / 2.0 / 1.6 (miss) | 5.0 / 3.5 / 2.9 | the row numbers; the feed size |
+| Baselining worth doing | always beats never | +21 / +8 / +24 | +33 / +26 / +39 | the Baseline dice and the traits |
+| Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
+| The boss is a climax (Full) | beating it once there: 75% or less | 73 / 77 / 75% | 64 / 71 / 75% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
 
-- **Responder + Soarcerer is the strongest pair** (64% Quick, 72% Full): crewmates' arrivals soften and every tuck draws an item. Full Shift 2p and 4p sit 1–3 points over the band.
-- **Quick Shift crews still see few comebacks** (2.3 / 1.7): crews beat alarms in fewer rounds, and the Hunter and Forensics now trim the row and the feed.
-- **Skill gap at 2p** is 14 (Quick) and 17 (Full). Spotlight, Slip, Golden ticket and Forensics' bury are player decisions the bot plays simply, so the sim likely undervalues them.
+- **The push costs a solo Full Shift player 6 points with this bot** (58% without it, 52% with). The bot's round score undervalues HP late in a long shift; a person who never pushes is no worse off, so the rule stays, but the bot (or the solo rule) needs a look before the numbers are trusted for solo.
+- **62% of Quick Shift 2p losses come before the boss**, two points over the new band: the threat lands in a feed of about 4.3 fights.
+- **The Soarcerer still anchors the strongest pairs** (61% Quick, 64% Full): every tuck draws an item.
+- **Quick Shift crews still see few comebacks** (2.0 / 1.6).
+- **Skill gap at 2p in Full** is 16. Spotlight, Slip, Golden ticket, Forensics' bury and now the push are player decisions the bot plays simply.
 - **The new portraits are placeholders** (Forensics: the magnifier scene; the Shift Lead: the retired PAT analyst's portrait).
 - Paper tuck: up to two tucked alarms per agent, band under band. Untested at a table.
 - No human has played these rules yet. Teach time, play time and whether matching feels better than adding all need a table.
@@ -180,7 +186,7 @@ Against the d20 baseline (600 games per case, 2026-10-30): the d20 had a real di
 ## How to run
 
 ```bash
-SYS=n6 HP=9 node prototypes/chapter-dice/sim.js                # Quick Shift (the default MODE) at its HP, 600 games per case (a few minutes)
+SYS=n6 HP=8 node prototypes/chapter-dice/sim.js                # Quick Shift (the default MODE) at its HP, 600 games per case (a few minutes)
 MODE=full SYS=n6 HP=10 node prototypes/chapter-dice/sim.js      # Full Shift at its HP
 SYS=n6 node prototypes/chapter-dice/sim.js             # the current rules, HP tuned to ~50% at 2p
 node prototypes/chapter-dice/sim.js                    # the legacy d20 baseline and chapter dice side by side
@@ -197,6 +203,11 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | --- | --- |
 | `SYS` | `d20`, `n6`, `d6`, comma-separated (default `d20,n6`) |
 | `N` | games per case (default 600) |
+| `BOSSDMG` | n6: every boss's Damage (default 5) |
+| `ESC`, `ESCMAX` | n6 threat: after every `ESC` fights won, alarms deal 1 more, up to `ESCMAX` (default 3 and 1; `ESC=0` off) |
+| `PUSH`, `PUSHMIN`, `PUSHGAIN` | n6 push (default on; `PUSH=0` off): the bot pushes above `PUSHMIN` HP (4) when the reroll's average gain beats `PUSHGAIN` (6) |
+| `HEALX` | scales the after-fight heals (default 1) |
+| `QSOLO` | items a solo player starts with (default Quick 3, Full 4) |
 | `HP` | starting HP; skips the tune-to-50% search |
 | `N6DICE` | n6: dice per analyst each round (default 1; on point +1) |
 | `N6SOLO` | n6: dice a solo player rolls (default 3: two own plus the crew die) |
@@ -303,6 +314,34 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### The squeeze: push, threat, a softer boss (2026-11-03)
+
+From a fun review (`/game-design` "how fun is this game?"). Measured first (600 games a row, 1p / 2p / 4p): every boss hit for 9 against 9–10 HP, so one unguarded boss round ended the shift, and **45–65% of all losses came at the boss**. Only 37–50% of rounds had a real dice choice; in the rest the matches were obvious. The first read, that wins were rarely close (3–7% ended with someone at 2 HP or less), was wrong: healing between fights hides the dips, and 36–42% of wins had someone at 3 HP or less along the way. The owner picked two fixes: build danger slowly instead of at the boss, and give the obvious rounds a choice.
+
+#### What changed
+
+| Change | Why |
+| --- | --- |
+| Every boss hits for **5** (was 9). | One bad boss round no longer ends the shift. |
+| **Threat:** a coin on the shift tracker after each fight won; once 3 are won, alarms (not the boss) deal +1 for the rest of the shift. | Danger climbs through the shift. |
+| **Push:** once a round, after your free reroll, take 1 damage to reroll one more of your own dice. Never at 1 HP. | A real decision in most rounds, paid in HP, which also feeds the climb. |
+| Quick Shift HP **8** (was 9). Solo starts with **3** items in Quick (was 1), **4** in Full (was 2). | Retune: the threat hits solo hardest. |
+
+#### What was tried (`SYS=n6`, 400 games a row unless noted; losses at the boss in brackets)
+
+| Quick Shift | 1p / 2p / 4p |
+| --- | --- |
+| Before (HP 9) | 53 / 56 / 56% (45 / 58 / 65%) |
+| Boss 5 | 57 / 64 / 64% (40 / 49 / 56%) |
+| Boss 5, alarms +1 every 2 fights | 40 / 51 / 51% (35 / 38 / 45%) |
+| Halving the after-fight heals on top | 39 / 50 / 51%: no change, so heals weren't the cause |
+| Push, the bot pushing any dead die above 4 HP | 27 / 49 / 51%: far too costly; the bot now pushes only when the reroll's average gain beats the HP |
+| Boss 5, +1 from the fourth fight, push, HP 8, solo 3 items (**kept**, 600 games) | **53 / 56 / 59%** (42 / 38 / 47%) |
+
+Full Shift kept HP 10 with solo starting on 4 items: 52 / 55 / 60% (59 / 49 / 51%). Push alone: Quick 54 / 52 / 57% without it against 53 / 56 / 59% with it; Full 58 / 56 / 58% without it, 52 / 55 / 60% with it (see Open). A real decision in 82–89% of rounds, up from 37–53%; the bot pushes 1.7–3.7 times a shift.
+
+Knobs: `BOSSDMG`, `ESC`, `ESCMAX`, `PUSH`, `PUSHMIN`, `PUSHGAIN`, `HEALX`, `QSOLO` defaults.
 
 ### Review 2: eight traits, six analysts, real choices (2026-11-02)
 

@@ -221,7 +221,7 @@
     const G = UI.G, fighting = G.phase === 'assign' || G.phase === 'roll', inc = fighting ? E.incoming(G) : null;
     const between = G.phase === 'flip' || G.phase === 'deal' || G.phase === 'sit' || G.phase === 'tuck';
     const F = flipped(G), T = G.feedTotal;
-    const label = G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · card ${F} of ${T}` : between ? (G.feed.length ? `Next: card ${F + 1} of ${T}` : 'Next: the boss') : `Fight ${G.fight} · card ${F} of ${T} · round ${G.round || 1}`;
+    const label = (G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · card ${F} of ${T}` : between ? (G.feed.length ? `Next: card ${F + 1} of ${T}` : 'Next: the boss') : `Fight ${G.fight} · card ${F} of ${T} · round ${G.round || 1}`) + (E.threat(G) && !G.bossOut ? ' · Threat +1' : '');
     const now = G.bossOut ? T : between && G.phase !== 'sit' ? -1 : F - 1, next = !G.bossOut && (G.phase === 'flip' || G.phase === 'deal') ? F : -1;
     const bar = [...Array(T)].map((_, i) => `<i class="${i < F && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === T ? ' next' : ''}"></i>`;
     const crew = G.team.map((id, k) => {
@@ -455,7 +455,7 @@
         <div class="acts">
         ${picking ? `<span class="t-gpick" role="group" aria-label="Guard who"><span class="inc">Guard who?</span>${E.guardable(G).map(k => `<button class="btn cy grdb" type="button" data-a="guardfor" data-n="${k}" data-k="gfor${k}">${ICON.shield}${esc(nm(G.team[k]))}${k === d.k ? ' (you)' : ''} <kbd>${k + 1}</kbd></button>`).join('')}<button class="btn s" type="button" data-a="guardx" data-k="guardx">Cancel</button></span>`
           : sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard${G.n > 1 && E.guardable(G).length > 1 ? '…' : ''} <kbd>G</kbd></button>` : ''}
-        ${d && E.canReroll(G, d) ? `<button class="btn" data-a="reroll" data-k="reroll">Reroll it <kbd>X</kbd></button>` : ''}${G.rerolled ? `<span class="inc rr">Rerolls left: ${G.team.map((id, k) => G.rerolled[k] ? '' : esc(SHORT[id])).filter(Boolean).join(', ') || 'none'}</span>` : ''}
+        ${d && E.canReroll(G, d) ? `<button class="btn" data-a="reroll" data-k="reroll">Reroll it <kbd>X</kbd></button>` : ''}${d && E.canPush(G, d) ? `<button class="btn" data-a="push" data-k="push" aria-label="Push: take 1 damage to reroll this die">Push: take 1, reroll <kbd>Z</kbd></button>` : ''}${G.rerolled ? `<span class="inc rr">Rerolls left: ${G.team.map((id, k) => G.rerolled[k] ? '' : esc(SHORT[id])).filter(Boolean).join(', ') || 'none'}</span>` : ''}
         ${sel && t.eng ? `<button class="btn cy" data-a="eng" data-k="eng" aria-label="Engineer: turn this die to its opposite side, ${7 - d.n}">Opposite side (→ ${7 - d.n}) <kbd>O</kbd></button>` : ''}
         ${sel && t.focus ? `<span class="inc">Focused: turn to…</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s cy" data-a="focus" data-n="${n}" data-k="focus${n}" aria-label="Focused: turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
         ${d && E.canSpot(G, d) ? `<button class="btn cy" data-a="spot" data-k="spot">Spotlight: make it a double</button>` : ''}
@@ -596,6 +596,7 @@
     if (a === 'guardx') { UI.guarding = null; render(); return focusKey('guard'); }
     if (a === 'pair') { const i = +b.dataset.i; doPair(i, +b.dataset.j); return focusKey('die' + i); }
     if (a === 'reroll') { const i = UI.sel; act(() => E.reroll(G, i)); return focusKey('die' + i); }
+    if (a === 'push') { const i = UI.sel; act(() => E.push(G, i)); return focusKey('die' + i); }
     if (a === 'turn') { const i = UI.sel; return act(() => E.enrichTurn(G, i, +b.dataset.n)); }
     if (a === 'undo') { UI.more = null; UI.guarding = null; act(() => E.unassign(G)); const last = G.dice.filter(d => !d.used).map(d => d.i); if (UI.sel == null || (G.dice[UI.sel] && G.dice[UI.sel].used)) UI.sel = last.length ? last[last.length - 1] : null; return render(); }
     if (a === 'end') { UI.sel = null; UI.more = null; UI.guarding = null; act(() => E.endRound(G)); return focusKey(G.phase === 'roll' ? 'roll' : 'flip'); }
@@ -625,6 +626,7 @@
       if (/^[1-9]$/.test(key) && G.dice[+key - 1]) { UI.more = null; UI.guarding = null; UI.sel = +key - 1; UI.msg = ''; render(); return focusKey('die' + UI.sel); }
       if (key === 'g') return click('guard');
       if (key === 'x') return click('reroll');
+      if (key === 'z') return click('push');
       if (key === 'o') return click('eng');
       if (key === 'u' || key === 'backspace') return click('undo');
       if (key === 'e') return click('end');

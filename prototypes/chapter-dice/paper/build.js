@@ -8,7 +8,7 @@ const { fonts } = require('../../../deck/render');
 const { launch, fontsReady } = require('../../../deck/browser');
 const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, tracker, mobs: cardMobs, boss, BOSS_IDS, ANALYST_IDS, AGENT_IDS, ITEM_DECK, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
 
-const OUT = __dirname, HP = 10; // Full Shift starting HP (Quick: 9), 2026-11-02 full pool; the numbers are in the README
+const OUT = __dirname, HP = 10; // Full Shift starting HP (Quick: 8), 2026-11-03 the squeeze; the numbers are in the README
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
@@ -21,11 +21,11 @@ const rules = `<section class="page rules">
 <p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
 <h2>Setup</h2>
 <ol>
-<li>Pick the shift. <b>Quick:</b> everyone starts at <b>9 HP</b>. <b>Full:</b> <b>10 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
+<li>Pick the shift. <b>Quick:</b> everyone starts at <b>8 HP</b>. <b>Full:</b> <b>10 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
 <li>The <b>situation deck</b> is the 15 alarms and 18 situations. Set the 9 <b>story</b> situations aside and shuffle the rest. <b>Quick:</b> deal 8. <b>Full:</b> deal 11, add 3 story cards, shuffle the 14. That’s the <b>feed</b>.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
-<li>Shuffle the 16 items: the item deck. The crew draws 2 (Quick solo: 1).</li>
-<li>Set out the shift tracker: a coin on a box marks anything used once a round or once a fight.</li>
+<li>Shuffle the 16 items: the item deck. The crew draws 2. Solo draws 3 (Full: 4).</li>
+<li>Set out the shift tracker: coin a box for anything once a round or fight (a push: a second coin); clear it as that ends.</li>
 </ol>
 <h2>Threat dice</h2>
 <p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. <b>3 or 4 players:</b> add the card’s <b>+</b> die (a 6) per player past 2.</p>
@@ -46,21 +46,21 @@ const rules = `<section class="page rules">
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>
-<li><b>Roll.</b> Everyone rolls one crew die. On point rolls two. Solo: two of your own dice plus the crew die (second colour). Each Triage Agent: its holder rolls one more of their own dice. <b>Once a round, each player may reroll one of their own dice</b> before using it.</li>
+<li><b>Roll.</b> Everyone rolls one crew die. On point rolls two. Solo: two of your own dice plus the crew die (second colour). Each Triage Agent: its holder rolls one more of their own dice. <b>Once a round, each player may reroll one of their own dice</b> before using it. <b>Push:</b> then take 1 to reroll one more (not at 1 HP).</li>
 <li><b>Match.</b> A die takes out one threat die showing <b>exactly</b> its number: a ${P(4)} takes a ${P(4)}. Turn the taken die aside.</li>
 <li><b>Hits back.</b> Every alarm with dice left hits everyone who isn’t blocking, for its Damage. An alarm with no dice left is beaten.</li>
 </ol>
 <h2>Doubles</h2>
 <p>Your analyst card shows your doubles. The solo crew die: <b>only a 6</b>. A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you or anyone you choose blocks this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
 <h2>After a fight</h2>
-<p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. Each player holds 2 (the Soarcerer 3; solo 4). Full? Discard one to take another. <b>Consumables</b> don’t take a slot: keep them in hand and use each once.</p>
+<p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Coin a <b>Threat</b> box: from 3 won, alarms (not the boss) deal <b>+1</b>. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. Each player holds 2 (the Soarcerer 3; solo 4). Full? Discard one to take another. <b>Consumables</b> don’t take a slot: keep them in hand and use each once.</p>
 <h2>Situations and conditions</h2>
 <p>Most situations make you choose: stay or run, grab it or leave it. On point rolls any grab with spare dice. Conditions are cards you keep in front of you. <b>Rattled</b> and <b>Exposed</b> wear off; <b>Focused</b> waits until you use it. Nobody holds two of the same.</p>
 <h2>Win or lose</h2>
 <p>Beat the boss and you’ve survived the night. Anyone at 0 HP and the shift is lost.</p>
 </div>
 </div>
-<p class="foot">Prototype only. Numbers from the bot sim of 2026-11-02: situations shuffled into the feed, agent traits (prototypes/chapter-dice/README.md). Record: who played, time, win or loss, and every rule you played wrong.</p>
+<p class="foot">Prototype only; numbers from the sim of 2026-11-03. Record who played, time, win or loss, every rule played wrong.</p>
 </section>`;
 
 // ---- Cards (2.5 × 3.5 in, nine to a page): the markup lives in ../cards.js, shared with the web prototype ----

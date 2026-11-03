@@ -40,7 +40,9 @@
   // The modes (2026-11-02): one situation deck holds all 15 alarms and 18 situations. Quick Shift deals 8 of the 24
   // core cards (8 since 2026-11-02: 6 left too few comebacks); Full Shift deals 3 story cards and 11 core. The boss is drawn from three; its row trigger is Full Shift
   // only. Same deals as sim.js MODE, DEALQ, DEALF and STORYF.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 9, soloItems: 1, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 10, bossRow: true } };
+  // The squeeze (2026-11-03): Quick HP 8, and solo starts with 3 items (Quick) or 4 (Full), against bosses that hit for
+  // 5, alarms that hit 1 harder from the fourth fight, and the push.
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 8, soloItems: 3, bossRow: false }, full: { label: 'Full Shift', deal: 14, story: 3, hp: 10, soloItems: 4, bossRow: true } };
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -63,7 +65,7 @@
       agents: team.map(() => []), hand: team.map(() => []), freeze: false,
       sit: null, sitDone: false, badgeSkip: false, once: { slip: {}, ticket: {}, move: false }, spotUsed: team.map(() => 0), slipOn: [], handed: false, pending: [], mute: 0, bonusDraw: 0, engUsed: false, resUsed: false, stand: null, aug: [], tuck: [], flipped: null, augReroll: false,
       cond: team.map(() => ({ rattled: false, exposed: false, focused: false })),
-      point: 0, phase: 'flip', fight: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
+      point: 0, phase: 'flip', fight: 0, won: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
       over: false, win: false, log: [], rows: [], lastRow: null, drawn: [], beaten: [],
       stats: { rounds: 0, back: 0, flips: 0, guards: 0, used: {}, gone: 0, healed: 0, sits: 0, items: { triage: 0, contain: 0, recover: 0, enrich: 0, surge: 0, intel: 0, isolate: 0, coffee: 0, freeze: 0, twin: 0, ghost: 0, scramble: 0, repair: 0, spotlight: 0, slip: 0, ticket: 0, momentum: 0, persist: 0, siphon: 0, callback: 0 } } };
     const si = startItems(n, mode);
@@ -99,7 +101,9 @@
   const on = (G, id) => G.team.includes(id);
   // Damage right now: Lockjaw +2 until it has lost two dice; Escalating +1 per round it stayed up.
   // The CEO's Inbox (plus): +2 for one visit.
-  const dmgOf = (G, m) => (m.plus || 0) + (m.boss ? m.dmg + (m.kw === 'wyrm' && left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0));
+  // Threat: once THREAT_AFTER fights are won, every alarm (not the boss) hits 1 harder for the rest of the shift.
+  const threat = G => (G.won || 0) >= CARDS.THREAT_AFTER ? 1 : 0;
+  const dmgOf = (G, m) => (m.plus || 0) + (m.boss ? 0 : threat(G)) + (m.boss ? m.dmg + (m.kw === 'wyrm' && left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0));
   const d6 = G => Math.floor(G.r() * 6);
   const BOSS_STEPS = CARDS.BOSS_STEPS;
   const findMob = (G, uid) => G.play.find(m => m.uid === uid);
@@ -373,7 +377,7 @@
     // Rattled: that player's dice in this roll have no doubles (they stay single if turned later). Then it's gone.
     dice.forEach(d => { if (d.crew && G.cond[d.k].rattled) { d.rattled = true; d.dbl = false; } });
     G.cond.forEach((c, k) => { if (c.rattled) { c.rattled = false; say(G, `${nameOf(G.team[k])} rolled Rattled: no doubles. Rattled is discarded.`, 'sit'); } });
-    G.dice = dice; G.augReroll = aug(G, 'spray'); G.rerolled = G.team.map(() => false); G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = []; G.spotUsed = G.team.map(() => 0); G.handed = false; G.slipOn = []; G.leadReroll = G.n === 1 && on(G, 'LEAD'); // the solo Shift Lead: one more reroll
+    G.dice = dice; G.augReroll = aug(G, 'spray'); G.rerolled = G.team.map(() => false); G.blocks = G.team.map(() => false); G.enrichLeft = running(G, 'enrich'); G.wildAll = false; G.undo = []; G.spotUsed = G.team.map(() => 0); G.handed = false; G.pushed = G.team.map(() => false); G.slipOn = []; G.leadReroll = G.n === 1 && on(G, 'LEAD'); // the solo Shift Lead: one more reroll
     G.roundDmg = {}; G.play.forEach(m => { G.roundDmg[m.uid] = dmgOf(G, m); });
     G.phase = 'assign';
     say(G, `Round ${G.round}: rolled ${dice.map(faceText).join(', ')}.`, 'roll');
@@ -498,6 +502,21 @@
     const was = d.n; d.n = 1 + d6(G); d.dbl = dieDbl(G, d, d.n); G.rerolled[d.k] = true; G.undo = [];
     G.stats.rerolls = (G.stats.rerolls || 0) + 1;
     say(G, `${dieOwner(G, d)} rerolls a ${was}: ${faceText(d)}${extra ? ' (Password Sprayer baseline)' : ''}.`, 'roll');
+    return G;
+  }
+  // Push (2026-11-03): once a round, after their reroll, a player may take 1 damage to reroll one more of their own
+  // dice. Never at 1 HP. Same die rules as a reroll.
+  const canPush = (G, d) => !!d && G.phase === 'assign' && d.crew && !d.used && !(d.takes || []).length && !d.turned && !d.flipped && d.paired == null && !!(G.rerolled || [])[d.k] && !(G.pushed || [])[d.k] && G.hp[d.k] > CARDS.PUSH_COST;
+  function push(G, di) {
+    if (G.phase !== 'assign') fail('Roll first.');
+    const d = G.dice[di]; if (!d) fail('No such die.');
+    if (!d.crew) fail('Agent dice can’t be pushed.'); if (d.used || d.takes.length) fail('That die is already used.'); if (d.turned || d.flipped) fail('A turned die can’t be rerolled.');
+    if (d.paired != null) fail('Undo the pair first.');
+    if (!G.rerolled[d.k]) fail('Use your free reroll first.'); if (G.pushed[d.k]) fail(`${nameOf(G.team[d.k])} has already pushed this round.`);
+    if (G.hp[d.k] <= CARDS.PUSH_COST) fail('You can’t push at 1 HP.');
+    G.pushed[d.k] = true; hurt(G, d.k, CARDS.PUSH_COST, 'push'); G.stats.pushes = (G.stats.pushes || 0) + 1;
+    const was = d.n; d.n = 1 + d6(G); d.dbl = dieDbl(G, d, d.n); G.undo = [];
+    say(G, `${dieOwner(G, d)} pushes a ${was}: ${faceText(d)}.`, 'roll');
     return G;
   }
   // Enrichment Agent (crew-wide since 2026-11-01): once a round per card, turn any crew die to any number. The die keeps
@@ -683,6 +702,7 @@
   // agent (phase 'tuck'), then the drawn items are dealt (phase 'deal'), then the next flip.
   function afterFight(G) {
     say(G, `Fight ${G.fight} won in ${G.round} round${G.round === 1 ? '' : 's'}.`, 'win');
+    G.won = (G.won || 0) + 1; if (G.won === CARDS.THREAT_AFTER) say(G, `Fight ${G.won} won: the threat rises. Alarms deal 1 more Damage for the rest of the shift (not the boss).`, 'mob');
     G.cond.forEach((c, k) => { if (c.exposed) { c.exposed = false; say(G, `${nameOf(G.team[k])} discards Exposed.`, 'sit'); } });
     const rec = running(G, 'recover'), recUp = G.agents.flat().filter(c => c.t === 'recover' && upgraded(G, c.uid)).length * 2; if (rec) G.stats.items.recover += spread(G, rec * D.recoverHeal + recUp, 'Recovery Agent'); // crew-wide since 2026-11-01
     G.agents.forEach((a, k) => a.forEach(c => { const n = traitsOn(G, c.uid, 'Repair') * 2, h = Math.min(n, G.max - G.hp[k]); if (!n) return; G.hp[k] += h; G.stats.healed += h; G.stats.items.repair += h; say(G, `Repair: the ${KIT_NAME[c.t]} heals ${nameOf(G.team[k])} ${h}.`, 'heal'); }));
@@ -753,5 +773,5 @@
   }
 
   return { aug, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, canSpot, spotlight, canTicket, ticket, canSlip, slip, canHand, hand, canPeek, peek, bury, canMove, moveTuck, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, stand, canStand, hunts, roll, assign, guard, enrichTurn, unassign, endRound,
-    give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
+    give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canPush, push, threat, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

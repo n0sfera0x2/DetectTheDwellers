@@ -143,7 +143,7 @@
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
   <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards anyone.</div>
   <div class="note">The solo crew die: only a ${pip(6, 14)}. <b>Two of yours on one number: a double.</b></div>
-  <div class="note"><b>Once a round, reroll one of your own dice.</b></div>
+  <div class="note"><b>Once a round, reroll one of your own dice.</b> <b>Push:</b> take 1 to reroll one more (not at 1 HP).</div>
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
   <div class="note">Row: 2 amber dice; back if the sum is at most its number.</div></div>`;
 
@@ -151,8 +151,9 @@
   // go on its boxes when something is used; a row is cleared when its round or fight ends. Paper only: the web tracks it.
   const box = t => `<span class="bx">${t}</span>`;
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
-  <div class="note">Put a coin on a box when you use it. Clear a row when its round or fight ends.</div>
-  <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Enrichment 2 (Twin)')}</div>
+
+  <div class="trow"><b>Threat: fights won</b>${[1, 2, 3].map(n => box(n)).join('')}${box('Alarms +1')}</div>
+  <div class="trow"><b>This round</b>${[1, 2, 3, 4].map(n => box('Reroll ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Twin')}</div>
   <div class="trow"><b>This fight</b>${box('Responder stand')}${box('Hold the room: +1 item')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
   <div class="note"><b>Escalating:</b> a coin on it each round. <b>Regen:</b> line up taken dice; it puts back the last.</div></div>`;
@@ -204,7 +205,10 @@
   // The item deck, as sim.js KIT: Triage and Containment ×2, Enrichment and Recovery ×1, each consumable ×2.
   const ITEM_DECK = ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', ...CONS_IDS.flatMap(t => [t, t])];
   const mobs = () => MOB_IDS.map(id => D.mobs.find(m => m.id === id));
-  const boss = (id = BOSS_ID) => D.bosses.find(b => b.id === id);
+  // The squeeze (2026-11-03): every boss hits for 5, not the data's 9 (one unguarded round no longer ends the shift), and
+  // from the fourth fight on alarms hit 1 harder (THREAT_AFTER fights won). PUSH_COST: a second reroll a round costs 1 HP.
+  const BOSS_DMG = 5, THREAT_AFTER = 3, PUSH_COST = 1;
+  const boss = (id = BOSS_ID) => ({ ...D.bosses.find(b => b.id === id), dmg: BOSS_DMG });
 
   // The card face CSS, shared by print and web. Page and sheet layout stay in each build.
   const CARD_CSS = `.card{--pl:${C.ex};--pa:${C.fl};position:relative;isolation:isolate;box-sizing:border-box;border:1px dashed #999;background:${C.bg};color:${C.ink};padding:13px 14px 0;display:flex;flex-direction:column;gap:5px;overflow:hidden;font-family:'Chakra Petch',sans-serif}
@@ -244,6 +248,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:9px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { BOSS_DMG, THREAT_AFTER, PUSH_COST, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });

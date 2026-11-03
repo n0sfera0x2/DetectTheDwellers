@@ -52,7 +52,7 @@ const hitsOn = (G, di, m) => E.targets(G, di).hits.filter(h => h.uid === m.uid).
 const PRINTED = { mailer: [[2], 6], spray: [[4], 6], imp: [[1], 6], druid: [[3, 3], 6], wyrmling: [[5, 5], 6], mimic: [[5, 6, 6], 6], wyrm: [[2, 2, 3, 3, 3, 3, 3, 4], 6] };
 const otherSlot = (m, n, p) => m.slots.findIndex((v, i) => v === n && !m.off[i] && i !== p);
 
-test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (the boss too); HP 10; the crew draws 2 items, solo 2', () => {
+test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (the boss too); mode HP; the crew draws 2 items, solo by mode', () => {
   for (const m of CARDS.mobs()) {
     const d = CARDS.diceFor(m); if (PRINTED[m.id]) assert.deepEqual([d.base, d.extra], PRINTED[m.id], m.id);
     assert.deepEqual(d.base, SIM.numbersFor(m.id, m.hits - 2).slice().sort((a, b) => a - b));
@@ -65,11 +65,11 @@ test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (th
   const G = E.newGame({ team: ['HUN', 'RES'], seed: 3 });
   assert.equal(G.hp[0], E.MODES.quick.hp); assert.equal(E.newGame({ team: ['HUN', 'RES'], seed: 3, mode: 'full' }).hp[0], E.MODES.full.hp);
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, 2); assert.equal(G.kit.length, CARDS.ITEM_DECK.length - 2);
-  // Solo starts with 2 items (since 2026-11-01) and deals itself: 4 free slots and a hand.
-  const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
-  assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 2); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
-  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 1, 'Quick Shift solo starts with 1');
-  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 1); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), 2);
+  // Solo starts with 4 items in Full Shift and 3 in Quick (since the squeeze, 2026-11-03) and deals itself.
+  const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 4);
+  assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 4); assert.equal(E.startItems(1, 'quick'), 3); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
+  assert.equal(E.startItems(1), 4); assert.equal(E.startItems(1, 'quick'), 3, 'Quick Shift solo starts with 3'); assert.equal(E.startItems(3, 'quick'), 2);
+  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 3); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), 2);
   for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 2, team.length + 'p draws 2');
   assert.equal(CARDS.ITEM_DECK.length, 16);
 });
@@ -227,10 +227,28 @@ test('end of round: mobs hit back; Piercing ignores blocks; Targeted hits only o
   G.blocks = [false, false];
   assert.deepEqual(E.incoming(G).total, [1, 1 + 6]);
 });
+test('push: after their reroll, a player may take 1 to reroll one more of their own dice, once a round, never at 1 HP', () => {
+  const G = fight(['ENG', 'SOA'], ['spray'], { dice: [[0, 3], [0, 4], [1, 2]] }); G.rerolled = [false, false]; G.pushed = [false, false]; G.hp = [5, 1];
+  throwsRule(() => E.push(G, 0), /free reroll first/); assert.ok(!E.canPush(G, G.dice[0]));
+  E.reroll(G, 0); assert.ok(E.canPush(G, G.dice[1])); E.push(G, 1);
+  assert.equal(G.hp[0], 4, 'a push costs 1'); assert.ok(G.dice[1].n >= 1 && G.dice[1].n <= 6); throwsRule(() => E.push(G, 0), /already pushed/);
+  E.reroll(G, 2); assert.ok(!E.canPush(G, G.dice[2])); throwsRule(() => E.push(G, 2), /at 1 HP/);
+  assert.match(CARDS.legend, /Push:<\/b> take 1 to reroll one more/);
+});
+test('threat: once three fights are won, alarms (not the boss) deal 1 more; bosses hit for 5', () => {
+  const G = fight(['HUN', 'RES'], ['spray'], {}), m = mob(G, 'spray'), base = E.dmgOf(G, m);
+  G.won = CARDS.THREAT_AFTER - 1; assert.equal(E.dmgOf(G, m), base); assert.equal(E.threat(G), 0);
+  G.won = CARDS.THREAT_AFTER; assert.equal(E.dmgOf(G, m), base + 1); assert.equal(E.dmgOf(G, Object.assign({}, G.boss, { kw: 'ai' })), CARDS.BOSS_DMG);
+  assert.ok(CARDS.BOSS_IDS.every(id => CARDS.boss(id).dmg === CARDS.BOSS_DMG)); assert.match(CARDS.tracker, /Threat: fights won.*Alarms \+1/);
+  // Winning a fight counts toward it.
+  const H = fight(['HUN', 'RES'], ['spray'], { dice: [[0, 1], [0, 1]] }), s2 = setSlots(mob(H, 'spray'), [1]); E.assign(H, 0, s2.uid, slotOf(s2, 1)); E.endRound(H);
+  assert.equal(H.won, 1);
+});
 test('Lockjaw +2 until it has lost two dice; Regen puts back the die it lost; Escalating at round end', () => {
   const G = fight(['ENG', 'SOA'], ['boss'], {});
-  assert.equal(E.dmgOf(G, G.boss), 11); G.boss.off[0] = true; assert.equal(E.dmgOf(G, G.boss), 11);
-  G.boss.off[1] = true; assert.equal(E.dmgOf(G, G.boss), 9);
+  const bd = CARDS.BOSS_DMG; assert.equal(bd, 5); // every boss hits for 5 since the squeeze (2026-11-03)
+  assert.equal(E.dmgOf(G, G.boss), bd + 2); G.boss.off[0] = true; assert.equal(E.dmgOf(G, G.boss), bd + 2);
+  G.boss.off[1] = true; assert.equal(E.dmgOf(G, G.boss), bd);
   const H = fight(['ENG', 'SOA'], ['mimic', 'wyrmling'], { dice: [[1, 5], [1, 6]] }); // SOA 6 is a double
   const mi = setSlots(mob(H, 'mimic'), [5, 5, 6, 6]), p = slotOf(mi, 5);
   E.assign(H, 0, mi.uid, p); E.assign(H, 1, mi.uid, slotOf(mi, 6)); H.hp = [99, 99]; E.endRound(H);

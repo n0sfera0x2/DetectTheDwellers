@@ -115,7 +115,7 @@
     HUN: 'On point, you roll one more die. It’s never a double.',
     RES: 'A double of yours can heal anyone 3 instead of guarding.',
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
-    SOA: 'Any die you roll is a double for baselining: it takes two Baseline dice.',
+    SOA: 'Your agents count as two.', // since 2026-11-04 (was: any die is a double for baselining)
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'on shift')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>

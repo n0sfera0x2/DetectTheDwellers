@@ -9,7 +9,7 @@ An original game by Binary Defense.
 
 ## What you need
 
-The 63 cards, standard dice in four colours, and a few coins: crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, about 16 threat dice, and coins for HP and the shift tracker. 1–4 players, four analysts to pick from. Quick Shift (8 cards, 11 HP, about 20 minutes) or Full Shift (9 cards and 3 story cards, 15 HP, about 30 minutes), dealt fresh every shift from the situation deck, with one of three bosses waiting underneath. Full Shift adds a small story deck: a story card after your 1st, 3rd and 5th win.
+The 63 cards, standard dice in four colours, and a few coins: crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, about 16 threat dice, and coins for HP and the shift tracker. 1–4 players, four analysts to pick from. Quick Shift (8 cards, 11 HP, about 20 minutes) or Full Shift (9 cards and 3 story cards, 14 HP, about 30 minutes), dealt fresh every shift from the situation deck, with one of three bosses waiting underneath. Full Shift adds a small story deck: a story card after your 1st, 3rd and 5th win.
 
 ## How it plays
 
@@ -28,7 +28,7 @@ npm install                            # once
 npm run serve                          # build the page and play it at http://localhost:8080
 node game/paper/build.js               # the print-and-play PDF: game/paper/chapter-dice-paper.pdf
 node --test game/web/spec.js           # the game's tests
-SYS=n6 HP=11 node game/sim.js          # the balance sim (Quick Shift); MODE=full HP=15 for Full
+SYS=n6 HP=11 node game/sim.js          # the balance sim (Quick Shift); MODE=full HP=14 for Full
 ```
 
 ## Repo map
@@ -47,4 +47,4 @@ Working with Claude Code? Start with [CLAUDE.md](CLAUDE.md).
 
 ## Status
 
-Rules as of 2026-11-04 (late): 2 Baseline dice, a 9-card Full Shift at 15 HP, Quick at 11 HP; four analysts with one line each, a reroll costs 1 HP (once a round), agents and consumables share 4 item slots, one tucked alarm changes its agent for good, a wider row whose comebacks rejoin the fight, and Full Shift story cards in their own deck, one after the 1st, 3rd and 5th fight won, and 18 items with the Watchlist Agent and Takedown Request. Bot sims (600 games per crew size) win 60% / 56% / 47% in Quick Shift and 59% / 60% / 50% in Full Shift at 1 / 2 / 4 players, with a 25–33 point gap between smart and random play and a real decision in 94–97% of rounds. No human table yet: a playtest is next. Details in [game/README.md](game/README.md#where-it-stands).
+Rules as of 2026-11-04 (late): 2 Baseline dice, a 9-card Full Shift at 14 HP, Quick at 11 HP; four analysts with one line each, a reroll costs 1 HP (once a round), agents and consumables share 4 item slots, one tucked alarm changes its agent for good, a wider row whose comebacks rejoin the fight, and Full Shift story cards in their own deck, one after the 1st, 3rd and 5th fight won, and 18 items with the Watchlist Agent and Takedown Request. Bot sims (600 games per crew size) win 62% / 59% / 56% in Quick Shift and 56% / 56% / 55% in Full Shift at 1 / 2 / 4 players, with a 24–34 point gap between smart and random play and a real decision in 94–97% of rounds. No human table yet: a playtest is next. Details in [game/README.md](game/README.md#where-it-stands).

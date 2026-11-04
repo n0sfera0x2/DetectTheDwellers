@@ -68,9 +68,9 @@ test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (th
   // Solo starts with 2 items in both modes and deals itself.
   const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
   assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 2); assert.equal(E.startItems(1, 'quick'), 2); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
-  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 2, 'Quick Shift solo starts with 2'); assert.equal(E.startItems(3, 'quick'), 3, 'a crew of 3–4 draws 3');
-  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 3 : 2);
-  for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 3, team.length + 'p draws 3');
+  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 2, 'Quick Shift solo starts with 2'); assert.equal(E.startItems(3, 'quick'), 4, 'a crew of 3–4 draws 4'); assert.equal(E.startItems(4), 4);
+  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 4 : 2);
+  for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 4, team.length + 'p draws 4');
   assert.equal(CARDS.ITEM_DECK.length, 18);
 });
 test('scaling: a 6 per player past two (review 2); solo and 2 players play the printed dice', () => {
@@ -325,15 +325,12 @@ test('dealing solo: automatic into free slots (6 solo); full, the player picks w
   E.give(S, 0, 'a0-3'); assert.equal(S.phase, 'flip'); assert.deepEqual(S.agents[0].map(c => c.t), ['triage', 'contain', 'enrich', 'triage']);
   assert.equal(E.slotsOf(S, 0), 6);
 });
-test('the Soarcerer: their dice take Baseline dice whatever they show; the printed dice stay exact; baselining costs 3 as for anyone', () => {
+test('the Soarcerer (2026-11-04): their agents count as two; their dice match exactly like anyone’s', () => {
   const G = fight(['SOA', 'ENG'], ['spray'], { dice: [[0, 1], [1, 1]] }); assert.equal(E.slotsOf(G, 0), 4); assert.equal(E.slotsOf(fight(['SOA'], ['spray']), 0), 6);
   assert.equal(E.baseCost(G, { back: 0 }), CARDS.BASE_N); assert.equal(E.baseCost(G, { back: 1 }), CARDS.BASE_N + 1);
-  const m = setSlots(mob(G, 'spray'), [4, 4, 3, 3, 3]); m.based = 3; // two printed 4s, three Baseline 3s
-  assert.deepEqual(E.canHit(G, G.dice[0], m).slots, [2, 3, 4], 'a Soarcerer 1 takes a Baseline die'); assert.equal(E.canHit(G, G.dice[1], m), null, 'an Engineer 1 doesn’t');
-  E.assign(G, 0, m.uid, 2); assert.equal(E.takesLeft(G.dice[0]), 1, 'a double for baselining: one more'); assert.deepEqual(E.canHit(G, G.dice[0], m).slots, [3, 4], 'Baseline dice only');
-  E.assign(G, 0, m.uid, 3); assert.ok(G.dice[0].used); E.unassign(G); E.unassign(G); assert.ok(!G.dice[0].baseTwo, 'undo clears it');
-  m.based = 0; assert.equal(E.canHit(G, G.dice[0], m), null, 'not baselining: exact numbers only');
-  assert.equal(CARDS.PERK.SOA, 'Any die you roll is a double for baselining: it takes two Baseline dice.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
+  setAgents(G, 0, ['contain']); setAgents(G, 1, ['contain']); assert.equal(E.weight(G, 'a0-0'), 2, 'the Soarcerer’s agent counts as two'); assert.equal(E.weight(G, 'a1-0'), 1);
+  const m = setSlots(mob(G, 'spray'), [4, 4, 3, 3]); m.based = 2; assert.equal(E.canHit(G, G.dice[0], m), null, 'a Soarcerer 1 takes nothing here');
+  assert.equal(CARDS.PERK.SOA, 'Your agents count as two.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
 });
 test('Triage Agent: its holder rolls one more of their own dice every round, under its card; it pairs, guards, rerolls and hits the boss', () => {
   const G = fight(['HUN', 'RES'], ['spray', 'boss'], {}); setAgents(G, 1, ['triage', 'triage']); G.phase = 'roll'; G.round = 0; E.roll(G);
@@ -361,12 +358,12 @@ test('Containment Agent: per card, the highest-Damage alarm deals 2 less to ever
   assert.deepEqual(E.incoming(G).total, [1 + 4, 1 + 6 + 4]);
   setAgents(G, 0, ['contain']); // the Exfil Courier (4) is the biggest: 2 less, for both of them
   let inc = E.incoming(G); assert.deepEqual(inc.total, [1 + 2, 1 + 6 + 2]); assert.deepEqual(inc.contain, [2, 2]);
-  setAgents(G, 1, ['contain']); // a second card: the Courier is now 2, so the Grifter (3) is the biggest; on point takes it doubled
+  setAgents(G, 0, ['contain', 'contain']); // a second card (not the Soarcerer's: theirs count as two): the Courier is now 2, so the Grifter (3) is the biggest; on point takes it doubled
   inc = E.incoming(G); assert.deepEqual(inc.total, [1 + 2, 1 + 2 + 2]); assert.deepEqual(inc.contain, [2, 2 + 4]);
   // Never below 1.
   const spray = mob(G, 'spray'), wyr = mob(G, 'wyrmling'); G.play = [spray]; assert.deepEqual(E.incoming(G).total, [1, 1]);
   // At round end the log names the cut, once per alarm.
-  setAgents(G, 1, []); G.play = [wyr]; setDice(G, []); E.endRound(G); assert.deepEqual(G.hp, [E.HP - 2, E.HP - 2]);
+  setAgents(G, 0, ['contain']); G.play = [wyr]; setDice(G, []); E.endRound(G); assert.deepEqual(G.hp, [E.HP - 2, E.HP - 2]);
   assert.ok(G.log.some(l => /Containment Agent: Exfil Courier deals 2 less to each of you/.test(l.text))); assert.equal(G.stats.items.contain, 4);
 });
 test('Recovery Agent: after every won fight, heals 4 per card split across the crew, lowest first, up to the start', () => {

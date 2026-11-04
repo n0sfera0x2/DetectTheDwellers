@@ -395,7 +395,7 @@
   // "What now": what to do this step in a line or two, what this alarm does, and the full rules folded away.
   function vBrief(m) {
     const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null, dm = !m.boss && dataMob(m.id);
-    const perks = (G.team.includes('HUN') ? ' Hunter on point: one more die.' : '') + (G.team.includes('RES') ? ` Responder: a double may heal anyone ${A.RES_HEAL} instead of guarding.` : '') + (G.team.includes('SOA') ? ' Soarcerer: any die is a double for baselining.' : '') + (G.team.includes('ENG') ? ' Engineer: once a round, turn a die to its opposite side.' : '');
+    const perks = (G.team.includes('HUN') ? ' Hunter on point: one more die.' : '') + (G.team.includes('RES') ? ` Responder: a double may heal anyone ${A.RES_HEAL} instead of guarding.` : '') + (G.team.includes('SOA') ? ' Soarcerer: their agents count as two.' : '') + (G.team.includes('ENG') ? ' Engineer: once a round, turn a die to its opposite side.' : '');
     const now = nowText(G);
     const hits = !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up at round end, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`;
     const kw = m.boss ? '+2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`;

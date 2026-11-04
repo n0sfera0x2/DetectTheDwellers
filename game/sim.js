@@ -187,13 +187,13 @@ const CAP = +(process.env.CAP || (V4 ? 1 : 2)), UPGRADE = process.env.UPGRADE !=
 // comebacks deal the Hunter no damage. RESNEW=heal: the Responder's doubles can't guard; a double may instead heal
 // anyone RESHEAL (default 2) right away.
 const HUNNEW = process.env.HUNNEW ?? 'dieplain', RESHEAL = +(process.env.RESHEAL || 3); // defaults since 2026-11-03: HUNNEW die (on point, one more die; also triple, fewer, fewer2, immune), RESNEW heal 5
-const SOANEW = process.env.SOANEW ?? 'wilddbl', RESNEW = process.env.RESNEW ?? 'healor'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
-const upgraded = (G, i) => V4 ? has(G, i, 'overclock') > 0 : UPGRADE && traitsOf(G, i).length >= (SOANEW === 'up1' && G.team[G.trayK ? G.trayK[i] || 0 : 0] === 'SOA' ? 1 : 2);
+const SOANEW = process.env.SOANEW ?? 'twinown' /* since 2026-11-04; wilddbl before */, RESNEW = process.env.RESNEW ?? 'healor'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
+const upgraded = (G, i) => V4 ? has(G, i, 'overclock') > 0 || (SOANEW === 'up1' && G.team[G.trayK[i] || 0] === 'SOA' && traitsOf(G, i).length > 0) : UPGRADE && traitsOf(G, i).length >= (SOANEW === 'up1' && G.team[G.trayK ? G.trayK[i] || 0 : 0] === 'SOA' ? 1 : 2);
 // Which agent the bot tucks each trait under, best first.
 const TUCK = { twin: process.env.TWINTO === 'contain' ? ['contain', 'triage', 'recover', 'enrich'] : ['triage', 'contain', 'recover', 'enrich'], stealth: ['triage', 'contain', 'recover', 'enrich'], relay: ['triage', 'contain', 'recover', 'enrich'], repair: ['recover', 'contain', 'triage', 'enrich'], ghost: ['enrich', 'recover', 'contain', 'triage'], scramble: ['enrich', 'recover', 'contain', 'triage'] };
 const traitsOf = (G, i) => (G.trayT && G.trayT[i]) || [];
 const has = (G, i, tr) => traitsOf(G, i).filter(x => x === tr).length;
-const weight = (G, i) => 1 + has(G, i, 'twin') + (has(G, i, 'escalate') && (G.round || 0) >= 2 ? 1 : 0) + (has(G, i, 'golden') && G.play && G.play.some(m => m.boss) ? 1 : 0) + (has(G, i, 'rooted') && G.hp[G.trayK[i]] * 2 <= G.max ? 1 : 0) + (has(G, i, 'beacon') && G.cbJoin ? 1 : 0) + (has(G, i, 'dayone') && (G.round || 0) <= 1 ? 1 : 0) + (upgraded(G, i) && ['triage', 'enrich'].includes(G.tray[i]) ? 1 : 0) + (process.env.LEVEL === '1' ? traitsOf(G, i).length : 0); // LEVEL=1: every tucked alarm also adds one
+const weight = (G, i) => 1 + has(G, i, 'twin') + (has(G, i, 'escalate') && (G.round || 0) >= 2 ? 1 : 0) + (has(G, i, 'golden') && G.play && G.play.some(m => m.boss) ? 1 : 0) + (has(G, i, 'rooted') && G.hp[G.trayK[i]] * 2 <= G.max ? 1 : 0) + (has(G, i, 'beacon') && G.cbJoin ? 1 : 0) + (has(G, i, 'dayone') && (G.round || 0) <= 1 ? 1 : 0) + (SOANEW === 'twinown' && G.team[G.trayK[i] || 0] === 'SOA' ? 1 : 0) /* SOANEW=twinown (proposal, 2026-11-04): the Soarcerer's agents count as two */ + (upgraded(G, i) && ['triage', 'enrich'].includes(G.tray[i]) ? 1 : 0) + (process.env.LEVEL === '1' ? traitsOf(G, i).length : 0); // LEVEL=1: every tucked alarm also adds one
 const traitN = (G, tr) => G.play && aiUp(G) ? 0 : G.tray.reduce((s, _, i) => s + has(G, i, tr), 0); // the Rogue AI turns traits off too
 // Returns true (tucked), 'full' (every agent holds CAP traits: the alarm goes on the row) or false (no agent: it waits).
 function tuckTrait(G, tr) {
@@ -668,7 +668,7 @@ function relay(G) {
 function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
-  if (G.n >= 3 && NEWITEMS) draw(G, +(process.env.START34 ?? 1)); // START34: extra setup items for a crew of 3 or 4 (1 since 2026-11-03)
+  if (G.n >= 3 && NEWITEMS) draw(G, +(process.env.START34 ?? 2)); // START34: extra setup items for a crew of 3 or 4 (2 since 2026-11-04; 1 since 2026-11-03)
   if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with (2)
   const sits = SIT && G.sys === 'n6';
   for (let f = 0; !G.over; f++) {

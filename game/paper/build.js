@@ -8,7 +8,7 @@ const { fonts } = require('../../deck/render');
 const { launch, fontsReady } = require('../../deck/browser');
 const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, tracker, mobs: cardMobs, boss, BOSS_IDS, ANALYST_IDS, AGENT_IDS, ITEM_DECK, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
 
-const OUT = __dirname, HP = 15; // Full Shift starting HP (Quick: 11), 2026-11-04; the numbers are in the README
+const OUT = __dirname, HP = 14; // Full Shift starting HP (Quick: 11), 2026-11-04; the numbers are in the README
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
@@ -21,10 +21,10 @@ const rules = `<section class="page rules">
 <p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
 <h2>Setup</h2>
 <ol>
-<li>Pick the shift. <b>Quick:</b> everyone starts at <b>11 HP</b>. <b>Full:</b> <b>15 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
+<li>Pick the shift. <b>Quick:</b> everyone starts at <b>11 HP</b>. <b>Full:</b> <b>14 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
 <li>Shuffle the <b>situation deck</b>, the 15 alarms and 9 situations. <b>Quick:</b> deal 8. <b>Full:</b> deal 9. That’s the <b>feed</b>. <b>Full</b> also shuffles the 9 <b>story</b> cards into their own deck.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
-<li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 3); solo 2.</li>
+<li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 4); solo 2.</li>
 <li>Set out the shift tracker: coin a box for anything once a round or fight; clear it as that ends.</li>
 </ol>
 <h2>Threat dice</h2>

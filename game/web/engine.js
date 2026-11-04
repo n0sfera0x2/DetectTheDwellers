@@ -23,7 +23,7 @@
   const START_ITEMS = { solo: 2, crew: 2 }; // items drawn at setup: solo 2 (since 2026-11-01), a crew of 2–4 draws 2
   // Quick Shift solo starts with 1 (2026-11-02: solo ran 12 points ahead of a crew in the short feed).
   // A crew of 3 or 4 draws one more (2026-11-03: the Responder's doubles no longer guard, and 4p fell 9–15 points behind 2p).
-  const startItems = (n, mode = 'full') => n === 1 ? (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 1 : 0);
+  const startItems = (n, mode = 'full') => n === 1 ? (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 2 : 0); // a crew of 3–4 draws 4 (since 2026-11-04; 3 before)
   // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   // A crew die's double after it changes number: its owner's doubles (the solo crew die: a 6), none if rolled Rattled.
@@ -45,7 +45,7 @@
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 11, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 15, soloItems: 2, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 11, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 14, soloItems: 2, bossRow: true } };
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -107,7 +107,7 @@
   const upgraded = (G, uid) => traitsOn(G, uid, 'Overclock') > 0;
   const holderOf = (G, uid) => G.agents.findIndex(h => h.some(c => c.uid === uid));
   const weight = (G, uid) => { const c = cardOf(G, uid), k = holderOf(G, uid); return 1 + traitsOn(G, uid, 'Twin') + (traitsOn(G, uid, 'Escalate') && G.round >= 2 ? 1 : 0)
-    + (traitsOn(G, uid, 'Golden') && G.play.some(m => m.boss) ? 1 : 0) + (traitsOn(G, uid, 'Rooted') && k >= 0 && G.hp[k] * 2 <= G.max ? 1 : 0) + (traitsOn(G, uid, 'Beacon') && G.cbJoin ? 1 : 0) + (c && upgraded(G, uid) && (c.t === 'triage' || c.t === 'enrich') ? 1 : 0); };
+    + (traitsOn(G, uid, 'Golden') && G.play.some(m => m.boss) ? 1 : 0) + (traitsOn(G, uid, 'Rooted') && k >= 0 && G.hp[k] * 2 <= G.max ? 1 : 0) + (traitsOn(G, uid, 'Beacon') && G.cbJoin ? 1 : 0) + (k >= 0 && G.team[k] === 'SOA' ? 1 : 0) /* the Soarcerer (2026-11-04): their agents count as two */ + (c && upgraded(G, uid) && (c.t === 'triage' || c.t === 'enrich') ? 1 : 0); };
   // The players holding agents that carry a trait: [{ k, uid, a }] (none while the Rogue AI is up).
   const traitHolders = (G, name) => aiUp(G) ? [] : G.aug.filter(a => a.host && CARDS.traitName(a.id) === name).map(a => ({ k: G.agents.findIndex(h => h.some(c => c.uid === a.host)), uid: a.host, a })).filter(x => x.k >= 0);
   // Every held agent with its holder: [{ c, k }].
@@ -402,11 +402,7 @@
     // Evasive: a double of another number takes out any one die (and is spent). Not after its first take.
     if (m.kw === 'hardened' && !G.wildAll && !free.some(i => m.slots[i] === d.n)) return d.takes.length ? null : { slots: free, near: [], wild: true, dbl: false, evade: true };
     if (G.wildAll) return { slots: free, near: [], wild: true, dbl: d.dbl };
-    // The Soarcerer (2026-11-03): any of their dice is a double for baselining. It takes Baseline dice (the last m.based
-    // slots) whatever number it shows, two of them. A second take it earned that way (d.baseTwo) goes only on Baseline dice.
-    const base = soaBase(G, d, m) ? free.filter(i => i >= m.slots.length - m.based) : [];
-    if (d.baseTwo && d.takes.length) return base.length ? { slots: base, near: [], wild: true, dbl: true } : null;
-    const exact = [...new Set([...free.filter(i => m.slots[i] === d.n), ...base])], near = []; // no one-higher-or-lower matches in this test
+    const exact = free.filter(i => m.slots[i] === d.n), near = []; // no one-higher-or-lower matches in this test
     if (!exact.length && !near.length) return null;
     return { slots: [...exact, ...near], near, wild: false, dbl: d.dbl };
   }
@@ -439,10 +435,7 @@
     return out;
   }
   // How many takes a die has left: a double counts as two dice showing its number.
-  const takesLeft = d => !d || d.used ? 0 : (d.dbl || d.baseTwo ? 2 : 1) - (d.takes || []).length;
-  // A Soarcerer die against an alarm being baselined; isBase: slot p is one of its Baseline dice.
-  const soaBase = (G, d, m) => !!d && d.crew && G.team[d.k] === 'SOA' && !!m && m.based > 0;
-  const isBase = (m, p) => p >= m.slots.length - (m.based || 0);
+  const takesLeft = d => !d || d.used ? 0 : (d.dbl ? 2 : 1) - (d.takes || []).length;
   // Every legal use of a die, for the UI's slot highlights and for tests.
   function targets(G, di) {
     const d = G.dice[di]; if (!d || G.phase !== 'assign') return { hits: [], guard: false, enrich: false };
@@ -465,9 +458,8 @@
     const o = canHit(G, d, m); if (!o) fail(cantWhy(G, d, m));
     if (p == null) p = o.slots[0];
     if (!o.slots.includes(p)) fail(m.off[p] ? 'That die is already taken.' : `A ${d.n} can’t take the ${m.slots[p]} under ${m.name}.`);
-    const two = !d.dbl && soaBase(G, d, m) && isBase(m, p) && (q == null || isBase(m, q)); // the Soarcerer's double for baselining
     if (q != null) { if (takesLeft(d) < 2 || o.evade) fail('Only a double takes two.'); if (!moreSlots(G, d, m, p).includes(q)) fail(`A ${d.n} can’t take the ${m.slots[q]} under ${m.name}.`); }
-    G.undo.push(snap(G)); if (two && !d.takes.length) d.baseTwo = true; // after the snapshot, so undo clears it
+    G.undo.push(snap(G));
     const took = [m.slots[p]]; take(m, p); d.takes.push({ uid, p });
     if (q != null) { took.push(m.slots[q]); take(m, q); d.takes.push({ uid, p: q }); }
     if (o.evade || !takesLeft(d)) d.used = { uid, slots: d.takes.map(t => t.p) };

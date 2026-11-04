@@ -1,6 +1,6 @@
 # Detect the Dwellers
 
-**Status:** the rules below are current as of [scares measured right, cheaper baselining, a tighter Full Shift](#scares-measured-right-cheaper-baselining-a-tighter-full-shift-2026-11-04) (2026-11-04). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
+**Status:** the rules below are current as of [a new Soarcerer, 4 setup items, Full Shift at 14 HP](#a-new-soarcerer-4-setup-items-full-shift-at-14-hp-2026-11-04) (2026-11-04). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
 ## The rules now
 
@@ -11,9 +11,9 @@
 | Mode | Feed | HP | Solo starts with | Boss |
 | --- | --- | --- | --- | --- |
 | **Quick Shift** | deal 8 from the situation deck | 11 | 2 items | its core ability only |
-| **Full Shift** | deal 9 from the situation deck; after the 1st, 3rd and 5th fight won, the top story card is the next flip | 15 | 2 items | its core ability and its **Full Shift** row trigger |
+| **Full Shift** | deal 9 from the situation deck; after the 1st, 3rd and 5th fight won, the top story card is the next flip | 14 | 2 items | its core ability and its **Full Shift** row trigger |
 
-One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 3). The number of alarms in a feed varies: about 4.3 in Quick, 5.6 in Full.
+One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 4). The number of alarms in a feed varies: about 4.3 in Quick, 5.6 in Full.
 
 **A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (3 or 4 players add the card's + die, a 6, per player past 2). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll.
 
@@ -78,7 +78,7 @@ One line each since 2026-11-03; no wild numbers. Only the Engineer's turn needs 
 | Hunter | 4, 6 | On point, you roll one more die. It’s never a double. |
 | Responder | 3, 6 | A double of yours can heal anyone 3 instead of guarding. |
 | Engineer | 1, 6 | Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. |
-| Soarcerer | 2, 6 | Any die you roll is a double for baselining: it takes two Baseline dice. |
+| Soarcerer | 2, 6 | Your agents count as two. (Since 2026-11-04.) |
 
 ### Items (18)
 
@@ -131,18 +131,18 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-04 (traits for the agent only, story cards at the clock, Watchlist Agent and Takedown Request; then 2 Baseline dice, a 9-card Full Shift, HP 11 and 15). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
+Bot sims, `SYS=n6 N=600`, 2026-11-04 (traits for the agent only, story cards at the clock, Watchlist Agent and Takedown Request; then 2 Baseline dice, a 9-card Full Shift, HP 11 and 14, the Soarcerer’s agents, 4 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 5 HP or less: one boss hit from 0) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 60% | 33 pts | 46% | 94% | 17.2 | 6.6 | 50% | 62% |
-| Quick, 2p | 56% | 25 pts | 48% | 96% | 11.1 | 3.7 | 39% | 62% |
-| Quick, 4p | 47% | 29 pts | 50% | 98% | 9.6 | 2.4 | 55% | 54% |
-| Full, 1p | 59% | 31 pts | 47% | 94% | 18.9 | 8.5 | 49% | 31% |
-| Full, 2p | 60% | 26 pts | 50% | 96% | 12.6 | 5.4 | 31% | 24% |
-| Full, 4p | 50% | 28 pts | 45% | 98% | 11.2 | 3.7 | 43% | 27% |
+| Quick, 1p | 62% | 34 pts | 46% | 94% | 17.1 | 6.2 | 50% | 63% |
+| Quick, 2p | 59% | 24 pts | 48% | 96% | 11.3 | 3.4 | 44% | 59% |
+| Quick, 4p | 56% | 25 pts | 46% | 98% | 10.0 | 2.4 | 45% | 51% |
+| Full, 1p | 56% | 30 pts | 47% | 95% | 18.2 | 8.4 | 49% | 36% |
+| Full, 2p | 56% | 24 pts | 48% | 96% | 12.4 | 5.4 | 32% | 35% |
+| Full, 4p | 55% | 25 pts | 41% | 98% | 11.2 | 3.6 | 42% | 29% |
 
-Solo by analyst: Quick Hunter 65%, Responder 61%, Engineer 62%, Soarcerer 51%; Full 60 / 64 / 59 / 51%. Pairs (600 games each): Quick 55% (Engineer + Soarcerer) to 62% (Hunter + Engineer); Full 55% (Hunter + Soarcerer) to 64% (Hunter + Engineer).
+Solo by analyst: Quick Hunter 65%, Responder 61%, Engineer 62%, Soarcerer 56%; Full 55 / 60 / 56 / 57%. Pairs (600 games each): Quick 57% (Hunter + Responder) to 62% (Hunter + Engineer); Full 56% (Hunter + Soarcerer) to 59% (Responder + Engineer, Engineer + Soarcerer).
 
 ### Targets
 
@@ -150,25 +150,24 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 60 / 56 / 47% (4p under) | 59 / 60 / 50% | the mode's HP; solo: starting items; 3–4p: their setup item |
-| Spread across crew sizes | 10 points or less | 13 (misses) | 10 | 3–4p: the setup item (the + die is printed) |
-| Solo spread across analysts | 10 points or less | 14 (misses: Soarcerer 51%) | 13 (misses: Soarcerer 51%) | the analyst's ability, not their doubles |
-| Pairs, lowest to highest | within 15 points | 55–62% (7) | 55–64% (9) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 33 / 25 / 29 | 31 / 26 / 28 | more decisions per roll |
-| Rounds with a real decision | 60% or more | 94 / 96 / 98% | 94 / 96 / 98% | the reroll; its cost |
-| Rounds with a real dice choice | 40% or more | 46 / 48 / 50% | 47 / 50 / 45% | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 50 / 39 / 55% (2p just misses) | 49 / 31 / 43% (2p misses) | the boss's Damage; the threat timing (`ESC`) |
-| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 62 / 62 / 54% | 31 / 24 / 27% (misses) | Full: its HP (HP 13: 39–44%, but 4p 40%) |
-| Comebacks per shift | 3–6 | 6.6 / 3.7 / 2.4 (solo over, 4p under) | 8.5 / 5.4 / 3.7 (solo over) | the row ranges (`ROWSHIFT`); the feed size |
-| Baselining worth doing | always beats never | +10 / +6 / +12 | +19 / +23 / +25 | the Baseline dice and the traits |
+| Win rate, every crew size | 50–60% | 62 / 59 / 56% (1p a little over) | 56 / 56 / 55% | the mode's HP; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 6 | 1 | 3–4p: the setup item (the + die is printed) |
+| Solo spread across analysts | 10 points or less | 9 | 5 | the analyst's ability, not their doubles |
+| Pairs, lowest to highest | within 15 points | 57–62% (5) | 56–59% (3) | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 34 / 24 / 25 | 30 / 24 / 25 | more decisions per roll |
+| Rounds with a real decision | 60% or more | 94 / 96 / 98% | 95 / 96 / 98% | the reroll; its cost |
+| Rounds with a real dice choice | 40% or more | 46 / 48 / 46% | 47 / 48 / 41% | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 50 / 44 / 45% | 49 / 32 / 42% (2p misses) | the boss's Damage; the threat timing (`ESC`) |
+| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 63 / 59 / 51% | 36 / 35 / 29% (misses) | Full: its HP; 4p pile-ups |
+| Comebacks per shift | 3–6 | 6.2 / 3.4 / 2.4 (solo over, 4p under) | 8.4 / 5.4 / 3.6 (solo over) | the row ranges (`ROWSHIFT`); the feed size |
+| Baselining worth doing | always beats never | +8 / +4 / +18 | +15 / +18 / +30 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
-| The boss is a climax (Full) | beating it once there: 75% or less | 75 / 68 / 66% | 73 / 68 / 63% | its row marks (`BOSSSTEPS`) |
+| The boss is a climax (Full) | beating it once there: 75% or less | 77 / 72 / 70% (1p over) | 72 / 66 / 68% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
 
-- **The Soarcerer fell behind** (51% solo in both modes, 9–14 points under the others): with 2 Baseline dice everyone baselines cheaply, so its baselining edge shrank.
-- **Quick Shift 4-player crews are at 47%.** One more setup item for 3–4 players (`START34=2`) measured 55% at 4p with 1–2p unchanged (400 games, 2026-11-04).
-- **Full Shift scares are 24–31%** against 40%. HP 13 reaches 39–44% but drops 4-player crews to 40%.
+- **Full Shift scares are 29–36%** against 40%. HP 13 would reach it but costs 4-player crews about 10 points.
+- **4-player deaths are pile-ups.** Of the deaths from 5+ HP in one round, 74–86% happen with 3–6 alarms in play, often the boss plus a Beacon chain (600 games, 2026-11-04). The page already shows each round's incoming hit and marks it lethal, so this is the rule, not hidden information. A cap of 2 comebacks per row roll is the lever to try, if the table finds it unfair.
 - Full Shift's 30 minutes is an estimate from the round count (19 solo rounds, was 24), not timed at a table.
 - **The other proposed cards** (2026-11-04 history) are simmed but not in the deck.
 
@@ -180,7 +179,7 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 ```bash
 SYS=n6 HP=11 node game/sim.js               # Quick Shift (the default MODE) at its HP, 600 games per case (a few minutes)
-MODE=full SYS=n6 HP=15 node game/sim.js      # Full Shift at its HP
+MODE=full SYS=n6 HP=14 node game/sim.js      # Full Shift at its HP
 SYS=n6 node game/sim.js             # the current rules, HP tuned to ~50% at 2p
 node game/sim.js                    # the legacy d20 baseline and chapter dice side by side
 SYS=d6 node game/sim.js             # the earlier symbol d6 system (1–2 Detect, 3–4 Contain, 5–6 Eradicate)
@@ -201,13 +200,13 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `PUSH`, `PUSHMIN`, `PUSHGAIN` | n6 push (default on; `PUSH=0` off): the bot pushes above `PUSHMIN` HP (4) when the reroll's average gain beats `PUSHGAIN` (6) |
 | `HEALX` | scales the after-fight heals (default 1) |
 | `QSOLO` | items a solo player starts with (default 2) |
-| `START34` | extra setup items for a crew of 3 or 4 (default 1) |
+| `START34` | extra setup items for a crew of 3 or 4 (default 2 since 2026-11-04; was 1) |
 | `HUNNEW`, `HUNWILD` | the Hunter: `die` (default: on point, one more die); `triple`, `fewer`, `fewer2`, `immune` were tried; `HUNWILD=1` brings back the wild 1s |
 | `RESHEAL` | what a Responder double heals with `RESNEW=heal` (default 5); `RESNEW=healor` lets it guard too |
 | `ANALYSTS` | the analyst pool crews are drawn from (default `HUN,RES,ENG,SOA`; `FOR` and `LEAD` still run) |
 | `HUNANY`, `HUNBOSS`, `HUNEND` | the Hunter's 1s: wild on any alarm (`HUNANY=1`), on the boss too (`HUNBOSS`, default on), and the old once-a-fight comeback removal (`HUNEND=once`, default off) |
 | `RESNEW`, `RESPERK`, `RESARR` | the Responder: `RESNEW=top` (default) cuts the highest-Damage alarm by 1; the old stand (`RESPERK=stand`) and arrival cut (`RESARR=crew`) are off |
-| `SOANEW`, `SOAPERK`, `SOATUCK` | the Soarcerer: `SOANEW=wildbase` (default) takes Baseline dice with any number; `up1` (one tuck upgrades) and `pair5` were tried; the old 2-die cost (`SOAPERK=auto`) and tuck draw (`SOATUCK=1`) are off |
+| `SOANEW`, `SOAPERK`, `SOATUCK` | the Soarcerer: `SOANEW=twinown` (default since 2026-11-04) makes their agents count as two; `wilddbl` (any die a double for baselining, the rule before), `wildbase`, `up1` (a tuck under their agent also overclocks it) and `pair5` were tried; the old 2-die cost (`SOAPERK=auto`) and tuck draw (`SOATUCK=1`) are off |
 | `HP` | starting HP; skips the tune-to-50% search |
 | `N6DICE` | n6: dice per analyst each round (default 1; on point +1) |
 | `N6SOLO` | n6: dice a solo player rolls (default 3: two own plus the crew die) |
@@ -318,6 +317,18 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### A new Soarcerer, 4 setup items, Full Shift at 14 HP (2026-11-04)
+
+The three misses the last pass left.
+
+- **The Soarcerer: "Your agents count as two."** With 2 Baseline dice, any one die finished a band, so "any die is a double for baselining" barely mattered (51% solo). Tried, 400 games: no ability 48–49%, drawing an item when the crew tucks 54–56% solo but 63–69% at 4 players, a tuck under their agent also overclocking it 51–52%, agents counting as two 56–62%. It's one line, needs no coin, and puts the agents in charge of the win.
+- **A crew of 3 or 4 draws 4 items at setup** (was 3). Quick 4-player crews were at 47%.
+- **Full Shift HP 14** (was 15): the two changes above lifted Full to about 60% at every size, room for a tighter shift.
+
+Also checked: the page already shows each round's incoming hit before dice are committed, so 4-player spike deaths aren't hidden information. They are pile-ups (3–6 alarms in play in 74–86% of them).
+
+Sims, 600 games per crew size, 2026-11-04: Quick 62 / 59 / 56%, Full 56 / 56 / 55%. Solo spread 9 (Quick) and 5 (Full), pairs 57–62% and 56–59%. Scares (5 HP or less) Quick 51–63%, Full 29–36%. Baselining beats never by 4–18 points in Quick and 15–30 in Full. Knobs: `SOANEW=twinown` (default), `START34=2` (default).
 
 ### Scares measured right, cheaper baselining, a tighter Full Shift (2026-11-04)
 

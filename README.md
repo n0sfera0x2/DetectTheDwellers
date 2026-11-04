@@ -5,17 +5,17 @@
 An original game by Binary Defense.
 
 - **Play in the browser:** https://n0sfera0x2.github.io/DetectTheDwellers/ (one page, works offline once loaded)
-- **Print and play:** [detect-the-dwellers-print-and-play.pdf](https://n0sfera0x2.github.io/DetectTheDwellers/detect-the-dwellers-print-and-play.pdf), a rules sheet and 61 cards to cut out (8 Letter pages)
+- **Print and play:** [detect-the-dwellers-print-and-play.pdf](https://n0sfera0x2.github.io/DetectTheDwellers/detect-the-dwellers-print-and-play.pdf), a rules sheet and 63 cards to cut out (8 Letter pages)
 
 ## What you need
 
-The 61 cards, standard dice in four colours, and a few coins: crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, about 16 threat dice, and coins for HP and the shift tracker. 1–4 players, four analysts to pick from. Quick Shift (8 cards, 12 HP, about 20 minutes) or Full Shift (14 cards, 17 HP, about 35 minutes), dealt fresh every shift from one situation deck, with one of three bosses waiting underneath.
+The 63 cards, standard dice in four colours, and a few coins: crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, about 16 threat dice, and coins for HP and the shift tracker. 1–4 players, four analysts to pick from. Quick Shift (8 cards, 12 HP, about 20 minutes) or Full Shift (14 cards, 17 HP, about 35 minutes), dealt fresh every shift from the situation deck, with one of three bosses waiting underneath. Full Shift adds a small story deck: a story card after every second fight you win.
 
 ## How it plays
 
 Pick who's on point and flip the top card of the feed. A situation asks you to choose. An alarm sets threat dice under its card. Everyone rolls (on point rolls two), and each die takes out a threat die showing exactly its number. A double counts as two dice, or guards you (a Responder's double may heal anyone 3 instead). Once a round you may take 1 damage to reroll a die. Whatever's left hits back.
 
-Win a fight and draw items: agents that work for the whole crew every round, and consumables you use once. Baseline an alarm (beat it with three more dice) and it slides under an agent, which changes for good: it counts as two, or overclocks, or keeps working against the Rogue AI. Beaten alarms go on the row and roll to come back, often: they rejoin the fight. Full rules: [game/README.md](game/README.md#the-rules-now).
+Win a fight and draw items: agents that work for the whole crew every round, and consumables you use once. Baseline an alarm (beat it with three more dice) and it slides under an agent, which changes for good: it counts as two, or overclocks, or takes no slot, or keeps working against the Rogue AI. Beaten alarms go on the row and roll to come back, often: they rejoin the fight. Full rules: [game/README.md](game/README.md#the-rules-now).
 
 ## Feedback
 
@@ -47,4 +47,4 @@ Working with Claude Code? Start with [CLAUDE.md](CLAUDE.md).
 
 ## Status
 
-Rules as of 2026-11-03: four analysts with one line each, a reroll costs 1 HP (once a round), agents and consumables share 4 item slots, one tucked alarm changes its agent for good, and a wider row whose comebacks rejoin the fight. Bot sims (600 games per crew size) win 59% / 59% / 47% in Quick Shift and 51% / 54% / 49% in Full Shift at 1 / 2 / 4 players, with a 24–32 point gap between smart and random play and a real decision in 94–97% of rounds. No human table yet: a playtest is next. Details in [game/README.md](game/README.md#where-it-stands).
+Rules as of 2026-11-04: four analysts with one line each, a reroll costs 1 HP (once a round), agents and consumables share 4 item slots, one tucked alarm changes its agent for good, a wider row whose comebacks rejoin the fight, and Full Shift story cards in their own deck, one after every second fight won, and 18 items with the Watchlist Agent and Takedown Request. Bot sims (600 games per crew size) win 56% / 55% / 51% in Quick Shift and 50% / 57% / 53% in Full Shift at 1 / 2 / 4 players, with a 24–32 point gap between smart and random play and a real decision in 94–97% of rounds. No human table yet: a playtest is next. Details in [game/README.md](game/README.md#where-it-stands).

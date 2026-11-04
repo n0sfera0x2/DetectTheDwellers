@@ -173,9 +173,8 @@
   // What the items did this shift (engine G.stats.items), one line per item that did something.
   const ITEM_DID = { triage: ['Triage Agents', 'dice taken or guarded'], contain: ['Containment Agents', 'damage stopped'], recover: ['Recovery Agents', 'HP healed'],
     enrich: ['Enrichment Agent', 'turned dice put to work'], surge: ['Surge Playbook', 'dice taken or guarded'], intel: ['Threat Intel Feed', 'wild takes'],
-    isolate: ['Isolation Script', 'threat dice removed'], coffee: ['Shift Coffee', 'HP healed'], freeze: ['Change Freeze', 'row rolls skipped'],
-    twin: ['Twin', 'extra dice put to work and damage stopped'], ghost: ['Ghost', 'arrival damage stopped'], scramble: ['Scramble', 'comebacks kept on the row'], repair: ['Repair', 'HP healed'],
-    signature: ['Signature', 'dice made doubles'], feedback: ['Feedback', 'HP healed'], siphon: ['Siphon', 'HP healed'], callback: ['Callback', 'amber dice rerolled'] };
+    isolate: ['Isolation Script', 'threat dice removed'], coffee: ['Shift Coffee', 'HP healed'], freeze: ['Change Freeze', 'row rolls skipped'], watchlist: ['Watchlist Agent', 'comebacks kept on the row'], takedown: ['Takedown Request', 'alarms taken off the row'],
+    twin: ['Agents counting as two', 'extra dice put to work and damage stopped'], ghost: ['Ghost', 'arrival damage stopped'], scramble: ['Scramble', 'comebacks kept on the row'], repair: ['Repair', 'HP healed'] };
   const itemsDid = G => Object.entries(G.stats.items || {}).filter(([, n]) => n > 0).map(([t, n]) => ({ t, n, name: ITEM_DID[t][0], what: ITEM_DID[t][1] }));
   // ---- Copy result -----------------------------------------------------------------------------------------------
   function resultLine() {
@@ -194,7 +193,7 @@
   // ---- Views --------------------------------------------------------------------------------------------------------
   const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button>`;
   const dbls = id => A.DOUBLES[id].map(n => A.pip(n, 18)).join('');
-  const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '14 cards, 3 of them story cards, then the boss. The boss pulls the row. About 35 minutes.' };
+  const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '11 cards, then the boss. Every second fight you win, a story card. The boss pulls the row. About 35 minutes.' };
   function vSetup() {
     const team = UI.setup.team, n = team.length;
     const picks = A.ANALYST_IDS.map(id => { const on = team.includes(id);
@@ -362,13 +361,14 @@
       const cards = ag.map(c => `<div class="t-kslot${swap ? ' swap' : ''}" data-card="agent:${c.t}" data-kuid="${c.uid}">${A.agentCard(c.t)}${tucked(c)}${under(c)}
         <div class="row"><span class="run">${swap ? 'Swap?' : 'Holding'}</span>${tucking ? `<button class="btn s cy" type="button" data-a="tuck" data-u="${c.uid}" data-k="tuck${c.uid}"${E.tuckedOn(G, c.uid) >= A.TUCK_CAP ? ' disabled' : ''} aria-label="Tuck ${esc(G.tuck[0].name)} under ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])}">${E.tuckedOn(G, c.uid) >= A.TUCK_CAP ? 'Full' : 'Tuck it here'}</button>`
           : swap ? `<button class="btn s warn" type="button" data-a="drop" data-n="${k}" data-u="${c.uid}" data-k="drop${c.uid}" aria-label="Discard ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])} for the new ${esc(E.KIT_NAME[top.t])}">Discard it</button>` : ''}</div></div>`).join('');
-      const empty = Array.from({ length: Math.max(0, slots - ag.length - hand.length) }, () => `<div class="t-kslot open"><div class="t-kempty">Item slot</div>${anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''}<div class="row"><span class="run">Empty</span></div></div>`).join('');
+      const empty = Array.from({ length: Math.max(0, slots - E.heldN(G, k)) }, () => `<div class="t-kslot open"><div class="t-kempty">Item slot</div>${anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''}<div class="row"><span class="run">Empty</span></div></div>`).join('');
       // Consumables sit in the same slots as agents (2026-11-03), each with Use (or Discard it when dealing to a full player).
       const hcards = hand.map(c => { const can = E.canUse(G, c.t);
         return `<div class="t-kslot cons${drawn.has(c.uid) && G.phase !== 'assign' ? ' new' : ''}${can ? ' live' : ''}${swap ? ' swap' : ''}" data-card="agent:${c.t}" data-huid="${c.uid}">${A.agentCard(c.t)}${anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''}
-          <div class="row"><span class="run">${swap ? 'Swap?' : 'Use once'}</span>${swap ? `<button class="btn s warn" type="button" data-a="drop" data-n="${k}" data-u="${c.uid}" data-k="drop${c.uid}" aria-label="Discard ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])} for the new ${esc(E.KIT_NAME[top.t])}">Discard it</button>`
+          <div class="row"><span class="run">${swap ? 'Swap?' : c.t === 'takedown' && can && G.row.length > 1 ? 'Take down:' : 'Use once'}</span>${swap ? `<button class="btn s warn" type="button" data-a="drop" data-n="${k}" data-u="${c.uid}" data-k="drop${c.uid}" aria-label="Discard ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])} for the new ${esc(E.KIT_NAME[top.t])}">Discard it</button>`
+          : c.t === 'takedown' && can && G.row.length > 1 ? `<span class="tdown">${G.row.map(m => `<button class="btn s cy" type="button" data-a="use" data-u="${c.uid}" data-m="${m.uid}" data-k="use${c.uid}${m.uid}" aria-label="${esc(nm(id))}: take down ${esc(m.name)}">${esc(m.name)}</button>`).join('')}</span>`
           : `<button class="btn s cy" type="button" data-a="use" data-u="${c.uid}" data-k="use${c.uid}" ${can ? '' : 'disabled'} aria-label="${esc(nm(id))}: use the ${esc(E.KIT_NAME[c.t])}">Use</button>`}</div></div>`; }).join('');
-      return `<div class="t-pk${k === G.point ? ' pt' : ''}${swap ? ' swap' : ''}" data-holder="${k}" role="group" aria-label="${esc(nm(id))}’s items"><h3 class="t-pkh"><span class="nm">${esc(nm(id))}</span><span class="cnt num">${ag.length + hand.length}/${slots} items</span></h3>
+      return `<div class="t-pk${k === G.point ? ' pt' : ''}${swap ? ' swap' : ''}" data-holder="${k}" role="group" aria-label="${esc(nm(id))}’s items"><h3 class="t-pkh"><span class="nm">${esc(nm(id))}</span><span class="cnt num">${E.heldN(G, k)}/${slots} items</span></h3>
         <div class="t-pkb"><div class="t-kit">${cards}${hcards}${empty}</div></div></div>`;
     }).join('');
     return `<div class="t-agents"><h2 class="sech"><span>Items</span><span class="cnt num">deck ${G.kit.length}</span></h2><div class="t-crewkit" style="--n:${G.n}">${groups}</div></div>`;
@@ -399,7 +399,7 @@
     const now = nowText(G);
     const hits = !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up at round end, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`;
     const kw = m.boss ? '+2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`;
-    const beaten = m.boss ? 'Beat it and the shift is survived.' : m.based ? 'Beaten with its Baseline dice, it tucks under an agent, off the row.' : `Beaten, it goes on the persistence row: ${backPct(m.top)}% to come back on each row roll.`;
+    const beaten = m.boss ? 'Beat it and the shift is survived.' : m.based ? 'Beaten with its Baseline dice, it tucks under an agent, off the row.' : `Beaten, it goes on the persistence row: ${backPct(E.backTop(G, m))}% to come back on each row roll.`;
     const rules = [['To hit', 'A die takes one die under it showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards you. Two of your own dice showing the same number pair up as a double. Once a round you may take 1 to reroll one of your dice (not at 1 HP).' + perks],
       ['Win the fight', `Draw ${G.n === 1 ? (D.kitSolo === 1 ? 'an item' : D.kitSolo + ' items') : D.kitPerFight + ' items'} and deal them.`],
       ['Next', m.boss ? 'No more situations: this is the last fight.' : !G.feed.length ? 'The feed is empty: the boss is next.' : `${pl(G.feed.length, 'card')} face down, alarms and situations shuffled, then the boss.`]];
@@ -411,8 +411,8 @@
   function vSide() {
     const G = UI.G, r = G.lastRow;
     // Each row mob as a small amber card: its scene, its number, and the 2d6 sums 2–12 that bring it back.
-    const rowHtml = G.row.length ? `<div class="t-rowlist">${G.row.map(m => `<div class="rcard"><span class="scr">${slice(ART[m.id])}</span><div class="rc-b"><b class="nm">${esc(m.name)}</b><span class="rng">Back on 2–${m.top} · <b>${backPct(m.top)}%</b> a roll</span>
-      <span class="t-track" aria-hidden="true">${Array.from({ length: 11 }, (_, i) => `<i class="${i + 2 <= m.top ? 'on' : ''}${r && r.fight === G.fight && r.roll === i + 2 ? ' roll' : ''}">${i + 2}</i>`).join('')}</span></div></div>`).join('')}</div>`
+    const rowHtml = G.row.length ? `<div class="t-rowlist">${G.row.map(m => `<div class="rcard"><span class="scr">${slice(ART[m.id])}</span><div class="rc-b"><b class="nm">${esc(m.name)}</b><span class="rng">${E.backTop(G, m) >= 2 ? `Back on 2–${E.backTop(G, m)}` : 'Stays put'} · <b>${backPct(E.backTop(G, m))}%</b> a roll</span>
+      <span class="t-track" aria-hidden="true">${Array.from({ length: 11 }, (_, i) => `<i class="${i + 2 <= E.backTop(G, m) ? 'on' : ''}${r && r.fight === G.fight && r.roll === i + 2 ? ' roll' : ''}">${i + 2}</i>`).join('')}</span></div></div>`).join('')}</div>`
       : '<p class="empty">Empty. Beaten alarms land here and come back on the 2 amber dice.</p>';
     return `<aside class="t-side">
       <div class="panel pad"><h2 class="sech a"><span>Persistence row</span><span class="cnt"></span></h2>${rowHtml}</div>
@@ -605,7 +605,7 @@
     if (a === 'turn') { const i = UI.sel; return act(() => E.enrichTurn(G, i, +b.dataset.n)); }
     if (a === 'undo') { UI.more = null; UI.guarding = null; act(() => E.unassign(G)); const last = G.dice.filter(d => !d.used).map(d => d.i); if (UI.sel == null || (G.dice[UI.sel] && G.dice[UI.sel].used)) UI.sel = last.length ? last[last.length - 1] : null; return render(); }
     if (a === 'end') { UI.sel = null; UI.more = null; UI.guarding = null; act(() => E.endRound(G)); return focusKey(G.phase === 'roll' ? 'roll' : 'flip'); }
-    if (a === 'use') { act(() => E.use(G, b.dataset.u)); if (G.phase === 'assign' && UI.sel == null) { nextDie(); render(); } return; }
+    if (a === 'use') { act(() => E.use(G, b.dataset.u, null, b.dataset.m)); if (G.phase === 'assign' && UI.sel == null) { nextDie(); render(); } return; }
     if (a === 'give') { const k = +b.dataset.n; if (E.dealFull(G, k)) { UI.dealTo = k; UI.msg = ''; render(); return focusKey('keepout'); } UI.dealTo = null; act(() => E.give(G, k)); return focusAfterDeal(); }
     if (a === 'drop') { const k = +b.dataset.n; act(() => E.give(G, k, b.dataset.u)); UI.dealTo = null; render(); return focusAfterDeal(); }
     if (a === 'keepout') { const k = UI.dealTo == null ? 0 : UI.dealTo, c = G.deal[0]; if (c) act(() => E.give(G, k, c.uid)); UI.dealTo = null; render(); return focusAfterDeal(); }

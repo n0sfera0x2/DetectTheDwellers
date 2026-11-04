@@ -76,18 +76,17 @@
   // The boss pulls the row (2026-11-02 review): at round end, when it is down to each of these dice counts, roll the row.
   const BOSS_STEPS = [6, 4, 2];
   // Since 2026-11-03: one tucked alarm per agent, and each trait changes its agent for good, nothing once-a-round
-  // (sim.js TRAIT v4). Signature's number is the alarm's own main number.
+  // (sim.js TRAIT v4). Since 2026-11-04 every trait changes the agent itself, never its holder or the row (TRAIT v5).
   const BASE = {
     imp: 'Overclock: its agent’s Overclocked line applies.',
     druid: 'Hardened: its agent keeps working against the Rogue AI.',
-    specter: `Signature: its holder’s ${numbersFor('specter', 1)[0]}s are doubles too.`,
+    specter: 'Golden: its agent counts as two against the boss.',
     wyrmling: 'Escalate: from round 2 of a fight, its agent counts as two.',
-    mimic: 'Feedback: each round its agent works, its holder heals 1.',
-    leech: 'Siphon: each alarm the crew beats heals its holder 1.',
-    bat: 'Callback: when you roll the row, you may reroll one amber die.',
+    mimic: 'Rooted: its agent counts as two while its holder is at half HP or less.',
+    leech: 'Siphon: its agent takes no item slot.',
+    bat: 'Beacon: its agent counts as two in any fight a comeback joins.',
     wraith: 'Twin: its agent counts as two of itself.',
   };
-  const SIG_N = numbersFor('specter', 1)[0];
   const traitName = id => BASE[id] ? BASE[id].split(':')[0] : '';
   // One tucked alarm per agent (2026-11-03; it was two, and two upgraded the agent: that is Overclock now).
   const TUCK_CAP = 1;
@@ -129,6 +128,8 @@
     enrich: ['Enrichment Agent', 'Once a round, turn any crew die to any number.', 'kit_enrich', 'Twice a round.'],
     contain: ['Containment Agent', `The highest-Damage alarm deals ${D.containCut} less to everyone, never below 1.`, 'kit_contain', `It deals ${D.containCut + 1} less.`],
     recover: ['Recovery Agent', `After every won fight, heal ${D.recoverHeal} HP split across the crew.`, 'kit_recover', `Heal ${D.recoverHeal + 2}.`],
+    // 2026-11-04: production's Recon scene.
+    watchlist: ['Watchlist Agent', 'Row alarms come back on one less: back on 2–5 is back on 2–4.', 'kit_recon', 'Two less.'],
   };
   const CONS = {
     surge: ['Surge Playbook', 'After the roll: roll 3 more dice.', 'cons_surge'],
@@ -136,6 +137,7 @@
     isolate: ['Isolation Script', 'Remove one die from every alarm (the boss keeps at least one).', 'cons_isolate'],
     coffee: ['Shift Coffee', `Heal ${D.recoverBurn} HP split across the crew.`, 'cons_coffee'],
     freeze: ['Change Freeze', 'Skip the next row roll.', 'cons_freeze'],
+    takedown: ['Takedown Request', 'Pick an alarm on the row. It leaves the game.', 'kit_hunt'], // 2026-11-04: production's Hunt scene
   };
   const ITEM = { ...AGENT, ...CONS }, isAgent = t => !!AGENT[t];
   const agentCard = t => isAgent(t)
@@ -155,11 +157,11 @@
   const box = t => `<span class="bx">${t}</span>`;
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
 
-  <div class="trow"><b>Threat: fights won</b>${box(1)}${box(2)}${box('3: alarms +1')}</div>
+  <div class="trow"><b>Fights won</b>${box(1)}${box('2: story')}${box('3: alarms +1')}${box('4: story')}${box(5)}${box('6: story')}</div>
   <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Twin')}</div>
-  <div class="trow"><b>This fight</b>${box('Hold the room: +1 item')}</div>
+  <div class="trow"><b>This fight</b>${box('Hold the room: +1 item')}${box('Comeback joined')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
-  <div class="note"><b>Escalating:</b> a coin on it each round. <b>Regen:</b> line up taken dice; it puts back the last.</div></div>`;
+  <div class="note"><b>Escalating:</b> a coin each round. <b>Regen:</b> it puts back the last die taken.</div></div>`;
   // Situations (2026-10-30; shuffled into the feed with the alarms since 2026-11-02, the boss underneath). Who's on point is
   // picked. The real game's situations (names, scenes and story lines from the data) with rules rewritten for the
   // dice. Each offers a choice, except the event. Same rules as sim.js situation(). [label, rule] per option.
@@ -204,9 +206,10 @@
   // The first card set: six alarms, the Lockjaw Syndicate, four analysts, 16 items (6 agents, 10 consumables).
   // Since 2026-11-02 the whole production pool: 15 alarms and 3 bosses.
   const MOB_IDS = D.mobs.map(m => m.id), BOSS_IDS = D.bosses.map(b => b.id);
-  const BOSS_ID = 'wyrm', ANALYST_IDS = ['HUN', 'RES', 'ENG', 'SOA'], AGENT_IDS = ['triage', 'enrich', 'contain', 'recover'], CONS_IDS = ['surge', 'intel', 'isolate', 'coffee', 'freeze'];
+  const BOSS_ID = 'wyrm', ANALYST_IDS = ['HUN', 'RES', 'ENG', 'SOA'], AGENT_IDS = ['triage', 'enrich', 'contain', 'recover', 'watchlist'], CONS_IDS = ['surge', 'intel', 'isolate', 'coffee', 'freeze', 'takedown'];
   // The item deck, as sim.js KIT: Triage and Containment ×2, Enrichment and Recovery ×1, each consumable ×2.
-  const ITEM_DECK = ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', ...CONS_IDS.flatMap(t => [t, t])];
+  // 18 items since 2026-11-04: one Watchlist Agent and one Takedown Request joined.
+  const ITEM_DECK = ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', ...CONS_IDS.filter(t => t !== 'takedown').flatMap(t => [t, t]), 'watchlist', 'takedown'];
   const mobs = () => MOB_IDS.map(id => D.mobs.find(m => m.id === id));
   // The squeeze (2026-11-03): every boss hits for 5, not the data's 9 (one unguarded round no longer ends the shift), and
   // alarms hit 1 harder for every THREAT_AFTER fights won, up to THREAT_MAX (2026-11-03: +1 once 3 are won; +1 per 2 up to
@@ -252,6 +255,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:9px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { abilityOf, KW_OVER, SIG_N, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });

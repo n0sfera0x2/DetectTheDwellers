@@ -430,3 +430,4 @@ kbd{font-family:var(--mono);font-weight:600;font-size:11px;line-height:1;padding
 @media (max-width:700px){.t-steps{flex-wrap:wrap}.t-steps li{flex:1 1 45%}}
 .t-now{font-size:16px;line-height:1.4;margin:0 0 10px}.t-now .sech{margin-right:8px}
 .lede2{font-size:clamp(15px,1.2vw,17px);line-height:1.5;max-width:56ch;margin:0 0 10px;opacity:.9}
+.t-kslot .tdown{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}.t-kslot .tdown .btn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

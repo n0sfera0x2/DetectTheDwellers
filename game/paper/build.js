@@ -34,15 +34,15 @@ const rules = `<section class="page rules">
 <ol>
 <li>Pick who’s on point. They stay on point through any situations until the next fight ends.</li>
 <li>Flip the top card of the feed. A <b>situation</b>: play it, then flip again.</li>
-<li>An <b>alarm</b>: set its dice. On point may <b>baseline it</b> (below). If anything is on the row, roll the row: every row alarm that comes back returns with its printed dice, and the two with the highest Damage hit everyone on the way in. Two or more in play: a <b>multi-alarm</b> fight.</li>
-<li>Fight. When the feed is empty, turn the boss up: it arrives with one last row roll and no arrival hits. <b>Full Shift:</b> its card says when it pulls the row (comebacks hit on arrival and join the fight).</li>
+<li>An <b>alarm</b>: set its dice. On point may <b>baseline it</b> (below). If anything is on the row, roll the row: every row alarm that comes back returns with its printed dice and joins the fight. Two or more in play: a <b>multi-alarm</b> fight.</li>
+<li>Fight. When the feed is empty, turn the boss up: it arrives with one last row roll. <b>Full Shift:</b> its card says when it pulls the row (comebacks join the fight).</li>
 </ol>
 <h2>The row</h2>
 <p>Roll the <b>2 amber dice</b> and add them. A row alarm comes back if the sum is <b>at most its number</b> (“back on 2–5” comes back on 5 or less). The first time an alarm comes back, put a coin on it. It stays.</p>
 </div>
 <div>
 <h2>Baseline it</h2>
-<p>A newly flipped alarm with a <b>tuck band</b> can be baselined (a comeback too, with one more die): set the band’s 3 dice as well. Beat it with them all and slide it under an agent someone holds, so only its band shows. That agent gains the band’s <b>trait</b>. An agent holds <b>two</b> at most, and with two it’s <b>upgraded</b> (its card says how). Tucked, the alarm is <b>off the row</b>; discard the agent and it goes back on the row. No agents: set it aside until one is drawn.</p>
+<p>A newly flipped alarm with a <b>tuck band</b> can be baselined (a comeback too, with one more die): set the band’s 3 dice as well. Beat it with them all and slide it under an agent someone holds, so only its band shows. That agent gains the band’s <b>trait</b> for good. <b>One</b> alarm per agent. Tucked, the alarm is <b>off the row</b>; discard the agent and it goes back on the row. No agents: set it aside until one is drawn.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>

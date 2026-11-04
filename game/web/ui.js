@@ -175,7 +175,7 @@
     enrich: ['Enrichment Agent', 'turned dice put to work'], surge: ['Surge Playbook', 'dice taken or guarded'], intel: ['Threat Intel Feed', 'wild takes'],
     isolate: ['Isolation Script', 'threat dice removed'], coffee: ['Shift Coffee', 'HP healed'], freeze: ['Change Freeze', 'row rolls skipped'],
     twin: ['Twin', 'extra dice put to work and damage stopped'], ghost: ['Ghost', 'arrival damage stopped'], scramble: ['Scramble', 'comebacks kept on the row'], repair: ['Repair', 'HP healed'],
-    spotlight: ['Spotlight', 'dice made doubles'], slip: ['Slip', 'hits dodged'], ticket: ['Golden ticket', 'dice turned'], momentum: ['Momentum', 'extra dice rolled'], persist: ['Persist', 'knockouts stopped'], siphon: ['Siphon', 'HP healed'], callback: ['Callback', 'amber dice rerolled'] };
+    signature: ['Signature', 'dice made doubles'], feedback: ['Feedback', 'HP healed'], siphon: ['Siphon', 'HP healed'], callback: ['Callback', 'amber dice rerolled'] };
   const itemsDid = G => Object.entries(G.stats.items || {}).filter(([, n]) => n > 0).map(([t, n]) => ({ t, n, name: ITEM_DID[t][0], what: ITEM_DID[t][1] }));
   // ---- Copy result -----------------------------------------------------------------------------------------------
   function resultLine() {
@@ -395,7 +395,7 @@
   // "What now": what to do this step in a line or two, what this alarm does, and the full rules folded away.
   function vBrief(m) {
     const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null, dm = !m.boss && dataMob(m.id);
-    const perks = (G.team.includes('HUN') ? ' Hunter on point: one more die.' : '') + (G.team.includes('RES') ? ` Responder: a double heals anyone ${A.RES_HEAL} instead of guarding.` : '') + (G.team.includes('SOA') ? ' Soarcerer: any die is a double for baselining.' : '') + (G.team.includes('ENG') ? ' Engineer: once a round, turn a die to its opposite side.' : '');
+    const perks = (G.team.includes('HUN') ? ' Hunter on point: one more die.' : '') + (G.team.includes('RES') ? ` Responder: a double may heal anyone ${A.RES_HEAL} instead of guarding.` : '') + (G.team.includes('SOA') ? ' Soarcerer: any die is a double for baselining.' : '') + (G.team.includes('ENG') ? ' Engineer: once a round, turn a die to its opposite side.' : '');
     const now = nowText(G);
     const hits = !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up at round end, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`;
     const kw = m.boss ? '+2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`;
@@ -456,7 +456,7 @@
       else if (d && !d.used && d.takes.length) hint = `<b>${esc(E.dieOwner(G, d))}: double ${d.n}, one more ${d.n} to place.</b> ${t.hits.length ? 'Tap another matching die, under this alarm or another.' : `No ${d.n} left to take.`} Or pick another die.`;
       else if (!d) hint = (G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under an alarm. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.') + (G.dice.some(x => E.canFocus(G, x)) ? ' Focused: pick one of your dice to turn it to any number.' : '') + (G.dice.some(x => E.canEng(G, x)) ? ' Engineer: pick one of your dice to turn it to its opposite side (once a round).' : '') + (G.hand.some(h => h.some(c => E.canUse(G, c.t))) ? ' Consumables: <b>Use</b> one in the dock.' : '') + prHint;
       else if (d.used) hint = 'That die is used. <b>Undo</b> to take it back.';
-      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one alarm or two,${(E.canHeal(G, d) ? ' <b>or Heal</b> anyone ' + A.RES_HEAL : ' <b>or Guard</b> yourself')}.` : 'Tap a glowing die under an alarm that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') + (t.hits.some(h => h.evade) ? ' <b>Evasive:</b> this double isn’t its number, so it takes any one of its dice and is spent.' : '') : (E.canHeal(G, d) ? `Nothing it can hit. <b>Heal</b> anyone ${A.RES_HEAL} with it.` : d.dbl && t.guard ? `Nothing it can hit. <b>Guard</b> yourself with it.` : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it for 1 HP?</b>' : ''}`)}${prs.some(p => p.includes(d.i)) ? prHint : ''}${t.focus ? ' <b>Focused:</b> turn it to any number.' : ''}${t.eng ? ` <b>Engineer:</b> turn it to its opposite side, a ${7 - d.n} (it counts as one die then).` : ''}${d.rattled ? ' Rattled: no doubles this roll.' : ''}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
+      else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one alarm or two,${' <b>or Guard</b> yourself' + (E.canHeal(G, d) ? ', <b>or Heal</b> anyone ' + A.RES_HEAL : '')}.` : 'Tap a glowing die under an alarm that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') + (t.hits.some(h => h.evade) ? ' <b>Evasive:</b> this double isn’t its number, so it takes any one of its dice and is spent.' : '') : (E.canHeal(G, d) ? `Nothing it can hit. <b>Guard</b> yourself, or <b>Heal</b> anyone ${A.RES_HEAL} with it.` : d.dbl && t.guard ? `Nothing it can hit. <b>Guard</b> yourself with it.` : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it for 1 HP?</b>' : ''}`)}${prs.some(p => p.includes(d.i)) ? prHint : ''}${t.focus ? ' <b>Focused:</b> turn it to any number.' : ''}${t.eng ? ` <b>Engineer:</b> turn it to its opposite side, a ${7 - d.n} (it counts as one die then).` : ''}${d.rattled ? ' Rattled: no doubles this roll.' : ''}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
       const ag = G.dice.filter(x => x.kuid).length;
       // Pair: a control right after the second of two matching dice, in the tray.
@@ -470,13 +470,13 @@
         ${d && E.canReroll(G, d) ? `<button class="btn" data-a="reroll" data-k="reroll" aria-label="Take 1 damage to reroll this die">Reroll: take 1 <kbd>X</kbd></button>` : ''}${G.rerolled ? `<span class="inc rr">Rerolls left: ${G.team.map((id, k) => G.rerolled[k] ? '' : esc(SHORT[id])).filter(Boolean).join(', ') || 'none'}</span>` : ''}
         ${sel && t.eng ? `<button class="btn cy" data-a="eng" data-k="eng" aria-label="Engineer: turn this die to its opposite side, ${7 - d.n}">Opposite side (→ ${7 - d.n}) <kbd>O</kbd></button>` : ''}
         ${sel && t.focus ? `<span class="inc">Focused: turn to…</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s cy" data-a="focus" data-n="${n}" data-k="focus${n}" aria-label="Focused: turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
-        ${d && E.canSpot(G, d) ? `<button class="btn cy" data-a="spot" data-k="spot">Spotlight: make it a double</button>` : ''}
-        ${d && E.canTicket(G, d) ? `<span class="inc">Golden ticket: turn to…</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s cy" data-a="ticket" data-n="${n}" data-k="ticket${n}" aria-label="Golden ticket: turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
-        ${G.team.map((id, k) => E.canSlip(G, k) ? G.play.filter(m => E.left(m)).map(m => `<button class="btn s cy" data-a="slip" data-n="${k}" data-u="${m.uid}" data-k="slip${k}${m.uid}">Slip: ${esc(m.name)} misses ${esc(SHORT[id])}</button>`).join('') : '').join('')}
         ${sel && t.enrich ? `<span class="inc">${esc(SHORT[G.team[d.k]])}’s Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
         <span class="inc grow dk">${incText()}</span>
         <button class="btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <kbd>U</kbd></button>
         <button class="btn p" data-a="end" data-k="end">End round <kbd>E</kbd></button></div>`;
+    } else if (G.phase === 'exfil') {
+      hint = `<b>Exfil.</b> The crew discards ${G.exfil === 1 ? 'an item' : G.exfil + ' items'}: tap one below. An agent takes what’s tucked under it along.`;
+      ctl = `<div class="t-dkit" role="group" aria-label="Discard an item">${G.team.map((id, k) => `<span class="t-dk"><b>${esc(SHORT[id])}</b>${[...G.agents[k], ...G.hand[k]].map(c => `<button class="btn s warn" type="button" data-a="exfil" data-u="${c.uid}" data-k="exfil${c.uid}">Discard ${esc(E.KIT_NAME[c.t])}</button>`).join('') || '<span class="chip">No items</span>'}</span>`).join('')}</div>`;
     } else if (G.phase === 'tuck') {
       hint = `<b>${esc(G.tuck[0].name)} is baselined.</b> Pick the agent it tucks under, whoever holds it: <b>Tuck it here</b> on the mat.`;
     } else if (G.phase === 'deal') {
@@ -508,7 +508,7 @@
   function vReveal() {
     const G = UI.G; if (!UI.reveal || G.over) return '';
     return `<div class="reveal" role="dialog" aria-modal="true" aria-labelledby="rv-h"><div class="rv"><div class="rv-card" data-card="boss:${G.boss.id}">${A.bossCard(A.boss(G.boss.id))}</div>
-      <div class="rv-b"><time class="clk f">05:59</time><h2 class="logo" id="rv-h">The boss is here</h2><p class="lede">${esc(G.boss.name)} arrives with one last row roll and no arrival hits. ${esc(A.BOSS_TEXT[G.boss.id][0])}${E.MODES[G.mode].bossRow ? ` Full Shift: ${esc(A.BOSS_TEXT[G.boss.id][1])}` : ''} Spend your doubles.</p>
+      <div class="rv-b"><time class="clk f">05:59</time><h2 class="logo" id="rv-h">The boss is here</h2><p class="lede">${esc(G.boss.name)} arrives with one last row roll. ${esc(A.BOSS_TEXT[G.boss.id][0])}${E.MODES[G.mode].bossRow ? ` Full Shift: ${esc(A.BOSS_TEXT[G.boss.id][1])}` : ''} Spend your doubles.</p>
       <button class="btn p big" type="button" data-a="unreveal" data-k="unreveal">Face it</button></div></div></div>`;
   }
   // Who dropped the crew: the last mob whose hit took someone to 0, from the log.
@@ -590,9 +590,6 @@
     if (a === 'sit') { act(() => E.resolveSit(G, b.dataset.o, b.dataset.n ? +b.dataset.n : undefined)); if (!UI.err && G.sit) say(G.sit.text); return focusKey(G.phase === 'flip' ? 'sitflip' : ''); }
     if (a === 'focus') { const i = UI.sel; act(() => E.focus(G, i, +b.dataset.n)); return focusKey('die' + i); }
     if (a === 'eng') { const i = UI.sel; act(() => E.engTurn(G, i)); return focusKey('die' + i); }
-    if (a === 'spot') { const i = UI.sel; act(() => E.spotlight(G, i)); return focusKey('die' + i); }
-    if (a === 'ticket') { const i = UI.sel; act(() => E.ticket(G, i, +b.dataset.n)); return focusKey('die' + i); }
-    if (a === 'slip') { act(() => E.slip(G, +b.dataset.n, b.dataset.u)); return focusKey('end'); }
     if (a === 'baseline') { act(() => E.baseline(G, b.dataset.u)); return focusKey('roll'); }
     if (a === 'tuck') { act(() => E.tuck(G, b.dataset.u)); return focusKey(G.phase === 'flip' ? 'flip' : ''); }
     if (a === 'roll') { UI.reveal = false; UI.sel = null; UI.more = null; UI.guarding = null; act(() => E.roll(G)); nextDie(); render(); return focusKey('die' + (UI.sel || 0)); }
@@ -600,6 +597,7 @@
     if (a === 'slot') return tapSlot(b.dataset.u, +b.dataset.p);
     if (a === 'guard') return doGuard();
     if (a === 'guardfor') return guardFor(+b.dataset.n);
+    if (a === 'exfil') { act(() => E.exfil(G, b.dataset.u)); return focusKey('roll'); }
     if (a === 'heal') { const i = UI.sel; UI.sel = null; act(() => E.heal(G, i, +b.dataset.n)); return focusKey('end'); }
     if (a === 'guardx') { UI.guarding = null; render(); return focusKey('guard'); }
     if (a === 'pair') { const i = +b.dataset.i; doPair(i, +b.dataset.j); return focusKey('die' + i); }

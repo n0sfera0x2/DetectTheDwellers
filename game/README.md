@@ -1,6 +1,6 @@
 # Detect the Dwellers
 
-**Status:** the rules below are current as of [one reroll rule, shared item slots, a clearer page](#one-reroll-rule-shared-item-slots-a-clearer-page-2026-11-03) (2026-11-03). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
+**Status:** the rules below are current as of [traits that change the agent, Exfil, a wider row](#traits-that-change-the-agent-exfil-a-wider-row-2026-11-03) (2026-11-03). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
 ## The rules now
 
@@ -15,7 +15,7 @@
 
 One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 3). The number of alarms in a feed varies: about 4.3 in Quick, 6 in Full.
 
-**A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (3 or 4 players add the card's + die, a 6, per player past 2). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll and no arrival hits.
+**A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (3 or 4 players add the card's + die, a 6, per player past 2). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll.
 
 **A fight round.**
 
@@ -24,11 +24,11 @@ One boss, drawn at random, goes face down under the feed. A crew draws 2 items (
 3. **Match.** A die takes out one threat die showing exactly its number.
 4. **Hits back.** Every alarm with dice left hits everyone who isn't blocking, for its Damage. An alarm with no dice left is beaten.
 
-**Doubles.** Each analyst has two double numbers: their own plus the 6. The solo crew die doubles only on a 6. **Pairs:** two of your own dice showing the same number make a double. A double counts as two dice showing its number (under one alarm or two), **or** it guards: you block this round (only you; the Responder heals instead). Never both.
+**Doubles.** Each analyst has two double numbers: their own plus the 6. The solo crew die doubles only on a 6. **Pairs:** two of your own dice showing the same number make a double. A double counts as two dice showing its number (under one alarm or two), **or** it guards: you block this round (only you; a Responder double may heal 3 instead). Never both.
 
-**The row.** Beaten alarms always go back on the row, unless they were baselined. Roll the two amber dice: a row alarm comes back if the sum is at most its number. Comebacks return with their printed dice, and the two with the highest Damage hit everyone on arrival. A coin marks an alarm the first time it comes back.
+**The row.** Beaten alarms always go back on the row, unless they were baselined. Roll the two amber dice: a row alarm comes back if the sum is at most its number. Comebacks return with their printed dice and join the fight; nobody is hit on arrival (since 2026-11-03, when every range also went one step wider: back on 2–3 to 2–6, 8–42% a roll). A coin marks an alarm the first time it comes back.
 
-**Baseline it.** A newly flipped alarm with a tuck band, or a comeback with one (one more die), can be baselined; never the boss. Set the band's 3 dice too, all showing its main number's opposite side. Beat it with all of them and slide it under an agent someone holds, so only its blue **tuck band** shows below the agent card. That agent gains the band's **trait**; most traits work for the agent's **holder**, so which agent (and whose) matters. An agent holds **two** at most, and with two it is **upgraded** (its card says how: Triage rolls one more, Enrichment one more turn, Containment cuts 1 more, Recovery heals 2 more). Once every agent is full, a baselined alarm goes on the row with no trait. Tucked, the alarm is **off the row** (a card can't be in two places). Discard that agent and the alarm goes back on the row. No agents: set it aside until the next one is drawn.
+**Baseline it.** A newly flipped alarm with a tuck band, or a comeback with one (one more die), can be baselined; never the boss. Set the band's 3 dice too, all showing its main number's opposite side. Beat it with all of them and slide it under an agent someone holds, so only its blue **tuck band** shows below the agent card. That agent gains the band's **trait** for good: each one changes the agent itself, nothing once-a-round. **One** tucked alarm per agent. Once every agent holds one, a baselined alarm goes on the row with no trait. Tucked, the alarm is **off the row** (a card can't be in two places). Discard that agent and the alarm goes back on the row. No agents: set it aside until the next one is drawn.
 
 **After a fight.** Coin the next **Threat** box on the shift tracker. Once 3 fights are won, every alarm (not the boss) deals 1 more Damage for the rest of the shift. Draw 2 items (solo 1) and decide who takes each.
 
@@ -41,27 +41,27 @@ Every alarm's dice come from `sim.js` `numbersFor`: a main number, repeated, wit
 
 | Card | Dice (1–2p) | Damage | Keyword | Back on | Tuck band (Baseline: 3 dice) |
 | --- | --- | --- | --- | --- | --- |
-| Mailer Daemon | 2 | 1 | Beacon: roll the row when it arrives or comes back | 2–5 | — |
-| Macro Gremlin | 5 | 1 | Targeted: only on point takes its damage, doubled | 2–5 | — |
-| Password Sprayer | 4 | 1 | Piercing: blocks don’t stop it | 2–5 | — |
-| MFA Banshee | 1 | 1 | Stalker: it only hits whoever has the lowest HP | 2–5 | — |
-| Vibe Coded App | 6 | 1 | Escalating: +1 Damage every round it stays up | 2–5 | — |
-| PowerShell Wraith | 2 2 | 3 | Fileless: containment Agents don’t cut its Damage | 2–4 | 3 × 5 · **Twin:** its agent counts as two of itself |
-| Living-off-the-Land Scavenger | 3 3 | 3 | Evasive: only a double can hit it. A double of another number takes out one die | 2–4 | 3 × 4 · **Slip:** once a fight, one alarm’s hit misses its holder |
-| DNS Beacon Drone | 4 4 | 3 | Beacon: roll the row when it arrives or comes back | 2–4 | 3 × 3 · **Callback:** when you roll the row, you may reroll one amber die |
-| OAuth Consent Grifter | 1 | 3 | Targeted: only on point takes its damage, doubled | 2–3 | 3 × 6 · **Spotlight:** once a round, one of its holder’s dice counts as a double |
-| Rootkit Implant | 5 6 6 | 4 | Regen: at the end of each round, put back one die it lost | 2–3 | 3 × 1 · **Persist:** once, anyone about to drop to 0 HP stays at 1. Then remove this card |
-| Kerberoast Enforcer | 2 3 3 | 4 | Piercing: blocks don’t stop it | 2–3 | — |
-| LSASS Siphon | 1 1 | 4 | Regen: at the end of each round, put back one die it lost | 2–3 | 3 × 6 · **Siphon:** each alarm the crew beats heals its holder 1 |
-| PsExec Swarm | 3 4 4 | 4 | Beacon: roll the row when it arrives or comes back | 2–3 | — |
-| Golden Ticket Ghost | 4 5 5 | 4 | Evasive: only a double can hit it. A double of another number takes out one die | 2–2 | 3 × 2 · **Golden ticket:** once a fight, turn one of its holder’s dice to any number |
-| Exfil Courier | 5 5 | 4 | Escalating: +1 Damage every round it stays up | 2–3 | 3 × 2 · **Momentum:** from round 2 of a fight, its holder rolls one more die |
+| Mailer Daemon | 2 | 1 | Beacon: roll the row when it arrives or comes back | 2–6 | — |
+| Macro Gremlin | 5 | 1 | Targeted: only on point takes its damage, doubled | 2–6 | — |
+| Password Sprayer | 4 | 1 | Piercing: blocks don’t stop it | 2–6 | — |
+| MFA Banshee | 1 | 1 | Stalker: it only hits whoever has the lowest HP | 2–6 | — |
+| Vibe Coded App | 6 | 1 | Escalating: +1 Damage every round it stays up | 2–6 | — |
+| PowerShell Wraith | 2 2 | 3 | Fileless: containment Agents don’t cut its Damage | 2–5 | 3 × 5 · **Twin:** its agent counts as two of itself |
+| Living-off-the-Land Scavenger | 3 3 | 3 | Exfil: still up at round end, the crew discards an item | 2–5 | 3 × 4 · **Hardened:** its agent keeps working against the Rogue AI |
+| DNS Beacon Drone | 4 4 | 3 | Beacon: roll the row when it arrives or comes back | 2–5 | 3 × 3 · **Callback:** when you roll the row, you may reroll one amber die |
+| OAuth Consent Grifter | 1 | 3 | Targeted: only on point takes its damage, doubled | 2–4 | 3 × 6 · **Overclock:** its agent’s Overclocked line applies |
+| Rootkit Implant | 5 6 6 | 4 | Regen: at the end of each round, put back one die it lost | 2–4 | 3 × 1 · **Feedback:** each round its agent works, its holder heals 1 |
+| Kerberoast Enforcer | 2 3 3 | 4 | Piercing: blocks don’t stop it | 2–4 | — |
+| LSASS Siphon | 1 1 | 4 | Regen: at the end of each round, put back one die it lost | 2–4 | 3 × 6 · **Siphon:** each alarm the crew beats heals its holder 1 |
+| PsExec Swarm | 3 4 4 | 4 | Beacon: roll the row when it arrives or comes back | 2–4 | — |
+| Golden Ticket Ghost | 4 5 5 | 4 | Exfil: still up at round end, the crew discards an item | 2–3 | 3 × 2 · **Signature:** its holder’s 5s are doubles too any number |
+| Exfil Courier | 5 5 | 4 | Escalating: +1 Damage every round it stays up | 2–4 | 3 × 2 · **Escalate:** from round 2 of a fight, its agent counts as two |
 
 ### Bosses (3, one drawn at random)
 
 Every boss hits for 5 (`cards.js` `BOSS_DMG`; the production data says 9, which against 8–10 HP made one unguarded round the end of the shift). The threat's +1 doesn't apply to bosses.
 
-The Full Shift trigger rolls the row at round end (the Operator's when it comes back; the AI's when a consumable is used); comebacks hit on arrival and join the fight. Quick Shift plays only the core ability.
+The Full Shift trigger rolls the row at round end (the Operator's when it comes back; the AI's when a consumable is used); comebacks join the fight. Quick Shift plays only the core ability.
 
 | Boss | Dice (1–3p) | Damage | Ability | Full Shift: roll the row |
 | --- | --- | --- | --- | --- |
@@ -76,7 +76,7 @@ One line each since 2026-11-03; no wild numbers. Only the Engineer's turn needs 
 | Analyst | Doubles | Ability |
 | --- | --- | --- |
 | Hunter | 4, 6 | On point, you roll one more die. It’s never a double. |
-| Responder | 3, 6 | Your doubles can’t guard. Instead, a double heals anyone 5. |
+| Responder | 3, 6 | A double of yours can heal anyone 3 instead of guarding. |
 | Engineer | 1, 6 | Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. |
 | Soarcerer | 2, 6 | Any die you roll is a double for baselining: it takes two Baseline dice. |
 
@@ -110,12 +110,12 @@ The production deck's 18 situations with rules rewritten for the dice. Core card
 | Pager Storm | Core | Stay or run | **Ride it out:** Everyone loses 2 HP. Draw an item. **Mute it:** The next alarm sets one more threat die: a 6. |
 | Budget Approved | Core | Choice | **Tools:** Draw 2 items. **Training:** Draw an item. Everyone heals 2 HP. |
 | The Badge That Wasn't | Story (Full) | Stay or run | **Hold the room:** On point takes Exposed. Win the next fight: draw an item. **Fall back:** Draw 2 items. The next alarm that flips goes straight on the row, unfought. Not the boss. |
-| Lateral Whispers | Story (Full) | Event | Roll the row now. Anything that comes back hits on arrival and joins the next fight. |
+| Lateral Whispers | Story (Full) | Event | Roll the row now. Anything that comes back joins the next fight. |
 | The CEO's Inbox | Story (Full) | Choice | **Quarantine everything:** Everyone loses 2 HP. **Let it ride:** The next alarm you flip gets +2 Damage this fight. |
 | Ghost in the Change Window | Story (Full) | Event | The next alarm you flip sets one more threat die: a copy of the first die on its card. |
 | Dark Web Chatter | Story (Full) | Grab | **Dig in:** On point picks 1–4 dice and rolls them. Any 6: draw 2 items. None: lose 1 HP per die. **Let it go:** Nothing happens. |
 | The Janitor's USB | Story (Full) | Grab | **Grab it:** On point rolls 3 dice. Any pair: draw 2 items and take Focused. No pair: take Rattled. **Leave it:** Draw an item. |
-| Old Case, New IOC | Story (Full) | Event | The row alarm that comes back on the highest number comes back now, with no arrival hit. It joins the next fight. |
+| Old Case, New IOC | Story (Full) | Event | The row alarm that comes back on the highest number comes back now. It joins the next fight. |
 | Honeytoken Tripped | Story (Full) | Event | Everyone heals 2 HP. |
 | Vendor Breach Notice | Story (Full) | Stay or run | **Rotate everything:** Everyone loses 2 HP, then roll the row. Comebacks join the next fight. **Cut them off:** On point loses 3 HP. No row roll. |
 
@@ -129,45 +129,45 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-03 (one reroll rule, shared item slots). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
+Bot sims, `SYS=n6 N=600`, 2026-11-03 (traits that change the agent, Exfil, a wider row). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 3 HP or less) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 56% | 22 pts | 39% | 94% | 15.3 | 3.5 | 51% | 26% |
-| Quick, 2p | 49% | 20 pts | 50% | 95% | 10.5 | 2.5 | 56% | 27% |
-| Quick, 4p | 46% | 24 pts | 50% | 97% | 9.2 | 1.9 | 54% | 25% |
-| Full, 1p | 50% | 21 pts | 40% | 95% | 18.9 | 6.8 | 39% | 15% |
-| Full, 2p | 45% | 18 pts | 49% | 95% | 13.4 | 4.9 | 44% | 16% |
-| Full, 4p | 48% | 22 pts | 43% | 97% | 11.4 | 3.6 | 60% | 13% |
+| Quick, 1p | 59% | 27 pts | 49% | 94% | 18.6 | 7.7 | 49% | 20% |
+| Quick, 2p | 59% | 26 pts | 49% | 95% | 11.5 | 4.7 | 44% | 20% |
+| Quick, 4p | 47% | 29 pts | 45% | 97% | 9.8 | 3.1 | 53% | 19% |
+| Full, 1p | 51% | 28 pts | 50% | 94% | 22.8 | 13.6 | 48% | 14% |
+| Full, 2p | 54% | 24 pts | 47% | 94% | 15.2 | 9.3 | 26% | 12% |
+| Full, 4p | 49% | 32 pts | 38% | 97% | 12.6 | 5.3 | 57% | 9% |
 
-Solo by analyst: Quick Hunter 57%, Responder 52%, Engineer 58%, Soarcerer 58%; Full 56 / 47 / 54 / 48%. Pairs (600 games each): Quick 47% (Engineer + Soarcerer) to 51% (Responder + Engineer); Full 43% (Hunter + Soarcerer, Engineer + Soarcerer) to 49% (Responder + Engineer).
+Solo by analyst: Quick Hunter 63%, Responder 60%, Engineer 61%, Soarcerer 56%; Full 52 / 52 / 51 / 48%. Pairs (600 games each): Quick 56% (Responder + Engineer) to 61% (Hunter + Engineer); Full 51% (Responder + Soarcerer) to 57% (Responder + Engineer).
 
 ### Targets
 
-What the sim should hold after any rule change, and what to turn when it misses. Every target is a starting value (posture B): set on 2026-11-01 from the current numbers and the d20 game's targets, and checked against bot sims only. Move them when a table disagrees. Each mode is checked on its own. Now: Quick / Full, 1p / 2p / 4p, 600 games.
+What the sim should hold after any rule change, and what to turn when it misses. Every target is a starting value (posture B): set on 2026-11-01 from the current numbers, and checked against bot sims only. Move them when a table disagrees. Each mode is checked on its own. Now: Quick / Full, 1p / 2p / 4p, 600 games.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 56 / 49 / 46% (crews a little under) | 50 / 45 / 48% (crews a little under) | the mode's HP, one point at a time; solo: starting items; 3–4p: their setup item |
-| Spread across crew sizes | 10 points or less | 10 | 5 | solo: starting items; 3–4p: the setup item (the + die is printed) |
-| Solo spread across analysts | 10 points or less | 6 | 9 | the analyst's ability, not their doubles |
-| Pairs, lowest to highest | within 15 points | 47–51% (4) | 43–49% (6) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 22 / 20 / 24 | 21 / 18 / 22 (2p just misses) | more decisions per roll |
-| Rounds with a real decision | 60% or more | 94 / 95 / 97% | 95 / 95 / 97% | the reroll; its cost |
-| Rounds with a real dice choice | 40% or more | 39 / 50 / 50% (solo just misses) | 40 / 49 / 43% | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 51 / 56 / 54% | 39 / 44 / 60% (solo just misses) | the boss's Damage; the threat timing (`ESC`) |
-| Wins with a scare | 30% or more | 26 / 27 / 25% (misses) | 15 / 16 / 13% (misses) | the threat; HP; healing (`HEALX`) |
-| Comebacks per shift | 3–6 | 3.5 / 2.5 / 1.9 (crews miss) | 6.8 / 4.9 / 3.6 (solo just over) | the row numbers; the feed size |
-| Baselining worth doing | always beats never | +20 / +5 / +13 | +25 / +23 / +25 | the Baseline dice and the traits |
+| Win rate, every crew size | 50–60% | 59 / 59 / 47% (4p a little under) | 51 / 54 / 49% | the mode's HP; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 12 (misses) | 5 | 3–4p: the setup item (the + die is printed) |
+| Solo spread across analysts | 10 points or less | 7 | 4 | the analyst's ability, not their doubles |
+| Pairs, lowest to highest | within 15 points | 56–61% (5) | 51–57% (6) | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 27 / 26 / 29 | 28 / 24 / 32 | more decisions per roll |
+| Rounds with a real decision | 60% or more | 94 / 95 / 97% | 94 / 94 / 97% | the reroll; its cost |
+| Rounds with a real dice choice | 40% or more | 49 / 49 / 45% | 50 / 47 / 38% (4p just misses) | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 49 / 44 / 53% | 48 / 26 / 57% (2p misses) | the boss's Damage; the threat timing (`ESC`) |
+| Wins with a scare | 30% or more | 20 / 20 / 19% (misses) | 14 / 12 / 9% (misses) | the threat; HP; healing (`HEALX`) |
+| Comebacks per shift | 3–6 | 7.7 / 4.7 / 3.1 (solo over) | 13.6 / 9.3 / 5.3 (solo, 2p over) | the row ranges (`ROWSHIFT`); the feed size |
+| Baselining worth doing | always beats never | +10 / +9 / +27 | +26 / +35 / +39 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
-| The boss is a climax (Full) | beating it once there: 75% or less | 73 / 69 / 65% | 62 / 59 / 70% | its row marks (`BOSSSTEPS`) |
+| The boss is a climax (Full) | beating it once there: 75% or less | 74 / 71 / 65% | 67 / 62 / 69% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
 
-- **Crews sit a few points under the band** (Quick 2p 49%, 4p 46%; Full 2p 45%), and solo above them in Quick (56%). One HP more for everyone, or a third setup item for 2 players, are the next things to try.
-- **Few scares** (13–27% of wins). The HP that the reroll's cost called for keeps crews safe until late.
-- **Quick Shift crews still see few comebacks** (2.5 / 1.9).
-- Paper tuck: up to two tucked alarms per agent, band under band. Untested at a table.
+- **Comebacks may now be too many** (Full solo 13.6 a shift; the target band was set when the row was quiet). Fights run long: about 23 rounds for a solo Full Shift. If tables find it a grind, try `ROWSHIFT=2` on short-range alarms only, or a smaller Full feed.
+- **Scares are rare** (9–20% of wins): the HP the reroll's cost called for keeps crews safe until late; 2-player Full Shift losses mostly come at the boss (74%).
+- **Quick Shift 4-player crews sit at 47%**, 12 points under 1–2 players.
+- Paper tuck: one tucked alarm per agent. Untested at a table.
 - No human has played these rules yet. Teach time, play time and whether matching feels better than adding all need a table.
 
 ## How to run
@@ -308,6 +308,31 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### Traits that change the agent, Exfil, a wider row (2026-11-03)
+
+The owner's notes: Evasive (only a double can hit it) was hard to read, and any double taking a die felt wrong; tucking two alarms under an agent to upgrade it was too much, and most traits were once-a-round effects that felt like consumables; the row's odds looked too low to threaten anyone.
+
+#### What changed
+
+| Change | Detail |
+| --- | --- |
+| **Exfil** replaces Evasive | The Scavenger and the Golden Ticket Ghost: "Still up at round end: the crew discards an item" (the crew's choice; the page asks). The data still says hardened; `cards.js` KW_OVER maps it. |
+| **One tuck per agent; traits change it for good** | Overclock (Grifter: its Overclocked line, the old two-tuck upgrade), Twin (Wraith), Signature (Golden Ticket Ghost: its holder's 5s are doubles too), Escalate (Courier: from round 2 it counts as two), Feedback (Rootkit: each round it works, its holder heals 1), Siphon (LSASS), Callback (Beacon), Hardened (Scavenger: keeps working against the Rogue AI). Spotlight, Slip, Golden ticket, Momentum and Persist are gone. |
+| **The row: one step wider, no arrival hits** | Back on 2–3 to 2–6 (8–42% a roll, was 3–28%). Comebacks return with their printed dice and join the fight; nobody is hit on arrival. Every alarm card's range is reprinted. |
+| **Responder: guard or heal 3** | Without guards, the Responder fell to 28–36% solo under the wider row (heal 7 still 35–38%). "A double of yours can heal anyone 3 instead of guarding" puts it at 60% / 52%. |
+
+#### What was tried (`SYS=n6`, 400 games a row, 1p / 2p / 4p)
+
+| Variant | Quick (HP 12) | Full (HP 17) |
+| --- | --- | --- |
+| Before (old traits, two tucks, Evasive) | 50 / 44 / 44% | 48 / 44 / 48% |
+| New traits, one tuck, Exfil | 45 / 51 / 53% | 40 / 48 / 51% |
+| + row one step wider (arrival hits kept) | 32 / 37 / 37% | 23 / 34 / 32% |
+| + row two steps wider, HP 14 / 20 | 24 / 30 / 26% | 14 / 26 / 27% |
+| + row one step wider, only the top comeback hits | 38 / 44 / 40% | 28 / 39 / 34% |
+| **+ row one step wider, no arrival hits (kept)** | **52 / 57 / 51%** (comebacks 7.2 / 4.8 / 3.1) | **45 / 51 / 48%** (12.1 / 8.9 / 5.5) |
+| **+ Responder guard or heal 3 (kept, 600 games)** | **59 / 59 / 47%** | **51 / 54 / 49%** |
 
 ### One reroll rule, shared item slots, a clearer page (2026-11-03)
 

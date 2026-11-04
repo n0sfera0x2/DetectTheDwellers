@@ -31,7 +31,8 @@
   // The persistence row on 2d6: a row mob comes back if the sum is at most its number. The data's d20 ranges map by
   // tier (top 12+ → 5, 10–11 → 4, 8–9 → 3, 7 or less → 2): every beaten mob goes back to the row, so the odds sit
   // three lower than they did when a comeback was gone for good. Same as sim.js rowTop (ROWSHIFT 3).
-  const rowTop = N => N >= 12 ? 5 : N >= 10 ? 4 : N >= 8 ? 3 : 2;
+  // Since 2026-11-03 one step wider (2–3 to 2–6), and comebacks no longer hit on arrival (sim.js ROWSHIFT 2, ARRIVE 0).
+  const rowTop = N => N >= 12 ? 6 : N >= 10 ? 5 : N >= 8 ? 4 : 3;
   // Analysts that aren't in the game data, with borrowed portraits. None since 2026-11-03 (Forensics and the Shift Lead
   // were cut); the hooks stay for the next one.
   const EXTRA_CLASSES = [], ANALYST_ART = {};
@@ -53,14 +54,17 @@
   const pip = (n, px) => `<svg class="pip" viewBox="0 0 16 16" width="${px}" height="${px}" style="display:inline-block;vertical-align:middle" role="img" aria-label="${n}"><rect x=".7" y=".7" width="14.6" height="14.6" rx="3.2" fill="#fff" stroke="${C.ink}" stroke-width="1.1"/>${PIPS[n].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.45" fill="${C.ink}"/>`).join('')}</svg>`;
 
   // ---- Cards (2.5 × 3.5 in) ----------------------------------------------------------------------------------
-  const kw = { beacon: 'Beacon', noblock: 'Piercing', onpoint: 'Targeted', hardened: 'Evasive', regen: 'Regen', ramp: 'Escalating', lowest: 'Stalker', noagent: 'Fileless' };
-  const kwText = { beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it. A double of another number takes out one die.', regen: 'At the end of each round, put back one die it lost.', ramp: '+1 Damage every round it stays up.', lowest: 'It only hits whoever has the lowest HP.', noagent: 'Containment Agents don’t cut its Damage.' };
+  // Exfil (2026-11-03) replaces Evasive on the Scavenger and the Golden Ticket Ghost (the data still says hardened).
+  const KW_OVER = { druid: 'exfil', specter: 'exfil' }, abilityOf = m => KW_OVER[m.id] || m.ability;
+  const kw = { exfil: 'Exfil', beacon: 'Beacon', noblock: 'Piercing', onpoint: 'Targeted', hardened: 'Evasive', regen: 'Regen', ramp: 'Escalating', lowest: 'Stalker', noagent: 'Fileless' };
+  const kwText = { exfil: 'Still up at round end: the crew discards an item.', beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it. A double of another number takes out one die.', regen: 'At the end of each round, put back one die it lost.', ramp: '+1 Damage every round it stays up.', lowest: 'It only hits whoever has the lowest HP.', noagent: 'Containment Agents don’t cut its Damage.' };
   // The dice strip along the bottom edge: the dice to set under the card, then the + die per player past three. On
   // the table the physical dice sit just below it.
   const strip = (d, px) => `<div class="dice"><div class="set">${d.base.map(n => pip(n, px)).join('')}</div>
   <div class="plus"><b>+</b>${pip(d.extra, 18)}<span>per player past ${PAST}</span></div></div>`;
   // The keyword's icon from the game data, as the printed d20 mob cards show it.
-  const kwIcon = m => { const k = D.keywords && D.keywords[m.kw]; return k ? `<svg class="kwi" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="#A8360F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${k.icon}</svg>` : ''; };
+  const KW_ICON = { exfil: '<path d="M2.5 8h8M7.5 4.5 11 8l-3.5 3.5M13.5 2.5v11"/>' };
+  const kwIcon = m => { const k = KW_ICON[m.kw] ? { icon: KW_ICON[m.kw] } : D.keywords && D.keywords[m.kw]; return k ? `<svg class="kwi" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="#A8360F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${k.icon}</svg>` : ''; };
   const nmRow = (name, dmg) => `<div class="nr"><div class="nm">${name}</div><div class="dmg"><span>Damage</span><b>${dmg}</b></div></div>`;
   // Baselining (2026-10-31): an alarm prints a harder "Baseline it" condition: set more threat dice showing its main
   // number's opposite side (7 − main). Beat it with them and tuck it under an agent: that agent's card gains the line
@@ -71,27 +75,29 @@
   const BASE_N = 3;
   // The boss pulls the row (2026-11-02 review): at round end, when it is down to each of these dice counts, roll the row.
   const BOSS_STEPS = [6, 4, 2];
-  // Review 2 (2026-11-02): eight traits, one per alarm, each the alarm's own trick turned around (sim.js TRAIT v3).
+  // Since 2026-11-03: one tucked alarm per agent, and each trait changes its agent for good, nothing once-a-round
+  // (sim.js TRAIT v4). Signature's number is the alarm's own main number.
   const BASE = {
-    imp: 'Spotlight: once a round, one of its holder’s dice counts as a double.',
-    druid: 'Slip: once a fight, one alarm’s hit misses its holder.',
-    specter: 'Golden ticket: once a fight, turn one of its holder’s dice to any number.',
-    wyrmling: 'Momentum: from round 2 of a fight, its holder rolls one more die.',
-    mimic: 'Persist: once, anyone about to drop to 0 HP stays at 1. Then remove this card.',
+    imp: 'Overclock: its agent’s Overclocked line applies.',
+    druid: 'Hardened: its agent keeps working against the Rogue AI.',
+    specter: `Signature: its holder’s ${numbersFor('specter', 1)[0]}s are doubles too.`,
+    wyrmling: 'Escalate: from round 2 of a fight, its agent counts as two.',
+    mimic: 'Feedback: each round its agent works, its holder heals 1.',
     leech: 'Siphon: each alarm the crew beats heals its holder 1.',
     bat: 'Callback: when you roll the row, you may reroll one amber die.',
     wraith: 'Twin: its agent counts as two of itself.',
   };
+  const SIG_N = numbersFor('specter', 1)[0];
   const traitName = id => BASE[id] ? BASE[id].split(':')[0] : '';
-  // Two tucked alarms (the most one agent holds) also upgrade the agent's own number (sim.js UPGRADE).
-  const TUCK_CAP = 2;
+  // One tucked alarm per agent (2026-11-03; it was two, and two upgraded the agent: that is Overclock now).
+  const TUCK_CAP = 1;
   const baseDie = id => 7 - numbersFor(id, 1)[0];
   // The tuck band (2026-11-02 review): a fixed-height band on the bottom edge, in the agents' colour. Beaten with its
   // Baseline dice, the card slides under an agent until only this band shows below it; several stack, band under band.
   const baseLine = m => BASE[m.id] ? `<div class="base"><span class="bh"><b>Baseline it</b>${Array(BASE_N).fill(pip(baseDie(m.id), 14)).join('')}</span><span class="bt">${BASE[m.id].replace(/^([^:]+):/, '<b>$1:</b>')}</span></div>` : '';
   function mobCard(m) {
     return `<div class="card mob">${tab}${art(SCENE.mob(m.id))}${hd(m.domain, `back on 2–${rowTop(m.persist[1])}`)}${nmRow(m.name, m.dmg)}
-  <div class="kw">${kwIcon(m)}<span><b>${kw[m.ability]}.</b> ${kwText[m.ability]}</span></div><div class="fl">${m.flavor}</div>
+  <div class="kw">${kwIcon({ kw: abilityOf(m) })}<span><b>${kw[abilityOf(m)]}.</b> ${kwText[abilityOf(m)]}</span></div><div class="fl">${m.flavor}</div>
   ${strip(diceFor(m), 24)}${baseLine(m)}</div>`;
   }
   // The three bosses (2026-11-02): one drawn at random. Each prints its core ability, then its Full Shift row trigger.
@@ -108,7 +114,7 @@
   const PERK = {
     // One passive line each since 2026-11-03, nothing to track but the Engineer's turn. Same as sim.js.
     HUN: 'On point, you roll one more die. It’s never a double.',
-    RES: 'Your doubles can’t guard. Instead, a double heals anyone 5.',
+    RES: 'A double of yours can heal anyone 3 instead of guarding.',
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
     SOA: 'Any die you roll is a double for baselining: it takes two Baseline dice.',
   };
@@ -133,7 +139,7 @@
   };
   const ITEM = { ...AGENT, ...CONS }, isAgent = t => !!AGENT[t];
   const agentCard = t => isAgent(t)
-    ? `<div class="card agent cy">${tab}${art(ART[AGENT[t][2]] || '')}${hd('Agent', 'passive')}<div class="nm">${AGENT[t][0]}</div><div class="mode"><b>While you hold it</b> ${AGENT[t][1]}</div><div class="mode up"><b>Two alarms tucked under it</b> ${AGENT[t][3]}</div></div>`
+    ? `<div class="card agent cy">${tab}${art(ART[AGENT[t][2]] || '')}${hd('Agent', 'passive')}<div class="nm">${AGENT[t][0]}</div><div class="mode"><b>While you hold it</b> ${AGENT[t][1]}</div><div class="mode up"><b>Overclocked</b> ${AGENT[t][3]}</div></div>`
     : `<div class="card agent use">${tab}${art(ART[CONS[t][2]] || '')}${hd('Consumable', 'use once')}<div class="nm">${CONS[t][0]}</div><div class="mode"><b>Use it</b> ${CONS[t][1]}</div></div>`;
   const legend = `<div class="card ref am">${tab}${hd('Reference', 'every die')}<div class="nm">Dice</div>
   <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
@@ -167,7 +173,7 @@
     pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP. Draw an item.'], ['Mute it', `The next alarm sets one more threat die: a ${pip(6, 13)}.`]] },
     usb: { kind: 'Grab', opts: [['Grab it', 'On point rolls 3 dice. Any pair: draw 2 items and take Focused. No pair: take Rattled.'], ['Leave it', 'Draw an item.']] },
     chatter: { kind: 'Grab', opts: [['Dig in', `On point picks 1–4 dice and rolls them. Any ${pip(6, 13)}: draw 2 items. None: lose 1 HP per die.`], ['Let it go', 'Nothing happens.']] },
-    lateral: { kind: 'Event', rule: 'Roll the row now. Anything that comes back hits on arrival and joins the next fight.' },
+    lateral: { kind: 'Event', rule: 'Roll the row now. Anything that comes back joins the next fight.' },
     patch: { kind: 'Choice', opts: [['Take a breather', 'Everyone heals 3 HP.'], ['Raid the supply closet', 'Draw an item. On point loses 1 HP.']] },
     travel: { kind: 'Grab', opts: [['Chase it', 'On point rolls 2 dice. Total 7 or more: draw an item. Less: lose 2 HP.'], ['Let it go', 'Nothing happens.']] },
     coffee: { kind: 'Choice', opts: [['Pass it round', 'Everyone heals 2 HP.'], ['Double shot', 'Whoever has the lowest HP heals 5.']] },
@@ -178,7 +184,7 @@
     budget: { kind: 'Choice', opts: [['Tools', 'Draw 2 items.'], ['Training', 'Draw an item. Everyone heals 2 HP.']] },
     ceo: { kind: 'Choice', opts: [['Quarantine everything', 'Everyone loses 2 HP.'], ['Let it ride', 'The next alarm you flip gets +2 Damage this fight.']] },
     change: { kind: 'Event', rule: 'The next alarm you flip sets one more threat die: a copy of the first die on its card.' },
-    ioc: { kind: 'Event', rule: 'The row alarm that comes back on the highest number comes back now, with no arrival hit. It joins the next fight.' },
+    ioc: { kind: 'Event', rule: 'The row alarm that comes back on the highest number comes back now. It joins the next fight.' },
     honey: { kind: 'Event', rule: 'Everyone heals 2 HP.' },
     vendor: { kind: 'Stay or run', opts: [['Rotate everything', 'Everyone loses 2 HP, then roll the row. Comebacks join the next fight.'], ['Cut them off', 'On point loses 3 HP. No row roll.']] },
   };
@@ -205,7 +211,7 @@
   // The squeeze (2026-11-03): every boss hits for 5, not the data's 9 (one unguarded round no longer ends the shift), and
   // alarms hit 1 harder for every THREAT_AFTER fights won, up to THREAT_MAX (2026-11-03: +1 once 3 are won; +1 per 2 up to
   // +2 was tried with more HP, and took the scares out). PUSH_COST: a reroll costs 1 HP (once a round).
-  const BOSS_DMG = 5, THREAT_AFTER = 3, THREAT_MAX = 1, PUSH_COST = 1, RES_HEAL = 5; // RES_HEAL: a Responder double heals this much
+  const BOSS_DMG = 5, THREAT_AFTER = 3, THREAT_MAX = 1, PUSH_COST = 1, RES_HEAL = 3; // RES_HEAL: a Responder double may heal this much instead of guarding
   const boss = (id = BOSS_ID) => ({ ...D.bosses.find(b => b.id === id), dmg: BOSS_DMG });
 
   // The card face CSS, shared by print and web. Page and sheet layout stay in each build.
@@ -246,6 +252,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:9px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { abilityOf, KW_OVER, SIG_N, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });

@@ -39,13 +39,13 @@
 
   // ---- Setup ------------------------------------------------------------------------------------------------
   // The modes (2026-11-02): one situation deck holds all 15 alarms and 18 situations. Quick Shift deals 8 of the 24
-  // core cards (8 since 2026-11-02: 6 left too few comebacks); Full Shift deals 11 core. The boss is drawn from three; its row trigger is Full Shift
-  // only. Since 2026-11-04 the story cards are their own deck (Full Shift): after the 2nd, 4th and 6th fight won,
+  // core cards (8 since 2026-11-02: 6 left too few comebacks); Full Shift deals 9 core (11 until 2026-11-04). The boss is drawn from three; its row trigger is Full Shift
+  // only. Since 2026-11-04 the story cards are their own deck (Full Shift): after the 1st, 3rd and 5th fight won,
   // the top story card is the next flip. Same deals as sim.js MODE, DEALQ, DEALF and STORYAT.
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 12, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 11, storyAt: [2, 4, 6], hp: 17, soloItems: 2, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 11, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 15, soloItems: 2, bossRow: true } };
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -667,7 +667,7 @@
   function afterFight(G) {
     say(G, `Fight ${G.fight} won in ${G.round} round${G.round === 1 ? '' : 's'}.`, 'win');
     const was = threat(G); G.won = (G.won || 0) + 1; if (threat(G) > was) say(G, `Fight ${G.won} won: the threat rises. Alarms deal ${threat(G)} more Damage for the rest of the shift (not the boss).`, 'mob');
-    // Full Shift (2026-11-04): after the 2nd, 4th and 6th fight won, the top story card is the next flip.
+    // Full Shift (2026-11-04): after the 1st, 3rd and 5th fight won, the top story card is the next flip.
     const at = MODES[G.mode].storyAt; if (at && at.includes(G.won) && G.story.length) { G.feed.unshift(G.story.shift()); say(G, `Fight ${G.won} won: a story card is the next flip.`, 'sit'); }
     G.cond.forEach((c, k) => { if (c.exposed) { c.exposed = false; say(G, `${nameOf(G.team[k])} discards Exposed.`, 'sit'); } });
     const rec = running(G, 'recover'), recUp = G.agents.flat().filter(c => c.t === 'recover' && upgraded(G, c.uid)).length * 2; if (rec) G.stats.items.recover += spread(G, rec * D.recoverHeal + recUp, 'Recovery Agent'); // crew-wide since 2026-11-01

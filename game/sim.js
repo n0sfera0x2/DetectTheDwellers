@@ -112,7 +112,7 @@ const HUNEND = process.env.HUNEND || '0', RESARR = process.env.RESARR || '0', BA
 // BASES lists which alarms have it: spray (once a round, reroll one more die), druid (comebacks don't hit on
 // arrival), mailer (the highest-Damage alarm deals 1 less), imp (on point rolls one more die), wyrmling (add 1 to
 // every row roll), mimic (after every won fight, heal 3 split across the crew). BASEPICK=always|never|bot.
-const BASE = process.env.BASE !== '0', BASEPICK = process.env.BASEPICK || 'bot', BASEDICE = +(process.env.BASEDICE || 3); // 3 since 2026-11-01 (was 4)
+const BASE = process.env.BASE !== '0', BASEPICK = process.env.BASEPICK || 'bot', BASEDICE = +(process.env.BASEDICE || 2); // 2 since 2026-11-04 (3 since 2026-11-01, was 4)
 const BASES = (process.env.BASES || 'imp,druid,wyrmling,mimic,wraith,specter,bat,leech,locker,zeroday,deepfake').split(','); // since 2026-11-01 the Mailer and Sprayer have no Baseline line
 const aug = (G, id) => TRAITS ? (id === 'druid' && traitN(G, 'ghost') > 0) || (id === 'wyrmling' && traitN(G, 'scramble') > 0) : G.aug && G.aug.some(a => a.id === id && G.tray.includes(a.host));
 // TRAITS=1 (default, 2026-11-02): a baselined alarm gives the agent it tucks under a trait, kept on that card (G.trayT,
@@ -139,9 +139,9 @@ const TUCKOUT = TRAITS && process.env.TUCKOUT !== '0';
 // The Lockjaw Syndicate: down to 6, 4 and 2 dice. The Persistent Operator: when it comes back, and down to 4 dice.
 // The Rogue AI: each consumable used while it is in play.
 const BOSSROW = process.env.BOSSROW || (MODE === 'quick' ? 'none' : 'steps'), BOSSSTEPS = (process.env.BOSSSTEPS || '6,4,2').split(',').map(Number);
-// STORYAT (2026-11-04, Full Shift): story cards are their own deck; after the 2nd, 4th and 6th fight won, flip one
-// (the feed is 11 core cards). STORYAT=0: the old deal, 3 story cards shuffled into 11 core.
-const STORYAT = process.env.STORYAT === '0' ? null : (process.env.STORYAT || '2,4,6').split(',').map(Number);
+// STORYAT (2026-11-04, Full Shift): story cards are their own deck; after the 1st, 3rd and 5th fight won, flip one
+// (the feed is 9 core cards; it was 11 with the 2nd, 4th and 6th earlier the same day). STORYAT=0: the old deal, 3 story cards shuffled into 11 core.
+const STORYAT = process.env.STORYAT === '0' ? null : (process.env.STORYAT || '1,3,5').split(',').map(Number);
 // NEWCARDS (proposal, 2026-11-04): comma list of new cards to add. Alarms: locker (Ransomware Locker, Detonate: still up
 // after its 2nd round, it hits everyone for 5 and goes on the row; tuck: Locked, can't be lost), zeroday (Zero-Day
 // Phantom, Unknown: its threat dice are rolled when it arrives; tuck: Day one, counts as two in round 1), stuffer
@@ -271,7 +271,7 @@ function newGame(sys, team, opt) {
   let feed, mobs, storyDeck = [];
   if (sys === 'n6' && SIT && MODE !== 'classic') {
     const core = shuffle([...MOBS.map(m => mk(m)), ...SITS_CORE.map(s => ({ sit: s }))], r), story = shuffle(SITS_STORY.map(s => ({ sit: s })), r).slice(0, MODE === 'full' ? +(process.env.STORYF || 3) : 0);
-    feed = shuffle([...story, ...core.slice(0, (MODE === 'full' ? +(process.env.DEALF || 14) : +(process.env.DEALQ || 8)) - story.length)], r); if (MODE === 'full' && STORYAT) { feed = core.slice(0, +(process.env.DEALF || 11)); storyDeck = shuffle(SITS_STORY.map(s => ({ sit: s })), r); } // STORYAT: story deck flips after these fights won // DEALQ, DEALF, STORYF: deal sizes mobs = feed.filter(c => !c.sit);
+    feed = shuffle([...story, ...core.slice(0, (MODE === 'full' ? +(process.env.DEALF || 14) : +(process.env.DEALQ || 8)) - story.length)], r); if (MODE === 'full' && STORYAT) { feed = core.slice(0, +(process.env.DEALF || 9)); storyDeck = shuffle(SITS_STORY.map(s => ({ sit: s })), r); } // STORYAT: story deck flips after these fights won // DEALQ, DEALF, STORYF: deal sizes mobs = feed.filter(c => !c.sit);
   } else { mobs = shuffle(D.mobs.filter(m => CLASSIC.includes(m.id)), r).slice(0, opt.deal || 6).map(m => mk(m)); feed = SIT && sys === 'n6' && FEED === 'mixed' ? shuffle([...mobs, ...SITS.map(s => ({ sit: s }))], r) : mobs; }
   return { storyDeck, sys, team, n, r, hp: team.map(() => opt.hp), max: opt.hp, feed, boss: mk(D.bosses[Math.floor(r() * 3)], true),
     row: [], play: [], trayK: [], trayT: [], pendT: [], kit: shuffle(NEWITEMS ? KIT.slice() : KIT.flatMap(t => [t, t]), r), discard: [], tray: [], point: 0, over: false, win: false,

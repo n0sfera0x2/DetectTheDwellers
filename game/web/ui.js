@@ -193,7 +193,7 @@
   // ---- Views --------------------------------------------------------------------------------------------------------
   const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button>`;
   const dbls = id => A.DOUBLES[id].map(n => A.pip(n, 18)).join('');
-  const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '11 cards, then the boss. Every second fight you win, a story card. The boss pulls the row. About 35 minutes.' };
+  const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '9 cards, then the boss. A story card after your 1st, 3rd and 5th win. The boss pulls the row. About 30 minutes.' };
   function vSetup() {
     const team = UI.setup.team, n = team.length;
     const picks = A.ANALYST_IDS.map(id => { const on = team.includes(id);

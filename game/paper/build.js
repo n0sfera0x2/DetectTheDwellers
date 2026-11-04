@@ -8,7 +8,7 @@ const { fonts } = require('../../deck/render');
 const { launch, fontsReady } = require('../../deck/browser');
 const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend, tracker, mobs: cardMobs, boss, BOSS_IDS, ANALYST_IDS, AGENT_IDS, ITEM_DECK, CARD_CSS, SIT_IDS, sitCard, COND_IDS, condCard } = require('../cards');
 
-const OUT = __dirname, HP = 17; // Full Shift starting HP (Quick: 12), 2026-11-03 four analysts; the numbers are in the README
+const OUT = __dirname, HP = 15; // Full Shift starting HP (Quick: 11), 2026-11-04; the numbers are in the README
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
 const P = (n, px = 15) => pip(n, px);
@@ -21,8 +21,8 @@ const rules = `<section class="page rules">
 <p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
 <h2>Setup</h2>
 <ol>
-<li>Pick the shift. <b>Quick:</b> everyone starts at <b>12 HP</b>. <b>Full:</b> <b>17 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
-<li>Shuffle the <b>situation deck</b>, the 15 alarms and 9 situations. <b>Quick:</b> deal 8. <b>Full:</b> deal 11. That’s the <b>feed</b>. <b>Full</b> also shuffles the 9 <b>story</b> cards into their own deck.</li>
+<li>Pick the shift. <b>Quick:</b> everyone starts at <b>11 HP</b>. <b>Full:</b> <b>15 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
+<li>Shuffle the <b>situation deck</b>, the 15 alarms and 9 situations. <b>Quick:</b> deal 8. <b>Full:</b> deal 9. That’s the <b>feed</b>. <b>Full</b> also shuffles the 9 <b>story</b> cards into their own deck.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
 <li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 3); solo 2.</li>
 <li>Set out the shift tracker: coin a box for anything once a round or fight; clear it as that ends.</li>
@@ -42,7 +42,7 @@ const rules = `<section class="page rules">
 </div>
 <div>
 <h2>Baseline it</h2>
-<p>A newly flipped alarm with a <b>tuck band</b> can be baselined (a comeback too, with one more die): set the band’s 3 dice as well. Beat it with them all and slide it under an agent someone holds, so only its band shows. That agent gains the band’s <b>trait</b> for good. <b>One</b> alarm per agent. Tucked, the alarm is <b>off the row</b>; discard the agent and it goes back on the row. No agents: set it aside until one is drawn.</p>
+<p>A newly flipped alarm with a <b>tuck band</b> can be baselined (a comeback too, with one more die): set the band’s 2 dice as well. Beat it with them all and slide it under an agent someone holds, so only its band shows. That agent gains the band’s <b>trait</b> for good. <b>One</b> alarm per agent. Tucked, the alarm is <b>off the row</b>; discard the agent and it goes back on the row. No agents: set it aside until one is drawn.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>
@@ -53,7 +53,7 @@ const rules = `<section class="page rules">
 <h2>Doubles</h2>
 <p>Your analyst card shows your doubles. The solo crew die: <b>only a 6</b>. A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
 <h2>After a fight</h2>
-<p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Coin the next <b>fights won</b> box: from 3 won, alarms (not the boss) deal <b>+1</b>. <b>Full:</b> after the 2nd, 4th and 6th, the top story card goes on the feed: flip it next. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. <b>Consumables</b> are used once. Both kinds take a slot: each player holds 4 items (solo 6). Full? Discard one to take another.</p>
+<p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Coin the next <b>fights won</b> box: from 3 won, alarms (not the boss) deal <b>+1</b>. <b>Full:</b> after the 1st, 3rd and 5th, the top story card goes on the feed: flip it next. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. <b>Consumables</b> are used once. Both kinds take a slot: each player holds 4 items (solo 6). Full? Discard one to take another.</p>
 <h2>Situations and conditions</h2>
 <p>Most situations make you choose: stay or run, grab it or leave it. On point rolls any grab with spare dice. Conditions are cards you keep in front of you. <b>Rattled</b> and <b>Exposed</b> wear off; <b>Focused</b> waits until you use it. Nobody holds two of the same.</p>
 <h2>Win or lose</h2>

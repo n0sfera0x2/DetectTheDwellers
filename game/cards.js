@@ -72,7 +72,7 @@
   // (the Mailer Daemon and Password Sprayer cost more than their lines gave back). Same as sim.js BASES and BASEDICE.
   // Since 2026-11-02 each line is a trait of the agent it tucks under (its agent), lost if that agent is discarded:
   // Twin and Repair change the agent itself, Ghost and Scramble guard the row. Same as sim.js TRAIT (hybrid).
-  const BASE_N = 3;
+  const BASE_N = 2; // 2 since 2026-11-04 (was 3): Quick Shift has too few fights to earn back 3
   // The boss pulls the row (2026-11-02 review): at round end, when it is down to each of these dice counts, roll the row.
   const BOSS_STEPS = [6, 4, 2];
   // Since 2026-11-03: one tucked alarm per agent, and each trait changes its agent for good, nothing once-a-round
@@ -157,7 +157,7 @@
   const box = t => `<span class="bx">${t}</span>`;
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
 
-  <div class="trow"><b>Fights won</b>${box(1)}${box('2: story')}${box('3: alarms +1')}${box('4: story')}${box(5)}${box('6: story')}</div>
+  <div class="trow"><b>Fights won</b>${box('1: story')}${box(2)}${box('3: story, alarms +1')}${box(4)}${box('5: story')}${box(6)}</div>
   <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Twin')}</div>
   <div class="trow"><b>This fight</b>${box('Hold the room: +1 item')}${box('Comeback joined')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>

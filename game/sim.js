@@ -191,7 +191,8 @@ const CAP = +(process.env.CAP || (V4 ? 1 : 2)), UPGRADE = process.env.UPGRADE !=
 // comebacks deal the Hunter no damage. RESNEW=heal: the Responder's doubles can't guard; a double may instead heal
 // anyone RESHEAL (default 2) right away.
 const HUNNEW = process.env.HUNNEW ?? 'dieplain', RESHEAL = +(process.env.RESHEAL || 3); // defaults since 2026-11-03: HUNNEW die (on point, one more die; also triple, fewer, fewer2, immune), RESNEW heal 5
-const SOANEW = process.env.SOANEW ?? 'drawpoint' /* since 2026-11-04 (late): on point, a baseline draws an item; twinown (agents count as two) earlier that day, wilddbl before */, RESNEW = process.env.RESNEW ?? 'healor'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
+const ENGPT = process.env.ENGPT ?? 'other'; // the Engineer on point (2026-11-05): other (default), crewguard, two, dbl, '' for none
+const SOANEW = process.env.SOANEW ?? 'basedie2' /* since 2026-11-05: on point, two more dice while baselining (basedie: one; both: one and the draw); drawpoint (a baseline draws an item) 2026-11-04 (late); twinown (agents count as two) earlier that day, wilddbl before */, RESNEW = process.env.RESNEW ?? 'healor'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
 const upgraded = (G, i) => V4 ? has(G, i, 'overclock') > 0 || (SOANEW === 'up1' && G.team[G.trayK[i] || 0] === 'SOA' && traitsOf(G, i).length > 0) : UPGRADE && traitsOf(G, i).length >= (SOANEW === 'up1' && G.team[G.trayK ? G.trayK[i] || 0 : 0] === 'SOA' ? 1 : 2);
 // Which agent the bot tucks each trait under, best first.
 const TUCK = { twin: process.env.TWINTO === 'contain' ? ['contain', 'triage', 'recover', 'enrich'] : ['triage', 'contain', 'recover', 'enrich'], stealth: ['triage', 'contain', 'recover', 'enrich'], relay: ['triage', 'contain', 'recover', 'enrich'], repair: ['recover', 'contain', 'triage', 'enrich'], ghost: ['enrich', 'recover', 'contain', 'triage'], scramble: ['enrich', 'recover', 'contain', 'triage'] };
@@ -307,7 +308,7 @@ function roll(G) {
   const dice = [];
   if (G.sys === 'n6') {
     const raw = [];
-    G.team.forEach((id, k) => { const nd = (G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0)) + (k === G.point && aug(G, 'imp') ? 1 : 0) + ((HUNNEW === 'die' || HUNNEW === 'dieplain') && id === 'HUN' && k === G.point ? 1 : 0); for (let i = 0; i < nd; i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : HUNNEW === 'dieplain' && id === 'HUN' && k === G.point && i === 0 ? [] : DOUBLES[id] }); }); // dieplain: the Hunter's extra die is never a double
+    G.team.forEach((id, k) => { const nd = (G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0)) + (k === G.point && aug(G, 'imp') ? 1 : 0) + ((HUNNEW === 'die' || HUNNEW === 'dieplain') && id === 'HUN' && k === G.point ? 1 : 0) + ((SOANEW === 'basedie' || SOANEW === 'basedie2' || SOANEW === 'both') && id === 'SOA' && k === G.point && G.play && G.play.some(m => m.baselining) ? (SOANEW === 'basedie2' ? 2 : 1) : 0) /* SOANEW=basedie (proposal, 2026-11-05): on point, one more die while baselining */; for (let i = 0; i < nd; i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : HUNNEW === 'dieplain' && id === 'HUN' && k === G.point && i === 0 ? [] : DOUBLES[id] }); }); // dieplain: the Hunter's extra die is never a double
     if (TRIAGE === 'crew') G.team.forEach((id, k) => { for (let i = 0; i < activeK(G, 'triage', k); i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : DOUBLES[id] }); });
     // DBLMODE=pair (proposal, 2026-10-31): no number is a double by itself; two of your own dice showing the same
     // number are a double (they take two of it, as they would anyway, or together they guard).
@@ -367,7 +368,9 @@ function choose(G, raw) {
   if (!G.smart) return build(raw);
   const set = (rs, i, v) => rs.map((x, j) => j === i ? { ...x, v } : x), e = G.team.indexOf('ENG');
   const cands = [{ raw, focus: -1 }];
-  if (NEWPERKS && e >= 0 && !G.engUsed) raw.forEach((r, i) => { if (r.crew && r.k === e) cands.push({ raw: raw.map((x, j) => j === i ? { ...x, v: 7 - x.v, flip: true, dbl: process.env.ENGDBL === '1' ? x.dbl : [] } : x), focus: -1, flip: true }); });
+  if (NEWPERKS && e >= 0 && !G.engUsed) raw.forEach((r, i) => { if (r.crew && r.k === e) cands.push({ raw: raw.map((x, j) => j === i ? { ...x, v: 7 - x.v, flip: true, dbl: process.env.ENGDBL === '1' || ENGPT === 'dbl' && e === G.point ? x.dbl : [] } : x), focus: -1, flip: true }); });
+  // ENGPT=two (proposal, 2026-11-05): on point, the Engineer turns up to two of their dice.
+  if (ENGPT === 'two' && e === G.point) for (const c of cands.slice()) if (c.flip) c.raw.forEach((r, i) => { if (r.crew && r.k === e && !r.flip) cands.push({ raw: c.raw.map((x, j) => j === i ? { ...x, v: 7 - x.v, flip: true, dbl: [] } : x), focus: -1, flip: true }); });
   // PATPERK=nudge: once a fight the Fixer turns one of their dice one up or one down.
   const pf = G.team.indexOf('PAT');
   if (PATPERK === 'nudge' && pf >= 0 && !G.patUsed) for (const c of cands.slice()) c.raw.forEach((r, i) => { if (r.crew && r.k === pf) for (const v of [r.v - 1, r.v + 1]) if (v >= 1 && v <= 6) cands.push({ raw: set(c.raw, i, v), focus: c.focus, flip: c.flip, nudge: true }); });
@@ -429,6 +432,10 @@ const GUARDANY = process.env.GUARDANY === '1'; // 2026-10-31 to 2026-11-03 a gua
 const top = G => G.play.slice().sort((a, b) => dmgOf(G, b) - dmgOf(G, a))[0];
 const resHeals = (G, d) => (RESNEW === 'heal' || RESNEW === 'healor') && G.sys === 'n6' && d.crew && G.team[d.k] === 'RES' && d.f[1] === 2 && !d.half && !d.noguard;
 const canGuard = (G, d) => d.crew && !(RESNEW === 'heal' && resHeals(G, d)) && (G.sys === 'd20' ? d.r >= D.guard.min && d.r < (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18) : d.f[1] === 2 && !d.half && !d.noguard);
+// ENGPT=crewguard (proposal, 2026-11-05): on point, a double of the Engineer's can guard the whole crew.
+// ENGPT=other (default since 2026-11-05): on point, a double of the Engineer's can guard another analyst instead.
+const engOther = (G, d) => ENGPT === 'other' && G.team[d.k] === 'ENG' && d.k === G.point;
+const crewGuard = (G, d) => ENGPT === 'crewguard' && G.team[d.k] === 'ENG' && d.k === G.point;
 const autoBlock = (G, d) => G.sys === 'd20' && d.crew && d.r >= (G.team[d.k] === 'ENG' ? D.perks.ENG.dbl : 18);
 
 // Damage the crew takes at the end of the round, given who is blocking.
@@ -472,7 +479,7 @@ function allocations(G, dice) {
         plan.push([i, m, useE]); rec(i + 1, nl, nb, enrichUsed || useE, plan); plan.pop();
       }
     }
-    if (canGuard(G, d)) for (const t of GUARDANY ? G.team.map((_, k) => k) : [d.k]) if (!blocks[t]) { const nb = cp(blocks); nb[t] = true; plan.push([i, 'guard']); rec(i + 1, left, nb, enrichUsed, plan); plan.pop(); any = true; }
+    if (canGuard(G, d) && crewGuard(G, d)) { if (blocks.some(b => !b)) { const nb = blocks.map(() => true); plan.push([i, 'guard']); rec(i + 1, left, nb, enrichUsed, plan); plan.pop(); any = true; } } else if (canGuard(G, d)) for (const t of GUARDANY || engOther(G, d) ? G.team.map((_, k) => k) : [d.k]) if (!blocks[t]) { const nb = cp(blocks); nb[t] = true; plan.push([i, 'guard']); rec(i + 1, left, nb, enrichUsed, plan); plan.pop(); any = true; }
     if (resHeals(G, d)) for (const t of G.team.map((_, k) => k)) { const nb = cp(blocks); nb.heal = [...(blocks.heal || []), [t, RESHEAL]]; plan.push([i, 'heal']); rec(i + 1, left, nb, enrichUsed, plan); plan.pop(); any = true; }
     const nb = cp(blocks); if (autoBlock(G, d)) nb[d.k] = true;
     plan.push([i, 'idle', any]); rec(i + 1, left, nb, enrichUsed, plan); plan.pop();
@@ -490,7 +497,7 @@ function greedy(G, dice) {
     let best = { s: score(G, left, blocks), left, blocks };
     for (const m of G.play) { const L = left.get(m); if (!L.n) continue; const h = G.sys === 'd20' ? Math.min(options(G, d, m), L.n) : options(G, d, { ...m, need: L.need }, false); if (!h) continue;
       const nl = new Map(left); nl.set(m, takeHits(G, m, L, d, h, false)); const sc = score(G, nl, blocks); if (sc > best.s) best = { s: sc, left: nl, blocks }; }
-    if (canGuard(G, d)) for (const t of GUARDANY ? G.team.map((_, k) => k) : [d.k]) if (!blocks[t]) { const nb = blocks.slice(); nb[t] = true; const sc = score(G, left, nb); if (sc > best.s) best = { s: sc, left, blocks: nb, g: true }; }
+    if (canGuard(G, d) && crewGuard(G, d)) { if (blocks.some(x => !x)) { const nb = blocks.map(() => true); const sc = score(G, left, nb); if (sc > best.s) best = { s: sc, left, blocks: nb, g: true }; } } else if (canGuard(G, d)) for (const t of GUARDANY || engOther(G, d) ? G.team.map((_, k) => k) : [d.k]) if (!blocks[t]) { const nb = blocks.slice(); nb[t] = true; const sc = score(G, left, nb); if (sc > best.s) best = { s: sc, left, blocks: nb, g: true }; }
     if (best.g) guarded.add(d); left = best.left; blocks = best.blocks;
   }
   return [{ plan: [], left, blocks, score: score(G, left, blocks), greedy: true }];
@@ -546,7 +553,7 @@ function fight(G, mobs) {
     for (const m of beaten) {
       if (m.boss) { if (m.kw === 'apt' && !m.rose) { m.rose = true; m.left = 2; m.need = G.sys === 'd6' ? ['D', 'C'] : G.sys === 'n6' ? numbersFor(m.id, 2) : null; alive.push(m); if (G.sys === 'n6' && BOSSROW !== 'none') rowRoll(G, true).forEach(b => alive.push(b)); continue; } G.over = true; G.win = true; return; }
       if (m.baselining) { m.baselining = false; G.stats.baselined = (G.stats.baselined || 0) + 1;
-        if (TRAITS) { const tr0 = TRAIT[m.id] === 'signature' ? 'sig' + numbersFor(m.id, 1)[0] : TRAIT[m.id], t = tuckTrait(G, tr0); if (SOANEW === 'drawpoint' && G.team[G.point] === 'SOA') draw(G, 1); /* the Soarcerer on point: a baseline draws an item */ if (t === 'full') { G.row.push(m); continue; } if (!t) G.pendT.push(tr0); if (SOATUCK && on(G, 'SOA')) draw(G, 1); } else { const host = G.tray.filter(isAgent).pop(); G.aug.push({ id: m.id, host: host || null, pend: !host }); }
+        if (TRAITS) { const tr0 = TRAIT[m.id] === 'signature' ? 'sig' + numbersFor(m.id, 1)[0] : TRAIT[m.id], t = tuckTrait(G, tr0); if ((SOANEW === 'drawpoint' || SOANEW === 'both') && G.team[G.point] === 'SOA') draw(G, 1); /* the Soarcerer on point: a baseline draws an item */ if (t === 'full') { G.row.push(m); continue; } if (!t) G.pendT.push(tr0); if (SOATUCK && on(G, 'SOA')) draw(G, 1); } else { const host = G.tray.filter(isAgent).pop(); G.aug.push({ id: m.id, host: host || null, pend: !host }); }
         if (process.env.BASEROW === 'out' || TUCKOUT) continue; } // TUCKOUT: tucked under its agent, so not on the row
       if (G.sys === 'n6' && HUNEND !== '0' && on(G, 'HUN') && m.back > 0 && (HUNEND !== 'point' || G.team[G.point] === 'HUN') && (HUNEND !== 'once' || !G.hunEnded)) { G.hunEnded = true; G.stats.ended = (G.stats.ended || 0) + 1; continue; } // the Hunter ends persistence
       if (G.sys === 'n6' && PERSIST === 'always') { G.row.push(m); continue; }
@@ -588,6 +595,7 @@ function fight(G, mobs) {
   // Won fight: heals, then kit.
   if (on(G, 'PAT') && PATPERK !== 'nudge') { if (PATPERK === 'choose' && Math.min(...G.hp) > G.max - +(process.env.PATMIN || 4)) { draw(G, +(process.env.PATDRAW || 1)); G.stats.patDraw = (G.stats.patDraw || 0) + 1; } else spread(G, Math.floor(HEALX * +(process.env.PATHEAL || D.perks.PAT.fight))); }
   if (aug(G, 'mimic')) spread(G, Math.floor(HEALX * +(process.env.BASEHEAL || 5)));
+  if (process.env.RESPT && G.team[G.point] === 'RES') { const t = G.hp.indexOf(Math.min(...G.hp)); G.hp[t] = Math.min(G.max, G.hp[t] + +process.env.RESPT); } // RESPT=n (proposal, 2026-11-05): a fight won with the Responder on point heals the lowest n
   G.tray.forEach((_, i) => { const k = G.trayK[i], h = has(G, i, 'repair') * 2; if (h) G.hp[k] = Math.min(G.max, G.hp[k] + h); }); // Repair
   if (PERSONAL) G.team.forEach((_, k) => { G.hp[k] = Math.min(G.max, G.hp[k] + activeK(G, 'recover', k) * D.recoverHeal); });
   else spread(G, Math.floor(HEALX * ((aiUp(G) ? 0 : G.tray.filter((x, i) => x === 'recover' && upgraded(G, i)).length * 2) + active(G, 'recover') * (D.recoverHeal + (on(G, 'PAT') && (PATPERK !== 'nudge' || process.env.PATREC === '1') ? D.perks.PAT.recover : 0)))));

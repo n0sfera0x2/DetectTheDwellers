@@ -1,6 +1,6 @@
 # Detect the Dwellers
 
-**Status:** the rules below are current as of [every alarm baselines, the Soarcerer draws on point](#every-alarm-baselines-the-soarcerer-draws-on-point-2026-11-04) (2026-11-04). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
+**Status:** the rules below are current as of [on point: the Engineer guards a crewmate, the Soarcerer baselines with two more dice](#on-point-the-engineer-guards-a-crewmate-the-soarcerer-baselines-with-two-more-dice-2026-11-05) (2026-11-05). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
 ## The rules now
 
@@ -77,8 +77,8 @@ One line each since 2026-11-03; no wild numbers. Only the Engineer's turn needs 
 | --- | --- | --- |
 | Hunter | 4, 6 | On point, you roll one more die. It’s never a double. |
 | Responder | 3, 6 | A double of yours can heal anyone 3 instead of guarding. |
-| Engineer | 1, 6 | Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. |
-| Soarcerer | 2, 6 | On point, when you baseline an alarm, draw an item. (Since 2026-11-04.) |
+| Engineer | 1, 6 | Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead. (On point since 2026-11-05.) |
+| Soarcerer | 2, 6 | On point, while you baseline an alarm, roll two more dice. (Since 2026-11-05: every round of that fight.) |
 
 ### Items (18)
 
@@ -131,18 +131,18 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-04 (late: all 15 alarms baseline, the Soarcerer draws on point, HP 10 and 13, 3 setup items for 3–4 players, solo starts with 1). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
+Bot sims, `SYS=n6 N=600`, 2026-11-05 (the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players, solo starts with 1). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 5 HP or less: one boss hit from 0) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 55% | 30 pts | 45% | 94% | 19.0 | 3.6 | 56% | 74% |
-| Quick, 2p | 52% | 24 pts | 52% | 96% | 12.0 | 1.4 | 52% | 76% |
-| Quick, 4p | 54% | 36 pts | 57% | 99% | 10.3 | 1.0 | 46% | 70% |
-| Full, 1p | 58% | 32 pts | 47% | 95% | 20.9 | 5.1 | 52% | 50% |
-| Full, 2p | 59% | 27 pts | 53% | 97% | 13.4 | 2.3 | 46% | 41% |
-| Full, 4p | 56% | 32 pts | 52% | 98% | 11.4 | 1.7 | 47% | 31% |
+| Quick, 1p | 54% | 30 pts | 45% | 95% | 18.7 | 3.7 | 54% | 73% |
+| Quick, 2p | 52% | 24 pts | 53% | 97% | 12.1 | 1.4 | 48% | 75% |
+| Quick, 4p | 54% | 34 pts | 57% | 99% | 10.3 | 0.9 | 45% | 69% |
+| Full, 1p | 56% | 31 pts | 48% | 95% | 20.5 | 5.4 | 49% | 50% |
+| Full, 2p | 59% | 27 pts | 54% | 97% | 13.6 | 2.3 | 42% | 38% |
+| Full, 4p | 56% | 32 pts | 53% | 98% | 11.4 | 1.7 | 46% | 31% |
 
-Solo by analyst: Quick Hunter 58%, Responder 57%, Engineer 48%, Soarcerer 55%; Full 59 / 63 / 53 / 59%. Pairs (600 games each): Quick 47% (Hunter + Soarcerer) to 60% (Responder + Engineer); Full 50% (Hunter + Soarcerer) to 62% (Hunter + Engineer). Baselines per shift: about 3.1 in Quick and 3.3 in Full (was 1.6).
+Solo by analyst: Quick Hunter 58%, Responder 57%, Engineer 48%, Soarcerer 55%; Full 59 / 63 / 53 / 53%. Pairs (600 games each): Quick 46% (Hunter + Soarcerer) to 60% (Responder + Engineer); Full 49% (Hunter + Soarcerer) to 63% (Hunter + Engineer). Baselines per shift: about 3.1 in Quick and 3.3 in Full (was 1.6).
 
 ### Targets
 
@@ -150,26 +150,26 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 55 / 52 / 54% | 58 / 59 / 56% | the mode's HP; solo: starting items; 3–4p: their setup item |
-| Spread across crew sizes | 10 points or less | 3 | 3 | 3–4p: the setup item (the + die is printed) |
+| Win rate, every crew size | 50–60% | 54 / 52 / 54% | 56 / 59 / 56% | the mode's HP; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 2 | 3 | 3–4p: the setup item (the + die is printed) |
 | Solo spread across analysts | 10 points or less | 10 (the Engineer 48%) | 10 | the analyst's ability, not their doubles |
-| Pairs, lowest to highest | within 15 points | 47–60% (13) | 50–62% (12) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 30 / 24 / 36 | 32 / 27 / 32 | more decisions per roll |
-| Rounds with a real decision | 60% or more | 94 / 96 / 99% | 95 / 97 / 98% | the reroll; its cost |
-| Rounds with a real dice choice | 40% or more | 45 / 52 / 57% | 47 / 53 / 52% | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 56 / 52 / 46% | 52 / 46 / 47% | the boss's Damage; the threat timing (`ESC`) |
-| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 74 / 76 / 70% | 50 / 41 / 31% (4p misses) | Full: its HP; 4p pile-ups |
-| Comebacks per shift | 3–6 | 3.6 / 1.4 / 1.0 (2p and 4p miss) | 5.1 / 2.3 / 1.7 (2p and 4p miss) | the row ranges (`ROWSHIFT`); the feed size |
-| Baselining worth doing | always beats never | +19 / +5 / +20 | +26 / +21 / +29 | the Baseline dice and the traits |
+| Pairs, lowest to highest | within 15 points | 46–60% (14) | 49–63% (14) | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 30 / 24 / 34 | 31 / 27 / 32 | more decisions per roll |
+| Rounds with a real decision | 60% or more | 95 / 97 / 99% | 95 / 97 / 98% | the reroll; its cost |
+| Rounds with a real dice choice | 40% or more | 45 / 53 / 57% | 48 / 54 / 53% | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 54 / 48 / 45% | 49 / 42 / 46% | the boss's Damage; the threat timing (`ESC`) |
+| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 73 / 75 / 69% | 50 / 38 / 31% (2p and 4p miss) | Full: its HP; 4p pile-ups |
+| Comebacks per shift | 3–6 | 3.7 / 1.4 / 0.9 (2p and 4p miss) | 5.4 / 2.3 / 1.7 (2p and 4p miss) | the row ranges (`ROWSHIFT`); the feed size |
+| Baselining worth doing | always beats never | +18 / +3 / +21 | +24 / +20 / +29 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
 | The boss is a climax (Full) | beating it once there: 75% or less | 77 / 72 / 70% (1p over) | 72 / 66 / 68% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
 
 - **Comebacks fell to 1.0–2.3 a shift in crews** (Quick 1.4 / 1.0, Full 2.3 / 1.7 at 2p / 4p; target 3–6). Baselining twice as often takes twice as many alarms off the row. The row is the game's signature, so this is the first thing to look at: a wider row (`ROWSHIFT`) or the boss pulling it more.
-- **Full Shift 4-player scares are 31%** against 40% (solo 50%, 2p 41% now reach it).
-- **Pairs with the Hunter and the Soarcerer are lowest** (47% Quick, 50% Full): the bot keeps whoever has the most HP on point, so the Soarcerer draws less than a player who takes point on purpose would. Putting the bot's Soarcerer on point lifted 4-player crews to 72–76%, so it stays off.
-- **The solo Engineer is 48% in Quick** (spread 10 points, at the edge).
+- **Full Shift scares miss at 2 and 4 players** (38% and 31% against 40%; solo 50%). The Engineer's guard for a crewmate took 2p from 41% to 38%.
+- **Pairs with the Hunter and the Soarcerer are lowest** (46% Quick, 49% Full): the bot keeps whoever has the most HP on point, so the Soarcerer baselines on point less than a player who takes point on purpose would. Putting the bot's Soarcerer on point lifted 4-player crews to 72–76%, so it stays off.
+- **The solo Engineer is 48% in Quick** (spread 10 points, at the edge). Their on-point guard does nothing solo; "turn up to two on point" (`ENGPT=two`) lifted them to 51 / 56% with no outlier pair, if this needs fixing.
 - **Shifts are longer:** solo 19 rounds in Quick (was 17) and 21 in Full (was 18), from the extra Baseline dice. "About 30 minutes" for Full needs a table to time it.
 - **The bot baselines less than it should in Full:** always baselining wins 61 / 62 / 66% against the bot's 58 / 59 / 56%.
 - **4-player deaths are pile-ups.** Of the deaths from 5+ HP in one round, 74–86% happened with 3–6 alarms in play (600 games, 2026-11-04, before this pass). A cap of 2 comebacks per row roll is the lever to try, if a table finds it unfair.
@@ -210,7 +210,9 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `HUNANY`, `HUNBOSS`, `HUNEND` | the Hunter's 1s: wild on any alarm (`HUNANY=1`), on the boss too (`HUNBOSS`, default on), and the old once-a-fight comeback removal (`HUNEND=once`, default off) |
 | `RESNEW`, `RESPERK`, `RESARR` | the Responder: `RESNEW=top` (default) cuts the highest-Damage alarm by 1; the old stand (`RESPERK=stand`) and arrival cut (`RESARR=crew`) are off |
 | `MORE`, `BASECHEAP` | `MORE=1` (default since 2026-11-04): all 15 alarms can be baselined (`MORE=0`: the eight before); `BASECHEAP=1` (default): the bot baselines a 1-Damage alarm unless someone is at 3 HP or less |
-| `SOANEW`, `SOAPERK`, `SOATUCK` | the Soarcerer: `SOANEW=drawpoint` (default since 2026-11-04): on point, each baseline draws an item; `twinown` (their agents count as two, earlier that day), `wilddbl` (any die a double for baselining, the rule before), `wildbase`, `up1` (a tuck under their agent also overclocks it) and `pair5` were tried; the old 2-die cost (`SOAPERK=auto`) and tuck draw (`SOATUCK=1`) are off |
+| `ENGPT` | the Engineer on point: `other` (default since 2026-11-05): a double of theirs can guard another analyst; `crewguard` (the whole crew), `two` (turn up to two dice), `dbl` (a turned die keeps its double), empty for none |
+| `RESPT` | proposal: a fight won with the Responder on point heals the lowest analyst this much (off) |
+| `SOANEW`, `SOAPERK`, `SOATUCK` | the Soarcerer: `SOANEW=basedie2` (default since 2026-11-05): on point, two more dice every round while baselining; `basedie` (one more), `both` (one more and the draw), `drawpoint` (each baseline on point draws an item, 2026-11-04), `twinown` (their agents count as two, earlier that day), `wilddbl` (any die a double for baselining, the rule before), `wildbase`, `up1` (a tuck under their agent also overclocks it) and `pair5` were tried; the old 2-die cost (`SOAPERK=auto`) and tuck draw (`SOATUCK=1`) are off |
 | `HP` | starting HP; skips the tune-to-50% search |
 | `N6DICE` | n6: dice per analyst each round (default 1; on point +1) |
 | `N6SOLO` | n6: dice a solo player rolls (default 3: two own plus the crew die) |
@@ -321,6 +323,16 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### On point: the Engineer guards a crewmate, the Soarcerer baselines with two more dice (2026-11-05)
+
+The owner's notes: put on-point abilities on the analysts; for the Soarcerer, roll one more die for baselining when an alarm can be baselined, in place of the item draw. For the Engineer, nothing that removes alarm dice.
+
+- **The Soarcerer: "On point, while you baseline an alarm, roll two more dice."** Every round of that fight. Tried (600 games, solo Soarcerer Quick / Full): the draw on point 55 / 59%, one more die 47 / 52% (weakest analyst), one more die and the draw 68 / 70%, two more dice 55 / 53%. Crews moved 0–2 points.
+- **The Engineer: "On point, a double of yours can guard another analyst instead."** The page asks **Guard who?** Tried: guarding the whole crew lifted Engineer + Soarcerer to 66 / 69% (pairs spread 19), so it covers one analyst. A turned die keeping its double (solo 52 / 55%) and turning up to two dice (51 / 56%) both helped the solo Engineer; the owner wanted something other than the turn. Also offered: a flipped alarm sets one fewer die (no: don't take dice off alarms), draw-then-discard on a flip, 1s and 6s count as each other, no damage in the first round.
+- **The Responder** stays as is: a fight won on point healing the lowest 1 or 2 put the solo Responder at 66% in Full, already the highest.
+
+Sims, 600 games per crew size, 2026-11-05: Quick 54 / 52 / 54%, Full 56 / 59 / 56%. Solo spread 10 in both (Quick Engineer 48%; Full Engineer and Soarcerer 53%). Pairs 46–60% and 49–63%. Scares Quick 69–75%, Full 31–50% (2p 38%). Baselining beats never by 3–21 points in Quick and 20–29 in Full. Knobs: `ENGPT=other`, `SOANEW=basedie2` (defaults), `RESPT` (off).
 
 ### Every alarm baselines, the Soarcerer draws on point (2026-11-04)
 

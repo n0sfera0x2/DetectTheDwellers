@@ -376,7 +376,8 @@
     const dice = [];
     G.team.forEach((id, k) => {
       // The Hunter (2026-11-03): on point, one more of their own dice (solo: one more own die, the crew die stays last).
-      const nd = (G.n === 1 ? D.soloDice : k === G.point ? 2 : 1) + (id === 'HUN' && k === G.point ? 1 : 0);
+      // The Soarcerer (2026-11-05): on point, while an alarm is being baselined, two more of their own dice.
+      const nd = (G.n === 1 ? D.soloDice : k === G.point ? 2 : 1) + (id === 'HUN' && k === G.point ? 1 : 0) + (id === 'SOA' && k === G.point && G.play.some(m => m.based) ? CARDS.SOA_BASE_DICE : 0);
       for (let i = 0; i < nd; i++) { const crewDie = G.n === 1 && i === nd - 1, hunX = id === 'HUN' && k === G.point && i === 0; /* the Hunter's extra die: never a double */ dice.push({ k, crew: true, src: crewDie ? 'crew' : 'own', ...pipDie(1 + d6(G), crewDie ? 'CREW' : id), ...(hunX ? { dbl: false, plain: true } : {}) }); }
     });
     // Each Triage Agent: its holder rolls one more of their own dice (it pairs, guards, rerolls and hits the boss like
@@ -410,7 +411,9 @@
   // A guard covers only the player who rolled it (2026-11-03; it covered anyone from 2026-10-31). A Responder double
   // may heal instead.
   const resDie = (G, d) => !!d && d.crew && G.team[d.k] === 'RES';
-  const canGuard = (G, d) => !!d && d.crew && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && !G.blocks[d.k];
+  // The Engineer on point (2026-11-05): a double of theirs can guard another analyst instead.
+  const engGuard = (G, d) => !!d && G.team[d.k] === 'ENG' && d.k === G.point;
+  const canGuard = (G, d) => !!d && d.crew && !d.flipped && !d.used && !(d.takes || []).length && d.dbl && (engGuard(G, d) ? G.blocks.some(b => !b) : !G.blocks[d.k]);
   // The Responder: a double of theirs may heal anyone 3 (CARDS.RES_HEAL) instead of guarding, right away. Like a guard,
   // it spends the whole double. Can't be undone.
   const canHeal = (G, d) => G.phase === 'assign' && resDie(G, d) && !d.flipped && !d.used && !(d.takes || []).length && d.dbl;
@@ -421,8 +424,8 @@
     say(G, `${nameOf(G.team[d.k])} spends a ${faceText(d)} to heal ${t === d.k ? 'themselves' : nameOf(G.team[t])} ${h}. ${hpLine(G)} HP.`, 'heal');
     return G;
   }
-  // Who a guard could cover now: every player not yet blocking (each covers only themselves).
-  const guardable = G => G.team.map((_, k) => k).filter(k => !G.blocks[k]);
+  // Who die d's guard could cover now: its owner, or anyone not yet blocking for the Engineer on point.
+  const guardable = (G, d) => G.team.map((_, k) => k).filter(k => !G.blocks[k] && (!d || k === d.k || engGuard(G, d)));
   // Pairs (2026-10-31): two of a player's own unused crew dice (their own, or the solo crew die) showing the same number
   // pair into one double. Not an agent die, a Surge Playbook die, a die turned by the Engineer, a die that is already a
   // double, or while Rattled. The pair counts as two dice showing that number (it takes two) or guards, never both.
@@ -483,7 +486,7 @@
     if (d.flipped) fail('A die turned to its opposite side can’t guard.');
     if (!d.dbl) fail('Only a double can guard.');
     const t = target == null ? d.k : target;
-    if (!(t >= 0 && t < G.n && t === Math.floor(t))) fail('No such analyst.'); if (t !== d.k) fail('A double guards only the player who rolled it.');
+    if (!(t >= 0 && t < G.n && t === Math.floor(t))) fail('No such analyst.'); if (t !== d.k && !engGuard(G, d)) fail('A double guards only the player who rolled it.');
     if (G.blocks[t]) fail(`${nameOf(G.team[t])} is already blocking.`);
     G.undo.push(snap(G)); d.used = 'guard'; d.guards = t; G.blocks[t] = true;
     say(G, `${nameOf(G.team[d.k])} guards ${t === d.k ? 'themselves' : nameOf(G.team[t])} with a ${faceText(d)}: ${t === d.k ? 'blocking' : `${nameOf(G.team[t])} blocks`} this round.`, 'guard');
@@ -618,8 +621,7 @@
       // Every beaten mob goes back on the row, however often it has come back.
       // Baselined: the card tucks under an agent instead of going on the row (it can't be in two places).
       if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid, mob: m }); unmute(m); say(G, `${m.name} is beaten with its Baseline dice. It tucks under an agent, off the row.`, 'win');
-        // The Soarcerer on point (2026-11-04): each baseline draws an item, dealt with the fight's draw.
-        if (G.team[G.point] === 'SOA') { G.bonusDraw = (G.bonusDraw || 0) + 1; G.stats.soaDraw = (G.stats.soaDraw || 0) + 1; say(G, `${nameOf('SOA')} is on point: draw an item for the baseline.`, 'kit'); } continue; }
+        continue; }
       unmute(m); G.row.push(m); say(G, `${m.name} is beaten and goes on the persistence row (back on 2–${m.top}).`, 'beat');
     }
     G.play = G.play.filter(m => left(m));
@@ -738,6 +740,6 @@
     return G;
   }
 
-  return { aug, enter, rollRow, backTop, watch, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
+  return { aug, enter, rollRow, backTop, watch, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
     give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canHeal, heal, threat, heldN, exfil, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

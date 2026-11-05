@@ -326,15 +326,27 @@ test('dealing solo: automatic into free slots (6 solo); full, the player picks w
   E.give(S, 0, 'a0-3'); assert.equal(S.phase, 'flip'); assert.deepEqual(S.agents[0].map(c => c.t), ['triage', 'contain', 'enrich', 'triage']);
   assert.equal(E.slotsOf(S, 0), 6);
 });
-test('the Soarcerer (2026-11-04): on point, each baseline draws an item; their agents and dice are like anyone’s', () => {
+test('the Soarcerer (2026-11-05): on point, two more dice while baselining; no item draw; their agents and dice are like anyone’s', () => {
+  // Own dice the Soarcerer (analyst 0) rolls in the first round, with or without a baseline.
+  const soaDice = (point, base) => { for (let seed = 1; ; seed++) { const G = newG({ team: ['SOA', 'ENG'], seed }); G.point = point; E.flip(G); const m = G.play.find(x => x.uid === G.flipped);
+    if (G.phase !== 'roll' || !m || !E.canBaseline(G, m)) continue; if (base) E.baseline(G, m.uid); E.roll(G); return G.dice.filter(d => d.k === 0 && d.crew).length; } };
+  assert.equal(soaDice(0, true), 2 + CARDS.SOA_BASE_DICE, 'on point, baselining: two more'); assert.equal(soaDice(0, false), 2, 'on point, no baseline: the usual two');
+  assert.equal(soaDice(1, true), 1, 'off point: the usual one'); assert.equal(CARDS.SOA_BASE_DICE, 2);
   const won = point => { const G = fight(['SOA', 'ENG'], ['spray'], { point }); const m = mob(G, 'spray'); m.based = 2; G.phase = 'assign'; G.round = 1; G.dice = []; G.undo = []; G.play = [m]; m.off = m.off.map(() => true); setAgents(G, 1, ['contain']); E.endRound(G); return G; };
-  const on = won(0), off = won(1);
-  assert.equal(on.drawn.length, D.kitPerFight + 1, 'on point: one more item'); assert.equal(off.drawn.length, D.kitPerFight, 'off point: the usual draw');
-  assert.ok(on.log.some(l => /Soarcerer is on point: draw an item/.test(l.text)));
+  assert.equal(won(0).drawn.length, D.kitPerFight, 'a baseline draws no extra item now');
   const G = fight(['SOA', 'ENG'], ['spray'], { dice: [[0, 1], [1, 1]] }); assert.equal(E.slotsOf(G, 0), 4); assert.equal(E.baseCost(G, { back: 0 }), CARDS.BASE_N);
   setAgents(G, 0, ['contain']); assert.equal(E.weight(G, 'a0-0'), 1, 'their agents count as one');
   const m = setSlots(mob(G, 'spray'), [4, 4, 3, 3]); m.based = 2; assert.equal(E.canHit(G, G.dice[0], m), null, 'a Soarcerer 1 takes nothing here');
-  assert.equal(CARDS.PERK.SOA, 'On point, when you baseline an alarm, draw an item.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
+  assert.equal(CARDS.PERK.SOA, 'On point, while you baseline an alarm, roll two more dice.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
+});
+test('the Engineer on point (2026-11-05): a double of theirs can guard another analyst instead; off point, only themselves', () => {
+  const G = fight(['ENG', 'HUN'], ['spray'], { dice: [[0, 6], [0, 1], [1, 4]], point: 0 }); // ENG 6 and 1, HUN 4: doubles
+  assert.deepEqual(E.guardable(G, G.dice[0]), [0, 1]); E.guard(G, 0, 1); assert.deepEqual(G.blocks, [false, true]);
+  assert.match(G.log[G.log.length - 1].text, /^Engineer guards Hunter with a 6/);
+  assert.ok(!E.canGuard(G, G.dice[2]), 'the Hunter is blocking already'); E.guard(G, 1); assert.deepEqual(G.blocks, [true, true]);
+  const O = fight(['ENG', 'HUN'], ['spray'], { dice: [[0, 6], [1, 4]], point: 1 });
+  assert.deepEqual(E.guardable(O, O.dice[0]), [0]); throwsRule(() => E.guard(O, 0, 1), /only the player who rolled it/);
+  assert.match(CARDS.PERK.ENG, /On point, a double of yours can guard another analyst instead\.$/);
 });
 test('Triage Agent: its holder rolls one more of their own dice every round, under its card; it pairs, guards, rerolls and hits the boss', () => {
   const G = fight(['HUN', 'RES'], ['spray', 'boss'], {}); setAgents(G, 1, ['triage', 'triage']); G.phase = 'roll'; G.round = 0; E.roll(G);

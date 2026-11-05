@@ -113,7 +113,10 @@ const HUNEND = process.env.HUNEND || '0', RESARR = process.env.RESARR || '0', BA
 // arrival), mailer (the highest-Damage alarm deals 1 less), imp (on point rolls one more die), wyrmling (add 1 to
 // every row roll), mimic (after every won fight, heal 3 split across the crew). BASEPICK=always|never|bot.
 const BASE = process.env.BASE !== '0', BASEPICK = process.env.BASEPICK || 'bot', BASEDICE = +(process.env.BASEDICE || 2); // 2 since 2026-11-04 (3 since 2026-11-01, was 4)
-const BASES = (process.env.BASES || 'imp,druid,wyrmling,mimic,wraith,specter,bat,leech,locker,zeroday,deepfake').split(','); // since 2026-11-01 the Mailer and Sprayer have no Baseline line
+// MORE=1 (default, 2026-11-04): all 15 alarms can be baselined (the 1-Damage five, the Kerberoast Enforcer and the
+// PsExec Swarm join); MORE=0 is the eight before. Since 2026-11-01 to 2026-11-04 the Mailer and Sprayer had no line.
+const MORE = process.env.MORE !== '0', BASECHEAP = process.env.BASECHEAP !== '0'; // BASECHEAP: the bot baselines a 1-Damage alarm unless someone is at 3 HP or less
+const BASES = (process.env.BASES || (MORE ? 'mailer,hydra,vibe,banshee,macro,spray,ogre,' : '') + 'imp,druid,wyrmling,mimic,wraith,specter,bat,leech,locker,zeroday,deepfake').split(',');
 const aug = (G, id) => TRAITS ? (id === 'druid' && traitN(G, 'ghost') > 0) || (id === 'wyrmling' && traitN(G, 'scramble') > 0) : G.aug && G.aug.some(a => a.id === id && G.tray.includes(a.host));
 // TRAITS=1 (default, 2026-11-02): a baselined alarm gives the agent it tucks under a trait, kept on that card (G.trayT,
 // parallel to G.tray). The hybrid set (default): Grifter Twin (the agent counts as two), Scavenger Ghost (comebacks
@@ -172,7 +175,8 @@ const TRAIT = process.env.TRAITSET === 'agent' ? { imp: 'twin', druid: 'stealth'
   // TRAITSET=v5 (default, 2026-11-04): every trait changes the agent itself, never its holder or the row. Golden
   // (counts as two against the boss), Rooted (counts as two while its holder is at half HP or less), Stealth (takes no
   // item slot; the card says Siphon), Beacon (counts as two in a fight a comeback joined).
-  : { imp: 'overclock', wraith: 'twin', specter: 'golden', wyrmling: 'escalate', mimic: 'rooted', leech: 'stealth', bat: 'beacon', druid: 'hardened', locker: 'locked', zeroday: 'dayone', deepfake: 'mimica' };
+  : { imp: 'overclock', wraith: 'twin', specter: 'golden', wyrmling: 'escalate', mimic: 'rooted', leech: 'stealth', bat: 'beacon', druid: 'hardened', locker: 'locked', zeroday: 'dayone', deepfake: 'mimica', ...(MORE ? { mailer: 'beacon', hydra: 'beacon', vibe: 'escalate', banshee: 'rooted', macro: 'targeted', spray: 'piercing', ogre: 'piercing' } : {}) };
+  // Targeted (2026-11-04): its agent counts as two while its holder is on point. Piercing: in a multi-alarm fight.
 const V4 = !['agent', 'hybrid', 'v3'].includes(process.env.TRAITSET); // v4 and v5: one tuck, permanent traits
 // KWOVER (2026-11-03): Evasive is gone; the Scavenger and the Golden Ticket Ghost are Exfil (still up at round end:
 // the crew discards an item).
@@ -187,13 +191,13 @@ const CAP = +(process.env.CAP || (V4 ? 1 : 2)), UPGRADE = process.env.UPGRADE !=
 // comebacks deal the Hunter no damage. RESNEW=heal: the Responder's doubles can't guard; a double may instead heal
 // anyone RESHEAL (default 2) right away.
 const HUNNEW = process.env.HUNNEW ?? 'dieplain', RESHEAL = +(process.env.RESHEAL || 3); // defaults since 2026-11-03: HUNNEW die (on point, one more die; also triple, fewer, fewer2, immune), RESNEW heal 5
-const SOANEW = process.env.SOANEW ?? 'twinown' /* since 2026-11-04; wilddbl before */, RESNEW = process.env.RESNEW ?? 'healor'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
+const SOANEW = process.env.SOANEW ?? 'drawpoint' /* since 2026-11-04 (late): on point, a baseline draws an item; twinown (agents count as two) earlier that day, wilddbl before */, RESNEW = process.env.RESNEW ?? 'healor'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
 const upgraded = (G, i) => V4 ? has(G, i, 'overclock') > 0 || (SOANEW === 'up1' && G.team[G.trayK[i] || 0] === 'SOA' && traitsOf(G, i).length > 0) : UPGRADE && traitsOf(G, i).length >= (SOANEW === 'up1' && G.team[G.trayK ? G.trayK[i] || 0 : 0] === 'SOA' ? 1 : 2);
 // Which agent the bot tucks each trait under, best first.
 const TUCK = { twin: process.env.TWINTO === 'contain' ? ['contain', 'triage', 'recover', 'enrich'] : ['triage', 'contain', 'recover', 'enrich'], stealth: ['triage', 'contain', 'recover', 'enrich'], relay: ['triage', 'contain', 'recover', 'enrich'], repair: ['recover', 'contain', 'triage', 'enrich'], ghost: ['enrich', 'recover', 'contain', 'triage'], scramble: ['enrich', 'recover', 'contain', 'triage'] };
 const traitsOf = (G, i) => (G.trayT && G.trayT[i]) || [];
 const has = (G, i, tr) => traitsOf(G, i).filter(x => x === tr).length;
-const weight = (G, i) => 1 + has(G, i, 'twin') + (has(G, i, 'escalate') && (G.round || 0) >= 2 ? 1 : 0) + (has(G, i, 'golden') && G.play && G.play.some(m => m.boss) ? 1 : 0) + (has(G, i, 'rooted') && G.hp[G.trayK[i]] * 2 <= G.max ? 1 : 0) + (has(G, i, 'beacon') && G.cbJoin ? 1 : 0) + (has(G, i, 'dayone') && (G.round || 0) <= 1 ? 1 : 0) + (SOANEW === 'twinown' && G.team[G.trayK[i] || 0] === 'SOA' ? 1 : 0) /* SOANEW=twinown (proposal, 2026-11-04): the Soarcerer's agents count as two */ + (upgraded(G, i) && ['triage', 'enrich'].includes(G.tray[i]) ? 1 : 0) + (process.env.LEVEL === '1' ? traitsOf(G, i).length : 0); // LEVEL=1: every tucked alarm also adds one
+const weight = (G, i) => 1 + has(G, i, 'twin') + (has(G, i, 'escalate') && (G.round || 0) >= 2 ? 1 : 0) + (has(G, i, 'golden') && G.play && G.play.some(m => m.boss) ? 1 : 0) + (has(G, i, 'rooted') && G.hp[G.trayK[i]] * 2 <= G.max ? 1 : 0) + (has(G, i, 'beacon') && G.cbJoin ? 1 : 0) + (has(G, i, 'targeted') && G.trayK[i] === G.point ? 1 : 0) + (has(G, i, 'piercing') && G.play && G.play.length >= 2 ? 1 : 0) + (has(G, i, 'dayone') && (G.round || 0) <= 1 ? 1 : 0) + (SOANEW === 'twinown' && G.team[G.trayK[i] || 0] === 'SOA' ? 1 : 0) /* SOANEW=twinown (proposal, 2026-11-04): the Soarcerer's agents count as two */ + (upgraded(G, i) && ['triage', 'enrich'].includes(G.tray[i]) ? 1 : 0) + (process.env.LEVEL === '1' ? traitsOf(G, i).length : 0); // LEVEL=1: every tucked alarm also adds one
 const traitN = (G, tr) => G.play && aiUp(G) ? 0 : G.tray.reduce((s, _, i) => s + has(G, i, tr), 0); // the Rogue AI turns traits off too
 // Returns true (tucked), 'full' (every agent holds CAP traits: the alarm goes on the row) or false (no agent: it waits).
 function tuckTrait(G, tr) {
@@ -542,7 +546,7 @@ function fight(G, mobs) {
     for (const m of beaten) {
       if (m.boss) { if (m.kw === 'apt' && !m.rose) { m.rose = true; m.left = 2; m.need = G.sys === 'd6' ? ['D', 'C'] : G.sys === 'n6' ? numbersFor(m.id, 2) : null; alive.push(m); if (G.sys === 'n6' && BOSSROW !== 'none') rowRoll(G, true).forEach(b => alive.push(b)); continue; } G.over = true; G.win = true; return; }
       if (m.baselining) { m.baselining = false; G.stats.baselined = (G.stats.baselined || 0) + 1;
-        if (TRAITS) { const tr0 = TRAIT[m.id] === 'signature' ? 'sig' + numbersFor(m.id, 1)[0] : TRAIT[m.id], t = tuckTrait(G, tr0); if (t === 'full') { G.row.push(m); continue; } if (!t) G.pendT.push(tr0); if (SOATUCK && on(G, 'SOA')) draw(G, 1); } else { const host = G.tray.filter(isAgent).pop(); G.aug.push({ id: m.id, host: host || null, pend: !host }); }
+        if (TRAITS) { const tr0 = TRAIT[m.id] === 'signature' ? 'sig' + numbersFor(m.id, 1)[0] : TRAIT[m.id], t = tuckTrait(G, tr0); if (SOANEW === 'drawpoint' && G.team[G.point] === 'SOA') draw(G, 1); /* the Soarcerer on point: a baseline draws an item */ if (t === 'full') { G.row.push(m); continue; } if (!t) G.pendT.push(tr0); if (SOATUCK && on(G, 'SOA')) draw(G, 1); } else { const host = G.tray.filter(isAgent).pop(); G.aug.push({ id: m.id, host: host || null, pend: !host }); }
         if (process.env.BASEROW === 'out' || TUCKOUT) continue; } // TUCKOUT: tucked under its agent, so not on the row
       if (G.sys === 'n6' && HUNEND !== '0' && on(G, 'HUN') && m.back > 0 && (HUNEND !== 'point' || G.team[G.point] === 'HUN') && (HUNEND !== 'once' || !G.hunEnded)) { G.hunEnded = true; G.stats.ended = (G.stats.ended || 0) + 1; continue; } // the Hunter ends persistence
       if (G.sys === 'n6' && PERSIST === 'always') { G.row.push(m); continue; }
@@ -668,8 +672,8 @@ function relay(G) {
 function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
-  if (G.n >= 3 && NEWITEMS) draw(G, +(process.env.START34 ?? 2)); // START34: extra setup items for a crew of 3 or 4 (2 since 2026-11-04; 1 since 2026-11-03)
-  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with (2)
+  if (G.n >= 3 && NEWITEMS) draw(G, +(process.env.START34 ?? 1)); // START34: extra setup items for a crew of 3 or 4 (1; 2 for part of 2026-11-04; 1 since 2026-11-03)
+  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 1) - 1); // QSOLO: items a solo player starts with (1 since 2026-11-04, was 2)
   const sits = SIT && G.sys === 'n6';
   for (let f = 0; !G.over; f++) {
     G.point = G.hp.indexOf(Math.max(...G.hp));
@@ -683,7 +687,7 @@ function play(sys, team, opt) {
     if (!boss && G.badgeHit) { G.badgeHit = false; G.stats.ran++; G.team.forEach((_, k) => hurt(G, k, dmgOf(G, m))); if (G.over) break; } // fell back (SITV=1)
     if (!boss && G.badgeSkip) { G.badgeSkip = false; G.stats.ran++; G.row.push(m); continue; } // fell back: on the row, unfought
     relay(G);
-    if (BASE && m && !boss && (!m.back || BASEBACK) && BASES.includes(m.id) && (BASEPICK === 'always' || BASEPICK === 'bot' && Math.min(...G.hp) >= G.max * +(process.env.BASEHP || 0.8))) {
+    if (BASE && m && !boss && (!m.back || BASEBACK) && BASES.includes(m.id) && (BASEPICK === 'always' || BASEPICK === 'bot' && BASECHEAP && dmgOf(G, m) <= 1 && Math.min(...G.hp) > 3 || BASEPICK === 'bot' && Math.min(...G.hp) >= G.max * +(process.env.BASEHP || 0.8))) {
       const v = 7 - numbersFor(m.id, 1)[0], nb = (SOAAUTO && on(G, 'SOA') ? 2 : BASEDICE) + (m.back ? 1 : 0) + (process.env.BASEPLUS !== '1' ? 0 : Math.max(0, G.n - XFROM)); m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }
     if (m.fewer && m.left > 1) { m.need.pop(); m.left--; m.fewer = 0; } // Forensics read it first: one fewer die
     if (G.addSix) { m.need.push(...Array(G.addSix).fill(6)); m.left += G.addSix; G.addSix = 0; }

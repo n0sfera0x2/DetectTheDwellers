@@ -65,12 +65,13 @@ test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (th
   const G = E.newGame({ team: ['HUN', 'RES'], seed: 3 });
   assert.equal(G.hp[0], E.MODES.quick.hp); assert.equal(E.newGame({ team: ['HUN', 'RES'], seed: 3, mode: 'full' }).hp[0], E.MODES.full.hp);
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, 2); assert.equal(G.kit.length, CARDS.ITEM_DECK.length - 2);
-  // Solo starts with 2 items in both modes and deals itself.
-  const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
-  assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 2); assert.equal(E.startItems(1, 'quick'), 2); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
-  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 2, 'Quick Shift solo starts with 2'); assert.equal(E.startItems(3, 'quick'), 4, 'a crew of 3–4 draws 4'); assert.equal(E.startItems(4), 4);
-  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 4 : 2);
-  for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 4, team.length + 'p draws 4');
+  // Solo starts with 1 item in both modes (2 until 2026-11-04) and deals itself.
+  const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 1);
+  assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 1); assert.equal(E.startItems(1, 'quick'), 1); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
+  assert.equal(E.startItems(1), 1); assert.equal(E.startItems(1, 'quick'), 1, 'Quick Shift solo starts with 1'); assert.equal(E.startItems(3, 'quick'), 3, 'a crew of 3–4 draws 3'); assert.equal(E.startItems(4), 3);
+  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 1); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 3 : 2);
+  for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 3, team.length + 'p draws 3');
+  assert.deepEqual([E.MODES.quick.hp, E.MODES.full.hp], [10, 13]);
   assert.equal(CARDS.ITEM_DECK.length, 18);
 });
 test('scaling: a 6 per player past two (review 2); solo and 2 players play the printed dice', () => {
@@ -325,12 +326,15 @@ test('dealing solo: automatic into free slots (6 solo); full, the player picks w
   E.give(S, 0, 'a0-3'); assert.equal(S.phase, 'flip'); assert.deepEqual(S.agents[0].map(c => c.t), ['triage', 'contain', 'enrich', 'triage']);
   assert.equal(E.slotsOf(S, 0), 6);
 });
-test('the Soarcerer (2026-11-04): their agents count as two; their dice match exactly like anyone’s', () => {
-  const G = fight(['SOA', 'ENG'], ['spray'], { dice: [[0, 1], [1, 1]] }); assert.equal(E.slotsOf(G, 0), 4); assert.equal(E.slotsOf(fight(['SOA'], ['spray']), 0), 6);
-  assert.equal(E.baseCost(G, { back: 0 }), CARDS.BASE_N); assert.equal(E.baseCost(G, { back: 1 }), CARDS.BASE_N + 1);
-  setAgents(G, 0, ['contain']); setAgents(G, 1, ['contain']); assert.equal(E.weight(G, 'a0-0'), 2, 'the Soarcerer’s agent counts as two'); assert.equal(E.weight(G, 'a1-0'), 1);
+test('the Soarcerer (2026-11-04): on point, each baseline draws an item; their agents and dice are like anyone’s', () => {
+  const won = point => { const G = fight(['SOA', 'ENG'], ['spray'], { point }); const m = mob(G, 'spray'); m.based = 2; G.phase = 'assign'; G.round = 1; G.dice = []; G.undo = []; G.play = [m]; m.off = m.off.map(() => true); setAgents(G, 1, ['contain']); E.endRound(G); return G; };
+  const on = won(0), off = won(1);
+  assert.equal(on.drawn.length, D.kitPerFight + 1, 'on point: one more item'); assert.equal(off.drawn.length, D.kitPerFight, 'off point: the usual draw');
+  assert.ok(on.log.some(l => /Soarcerer is on point: draw an item/.test(l.text)));
+  const G = fight(['SOA', 'ENG'], ['spray'], { dice: [[0, 1], [1, 1]] }); assert.equal(E.slotsOf(G, 0), 4); assert.equal(E.baseCost(G, { back: 0 }), CARDS.BASE_N);
+  setAgents(G, 0, ['contain']); assert.equal(E.weight(G, 'a0-0'), 1, 'their agents count as one');
   const m = setSlots(mob(G, 'spray'), [4, 4, 3, 3]); m.based = 2; assert.equal(E.canHit(G, G.dice[0], m), null, 'a Soarcerer 1 takes nothing here');
-  assert.equal(CARDS.PERK.SOA, 'Your agents count as two.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
+  assert.equal(CARDS.PERK.SOA, 'On point, when you baseline an alarm, draw an item.'); assert.ok(!E.soloKeep(fight(['SOA'], ['spray']), 0), 'the solo keep roll is gone');
 });
 test('Triage Agent: its holder rolls one more of their own dice every round, under its card; it pairs, guards, rerolls and hits the boss', () => {
   const G = fight(['HUN', 'RES'], ['spray', 'boss'], {}); setAgents(G, 1, ['triage', 'triage']); G.phase = 'roll'; G.round = 0; E.roll(G);
@@ -358,7 +362,7 @@ test('Containment Agent: per card, the highest-Damage alarm deals 2 less to ever
   assert.deepEqual(E.incoming(G).total, [1 + 4, 1 + 6 + 4]);
   setAgents(G, 0, ['contain']); // the Exfil Courier (4) is the biggest: 2 less, for both of them
   let inc = E.incoming(G); assert.deepEqual(inc.total, [1 + 2, 1 + 6 + 2]); assert.deepEqual(inc.contain, [2, 2]);
-  setAgents(G, 0, ['contain', 'contain']); // a second card (not the Soarcerer's: theirs count as two): the Courier is now 2, so the Grifter (3) is the biggest; on point takes it doubled
+  setAgents(G, 0, ['contain', 'contain']); // a second card: the Courier is now 2, so the Grifter (3) is the biggest; on point takes it doubled
   inc = E.incoming(G); assert.deepEqual(inc.total, [1 + 2, 1 + 2 + 2]); assert.deepEqual(inc.contain, [2, 2 + 4]);
   // Never below 1.
   const spray = mob(G, 'spray'), wyr = mob(G, 'wyrmling'); G.play = [spray]; assert.deepEqual(E.incoming(G).total, [1, 1]);
@@ -668,15 +672,22 @@ test('Exfil (in place of Evasive): still up at round end, the crew discards an i
   // Nothing to discard: no step.
   const N = fight(['HUN', 'ENG'], ['druid'], {}); N.hp = [20, 20]; N.max = 20; E.endRound(N); assert.equal(N.phase, 'roll');
 });
-// A fresh game whose first flipped alarm has a Baseline line (the Mailer Daemon and Password Sprayer don't, since 2026-11-01).
+// A fresh game whose first flipped alarm has a Baseline line (all 15 do since 2026-11-04).
 function flipBaselinable(team) {
   for (let seed = 1; ; seed++) { const G = newG({ team, seed }); E.flip(G); const m = G.play.find(x => x.uid === G.flipped); if (CARDS.BASE[m.id]) return { G, m, seed }; }
 }
-test('baseline it: eight alarms carry a tuck band, one trait each; the Mailer Daemon and Password Sprayer have none', () => {
-  assert.deepEqual(Object.keys(CARDS.BASE).sort(), ['bat', 'druid', 'imp', 'leech', 'mimic', 'specter', 'wraith', 'wyrmling']); assert.equal(CARDS.BASE_N, 2);
-  for (const id of ['mailer', 'spray']) assert.doesNotMatch(CARDS.mobCard(D.mobs.find(x => x.id === id)), /Baseline it/);
-  for (let seed = 1; seed < 40; seed++) { const G = newG({ team: ['HUN', 'RES'], seed }); E.flip(G); const m = G.play.find(x => x.uid === G.flipped); if (!CARDS.BASE[m.id]) { assert.ok(!E.canBaseline(G, m), m.id); return; } }
-  assert.fail('no seed flipped a Mailer Daemon or Password Sprayer first');
+test('baseline it: all 15 alarms carry a tuck band (since 2026-11-04), one trait each, 10 traits in all', () => {
+  assert.deepEqual(Object.keys(CARDS.BASE).sort(), CARDS.mobs().map(m => m.id).sort()); assert.equal(CARDS.BASE_N, 2);
+  for (const id of ['mailer', 'spray', 'macro', 'banshee', 'vibe', 'ogre', 'hydra']) assert.match(CARDS.mobCard(D.mobs.find(x => x.id === id)), /Baseline it/);
+  for (let seed = 1; seed < 20; seed++) { const G = newG({ team: ['HUN', 'RES'], seed }); E.flip(G); const m = G.play.find(x => x.uid === G.flipped); assert.ok(E.canBaseline(G, m), m.id); }
+  assert.deepEqual([CARDS.traitName('mailer'), CARDS.traitName('hydra'), CARDS.traitName('vibe'), CARDS.traitName('banshee'), CARDS.traitName('macro'), CARDS.traitName('spray'), CARDS.traitName('ogre')], ['Beacon', 'Beacon', 'Escalate', 'Rooted', 'Targeted', 'Piercing', 'Piercing']);
+});
+test('Targeted and Piercing (2026-11-04): two while its holder is on point; two in a multi-alarm fight', () => {
+  const G = fight(['HUN', 'RES'], ['spray'], { point: 0 }); setAgents(G, 0, ['contain']); setAgents(G, 1, ['triage']);
+  G.aug = [{ id: 'macro', name: 'macro', host: 'a0-0' }, { id: 'spray', name: 'spray', host: 'a1-0' }];
+  assert.equal(E.weight(G, 'a0-0'), 2, 'Targeted: its holder is on point'); assert.equal(E.weight(G, 'a1-0'), 1, 'Piercing: one alarm in play');
+  G.point = 1; assert.equal(E.weight(G, 'a0-0'), 1, 'Targeted: off point');
+  G.play.push(mob(fight(['HUN', 'RES'], ['imp']), 'imp')); assert.equal(E.weight(G, 'a1-0'), 2, 'Piercing: a multi-alarm fight');
 });
 test('baseline it: two more dice before the first roll, on a fresh flip only; beaten, it tucks under an agent someone holds', () => {
   const { G, m, seed } = flipBaselinable(['HUN', 'RES']);
@@ -695,7 +706,7 @@ test('baseline it: two more dice before the first roll, on a fresh flip only; be
   // A comeback can be baselined too (one more die); never after the first roll.
   const H = newG({ team: ['HUN', 'RES'], seed }); E.flip(H); const c = H.play.find(x => x.uid === H.flipped); c.back = 1; assert.ok(E.canBaseline(H, c)); assert.equal(E.baseCost(H, c), 3);
   c.back = 0; E.roll(H); throwsRule(() => E.baseline(H, c.uid), /before the first roll/);
-  assert.equal(Object.keys(CARDS.BASE).length, 8); assert.ok(CARDS.mobs().every(x => CARDS.mobCard(x).includes('Baseline it') === !!CARDS.BASE[x.id]));
+  assert.equal(Object.keys(CARDS.BASE).length, 15); assert.ok(CARDS.mobs().every(x => CARDS.mobCard(x).includes('Baseline it') === !!CARDS.BASE[x.id]));
 });
 test('baselined with no agent held: it waits, and tucks under the next agent dealt', () => {
   const G = fight(['HUN', 'RES'], ['mailer'], {}); const m = mob(G, 'mailer'); m.based = 0; m.off = m.off.map(() => true);
@@ -727,7 +738,7 @@ test('agent traits (one tuck each, for good, each changing the agent): Overclock
   // One tuck per agent.
   const C = fight(['HUN', 'RES'], ['spray'], {}); setAgents(C, 1, ['triage']); held(C, 'imp'); C.phase = 'tuck'; C.tuck = [{ id: 'bat', name: 'b', uid: 'x', mob: {} }];
   throwsRule(() => E.tuck(C, 'a1-0'), /already holds 1/); assert.equal(CARDS.TUCK_CAP, 1); assert.match(CARDS.agentCard('contain'), /Overclocked/);
-  assert.deepEqual(Object.keys(CARDS.BASE).map(CARDS.traitName).sort(), ['Beacon', 'Escalate', 'Golden', 'Hardened', 'Overclock', 'Rooted', 'Siphon', 'Twin']);
+  assert.deepEqual([...new Set(Object.keys(CARDS.BASE).map(CARDS.traitName))].sort(), ['Beacon', 'Escalate', 'Golden', 'Hardened', 'Overclock', 'Piercing', 'Rooted', 'Siphon', 'Targeted', 'Twin']);
 });
 // ---- Guard anyone, pairs, the solo Soarcerer's keep roll, baselining at every crew size (sim.js GUARDANY, PAIRADD, SOASOLOKEEP) ----
 test('a guard covers only the player who rolled it (2026-11-03); never twice', () => {

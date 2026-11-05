@@ -68,8 +68,8 @@
   const nmRow = (name, dmg) => `<div class="nr"><div class="nm">${name}</div><div class="dmg"><span>Damage</span><b>${dmg}</b></div></div>`;
   // Baselining (2026-10-31): an alarm prints a harder "Baseline it" condition: set more threat dice showing its main
   // number's opposite side (7 − main). Beat it with them and tuck it under an agent: that agent's card gains the line
-  // below while it stays in the tray. Since 2026-11-01: 3 dice (was 4), and only the four heavier alarms have a line
-  // (the Mailer Daemon and Password Sprayer cost more than their lines gave back). Same as sim.js BASES and BASEDICE.
+  // below while it stays in the tray. Since 2026-11-01 only the heavier alarms had a line; since
+  // 2026-11-04 all 15 do, with 2 Baseline dice. Same as sim.js BASES and BASEDICE.
   // Since 2026-11-02 each line is a trait of the agent it tucks under (its agent), lost if that agent is discarded:
   // Twin and Repair change the agent itself, Ghost and Scramble guard the row. Same as sim.js TRAIT (hybrid).
   const BASE_N = 2; // 2 since 2026-11-04 (was 3): Quick Shift has too few fights to earn back 3
@@ -86,6 +86,14 @@
     leech: 'Siphon: its agent takes no item slot.',
     bat: 'Beacon: its agent counts as two in any fight a comeback joins.',
     wraith: 'Twin: its agent counts as two of itself.',
+    // Since 2026-11-04 every alarm has a line (sim.js MORE): the other seven reuse a trait or bring their keyword's.
+    mailer: 'Beacon: its agent counts as two in any fight a comeback joins.',
+    hydra: 'Beacon: its agent counts as two in any fight a comeback joins.',
+    vibe: 'Escalate: from round 2 of a fight, its agent counts as two.',
+    banshee: 'Rooted: its agent counts as two while its holder is at half HP or less.',
+    macro: 'Targeted: its agent counts as two while its holder is on point.',
+    spray: 'Piercing: its agent counts as two in a multi-alarm fight.',
+    ogre: 'Piercing: its agent counts as two in a multi-alarm fight.',
   };
   const traitName = id => BASE[id] ? BASE[id].split(':')[0] : '';
   // One tucked alarm per agent (2026-11-03; it was two, and two upgraded the agent: that is Overclock now).
@@ -115,7 +123,7 @@
     HUN: 'On point, you roll one more die. It’s never a double.',
     RES: 'A double of yours can heal anyone 3 instead of guarding.',
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
-    SOA: 'Your agents count as two.', // since 2026-11-04 (was: any die is a double for baselining)
+    SOA: 'On point, when you baseline an alarm, draw an item.', // since 2026-11-04 (late); earlier that day: your agents count as two
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'on shift')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>

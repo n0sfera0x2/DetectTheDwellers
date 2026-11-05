@@ -6,7 +6,7 @@ Guidance for Claude Code working in this repo.
 
 Detect the Dwellers: a co-op dice-and-card game (1–4 players) set on a cyberpunk SOC night shift.
 
-**The game lives in `game/`.** Its README opens with the current rules, card set, sim numbers and open items; read that first. Design reviews, sims and balance work target it (`SYS=n6 HP=11 node game/sim.js` for Quick Shift, `MODE=full SYS=n6 HP=14` for Full).
+**The game lives in `game/`.** Its README opens with the current rules, card set, sim numbers and open items; read that first. Design reviews, sims and balance work target it (`SYS=n6 HP=10 node game/sim.js` for Quick Shift, `MODE=full SYS=n6 HP=13` for Full).
 
 | Path | What it is |
 | --- | --- |

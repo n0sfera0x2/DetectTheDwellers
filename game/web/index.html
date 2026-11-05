@@ -563,8 +563,8 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   const nmRow = (name, dmg) => `<div class="nr"><div class="nm">${name}</div><div class="dmg"><span>Damage</span><b>${dmg}</b></div></div>`;
   // Baselining (2026-10-31): an alarm prints a harder "Baseline it" condition: set more threat dice showing its main
   // number's opposite side (7 − main). Beat it with them and tuck it under an agent: that agent's card gains the line
-  // below while it stays in the tray. Since 2026-11-01: 3 dice (was 4), and only the four heavier alarms have a line
-  // (the Mailer Daemon and Password Sprayer cost more than their lines gave back). Same as sim.js BASES and BASEDICE.
+  // below while it stays in the tray. Since 2026-11-01 only the heavier alarms had a line; since
+  // 2026-11-04 all 15 do, with 2 Baseline dice. Same as sim.js BASES and BASEDICE.
   // Since 2026-11-02 each line is a trait of the agent it tucks under (its agent), lost if that agent is discarded:
   // Twin and Repair change the agent itself, Ghost and Scramble guard the row. Same as sim.js TRAIT (hybrid).
   const BASE_N = 2; // 2 since 2026-11-04 (was 3): Quick Shift has too few fights to earn back 3
@@ -581,6 +581,14 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     leech: 'Siphon: its agent takes no item slot.',
     bat: 'Beacon: its agent counts as two in any fight a comeback joins.',
     wraith: 'Twin: its agent counts as two of itself.',
+    // Since 2026-11-04 every alarm has a line (sim.js MORE): the other seven reuse a trait or bring their keyword's.
+    mailer: 'Beacon: its agent counts as two in any fight a comeback joins.',
+    hydra: 'Beacon: its agent counts as two in any fight a comeback joins.',
+    vibe: 'Escalate: from round 2 of a fight, its agent counts as two.',
+    banshee: 'Rooted: its agent counts as two while its holder is at half HP or less.',
+    macro: 'Targeted: its agent counts as two while its holder is on point.',
+    spray: 'Piercing: its agent counts as two in a multi-alarm fight.',
+    ogre: 'Piercing: its agent counts as two in a multi-alarm fight.',
   };
   const traitName = id => BASE[id] ? BASE[id].split(':')[0] : '';
   // One tucked alarm per agent (2026-11-03; it was two, and two upgraded the agent: that is Overclock now).
@@ -610,7 +618,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
     HUN: 'On point, you roll one more die. It’s never a double.',
     RES: 'A double of yours can heal anyone 3 instead of guarding.',
     ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die.',
-    SOA: 'Your agents count as two.', // since 2026-11-04 (was: any die is a double for baselining)
+    SOA: 'On point, when you baseline an alarm, draw an item.', // since 2026-11-04 (late); earlier that day: your agents count as two
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'on shift')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
@@ -779,7 +787,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   const START_ITEMS = { solo: 2, crew: 2 }; // items drawn at setup: solo 2 (since 2026-11-01), a crew of 2–4 draws 2
   // Quick Shift solo starts with 1 (2026-11-02: solo ran 12 points ahead of a crew in the short feed).
   // A crew of 3 or 4 draws one more (2026-11-03: the Responder's doubles no longer guard, and 4p fell 9–15 points behind 2p).
-  const startItems = (n, mode = 'full') => n === 1 ? (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 2 : 0); // a crew of 3–4 draws 4 (since 2026-11-04; 3 before)
+  const startItems = (n, mode = 'full') => n === 1 ? (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 1 : 0); // a crew of 3–4 draws 3 (4 for part of 2026-11-04)
   // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   // A crew die's double after it changes number: its owner's doubles (the solo crew die: a 6), none if rolled Rattled.
@@ -801,7 +809,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 11, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 14, soloItems: 2, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, soloItems: 1, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, soloItems: 1, bossRow: true } }; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -859,11 +867,12 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   // changes the agent, never its holder or the row (sim.js TRAIT v5). Overclock: the agent's Overclocked line (Triage
   // rolls one more, Enrichment one more turn, Containment cuts 1 more, Recovery heals 2 more). Twin: it counts as two.
   // Escalate: from round 2 of a fight, two. Golden: two against the boss. Rooted: two while its holder is at half HP
-  // or less. Beacon: two in a fight a comeback joined. Siphon (heldN): no slot. Hardened (live): works against the AI.
+  // or less. Beacon: two in a fight a comeback joined. Targeted: two while its holder is on point. Piercing: two in a
+  // multi-alarm fight. Siphon (heldN): no slot. Hardened (live): works against the AI.
   const upgraded = (G, uid) => traitsOn(G, uid, 'Overclock') > 0;
   const holderOf = (G, uid) => G.agents.findIndex(h => h.some(c => c.uid === uid));
   const weight = (G, uid) => { const c = cardOf(G, uid), k = holderOf(G, uid); return 1 + traitsOn(G, uid, 'Twin') + (traitsOn(G, uid, 'Escalate') && G.round >= 2 ? 1 : 0)
-    + (traitsOn(G, uid, 'Golden') && G.play.some(m => m.boss) ? 1 : 0) + (traitsOn(G, uid, 'Rooted') && k >= 0 && G.hp[k] * 2 <= G.max ? 1 : 0) + (traitsOn(G, uid, 'Beacon') && G.cbJoin ? 1 : 0) + (k >= 0 && G.team[k] === 'SOA' ? 1 : 0) /* the Soarcerer (2026-11-04): their agents count as two */ + (c && upgraded(G, uid) && (c.t === 'triage' || c.t === 'enrich') ? 1 : 0); };
+    + (traitsOn(G, uid, 'Golden') && G.play.some(m => m.boss) ? 1 : 0) + (traitsOn(G, uid, 'Rooted') && k >= 0 && G.hp[k] * 2 <= G.max ? 1 : 0) + (traitsOn(G, uid, 'Beacon') && G.cbJoin ? 1 : 0) + (traitsOn(G, uid, 'Targeted') && k === G.point ? 1 : 0) + (traitsOn(G, uid, 'Piercing') && G.play.length >= 2 ? 1 : 0) + (c && upgraded(G, uid) && (c.t === 'triage' || c.t === 'enrich') ? 1 : 0); };
   // The players holding agents that carry a trait: [{ k, uid, a }] (none while the Rogue AI is up).
   const traitHolders = (G, name) => aiUp(G) ? [] : G.aug.filter(a => a.host && CARDS.traitName(a.id) === name).map(a => ({ k: G.agents.findIndex(h => h.some(c => c.uid === a.host)), uid: a.host, a })).filter(x => x.k >= 0);
   // Every held agent with its holder: [{ c, k }].
@@ -1372,7 +1381,9 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
       // The Hunter in the crew ends persistence: a beaten comeback leaves the game.
       // Every beaten mob goes back on the row, however often it has come back.
       // Baselined: the card tucks under an agent instead of going on the row (it can't be in two places).
-      if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid, mob: m }); unmute(m); say(G, `${m.name} is beaten with its Baseline dice. It tucks under an agent, off the row.`, 'win'); continue; }
+      if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid, mob: m }); unmute(m); say(G, `${m.name} is beaten with its Baseline dice. It tucks under an agent, off the row.`, 'win');
+        // The Soarcerer on point (2026-11-04): each baseline draws an item, dealt with the fight's draw.
+        if (G.team[G.point] === 'SOA') { G.bonusDraw = (G.bonusDraw || 0) + 1; G.stats.soaDraw = (G.stats.soaDraw || 0) + 1; say(G, `${nameOf('SOA')} is on point: draw an item for the baseline.`, 'kit'); } continue; }
       unmute(m); G.row.push(m); say(G, `${m.name} is beaten and goes on the persistence row (back on 2–${m.top}).`, 'beat');
     }
     G.play = G.play.filter(m => left(m));
@@ -1521,7 +1532,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   const THUMB = { HUN: '40 14 120 80', RES: '60 6 135 90', ENG: '34 10 120 80', SOA: '45 4 135 90' };
   const SQUARE = id => THUMB[id].replace(/ \d+ \d+$/, ' 90 90');
   const SHORT = { HUN: 'Hunter', RES: 'Resp.', ENG: 'Eng.', SOA: 'Soar.' };
-  const STYLE = { HUN: 'Rolls deep', RES: 'Patches the crew', ENG: 'Rolls hot', SOA: 'Runs the automation' };
+  const STYLE = { HUN: 'Rolls deep', RES: 'Patches the crew', ENG: 'Rolls hot', SOA: 'Baselines for loot' };
   const ic = p => `<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
   const ICON = { check: ic('<path d="M3 8.5l3.2 3L13 4.5"/>'), shield: ic('<path d="M8 1.8l5 2v4c0 3.2-2.2 5.3-5 6.4-2.8-1.1-5-3.2-5-6.4v-4z"/>') };
   const SPK = on => ic(`<path d="M2 6h3l4-3v10l-4-3H2z"/>${on ? '<path d="M11.5 5.5a3.5 3.5 0 010 5"/><path d="M13.5 3.5a6.5 6.5 0 010 9"/>' : '<path d="M11 6l4 4M15 6l-4 4"/>'}`);
@@ -1892,7 +1903,7 @@ window.CD_ART = {"mailer":"<svg viewBox=\"0 0 200 112\" width=\"100%\" height=\"
   // "What now": what to do this step in a line or two, what this alarm does, and the full rules folded away.
   function vBrief(m) {
     const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null, dm = !m.boss && dataMob(m.id);
-    const perks = (G.team.includes('HUN') ? ' Hunter on point: one more die.' : '') + (G.team.includes('RES') ? ` Responder: a double may heal anyone ${A.RES_HEAL} instead of guarding.` : '') + (G.team.includes('SOA') ? ' Soarcerer: their agents count as two.' : '') + (G.team.includes('ENG') ? ' Engineer: once a round, turn a die to its opposite side.' : '');
+    const perks = (G.team.includes('HUN') ? ' Hunter on point: one more die.' : '') + (G.team.includes('RES') ? ` Responder: a double may heal anyone ${A.RES_HEAL} instead of guarding.` : '') + (G.team.includes('SOA') ? ' Soarcerer on point: a baseline draws an item.' : '') + (G.team.includes('ENG') ? ' Engineer: once a round, turn a die to its opposite side.' : '');
     const now = nowText(G);
     const hits = !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up at round end, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`;
     const kw = m.boss ? '+2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`;

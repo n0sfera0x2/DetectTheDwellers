@@ -23,7 +23,7 @@
   const START_ITEMS = { solo: 2, crew: 2 }; // items drawn at setup: solo 2 (since 2026-11-01), a crew of 2–4 draws 2
   // Quick Shift solo starts with 1 (2026-11-02: solo ran 12 points ahead of a crew in the short feed).
   // A crew of 3 or 4 draws one more (2026-11-03: the Responder's doubles no longer guard, and 4p fell 9–15 points behind 2p).
-  const startItems = (n, mode = 'full') => n === 1 ? (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 2 : 0); // a crew of 3–4 draws 4 (since 2026-11-04; 3 before)
+  const startItems = (n, mode = 'full') => n === 1 ? (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 1 : 0); // a crew of 3–4 draws 3 (4 for part of 2026-11-04)
   // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   // A crew die's double after it changes number: its owner's doubles (the solo crew die: a 6), none if rolled Rattled.
@@ -45,7 +45,7 @@
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 11, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 14, soloItems: 2, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, soloItems: 1, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, soloItems: 1, bossRow: true } }; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -103,11 +103,12 @@
   // changes the agent, never its holder or the row (sim.js TRAIT v5). Overclock: the agent's Overclocked line (Triage
   // rolls one more, Enrichment one more turn, Containment cuts 1 more, Recovery heals 2 more). Twin: it counts as two.
   // Escalate: from round 2 of a fight, two. Golden: two against the boss. Rooted: two while its holder is at half HP
-  // or less. Beacon: two in a fight a comeback joined. Siphon (heldN): no slot. Hardened (live): works against the AI.
+  // or less. Beacon: two in a fight a comeback joined. Targeted: two while its holder is on point. Piercing: two in a
+  // multi-alarm fight. Siphon (heldN): no slot. Hardened (live): works against the AI.
   const upgraded = (G, uid) => traitsOn(G, uid, 'Overclock') > 0;
   const holderOf = (G, uid) => G.agents.findIndex(h => h.some(c => c.uid === uid));
   const weight = (G, uid) => { const c = cardOf(G, uid), k = holderOf(G, uid); return 1 + traitsOn(G, uid, 'Twin') + (traitsOn(G, uid, 'Escalate') && G.round >= 2 ? 1 : 0)
-    + (traitsOn(G, uid, 'Golden') && G.play.some(m => m.boss) ? 1 : 0) + (traitsOn(G, uid, 'Rooted') && k >= 0 && G.hp[k] * 2 <= G.max ? 1 : 0) + (traitsOn(G, uid, 'Beacon') && G.cbJoin ? 1 : 0) + (k >= 0 && G.team[k] === 'SOA' ? 1 : 0) /* the Soarcerer (2026-11-04): their agents count as two */ + (c && upgraded(G, uid) && (c.t === 'triage' || c.t === 'enrich') ? 1 : 0); };
+    + (traitsOn(G, uid, 'Golden') && G.play.some(m => m.boss) ? 1 : 0) + (traitsOn(G, uid, 'Rooted') && k >= 0 && G.hp[k] * 2 <= G.max ? 1 : 0) + (traitsOn(G, uid, 'Beacon') && G.cbJoin ? 1 : 0) + (traitsOn(G, uid, 'Targeted') && k === G.point ? 1 : 0) + (traitsOn(G, uid, 'Piercing') && G.play.length >= 2 ? 1 : 0) + (c && upgraded(G, uid) && (c.t === 'triage' || c.t === 'enrich') ? 1 : 0); };
   // The players holding agents that carry a trait: [{ k, uid, a }] (none while the Rogue AI is up).
   const traitHolders = (G, name) => aiUp(G) ? [] : G.aug.filter(a => a.host && CARDS.traitName(a.id) === name).map(a => ({ k: G.agents.findIndex(h => h.some(c => c.uid === a.host)), uid: a.host, a })).filter(x => x.k >= 0);
   // Every held agent with its holder: [{ c, k }].
@@ -616,7 +617,9 @@
       // The Hunter in the crew ends persistence: a beaten comeback leaves the game.
       // Every beaten mob goes back on the row, however often it has come back.
       // Baselined: the card tucks under an agent instead of going on the row (it can't be in two places).
-      if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid, mob: m }); unmute(m); say(G, `${m.name} is beaten with its Baseline dice. It tucks under an agent, off the row.`, 'win'); continue; }
+      if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid, mob: m }); unmute(m); say(G, `${m.name} is beaten with its Baseline dice. It tucks under an agent, off the row.`, 'win');
+        // The Soarcerer on point (2026-11-04): each baseline draws an item, dealt with the fight's draw.
+        if (G.team[G.point] === 'SOA') { G.bonusDraw = (G.bonusDraw || 0) + 1; G.stats.soaDraw = (G.stats.soaDraw || 0) + 1; say(G, `${nameOf('SOA')} is on point: draw an item for the baseline.`, 'kit'); } continue; }
       unmute(m); G.row.push(m); say(G, `${m.name} is beaten and goes on the persistence row (back on 2–${m.top}).`, 'beat');
     }
     G.play = G.play.filter(m => left(m));

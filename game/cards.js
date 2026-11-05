@@ -120,9 +120,9 @@
   }
   const PERK = {
     // One passive line each since 2026-11-03, nothing to track but the Engineer's turn. Same as sim.js.
-    HUN: 'On point, you roll one more die. It’s never a double.',
+    HUN: 'On point, you roll one more die in a fight’s first round. It’s never a double.', // first round only since 2026-11-05
     RES: 'A double of yours can heal anyone 3 instead of guarding.',
-    ENG: 'Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead.', // on point since 2026-11-05
+    ENG: 'Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead.', // on point, and once a fight (was once a round), since 2026-11-05
     SOA: 'On point, while you baseline an alarm, roll two more dice.', // since 2026-11-05; 2026-11-04 (late): a baseline draws an item; earlier: your agents count as two
   };
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'on shift')}<div class="nm">${cls(id).name}</div>
@@ -132,7 +132,7 @@
   // Since 2026-11-01 they work for the whole crew, and Triage rolls one more die of its holder's own. Consumables
   // don't take a slot: keep them in hand and use each once. [name, rule, art key].
   const AGENT = {
-    triage: ['Triage Agent', 'Every round, roll one more of your own dice.', 'kit_triage', 'Roll two more.'],
+    triage: ['Triage Agent', 'Every round, roll one more of your own dice. In a multi-alarm fight, two more.', 'kit_triage', 'Roll two more (four in a multi-alarm fight).'], // multi-alarm since 2026-11-05
     enrich: ['Enrichment Agent', 'Once a round, turn any crew die to any number.', 'kit_enrich', 'Twice a round.'],
     contain: ['Containment Agent', `The highest-Damage alarm deals ${D.containCut} less to everyone, never below 1.`, 'kit_contain', `It deals ${D.containCut + 1} less.`],
     recover: ['Recovery Agent', `After every won fight, heal ${D.recoverHeal} HP split across the crew.`, 'kit_recover', `Heal ${D.recoverHeal + 2}.`],
@@ -166,8 +166,8 @@
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
 
   <div class="trow"><b>Fights won</b>${box('1: story')}${box(2)}${box('3: story, alarms +1')}${box(4)}${box('5: story')}${box(6)}</div>
-  <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Engineer turn')}${box('Enrichment')}${box('Twin')}</div>
-  <div class="trow"><b>This fight</b>${box('Hold the room: +1 item')}${box('Comeback joined')}</div>
+  <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Enrichment')}${box('Twin')}</div>
+  <div class="trow"><b>This fight</b>${box('Engineer')}${box('Hold the room: +1 item')}${box('Comeback joined')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
   <div class="note"><b>Escalating:</b> a coin each round. <b>Regen:</b> it puts back the last die taken.</div></div>`;
   // Situations (2026-10-30; shuffled into the feed with the alarms since 2026-11-02, the boss underneath). Who's on point is
@@ -254,7 +254,7 @@
 .ex{display:flex;align-items:center;gap:5px;font-size:11px;color:${C.mut};background:#fff;border:1px solid ${C.rule};padding:5px 7px}
 .note{font-size:11px;line-height:1.35;color:${C.mut}}.note svg{vertical-align:-2px}.note b{color:${C.ink}}
 .trow{display:flex;flex-wrap:wrap;gap:3px;align-items:center;font-size:10px;line-height:1.25}.trow b{width:100%;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:${C.am}}
-.bx{background:#fff;border:1px solid ${C.rule};padding:2px 5px;color:${C.ink}}.bx svg{vertical-align:-2px}.card.trk{gap:4px}
+.bx{background:#fff;border:1px solid ${C.rule};padding:2px 5px;color:${C.ink}}.bx svg{vertical-align:-2px}.card.trk{gap:2px}
 .card.boss .kw{flex-direction:column;gap:2px}.card.boss .kw .fs{font-size:10px;color:${C.mut}}.card.boss .kw .fs b{color:${C.cy};font-size:9.5px}
 .card.ref .kw{display:block}.card.ref .kw b{text-transform:none;font-size:inherit}
 .card.sit .art{height:74px}.card.sit .fl{border-top:0;padding-top:0}.card.sit .nm{color:${C.am}}

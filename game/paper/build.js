@@ -24,7 +24,7 @@ const rules = `<section class="page rules">
 <li>Pick the shift. <b>Quick:</b> everyone starts at <b>10 HP</b>. <b>Full:</b> <b>13 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
 <li>Shuffle the <b>situation deck</b>, the 15 alarms and 9 situations. <b>Quick:</b> deal 8. <b>Full:</b> deal 9. That’s the <b>feed</b>. <b>Full</b> also shuffles the 9 <b>story</b> cards into their own deck.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
-<li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 3); solo 1.</li>
+<li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 3). Solo: deal until an agent comes up, shuffle the rest back, then draw 1 more.</li>
 <li>Set out the shift tracker: coin a box for anything once a round or fight; clear it as that ends.</li>
 </ol>
 <h2>Threat dice</h2>

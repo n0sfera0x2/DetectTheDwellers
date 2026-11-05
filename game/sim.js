@@ -77,7 +77,7 @@ const SITPICK = Object.fromEntries((process.env.SITPICK || '').split(',').filter
 const NEWPERKS = (process.env.PERKS || 'new') === 'new';
 const FOCUSGAIN = +(process.env.FOCUSGAIN || 8);
 // ENGFLIP: how often the Engineer may turn a die, 'fight' (default: once a round was +14 pts solo) or 'round'.
-const ENGFLIP = process.env.ENGFLIP || 'round'; // once a round since 2026-10-31: the turned die counts as one, so no guard loop
+const ENGFLIP = process.env.ENGFLIP || 'fight'; // once a fight since 2026-11-05; // once a round since 2026-10-31: the turned die counts as one, so no guard loop
 // EVASIVE=wild (2026-10-31): only a double hits an Evasive mob, and any double matches it (+19 pts solo, rejected).
 // EVASIVE=one: a double of its number takes two as usual; any other double takes one. EVASIVE=exact: a double of
 // its number (an analyst without that double could never hit it: ~1.5% of solo games stalled in an unwinnable fight).
@@ -190,6 +190,7 @@ const CAP = +(process.env.CAP || (V4 ? 1 : 2)), UPGRADE = process.env.UPGRADE !=
 // HUNNEW (proposal, 2026-11-03): fewer = with the Hunter in the crew, a comeback returns with one fewer die; immune =
 // comebacks deal the Hunter no damage. RESNEW=heal: the Responder's doubles can't guard; a double may instead heal
 // anyone RESHEAL (default 2) right away.
+const HUNR1 = process.env.HUNR1 ?? '1'; // default since 2026-11-05 // HUNR1=1 (proposal, 2026-11-05): the Hunter's extra dice on point only in a fight's first round (HUNR1N of them, default 1)
 const HUNNEW = process.env.HUNNEW ?? 'dieplain', RESHEAL = +(process.env.RESHEAL || 3); // defaults since 2026-11-03: HUNNEW die (on point, one more die; also triple, fewer, fewer2, immune), RESNEW heal 5
 const ENGPT = process.env.ENGPT ?? 'other'; // the Engineer on point (2026-11-05): other (default), crewguard, two, dbl, '' for none
 const SOANEW = process.env.SOANEW ?? 'basedie2' /* since 2026-11-05: on point, two more dice while baselining (basedie: one; both: one and the draw); drawpoint (a baseline draws an item) 2026-11-04 (late); twinown (agents count as two) earlier that day, wilddbl before */, RESNEW = process.env.RESNEW ?? 'healor'; // RESNEW: heal (default), healor, top, self // defaults since 2026-11-03 (HUNBOSS=0: the Hunter's 1s on comebacks only)
@@ -214,8 +215,9 @@ function tuckTrait(G, tr) {
 // Feed (every die matches anything this round), Isolation Script (one die off every alarm), Shift Coffee (heal 6
 // split), Change Freeze (skip a row roll). ITEMS=old: the 8 two-sided agent cards and the shared tray of 5.
 const USE = NEWITEMS && process.env.TWOSIDED !== '1' ? { triage: 'surge', enrich: 'intel', contain: 'isolate', recover: 'coffee' } : { triage: 'triage', enrich: 'enrich', contain: 'contain', recover: 'recover' };
-const AGENTS = ['triage', 'enrich', 'contain', 'recover', 'honeypot', 'watchlist', 'correl'], isAgent = t => AGENTS.includes(t);
-const KIT = NEWITEMS ? (process.env.KITJSON ? JSON.parse(process.env.KITJSON) : ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', 'surge', 'surge', 'intel', 'intel', 'isolate', 'isolate', 'coffee', 'coffee', 'freeze', 'freeze', ...(process.env.DECK18 === '0' ? [] : ['watchlist', 'takedown']) /* DECK18: one Watchlist Agent and one Takedown Request since 2026-11-04 */, ...NEWCARDS.filter(c => !NEWMOBS.some(m => m.id === c))]) : ['triage', 'enrich', 'contain', 'recover'];
+const TRIMULTI = process.env.TRIMULTI !== '0', CORR = process.env.CORR || '', SOLOAG = process.env.SOLOAG !== '0'; // 2026-11-05: TRIMULTI and SOLOAG on by default; CORR (the Correlation Agent) a proposal
+const AGENTS = ['triage', 'enrich', 'contain', 'recover', 'honeypot', 'watchlist', 'correl', 'corr'], isAgent = t => AGENTS.includes(t);
+const KIT = NEWITEMS ? (process.env.KITJSON ? JSON.parse(process.env.KITJSON) : ['triage', 'triage', 'contain', 'contain', 'enrich', 'recover', 'surge', 'surge', 'intel', 'intel', 'isolate', 'isolate', 'coffee', 'coffee', 'freeze', 'freeze', ...(process.env.DECK18 === '0' ? [] : ['watchlist', 'takedown']) /* DECK18: one Watchlist Agent and one Takedown Request since 2026-11-04 */, ...(CORR ? ['corr'] : []), ...(CORR === '2' ? ['corr'] : []) /* CORR: Correlation Agents in the deck (1 or 2) */, ...NEWCARDS.filter(c => !NEWMOBS.some(m => m.id === c))]) : ['triage', 'enrich', 'contain', 'recover'];
 const slotsOf = G => NEWITEMS ? (G.n === 1 ? +(process.env.SOLOSLOTS || 6) : CREWSLOTS * G.n) + (on(G, 'SOA') && !SOAAUTO && SOAPERK !== 'none' && !(G.n === 1 && process.env.SOASOLO === '0') ? 1 : 0) : D.sharedKit + (on(G, 'SOA') ? D.perks.SOA.slot : 0);
 // Each item has a holder (G.trayK, parallel to G.tray): 2 slots each (the Soarcerer 3), solo 4. Since 2026-11-01 agents
 // work for the whole crew (Containment cuts the highest-Damage alarm for everyone, Recovery heals the crew, Enrichment
@@ -308,8 +310,10 @@ function roll(G) {
   const dice = [];
   if (G.sys === 'n6') {
     const raw = [];
-    G.team.forEach((id, k) => { const nd = (G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0)) + (k === G.point && aug(G, 'imp') ? 1 : 0) + ((HUNNEW === 'die' || HUNNEW === 'dieplain') && id === 'HUN' && k === G.point ? 1 : 0) + ((SOANEW === 'basedie' || SOANEW === 'basedie2' || SOANEW === 'both') && id === 'SOA' && k === G.point && G.play && G.play.some(m => m.baselining) ? (SOANEW === 'basedie2' ? 2 : 1) : 0) /* SOANEW=basedie (proposal, 2026-11-05): on point, one more die while baselining */; for (let i = 0; i < nd; i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : HUNNEW === 'dieplain' && id === 'HUN' && k === G.point && i === 0 ? [] : DOUBLES[id] }); }); // dieplain: the Hunter's extra die is never a double
-    if (TRIAGE === 'crew') G.team.forEach((id, k) => { for (let i = 0; i < activeK(G, 'triage', k); i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : DOUBLES[id] }); });
+    G.team.forEach((id, k) => { const nd = (G.n === 1 ? N6SOLO : N6DICE + (k === G.point ? 1 : 0)) + (k === G.point && aug(G, 'imp') ? 1 : 0) + ((HUNNEW === 'die' || HUNNEW === 'dieplain') && id === 'HUN' && k === G.point && (HUNR1 !== '1' || G.round === 1) ? (HUNR1 === '1' ? +(process.env.HUNR1N || 1) : 1) : 0) + ((SOANEW === 'basedie' || SOANEW === 'basedie2' || SOANEW === 'both') && id === 'SOA' && k === G.point && G.play && G.play.some(m => m.baselining) ? (SOANEW === 'basedie2' ? 2 : 1) : 0) /* SOANEW=basedie (proposal, 2026-11-05): on point, one more die while baselining */; for (let i = 0; i < nd; i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : G.n === 1 && i === nd - 1 && SOLO === 'mixed' ? DOUBLES.CREW : HUNNEW === 'dieplain' && id === 'HUN' && k === G.point && i < (HUNR1 !== '1' ? 1 : G.round === 1 ? +(process.env.HUNR1N || 1) : 0) ? [] : DOUBLES[id] }); }); // dieplain: the Hunter's extra die is never a double
+    // TRIMULTI=1 (proposal, 2026-11-05): in a multi-alarm fight each Triage Agent rolls two. CORR=1: the Correlation Agent
+    // rolls one of its holder's dice for each alarm in play past the first.
+    if (TRIAGE === 'crew') G.team.forEach((id, k) => { for (let i = 0; i < activeK(G, 'triage', k) * (TRIMULTI && G.play.length >= 2 ? 2 : 1) + activeK(G, 'corr', k) * Math.max(0, G.play.length - 1); i++) raw.push({ k, crew: true, v: 1 + d6(G), dbl: G.cond[k].rattled ? [] : DOUBLES[id] }); });
     // DBLMODE=pair (proposal, 2026-10-31): no number is a double by itself; two of your own dice showing the same
     // number are a double (they take two of it, as they would anyway, or together they guard).
     if (process.env.DBLMODE === 'pair') raw.forEach(r => { r.dbl = process.env.PAIR6 === '1' ? [6] : []; }); // PAIR6=1: a 6 is a double on its own too
@@ -368,7 +372,7 @@ function choose(G, raw) {
   if (!G.smart) return build(raw);
   const set = (rs, i, v) => rs.map((x, j) => j === i ? { ...x, v } : x), e = G.team.indexOf('ENG');
   const cands = [{ raw, focus: -1 }];
-  if (NEWPERKS && e >= 0 && !G.engUsed) raw.forEach((r, i) => { if (r.crew && r.k === e) cands.push({ raw: raw.map((x, j) => j === i ? { ...x, v: 7 - x.v, flip: true, dbl: process.env.ENGDBL === '1' || ENGPT === 'dbl' && e === G.point ? x.dbl : [] } : x), focus: -1, flip: true }); });
+  if (NEWPERKS && e >= 0 && (G.engUsed || 0) < +(process.env.ENGN || 1)) raw.forEach((r, i) => { if (r.crew && r.k === e) cands.push({ raw: raw.map((x, j) => j === i ? { ...x, v: 7 - x.v, flip: true, dbl: process.env.ENGDBL === '1' || ENGPT === 'dbl' && e === G.point ? x.dbl : [] } : x), focus: -1, flip: true }); });
   // ENGPT=two (proposal, 2026-11-05): on point, the Engineer turns up to two of their dice.
   if (ENGPT === 'two' && e === G.point) for (const c of cands.slice()) if (c.flip) c.raw.forEach((r, i) => { if (r.crew && r.k === e && !r.flip) cands.push({ raw: c.raw.map((x, j) => j === i ? { ...x, v: 7 - x.v, flip: true, dbl: [] } : x), focus: -1, flip: true }); });
   // PATPERK=nudge: once a fight the Fixer turns one of their dice one up or one down.
@@ -380,7 +384,7 @@ function choose(G, raw) {
   const pick = cands.reduce((a, b) => b.s > a.s ? b : a);
   if (pick.focus >= 0) { G.cond[pick.focus].focused = false; G.stats.focus++; }
   if (pick.nudge) { G.patUsed = true; G.stats.nudge = (G.stats.nudge || 0) + 1; }
-  if (pick.flip) { G.stats.flipped++; if (ENGFLIP === 'fight') G.engUsed = true; }
+  if (pick.flip) { G.stats.flipped++; if (ENGFLIP === 'fight') G.engUsed = (G.engUsed || 0) + 1; /* ENGN: turns a fight (proposal, 2026-11-05) */ }
   return build(pick.raw);
 }
 // n6: roll one die into the list. A double counts as two dice showing that number: two entries, the second with
@@ -679,9 +683,10 @@ function relay(G) {
 }
 function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
+  if (G.n === 1 && NEWITEMS && SOLOAG) { const j = G.kit.map(isAgent).lastIndexOf(true); if (j >= 0) G.kit.push(G.kit.splice(j, 1)[0]); } // SOLOAG: deal until an agent comes up (the rest go back): the solo setup item is an agent
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
   if (G.n >= 3 && NEWITEMS) draw(G, +(process.env.START34 ?? 1)); // START34: extra setup items for a crew of 3 or 4 (1; 2 for part of 2026-11-04; 1 since 2026-11-03)
-  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 1) - 1); // QSOLO: items a solo player starts with (1 since 2026-11-04, was 2)
+  if (G.n === 1 && NEWITEMS) draw(G, +(process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with (2 since 2026-11-05, one an agent; 1 on 2026-11-04)
   const sits = SIT && G.sys === 'n6';
   for (let f = 0; !G.over; f++) {
     G.point = G.hp.indexOf(Math.max(...G.hp));

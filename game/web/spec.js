@@ -65,11 +65,12 @@ test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (th
   const G = E.newGame({ team: ['HUN', 'RES'], seed: 3 });
   assert.equal(G.hp[0], E.MODES.quick.hp); assert.equal(E.newGame({ team: ['HUN', 'RES'], seed: 3, mode: 'full' }).hp[0], E.MODES.full.hp);
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, 2); assert.equal(G.kit.length, CARDS.ITEM_DECK.length - 2);
-  // Solo starts with 1 item in both modes (2 until 2026-11-04) and deals itself.
-  const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 1);
-  assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 1); assert.equal(E.startItems(1, 'quick'), 1); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
-  assert.equal(E.startItems(1), 1); assert.equal(E.startItems(1, 'quick'), 1, 'Quick Shift solo starts with 1'); assert.equal(E.startItems(3, 'quick'), 3, 'a crew of 3–4 draws 3'); assert.equal(E.startItems(4), 3);
-  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 1); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 3 : 2);
+  // Solo starts with 2 items in both modes, one of them an agent (since 2026-11-05; 1 on 2026-11-04), and deals itself.
+  const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
+  for (let seed = 1; seed <= 40; seed++) for (const mode of ['quick', 'full']) assert.ok(E.newGame({ team: ['HUN'], seed, mode }).agents[0].length >= 1, `solo starts with an agent (seed ${seed}, ${mode})`);
+  assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 2); assert.equal(E.startItems(1, 'quick'), 2); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
+  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 2, 'Quick Shift solo starts with 2'); assert.equal(E.startItems(3, 'quick'), 3, 'a crew of 3–4 draws 3'); assert.equal(E.startItems(4), 3);
+  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 3 : 2);
   for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 3, team.length + 'p draws 3');
   assert.deepEqual([E.MODES.quick.hp, E.MODES.full.hp], [10, 13]);
   assert.equal(CARDS.ITEM_DECK.length, 18);
@@ -205,7 +206,7 @@ test('after a fight: every beaten alarm goes back to the row, comebacks too, wit
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, D.kitPerFight);
   // Since 2026-11-03 the Hunter no longer ends a comeback: it goes back on the row like any other.
   const H = fight(['HUN', 'ENG'], ['imp'], {}); const hi = mob(H, 'imp'); hi.back = 1; hi.off = hi.off.map(() => true); H.dice = []; E.endRound(H);
-  assert.ok(H.row.includes(hi)); assert.equal(H.gone.length, 0); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die. It’s never a double.');
+  assert.ok(H.row.includes(hi)); assert.equal(H.gone.length, 0); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die in a fight’s first round. It’s never a double.');
 });
 test('end of round: mobs hit back; Piercing ignores blocks; Targeted hits only on point, doubled', () => {
   const G = fight(['ENG', 'SOA'], ['spray', 'imp'], { dice: [[0, 6], [1, 6]], point: 1 }); // spray 1 pierces; imp 3 on point, doubled
@@ -264,6 +265,8 @@ test('roll: on point rolls two (a Hunter on point three); solo rolls two of thei
   const G = newG({ team: ['HUN', 'RES'], seed: 9 }); G.agents = [[], [{ uid: 'k1', t: 'triage' }]]; G.point = 0; E.flip(G); if (G.phase === 'roll') E.roll(G);
   assert.equal(G.dice.filter(d => d.k === 0 && d.src === 'own').length, 3, 'the Hunter on point: one more'); assert.ok(G.dice.find(d => d.k === 0 && d.plain && !d.dbl), 'the extra die is never a double'); assert.equal(G.dice.filter(d => d.k === 1 && d.src === 'own').length, 1);
   assert.ok(G.dice.every(d => d.crew), 'no agent dice any more');
+  { const H = newG({ team: ['HUN', 'RES'], seed: 9 }); H.point = 0; E.flip(H); if (H.phase === 'roll') E.roll(H); H.play.forEach(m => setSlots(m, [6, 6, 6, 6, 6, 6, 6, 6])); H.hp = [99, 99]; H.dice.forEach(d => { d.used = 'x'; }); E.endRound(H);
+    if (H.phase === 'roll') { E.roll(H); assert.equal(H.dice.filter(d => d.k === 0 && d.src === 'own').length, 2, 'round 2: the Hunter rolls the usual two (since 2026-11-05)'); } else assert.fail('the fight should go on: ' + H.phase); }
   const ag = G.dice.filter(d => d.src === 'triage'); assert.equal(ag.length, 1); assert.equal(ag[0].k, 1, 'the holder’s die, not on point’s'); assert.equal(ag[0].kuid, 'k1');
   assert.equal(ag[0].dbl, CARDS.DOUBLES.RES.includes(ag[0].n), 'the holder’s doubles');
   assert.match(E.dieOwner(G, ag[0]), /Responder \(Triage Agent\)/);
@@ -348,10 +351,12 @@ test('the Engineer on point (2026-11-05): a double of theirs can guard another a
   assert.deepEqual(E.guardable(O, O.dice[0]), [0]); throwsRule(() => E.guard(O, 0, 1), /only the player who rolled it/);
   assert.match(CARDS.PERK.ENG, /On point, a double of yours can guard another analyst instead\.$/);
 });
-test('Triage Agent: its holder rolls one more of their own dice every round, under its card; it pairs, guards, rerolls and hits the boss', () => {
+test('Triage Agent: its holder rolls one more of their own dice every round (two in a multi-alarm fight), under its card; it pairs, guards, rerolls and hits the boss', () => {
+  const one = fight(['HUN', 'RES'], ['spray'], {}); setAgents(one, 1, ['triage', 'triage']); one.phase = 'roll'; one.round = 0; E.roll(one);
+  assert.deepEqual(one.dice.filter(d => d.src === 'triage').map(d => d.kuid), ['a1-0', 'a1-1'], 'one alarm: one die each');
   const G = fight(['HUN', 'RES'], ['spray', 'boss'], {}); setAgents(G, 1, ['triage', 'triage']); G.phase = 'roll'; G.round = 0; E.roll(G);
-  const ag = G.dice.filter(d => d.src === 'triage'); assert.equal(ag.length, 2); assert.ok(ag.every(d => d.k === 1 && d.crew));
-  assert.deepEqual(ag.map(d => d.kuid), ['a1-0', 'a1-1']);
+  const ag = G.dice.filter(d => d.src === 'triage'); assert.equal(ag.length, 4, 'a multi-alarm fight: two each'); assert.ok(ag.every(d => d.k === 1 && d.crew && !d.twin));
+  assert.deepEqual(ag.map(d => d.kuid), ['a1-0', 'a1-0', 'a1-1', 'a1-1']); assert.match(CARDS.AGENT.triage[1], /In a multi-alarm fight, two more\.$/);
   // It plays like the holder's own die: it can take a boss die, reroll, and pair with their own die.
   const t = ag[0]; t.n = 3; t.dbl = CARDS.DOUBLES.RES.includes(3); setSlots(G.boss, [3, 4]);
   assert.ok(E.targets(G, t.i).hits.some(h => h.uid === G.boss.uid), 'it hits the boss'); assert.ok(E.canReroll(G, t));
@@ -645,9 +650,9 @@ test('Focused: once, turn one of your own dice to any number; it reads as that n
 test('Hunter: no wild numbers; a Hunter 1 matches only a 1 (on point they roll one more die: see the roll test)', () => {
   const G = fight(['HUN', 'RES'], ['wyrmling'], { dice: [[0, 1]] }); const w = setSlots(mob(G, 'wyrmling'), [1, 4, 5]); w.back = 1;
   assert.deepEqual(hitsOn(G, 0, w), [1], 'a comeback: exact numbers'); const B = fight(['HUN', 'RES'], ['boss'], { dice: [[0, 1]] }); assert.ok(!E.canHit(B, B.dice[0], B.boss) || !E.canHit(B, B.dice[0], B.boss).wild, 'the boss: exact too');
-  assert.equal(E.hunts, undefined); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die. It’s never a double.');
+  assert.equal(E.hunts, undefined); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die in a fight’s first round. It’s never a double.');
 });
-test('Engineer: once a round, turn one of their dice to its opposite side; it counts as one die', () => {
+test('Engineer: once a fight (since 2026-11-05), turn one of their dice to its opposite side; it counts as one die', () => {
   const G = fight(['ENG', 'SOA'], ['spray'], { dice: [[0, 6], [0, 5], [1, 3]] }); G.rerolled = [false, false]; G.undo = [{}]; G.engUsed = false;
   const s = setSlots(mob(G, 'spray'), [1, 1]);
   assert.ok(E.canEng(G, G.dice[0])); assert.ok(!E.canEng(G, G.dice[2]), 'only the Engineer’s dice');
@@ -658,15 +663,16 @@ test('Engineer: once a round, turn one of their dice to its opposite side; it co
   throwsRule(() => E.reroll(G, 0), /turned/);
   assert.deepEqual(hitsOn(G, 0, s), [1, 1]); throwsRule(() => E.assign(G, 0, s.uid, 0, 1), /Only a double/);
   E.assign(G, 0, s.uid, 0); assert.ok(G.dice[0].used, 'one take and it is spent');
-  throwsRule(() => E.engTurn(G, 1), /this round already/); assert.ok(!E.canEng(G, G.dice[1]));
-  // Two rounds of one fight: a turn each round.
+  throwsRule(() => E.engTurn(G, 1), /this fight already/); assert.ok(!E.canEng(G, G.dice[1]));
+  // Two rounds of one fight: one turn in all; the next fight, another.
   const H = newG({ team: ['ENG', 'SOA'], seed: 4 }); H.point = 0; E.flip(H); assert.equal(H.phase, 'roll');
   H.play.forEach(m => setSlots(m, [6, 6, 6, 6, 6, 6])); H.hp = [99, 99];
   const fight1 = H.fight, eng = () => H.dice.filter(x => x.crew && x.k === 0).map(x => x.i);
-  E.roll(H); E.engTurn(H, eng()[0]); throwsRule(() => E.engTurn(H, eng()[1]), /this round already/);
+  E.roll(H); E.engTurn(H, eng()[0]); throwsRule(() => E.engTurn(H, eng()[1]), /this fight already/);
   E.endRound(H); assert.equal(H.phase, 'roll'); assert.equal(H.fight, fight1, 'same fight');
-  E.roll(H); assert.equal(H.engUsed, false); E.engTurn(H, eng()[1]); assert.equal(H.stats.flipped, 2);
-  assert.match(CARDS.PERK.ENG, /Once a round, turn one of your dice to its opposite side/);
+  E.roll(H); assert.equal(H.engUsed, true, 'still spent in round 2'); throwsRule(() => E.engTurn(H, eng()[1]), /this fight already/); assert.equal(H.stats.flipped, 1);
+  H.phase = 'flip'; H.feed.push(H.feed[0]); E.flip(H); assert.equal(H.engUsed, false, 'a new fight: the turn is back');
+  assert.match(CARDS.PERK.ENG, /^Once a fight, turn one of your dice to its opposite side/);
 });
 test('Responder: a double may heal anyone 3 instead of guarding, spending it; nobody heals above the start', () => {
   const G = fight(['RES', 'SOA'], ['spray'], { dice: [[0, 3], [0, 6], [0, 2], [1, 6]] }); G.hp = [3, 5]; // RES 3 and 6: doubles

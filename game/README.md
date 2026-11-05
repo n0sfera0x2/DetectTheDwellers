@@ -1,6 +1,6 @@
 # Detect the Dwellers
 
-**Status:** the rules below are current as of [on point: the Engineer guards a crewmate, the Soarcerer baselines with two more dice](#on-point-the-engineer-guards-a-crewmate-the-soarcerer-baselines-with-two-more-dice-2026-11-05) (2026-11-05). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
+**Status:** the rules below are current as of [a first-round Hunter, a once-a-fight Engineer, agents for multi-alarm fights](#a-first-round-hunter-a-once-a-fight-engineer-agents-for-multi-alarm-fights-2026-11-05) (2026-11-05). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
 ## The rules now
 
@@ -10,8 +10,8 @@
 
 | Mode | Feed | HP | Solo starts with | Boss |
 | --- | --- | --- | --- | --- |
-| **Quick Shift** | deal 8 from the situation deck | 10 | 1 item | its core ability only |
-| **Full Shift** | deal 9 from the situation deck; after the 1st, 3rd and 5th fight won, the top story card is the next flip | 13 | 1 item | its core ability and its **Full Shift** row trigger |
+| **Quick Shift** | deal 8 from the situation deck | 10 | 2 items, one an agent | its core ability only |
+| **Full Shift** | deal 9 from the situation deck; after the 1st, 3rd and 5th fight won, the top story card is the next flip | 13 | 2 items, one an agent | its core ability and its **Full Shift** row trigger |
 
 One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 3). The number of alarms in a feed varies: about 4.3 in Quick, 5.6 in Full.
 
@@ -75,16 +75,16 @@ One line each since 2026-11-03; no wild numbers. Only the Engineer's turn needs 
 
 | Analyst | Doubles | Ability |
 | --- | --- | --- |
-| Hunter | 4, 6 | On point, you roll one more die. It’s never a double. |
+| Hunter | 4, 6 | On point, you roll one more die in a fight’s first round. It’s never a double. (First round only since 2026-11-05.) |
 | Responder | 3, 6 | A double of yours can heal anyone 3 instead of guarding. |
-| Engineer | 1, 6 | Once a round, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead. (On point since 2026-11-05.) |
+| Engineer | 1, 6 | Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead. (Both since 2026-11-05; the turn was once a round.) |
 | Soarcerer | 2, 6 | On point, while you baseline an alarm, roll two more dice. (Since 2026-11-05: every round of that fight.) |
 
 ### Items (18)
 
 | Item | Kind | Copies | Does |
 | --- | --- | --- | --- |
-| Triage Agent | Agent | 2 | Every round, roll one more of your own dice. |
+| Triage Agent | Agent | 2 | Every round, roll one more of your own dice. In a multi-alarm fight, two more. (Since 2026-11-05.) |
 | Containment Agent | Agent | 2 | The highest-Damage alarm deals 2 less to everyone, never below 1. |
 | Enrichment Agent | Agent | 1 | Once a round, turn any crew die to any number. |
 | Recovery Agent | Agent | 1 | After every won fight, heal 4 HP split across the crew. |
@@ -123,7 +123,7 @@ The production deck's 18 situations with rules rewritten for the dice. Core card
 
 Conditions are cards kept in front of a player, one of each at most. **Rattled:** your next roll has no doubles. **Exposed:** next fight, each round anything hits you, take 1 more. **Focused:** once, after you roll, turn one of your dice to any number.
 
-**The shift tracker.** A reference card with coin boxes for everything the table would otherwise have to remember: each player's reroll, the Engineer's turn and the Enrichment turns (this round); Hold the room's bonus draw and whether a comeback joined, for Beacon agents (this fight); the fights won, with the story and threat marks; a pending Change Freeze, Pager Storm's Mute die and a Badge fall-back (waiting). It also says how to track Escalating and Regen. The web version tracks all of this itself.
+**The shift tracker.** A reference card with coin boxes for everything the table would otherwise have to remember: each player's reroll and the Enrichment turns (this round); the Engineer's turn, Hold the room's bonus draw and whether a comeback joined, for Beacon agents (this fight); the fights won, with the story and threat marks; a pending Change Freeze, Pager Storm's Mute die and a Badge fall-back (waiting). It also says how to track Escalating and Regen. The web version tracks all of this itself.
 
 ### Components
 
@@ -131,18 +131,18 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-05 (the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players, solo starts with 1). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
+Bot sims, `SYS=n6 N=600`, 2026-11-05 (late: the Hunter's extra die in a fight's first round only, the Engineer's turn once a fight, the Triage Agent rolls two in a multi-alarm fight, solo starts with 2 items, one an agent; the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 5 HP or less: one boss hit from 0) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 54% | 30 pts | 45% | 95% | 18.7 | 3.7 | 54% | 73% |
-| Quick, 2p | 52% | 24 pts | 53% | 97% | 12.1 | 1.4 | 48% | 75% |
-| Quick, 4p | 54% | 34 pts | 57% | 99% | 10.3 | 0.9 | 45% | 69% |
-| Full, 1p | 56% | 31 pts | 48% | 95% | 20.5 | 5.4 | 49% | 50% |
-| Full, 2p | 59% | 27 pts | 54% | 97% | 13.6 | 2.3 | 42% | 38% |
-| Full, 4p | 56% | 32 pts | 53% | 98% | 11.4 | 1.7 | 46% | 31% |
+| Quick, 1p | 54% | 25 pts | 44% | 94% | 18.5 | 4.2 | 53% | 66% |
+| Quick, 2p | 50% | 21 pts | 52% | 96% | 12.1 | 1.4 | 50% | 76% |
+| Quick, 4p | 51% | 30 pts | 57% | 99% | 10.2 | 1.0 | 51% | 67% |
+| Full, 1p | 58% | 24 pts | 44% | 95% | 19.6 | 5.7 | 53% | 39% |
+| Full, 2p | 54% | 24 pts | 51% | 96% | 13.8 | 2.5 | 43% | 34% |
+| Full, 4p | 57% | 30 pts | 54% | 98% | 11.4 | 1.7 | 46% | 28% |
 
-Solo by analyst: Quick Hunter 58%, Responder 57%, Engineer 48%, Soarcerer 55%; Full 59 / 63 / 53 / 53%. Pairs (600 games each): Quick 46% (Hunter + Soarcerer) to 60% (Responder + Engineer); Full 49% (Hunter + Soarcerer) to 63% (Hunter + Engineer). Baselines per shift: about 3.1 in Quick and 3.3 in Full (was 1.6).
+Solo by analyst: Quick Hunter 46%, Responder 63%, Engineer 50%, Soarcerer 61%; Full 50 / 69 / 52 / 64%. Pairs (600 games each): Quick 42% (Hunter + Soarcerer) to 58% (Responder + Engineer); Full 46% (Hunter + Soarcerer) to 60% (Responder + Engineer). Baselines per shift: about 3.1 in Quick and 3.3 in Full (was 1.6).
 
 ### Targets
 
@@ -150,26 +150,26 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 54 / 52 / 54% | 56 / 59 / 56% | the mode's HP; solo: starting items; 3–4p: their setup item |
-| Spread across crew sizes | 10 points or less | 2 | 3 | 3–4p: the setup item (the + die is printed) |
-| Solo spread across analysts | 10 points or less | 10 (the Engineer 48%) | 10 | the analyst's ability, not their doubles |
-| Pairs, lowest to highest | within 15 points | 46–60% (14) | 49–63% (14) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 30 / 24 / 34 | 31 / 27 / 32 | more decisions per roll |
-| Rounds with a real decision | 60% or more | 95 / 97 / 99% | 95 / 97 / 98% | the reroll; its cost |
-| Rounds with a real dice choice | 40% or more | 45 / 53 / 57% | 48 / 54 / 53% | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 54 / 48 / 45% | 49 / 42 / 46% | the boss's Damage; the threat timing (`ESC`) |
-| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 73 / 75 / 69% | 50 / 38 / 31% (2p and 4p miss) | Full: its HP; 4p pile-ups |
-| Comebacks per shift | 3–6 | 3.7 / 1.4 / 0.9 (2p and 4p miss) | 5.4 / 2.3 / 1.7 (2p and 4p miss) | the row ranges (`ROWSHIFT`); the feed size |
-| Baselining worth doing | always beats never | +18 / +3 / +21 | +24 / +20 / +29 | the Baseline dice and the traits |
+| Win rate, every crew size | 50–60% | 54 / 50 / 51% | 58 / 54 / 57% | the mode's HP; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 4 | 4 | 3–4p: the setup item (the + die is printed) |
+| Solo spread across analysts | 10 points or less | 17 (misses: the Hunter 46%) | 19 (misses: the Hunter 50%, the Responder 69%) | items and agents (the owner's call, 2026-11-05), not the analyst's ability |
+| Pairs, lowest to highest | within 15 points | 42–58% (16, misses) | 46–60% (14) | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 25 / 21 / 30 | 24 / 24 / 30 | more decisions per roll |
+| Rounds with a real decision | 60% or more | 94 / 96 / 99% | 95 / 96 / 98% | the reroll; its cost |
+| Rounds with a real dice choice | 40% or more | 44 / 52 / 57% | 44 / 51 / 54% | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 53 / 50 / 51% | 53 / 43 / 46% | the boss's Damage; the threat timing (`ESC`) |
+| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 66 / 76 / 67% | 39 / 34 / 28% (all miss) | Full: its HP; 4p pile-ups |
+| Comebacks per shift | 3–6 | 4.2 / 1.4 / 1.0 (2p and 4p miss) | 5.7 / 2.5 / 1.7 (2p and 4p miss) | the row ranges (`ROWSHIFT`); the feed size |
+| Baselining worth doing | always beats never | +12 / +3 / +17 | +18 / +12 / +31 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
 | The boss is a climax (Full) | beating it once there: 75% or less | 77 / 72 / 70% (1p over) | 72 / 66 / 68% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
 
 - **Comebacks fell to 1.0–2.3 a shift in crews** (Quick 1.4 / 1.0, Full 2.3 / 1.7 at 2p / 4p; target 3–6). Baselining twice as often takes twice as many alarms off the row. The row is the game's signature, so this is the first thing to look at: a wider row (`ROWSHIFT`) or the boss pulling it more.
-- **Full Shift scares miss at 2 and 4 players** (38% and 31% against 40%; solo 50%). The Engineer's guard for a crewmate took 2p from 41% to 38%.
+- **The solo spread is 17–19 points.** The Hunter's die in the first round only took the solo Hunter from 58 / 59% to 25 / 29%; the solo agent setup brought it back to 46 / 50%, but lifted the Responder (63 / 69%) and Soarcerer (61 / 64%) too. The owner closes gaps with items and agents, not analyst buffs. Agents that pay off in multi-alarm fights only help once those fights are common (see comebacks): the Correlation Agent (`CORR=1`) cost crews 4–5 points while comebacks stay at 1–2.5 a shift.
+- **Full Shift scares miss at every crew size** (39 / 34 / 28% against 40%).
 - **Pairs with the Hunter and the Soarcerer are lowest** (46% Quick, 49% Full): the bot keeps whoever has the most HP on point, so the Soarcerer baselines on point less than a player who takes point on purpose would. Putting the bot's Soarcerer on point lifted 4-player crews to 72–76%, so it stays off.
-- **The solo Engineer is 48% in Quick** (spread 10 points, at the edge). Their on-point guard does nothing solo; "turn up to two on point" (`ENGPT=two`) lifted them to 51 / 56% with no outlier pair, if this needs fixing.
 - **Shifts are longer:** solo 19 rounds in Quick (was 17) and 21 in Full (was 18), from the extra Baseline dice. "About 30 minutes" for Full needs a table to time it.
 - **The bot baselines less than it should in Full:** always baselining wins 61 / 62 / 66% against the bot's 58 / 59 / 56%.
 - **4-player deaths are pile-ups.** Of the deaths from 5+ HP in one round, 74–86% happened with 3–6 alarms in play (600 games, 2026-11-04, before this pass). A cap of 2 comebacks per row roll is the lever to try, if a table finds it unfair.
@@ -202,7 +202,9 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `ESC`, `ESCMAX` | n6 threat: after every `ESC` fights won, alarms deal 1 more, up to `ESCMAX` (default 3 and 1; `ESC=0` off) |
 | `PUSH`, `PUSHMIN`, `PUSHGAIN` | n6 push (default on; `PUSH=0` off): the bot pushes above `PUSHMIN` HP (4) when the reroll's average gain beats `PUSHGAIN` (6) |
 | `HEALX` | scales the after-fight heals (default 1) |
-| `QSOLO` | items a solo player starts with (default 1 since 2026-11-04; was 2) |
+| `QSOLO`, `SOLOAG` | items a solo player starts with (default 2 since 2026-11-05; 1 on 2026-11-04); `SOLOAG=1` (default): one of them is an agent |
+| `TRIMULTI`, `CORR` | `TRIMULTI=1` (default since 2026-11-05): each Triage Agent rolls two in a multi-alarm fight; `CORR=1` or `2`: Correlation Agents (one die per alarm past the first) in the deck, a proposal |
+| `HUNR1`, `HUNR1N`, `ENGFLIP`, `ENGN` | `HUNR1=1` (default since 2026-11-05): the Hunter's extra die on point only in a fight's first round (`HUNR1N` dice); `ENGFLIP=fight` (default since 2026-11-05): the Engineer turns once a fight (`ENGN` times; `round` was the rule before) |
 | `START34` | extra setup items for a crew of 3 or 4 (default 1; 2 for part of 2026-11-04) |
 | `HUNNEW`, `HUNWILD` | the Hunter: `die` (default: on point, one more die); `triple`, `fewer`, `fewer2`, `immune` were tried; `HUNWILD=1` brings back the wild 1s |
 | `RESHEAL` | what a Responder double heals with `RESNEW=heal` (default 5); `RESNEW=healor` lets it guard too |
@@ -280,7 +282,7 @@ Add `?seed=123` to the URL to replay a shift.
 
 - 1–4 players, each with their own analyst (Hunter, Responder, Engineer, Soarcerer), all at 10 HP.
 - Pick **Quick** or **Full Shift** on the setup screen. The page deals the feed from the whole situation deck and draws one of three bosses. The shift bar counts feed cards; the page never says what the top one is. 4 players get the card's + die (a 6).
-- **Items:** the deck is the 18 items. The crew starts with 2 (solo 2) and draws 2 after each won fight (solo 1). A **deal** step shows each drawn card with a **Give to …** button per player; an agent for a full player asks which of their agents to discard, or **Keep it out**. Solo deals itself. The mat shows one group per player: their agent cards (a Triage Agent's extra die sits under its card), empty slots, and their consumables with a **Use** button that lights only when its timing allows (Surge Playbook and Threat Intel Feed after the roll; Isolation Script before or after; Shift Coffee outside an open roll; Change Freeze before a row roll).
+- **Items:** the deck is the 18 items. The crew starts with 2 (3 or 4 players: 3; solo 2, one an agent) and draws 2 after each won fight (solo 1). A **deal** step shows each drawn card with a **Give to …** button per player; an agent for a full player asks which of their agents to discard, or **Keep it out**. Solo deals itself. The mat shows one group per player: their agent cards (a Triage Agent's extra die sits under its card), empty slots, and their consumables with a **Use** button that lights only when its timing allows (Surge Playbook and Threat Intel Feed after the roll; Isolation Script before or after; Shift Coffee outside an open roll; Change Freeze before a row roll).
 - **A flip:** pick who's on point, then **Flip the top card**. The row roll shows the amber pair, their sum and what came back; the side panel shows each row mob's number on a 2–12 track. The two highest-Damage comebacks hit everyone on arrival, and the Beacon chains.
 - **A round:** roll the row (from round 2), then roll the dice. Each die shows its pips; doubles are ringed and labelled. Tap a die, then a glowing threat die under a mob showing the same number (a Hunter's 1 glows on every die under every alarm except an Evasive one; with a Threat Intel Feed every die glows). A double is labelled "Double ×2": it stays selected after its first take ("1 left") so you can tap a second die showing its number, under the same mob or another. Or press Guard instead, before it takes anything, and pick who it covers. Two of your own unused dice on one number show a **Pair** button (P) that makes them one double; pairing is optional. You can also turn a die to any number with a running Enrichment Agent, undo the last move, and end the round.
 - **Situations:** a situation flipped from the feed sits on the mat with one button per option (keys 1–9). The Badge That Wasn’t's Fall back is greyed out with the reason when no alarm is left in the feed. Dark Web Chatter has a 1–4 dice picker. The result (dice, Won or Lost, what happened) shows before "Flip the next card". On point locks once a situation is resolved, until the next fight ends.
@@ -323,6 +325,18 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### A first-round Hunter, a once-a-fight Engineer, agents for multi-alarm fights (2026-11-05)
+
+The owner's notes: the Engineer's turn is once a fight; the Hunter's extra die on point comes in a fight's first round only. Win-rate gaps are for items and agents to close, not analyst buffs: using agents to tackle multi-alarm fights is a theme of the game.
+
+- **The Hunter: "On point, you roll one more die in a fight's first round. It's never a double."** Alone, solo Hunter 58 → 25% (Quick), 59 → 29% (Full): solo is always on point, so the die came every round. Two or three dice in the first round (46–49%) were offered; the owner kept one.
+- **The Engineer: "Once a fight, turn one of your dice…"** Alone, solo Engineer 48 → 40%, 53 → 43%. The turn moved to the shift tracker's This fight row.
+- **Solo starts with 2 items, one an agent** (deal until an agent comes up, shuffle the rest back, draw 1 more). Every solo analyst gains 4–19 points.
+- **The Triage Agent: "In a multi-alarm fight, two more."** +1–4 points.
+- **Tried, not kept:** a Correlation Agent (one die per alarm past the first) cost crews 4–5 points (Quick 2p 49 → 44%): crews see few multi-alarm fights, and it takes a slot from a consumable. Two of them: worse. The bot's search falls back to greedy play with many dice (`ENUM`); the Correlation result held with a 15× larger search.
+
+Sims, 600 games per crew size, 2026-11-05: Quick 54 / 50 / 51%, Full 58 / 54 / 57%. Solo spread 17 and 19 (the Hunter lowest). Pairs 42–58% and 46–60%. Scares Quick 66–76%, Full 28–39%. Baselining beats never by 3–17 points in Quick and 12–31 in Full. Knobs: `HUNR1=1`, `ENGFLIP=fight`, `SOLOAG=1`, `QSOLO=2`, `TRIMULTI=1` (defaults), `CORR` (off).
 
 ### On point: the Engineer guards a crewmate, the Soarcerer baselines with two more dice (2026-11-05)
 

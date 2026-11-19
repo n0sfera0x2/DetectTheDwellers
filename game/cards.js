@@ -57,7 +57,7 @@
   // Exfil (2026-11-03) replaces Evasive on the Scavenger and the Golden Ticket Ghost (the data still says hardened).
   const KW_OVER = { druid: 'exfil', specter: 'exfil' }, abilityOf = m => KW_OVER[m.id] || m.ability;
   const kw = { exfil: 'Exfil', beacon: 'Beacon', noblock: 'Piercing', onpoint: 'Targeted', hardened: 'Evasive', regen: 'Regen', ramp: 'Escalating', lowest: 'Stalker', noagent: 'Fileless' };
-  const kwText = { exfil: 'Still up at round end: the crew discards an item.', beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it. A double of another number takes out one die.', regen: 'At the end of each round, put back one die it lost.', ramp: '+1 Damage every round it stays up.', lowest: 'It only hits whoever has the lowest HP.', noagent: 'Containment Agents don’t cut its Damage.' };
+  const kwText = { exfil: 'Still up at round end: the crew discards an item.', beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it. A double of another number takes out one die.', regen: 'At the end of each round, put back one die it lost.', ramp: '+2 Damage when it comes back.', lowest: 'It only hits whoever has the lowest HP.', noagent: 'Containment Agents don’t cut its Damage.' };
   // The dice strip along the bottom edge: the dice to set under the card, then the + die per player past three. On
   // the table the physical dice sit just below it.
   const strip = (d, px) => `<div class="dice"><div class="set">${d.base.map(n => pip(n, px)).join('')}</div>
@@ -170,7 +170,7 @@
   <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Enrichment')}${box('Enrichment again')}</div>
   <div class="trow"><b>This fight</b>${box('Engineer')}${box('Hold the room: +1 item')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
-  <div class="note"><b>Escalating:</b> a coin each round. <b>Regen:</b> it puts back the last die taken.</div></div>`;
+  <div class="note"><b>Regen:</b> at round end it puts back the last die taken.</div></div>`;
   // Situations (2026-10-30; shuffled into the feed with the alarms since 2026-11-02, the boss underneath). Who's on point is
   // picked. The real game's situations (names, scenes and story lines from the data) with rules rewritten for the
   // dice. Each offers a choice, except the event. Same rules as sim.js situation(). [label, rule] per option.

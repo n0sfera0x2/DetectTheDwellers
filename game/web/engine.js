@@ -114,11 +114,11 @@
   // Every held agent with its holder: [{ c, k }].
   const heldAgents = G => G.agents.flatMap((a, k) => a.map(c => ({ c, k })));
   const on = (G, id) => G.team.includes(id);
-  // Damage right now: Lockjaw +2 until it has lost two dice; Escalating +1 per round it stayed up.
+  // Damage right now: Lockjaw +2 until it has lost two dice; Escalating +2 when it came back (since 2026-11-19; it was +1 per round it stayed up).
   // The CEO's Inbox (plus): +2 for one visit.
   // Threat: every THREAT_AFTER fights won, every alarm (not the boss) hits 1 harder, up to THREAT_MAX.
   const threat = G => Math.min(CARDS.THREAT_MAX, Math.floor((G.won || 0) / CARDS.THREAT_AFTER));
-  const dmgOf = (G, m) => (m.plus || 0) + (m.boss ? 0 : threat(G)) + (m.boss ? m.dmg + (m.kw === 'wyrm' && left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' ? m.up : 0));
+  const dmgOf = (G, m) => (m.plus || 0) + (m.boss ? 0 : threat(G)) + (m.boss ? m.dmg + (m.kw === 'wyrm' && left(m) > m.hits - 2 ? 2 : 0) : m.dmg + (m.kw === 'ramp' && m.back > 0 ? 2 : 0));
   const d6 = G => Math.floor(G.r() * 6);
   const BOSS_STEPS = CARDS.BOSS_STEPS;
   const findMob = (G, uid) => G.play.find(m => m.uid === uid);
@@ -647,7 +647,6 @@
       m.up++;
       // Regen: put back the die it lost most recently.
       if (m.kw === 'regen' && m.offStack.length) { const p = m.offStack.pop(); m.off[p] = false; say(G, `${m.name} regenerates: its ${m.slots[p]} goes back under the card.`, 'mob'); }
-      if (m.kw === 'ramp') say(G, `${m.name} escalates: Damage ${dmgOf(G, m)} now.`, 'mob');
     }
     if (G.play.length) { G.phase = G.exfil ? 'exfil' : 'roll'; return G; }
     return afterFight(G);

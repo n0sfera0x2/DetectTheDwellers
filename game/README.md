@@ -1,6 +1,6 @@
 # Detect the Dwellers
 
-**Status:** the rules below are current as of [tuck traits with nothing to check each round](#tuck-traits-with-nothing-to-check-each-round-2026-11-19) (2026-11-19). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
+**Status:** the rules below are current as of [Escalating at one moment](#escalating-at-one-moment-2026-11-19) (2026-11-19). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
 ## The rules now
 
@@ -45,7 +45,7 @@ Every alarm's dice come from `sim.js` `numbersFor`: a main number, repeated, wit
 | Macro Gremlin | 5 | 1 | Targeted: only on point takes its damage, doubled | 2–6 | 2 × 2 · **Overclock:** its agent’s Overclocked line applies |
 | Password Sprayer | 4 | 1 | Piercing: blocks don’t stop it | 2–6 | 2 × 3 · **Overclock:** its agent’s Overclocked line applies |
 | MFA Banshee | 1 | 1 | Stalker: it only hits whoever has the lowest HP | 2–6 | 2 × 6 · **Overclock:** its agent’s Overclocked line applies |
-| Vibe Coded App | 6 | 1 | Escalating: +1 Damage every round it stays up | 2–6 | 2 × 1 · **Overclock:** its agent’s Overclocked line applies |
+| Vibe Coded App | 6 | 1 | Escalating: +2 Damage when it comes back | 2–6 | 2 × 1 · **Overclock:** its agent’s Overclocked line applies |
 | PowerShell Wraith | 2 2 | 3 | Fileless: containment Agents don’t cut its Damage | 2–5 | 2 × 5 · **Overclock:** its agent’s Overclocked line applies |
 | Living-off-the-Land Scavenger | 3 3 | 3 | Exfil: still up at round end, the crew discards an item | 2–5 | 2 × 4 · **Hardened:** its agent keeps working against the Rogue AI |
 | DNS Beacon Drone | 4 4 | 3 | Beacon: roll the row when it arrives or comes back | 2–5 | 2 × 3 · **Overclock:** its agent’s Overclocked line applies |
@@ -55,7 +55,7 @@ Every alarm's dice come from `sim.js` `numbersFor`: a main number, repeated, wit
 | LSASS Siphon | 1 1 | 4 | Regen: at the end of each round, put back one die it lost | 2–4 | 2 × 6 · **Siphon:** its agent takes no item slot |
 | PsExec Swarm | 3 4 4 | 4 | Beacon: roll the row when it arrives or comes back | 2–4 | 2 × 3 · **Overclock:** its agent’s Overclocked line applies |
 | Golden Ticket Ghost | 4 5 5 | 4 | Exfil: still up at round end, the crew discards an item | 2–3 | 2 × 2 · **Locked:** Exfil can’t take its agent |
-| Exfil Courier | 5 5 | 4 | Escalating: +1 Damage every round it stays up | 2–4 | 2 × 2 · **Overclock:** its agent’s Overclocked line applies |
+| Exfil Courier | 5 5 | 4 | Escalating: +2 Damage when it comes back | 2–4 | 2 × 2 · **Overclock:** its agent’s Overclocked line applies |
 
 ### Bosses (3, one drawn at random)
 
@@ -123,7 +123,7 @@ The production deck's 18 situations with rules rewritten for the dice. Core card
 
 Conditions are cards kept in front of a player, one of each at most. **Rattled:** your next roll has no doubles. **Exposed:** next fight, each round anything hits you, take 1 more. **Focused:** once, after you roll, turn one of your dice to any number.
 
-**The shift tracker.** A reference card with coin boxes for everything the table would otherwise have to remember: each player's reroll and the Enrichment turns, two for an Overclocked one (this round); the Engineer's turn and Hold the room's bonus draw (this fight); the fights won, with the story and threat marks; a pending Change Freeze, Pager Storm's Mute die and a Badge fall-back (waiting). It also says how to track Escalating and Regen. The web version tracks all of this itself.
+**The shift tracker.** A reference card with coin boxes for everything the table would otherwise have to remember: each player's reroll and the Enrichment turns, two for an Overclocked one (this round); the Engineer's turn and Hold the room's bonus draw (this fight); the fights won, with the story and threat marks; a pending Change Freeze, Pager Storm's Mute die and a Badge fall-back (waiting). It also says how to track Regen. The web version tracks all of this itself.
 
 ### Components
 
@@ -131,18 +131,18 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-19 (the tuck traits of 2026-11-19: twelve bands Overclock, plus Hardened, Siphon and Locked; otherwise the rules of 2026-11-05: the Hunter's extra die in a fight's first round only, the Engineer's turn once a fight, the Triage Agent rolls two in a multi-alarm fight, solo starts with 2 items, one an agent; the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer. The decision and scare columns weren't rerun this pass; their values are from 2026-11-05.
+Bot sims, `SYS=n6 N=600`, 2026-11-19 (Escalating +2 Damage when it comes back; the tuck traits of 2026-11-19: twelve bands Overclock, plus Hardened, Siphon and Locked; otherwise the rules of 2026-11-05: the Hunter's extra die in a fight's first round only, the Engineer's turn once a fight, the Triage Agent rolls two in a multi-alarm fight, solo starts with 2 items, one an agent; the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer. The decision and scare columns weren't rerun this pass; their values are from 2026-11-05.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 5 HP or less: one boss hit from 0) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 54% | 23 pts | 43% | 94% | 18.1 | 4.1 | 53% | 66% |
-| Quick, 2p | 53% | 23 pts | 51% | 96% | 12.0 | 1.5 | 48% | 76% |
-| Quick, 4p | 52% | 29 pts | 53% | 99% | 10.1 | 0.9 | 48% | 67% |
-| Full, 1p | 57% | 21 pts | 44% | 95% | 19.2 | 5.7 | 50% | 39% |
-| Full, 2p | 57% | 23 pts | 50% | 96% | 13.5 | 2.3 | 46% | 34% |
-| Full, 4p | 58% | 28 pts | 51% | 98% | 11.4 | 1.6 | 43% | 28% |
+| Quick, 1p | 54% | 22 pts | 43% | 94% | 18.1 | 4.1 | 52% | 66% |
+| Quick, 2p | 54% | 24 pts | 50% | 96% | 12.3 | 1.5 | 46% | 76% |
+| Quick, 4p | 53% | 29 pts | 53% | 99% | 10.2 | 0.9 | 48% | 67% |
+| Full, 1p | 58% | 21 pts | 44% | 95% | 19.2 | 5.7 | 51% | 39% |
+| Full, 2p | 57% | 23 pts | 50% | 96% | 13.9 | 2.4 | 42% | 34% |
+| Full, 4p | 59% | 29 pts | 51% | 98% | 11.5 | 1.6 | 41% | 28% |
 
-Solo by analyst: Quick Hunter 45%, Responder 63%, Engineer 51%, Soarcerer 64%; Full 49 / 69 / 52 / 64%. Pairs (600 games each): Quick 43% (Hunter + Soarcerer) to 59% (Responder + Engineer); Full 51% (Hunter + Soarcerer) to 62% (Responder + Engineer). Baselines per shift: about 3.0–3.5 in Quick and 3.4–3.7 in Full.
+Solo by analyst: Quick Hunter 45%, Responder 63%, Engineer 50%, Soarcerer 64%; Full 49 / 69 / 51 / 65%. Pairs (600 games each): Quick 43% (Hunter + Soarcerer) to 60% (Responder + Engineer); Full 51% (Hunter + Soarcerer) to 62% (Responder + Engineer). Baselines per shift: about 3.0–3.5 in Quick and 3.4–3.7 in Full.
 
 ### Targets
 
@@ -150,16 +150,16 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 54 / 53 / 52% | 57 / 57 / 58% | the mode's HP; solo: starting items; 3–4p: their setup item |
-| Spread across crew sizes | 10 points or less | 2 | 1 | 3–4p: the setup item (the + die is printed) |
+| Win rate, every crew size | 50–60% | 54 / 54 / 53% | 58 / 57 / 59% | the mode's HP; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 1 | 2 | 3–4p: the setup item (the + die is printed) |
 | Solo spread across analysts | 10 points or less | 19 (misses: the Hunter 45%, the Soarcerer 64%) | 20 (misses: the Hunter 49%, the Responder 69%) | items and agents (the owner's call, 2026-11-05), not the analyst's ability |
-| Pairs, lowest to highest | within 15 points | 43–59% (16, misses) | 51–62% (11) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 23 / 23 / 29 | 21 / 23 / 28 | more decisions per roll |
+| Pairs, lowest to highest | within 15 points | 43–60% (17, misses) | 51–62% (11) | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 22 / 24 / 29 | 21 / 23 / 29 | more decisions per roll |
 | Rounds with a real decision | 60% or more | 94 / 96 / 99% (2026-11-05, not rerun) | 95 / 96 / 98% (2026-11-05, not rerun) | the reroll; its cost |
-| Rounds with a real dice choice | 40% or more | 43 / 51 / 53% | 44 / 50 / 51% | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 53 / 48 / 48% | 50 / 46 / 43% | the boss's Damage; the threat timing (`ESC`) |
+| Rounds with a real dice choice | 40% or more | 43 / 50 / 53% | 44 / 50 / 51% | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 52 / 46 / 48% | 51 / 42 / 41% | the boss's Damage; the threat timing (`ESC`) |
 | Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 66 / 76 / 67% (2026-11-05, not rerun) | 39 / 34 / 28% (all miss; 2026-11-05, not rerun) | Full: its HP; 4p pile-ups |
-| Comebacks per shift | 3–6 | 4.1 / 1.5 / 0.9 (2p and 4p miss) | 5.7 / 2.3 / 1.6 (2p and 4p miss) | the row ranges (`ROWSHIFT`); the feed size |
+| Comebacks per shift | 3–6 | 4.1 / 1.5 / 0.9 (2p and 4p miss) | 5.7 / 2.4 / 1.6 (2p and 4p miss) | the row ranges (`ROWSHIFT`); the feed size |
 | Baselining worth doing | always beats never | +12 / +6 / +18 | +17 / +15 / +32 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
 | The boss is a climax (Full) | beating it once there: 75% or less | 77 / 72 / 70% (1p over) | 72 / 66 / 68% | its row marks (`BOSSSTEPS`) |
@@ -201,6 +201,7 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `BOSSDMG` | n6: every boss's Damage (default 5) |
 | `ESC`, `ESCMAX` | n6 threat: after every `ESC` fights won, alarms deal 1 more, up to `ESCMAX` (default 3 and 1; `ESC=0` off) |
 | `PUSH`, `PUSHMIN`, `PUSHGAIN` | n6 push (default on; `PUSH=0` off): the bot pushes above `PUSHMIN` HP (4) when the reroll's average gain beats `PUSHGAIN` (6) |
+| `RAMP` | `RAMP=count`: Escalating's old +1 Damage per round it stays up (the default since 2026-11-19 is +2 Damage when it comes back) |
 | `HEALX` | scales the after-fight heals (default 1) |
 | `QSOLO`, `SOLOAG` | items a solo player starts with (default 2 since 2026-11-05; 1 on 2026-11-04); `SOLOAG=1` (default): one of them is an agent |
 | `TRIMULTI`, `CORR` | `TRIMULTI=1` (default since 2026-11-05): each Triage Agent rolls two in a multi-alarm fight; `CORR=1` or `2`: Correlation Agents (one die per alarm past the first) in the deck, a proposal |
@@ -340,6 +341,21 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### Escalating at one moment (2026-11-19)
+
+An audit of the alarm keywords that need tracking every round on paper ([#4](https://gitlab.com/nosfera0x2-crypt-group/detectthedwellers/-/work_items/4)). Escalating (Vibe Coded App, Exfil Courier) put a coin on the tracker each round it stayed up: 0.5–1.8 coins a shift. It now reads **+2 Damage when it comes back**: no coin, one moment the table can see, and the alarm still gets worse over the shift. Regen stays (putting a die back is physical, nothing is remembered, 0.3–1.1 times a shift). The tracker's Escalating note is gone. Sim: `RAMP=count` plays the old rule.
+
+#### What was tried (`SYS=n6`, 600 games a row, Quick HP 10 / Full HP 13, 1p / 2p / 4p, 2026-11-19)
+
+| Escalating | Regen | Quick win | Full win |
+| --- | --- | --- | --- |
+| +1 per round it stays up (old) | one die back per round | 54 / 53 / 52% | 57 / 57 / 58% |
+| +1 from round 2 | as now | 54 / 54 / 52% | 57 / 58 / 60% |
+| **+2 when it comes back (shipped)** | as now | 54 / 54 / 53% | 58 / 57 / 59% |
+| +1 printed, keyword gone | as now | 54 / 53 / 51% | 58 / 57 / 58% |
+| as before | a comeback returns with one more die | 56 / 54 / 53% | 57 / 59 / 60% |
+| +2 when it comes back | a comeback returns with one more die | 55 / 56 / 54% | 58 / 59 / 61% |
 
 ### Tuck traits with nothing to check each round (2026-11-19)
 

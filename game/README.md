@@ -169,9 +169,9 @@ What the sim should hold after any rule change, and what to turn when it misses.
 - **Comebacks fell to 1.0–2.3 a shift in crews** (Quick 1.4 / 1.0, Full 2.3 / 1.7 at 2p / 4p; target 3–6). Baselining twice as often takes twice as many alarms off the row. The row is the game's signature, so this is the first thing to look at: a wider row (`ROWSHIFT`) or the boss pulling it more.
 - **The solo spread is 17–19 points.** The Hunter's die in the first round only took the solo Hunter from 58 / 59% to 25 / 29%; the solo agent setup brought it back to 46 / 50%, but lifted the Responder (63 / 69%) and Soarcerer (61 / 64%) too. The owner closes gaps with items and agents, not analyst buffs. Agents that pay off in multi-alarm fights only help once those fights are common (see comebacks): the Correlation Agent (`CORR=1`) cost crews 4–5 points while comebacks stay at 1–2.5 a shift.
 - **Full Shift scares miss at every crew size** (39 / 34 / 28% against 40%).
-- **Pairs with the Hunter and the Soarcerer are lowest** (46% Quick, 49% Full): the bot keeps whoever has the most HP on point, so the Soarcerer baselines on point less than a player who takes point on purpose would. Putting the bot's Soarcerer on point lifted 4-player crews to 72–76%, so it stays off.
+- **Pairs with the Hunter and the Soarcerer are lowest** (46% Quick, 49% Full): the bot keeps whoever has the most HP on point, so the Soarcerer baselines on point less than a player who takes point on purpose would. A deliberate player was measured on 2026-11-19 ([history](#a-deliberate-player-the-soarcerer-on-point-always-baselining-2026-11-19)): the Soarcerer on point alone moves crews 0–3 points; on point and always baselining lifts Full 4-player crews to 72% (Quick 58%).
 - **Shifts are longer:** solo 19 rounds in Quick (was 17) and 21 in Full (was 18), from the extra Baseline dice. "About 30 minutes" for Full needs a table to time it.
-- **The bot baselines less than it should in Full:** always baselining wins 61 / 62 / 66% against the bot's 58 / 59 / 56%.
+- **A deliberate player beats the Full 4-player target.** Always baselining: Quick 57 / 51 / 55%, Full 59 / 58 / 64%. The Soarcerer on point and always baselining: Quick 57 / 55 / 58%, Full 59 / 63 / 72% (600 games a crew size, 2026-11-19). Quick stays in 50–60% either way; Full 2p and 4p go over. The lever, if a table confirms it: Full's 4-player setup item or the Soarcerer's two Baseline dice.
 - **4-player deaths are pile-ups.** Of the deaths from 5+ HP in one round, 74–86% happened with 3–6 alarms in play (600 games, 2026-11-04, before this pass). A cap of 2 comebacks per row roll is the lever to try, if a table finds it unfair.
 - **The other proposed cards** (2026-11-04 history) are simmed but not in the deck.
 
@@ -215,6 +215,7 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `ENGPT` | the Engineer on point: `other` (default since 2026-11-05): a double of theirs can guard another analyst; `crewguard` (the whole crew), `two` (turn up to two dice), `dbl` (a turned die keeps its double), empty for none |
 | `RESPT` | proposal: a fight won with the Responder on point heals the lowest analyst this much (off) |
 | `SOANEW`, `SOAPERK`, `SOATUCK` | the Soarcerer: `SOANEW=basedie2` (default since 2026-11-05): on point, two more dice every round while baselining; `basedie` (one more), `both` (one more and the draw), `drawpoint` (each baseline on point draws an item, 2026-11-04), `twinown` (their agents count as two, earlier that day), `wilddbl` (any die a double for baselining, the rule before), `wildbase`, `up1` (a tuck under their agent also overclocks it) and `pair5` were tried; the old 2-die cost (`SOAPERK=auto`) and tuck draw (`SOATUCK=1`) are off |
+| `POINT` | who's on point: `bot` (default, whoever has the most HP); `soa`, the Soarcerer whenever they're in the crew (a deliberate player, measured 2026-11-19) |
 | `HP` | starting HP; skips the tune-to-50% search |
 | `N6DICE` | n6: dice per analyst each round (default 1; on point +1) |
 | `N6SOLO` | n6: dice a solo player rolls (default 3: two own plus the crew die) |
@@ -340,6 +341,26 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### A deliberate player: the Soarcerer on point, always baselining (2026-11-19)
+
+No rule changes. The targets are measured with a bot that keeps whoever has the most HP on point and baselines only when the crew is healthy. Two things a player might do on purpose, measured under the tuck traits of 2026-11-19 before the first table playtest.
+
+`SYS=n6`, 600 games per crew size (the sim's seeds, so the bot row is the bare run), Quick HP 10 / Full HP 13, 1p / 2p / 4p, 2026-11-19. Baselines are per shift. The last column is the three 2p crews with the Soarcerer, 600 games.
+
+| Play | Quick win | Full win | Baselines, Quick / Full | 2p with the Soarcerer, Quick / Full |
+| --- | --- | --- | --- | --- |
+| (a) The bot | 54 / 53 / 52% | 57 / 57 / 58% | 3.6 / 3.1 / 3.4 · 3.8 / 3.5 / 3.5 | 51 / 55% |
+| (b) Always baseline (`BASEPICK=always`) | 57 / 51 / 55% | 59 / 58 / **64%** | 4.6 / 4.3 / 4.5 · 5.3 / 5.0 / 5.3 | 52 / 57% |
+| (c) The Soarcerer on point (`POINT=soa`) | 54 / 53 / 52% | 57 / 58 / **61%** | 3.6 / 3.3 / 3.5 · 3.8 / 3.7 / 3.6 | 54 / 59% |
+| (b) and (c) | 57 / 55 / 58% | 59 / **63** / **72%** | 4.6 / 4.5 / 4.8 · 5.3 / 5.3 / 5.5 | 58 / 66% |
+
+Solo is the same in (a) and (c): a solo Soarcerer is always on point.
+
+- **Quick holds.** Every row stays inside 50–60%.
+- **Full 4p breaks it.** Always baselining is 64%; with the Soarcerer on point too, 72%. Full 2p goes to 63% with both.
+- **The Soarcerer on point does little alone** (0–3 points): their two extra dice only come while the crew baselines, and the bot still baselines only when it's healthy. The 72–76% noted under the 2026-11-05 rules doesn't hold for (c) alone today; (c) with (b) reaches it in Full.
+- Nothing changed: the targets stay as they are until a table shows players doing this. Knob: `POINT=soa` (default `bot`).
 
 ### Tuck traits with nothing to check each round (2026-11-19)
 

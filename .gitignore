@@ -44,3 +44,6 @@ exports/
 
 # Ink & Static generator output (node tools/ink/<batch>/scenes.js); merged into data/ by tools/ink/merge.js
 tools/ink/*/ink-art.json
+
+# macOS Finder metadata
+.DS_Store

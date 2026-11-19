@@ -3,8 +3,9 @@ stages: [test]
 
 test:
   stage: test
-  # Playwright's image ships Node and Chromium, so the rendered card checks run instead of skipping.
-  image: mcr.microsoft.com/playwright:v1.64.1-noble
+  # No browser here on purpose: Linux Chromium lays out the old print deck's text wider than macOS,
+  # so its two rendered overflow checks skip in CI and run on a Mac with `npm test`.
+  image: node:20
   cache:
     key:
       files: [package-lock.json]

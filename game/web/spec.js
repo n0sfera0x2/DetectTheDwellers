@@ -249,7 +249,7 @@ test('Full Shift: after the 1st, 3rd and 5th fight won, the top story card is th
   const O = fight(['HUN', 'RES'], ['spray'], { dice: [[0, 1], [0, 1]], mode: 'full' }), ol = O.feed.length; win(O, 2); assert.equal(O.feed.length, ol, 'no story card after the 2nd');
   const Q = fight(['HUN', 'RES'], ['spray'], { dice: [[0, 1], [0, 1]] }), ql = Q.feed.length; win(Q, 1); assert.equal(Q.feed.length, ql, 'Quick Shift has no story deck');
 });
-test('Lockjaw +2 until it has lost two dice; Regen puts back the die it lost; Escalating at round end', () => {
+test('Lockjaw +2 until it has lost two dice; Regen puts back the die it lost; Escalating +2 when it comes back (2026-11-19)', () => {
   const G = fight(['ENG', 'SOA'], ['boss'], {});
   const bd = CARDS.BOSS_DMG; assert.equal(bd, 5); // every boss hits for 5 since the squeeze (2026-11-03)
   assert.equal(E.dmgOf(G, G.boss), bd + 2); G.boss.off[0] = true; assert.equal(E.dmgOf(G, G.boss), bd + 2);
@@ -259,7 +259,7 @@ test('Lockjaw +2 until it has lost two dice; Regen puts back the die it lost; Es
   E.assign(H, 0, mi.uid, p); E.assign(H, 1, mi.uid, slotOf(mi, 6)); H.hp = [99, 99]; E.endRound(H);
   assert.equal(offCount(mi), 1); assert.equal(mi.off[p], true); assert.deepEqual(E.remaining(mi), [5, 6, 6]); // the 6 it lost last is back; the 5 stays taken
   assert.ok(H.log.some(l => /regenerates: its 6 goes back/.test(l.text)));
-  assert.equal(E.dmgOf(H, mob(H, 'wyrmling')), 5);
+  const w = mob(H, 'wyrmling'); assert.equal(E.dmgOf(H, w), 4, 'no per-round climb'); w.back = 1; assert.equal(E.dmgOf(H, w), 6, 'a comeback hits for 2 more');
 });
 test('roll: on point rolls two (a Hunter on point three); solo rolls two of their own plus the crew die; a Triage Agent’s holder rolls one more of their own', () => {
   const G = newG({ team: ['HUN', 'RES'], seed: 9 }); G.agents = [[], [{ uid: 'k1', t: 'triage' }]]; G.point = 0; E.flip(G); if (G.phase === 'roll') E.roll(G);
@@ -584,7 +584,7 @@ test('the full pool: the twelve new situations, each as its card says', () => {
   E.resolveSit(G, 'ok'); assert.deepEqual(G.row, [lo]); assert.ok(G.gone.includes(hi));
   // The CEO's Inbox: everyone loses 2, or the next alarm gets +2 Damage for that fight only.
   G = T('ceo'); E.resolveSit(G, 'quarantine'); assert.deepEqual(G.hp, [E.HP - 2, E.HP - 2]);
-  G = T('ceo'); E.resolveSit(G, 'letride'); G.row = []; const c = G.feed[0], dm = c.dmg; E.flip(G); assert.equal(E.dmgOf(G, c), dm + 2 + (c.kw === 'ramp' ? c.up : 0));
+  G = T('ceo'); E.resolveSit(G, 'letride'); G.row = []; const c = G.feed[0], dm = c.dmg; E.flip(G); assert.equal(E.dmgOf(G, c), dm + 2 + (c.kw === 'ramp' && c.back > 0 ? 2 : 0));
   G.phase = 'assign'; G.dice = []; c.off = c.off.map(() => true); E.endRound(G); assert.equal(c.plus, 0, 'gone once beaten');
   // Ghost in the Change Window: the next alarm sets a copy of its first die.
   G = T('change'); E.resolveSit(G, 'ok'); G.row = []; const g = G.feed[0], first = g.slots[0], h0 = g.hits; E.flip(G); assert.equal(g.hits, h0 + 1); assert.equal(g.slots[g.slots.length - 1], first);

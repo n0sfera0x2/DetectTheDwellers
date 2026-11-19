@@ -294,7 +294,7 @@ function newGame(sys, team, opt) {
 const d20 = G => 1 + Math.floor(G.r() * 20), d6 = G => Math.floor(G.r() * 6);
 const on = (G, id) => G.team.includes(id);
 const active = (G, t) => G.tray.reduce((s, x, i) => s + (typeAt(G, i) === t && (!aiUp(G) || has(G, i, 'hardened')) ? weight(G, i) : 0), 0); // Hardened: the Rogue AI doesn't switch it off
-const dmgOf = (G, m) => (m.plus || 0) + (m.boss ? 0 : heat(G)) + (m.kw === 'swarm' ? m.left : m.kw === 'mimic' ? Math.max(2, ...G.play.filter(x => x !== m && x.kw !== 'mimic').map(x => dmgOf(G, x))) : 0) + (m.kw === 'swarm' || m.kw === 'mimic' ? 0 : m.boss && m.kw === 'wyrm' && m.left > m.hits - 2 ? m.dmg + 2 : m.dmg + (m.kw === 'ramp' ? m.up : 0)); // plus: The CEO's Inbox
+const dmgOf = (G, m) => (m.plus || 0) + (m.boss ? 0 : heat(G)) + (m.kw === 'swarm' ? m.left : m.kw === 'mimic' ? Math.max(2, ...G.play.filter(x => x !== m && x.kw !== 'mimic').map(x => dmgOf(G, x))) : 0) + (m.kw === 'swarm' || m.kw === 'mimic' ? 0 : m.boss && m.kw === 'wyrm' && m.left > m.hits - 2 ? m.dmg + 2 : m.dmg + (m.kw === 'ramp' ? (process.env.RAMP === 'count' ? m.up : m.back > 0 ? 2 : 0) : 0)); // Escalating (2026-11-19): +2 Damage when it comes back (RAMP=count: the old +1 per round it stayed up). plus: The CEO's Inbox
 function hurt(G, k, n) { if (n <= 0 || G.over) return; G.hp[k] = Math.max(0, G.hp[k] - n); G.low = Math.min(G.low ?? G.max, G.hp[k]);
   if (!G.hp[k] && G.trayT && !(G.play && aiUp(G))) { const i = G.tray.findIndex((_, j) => has(G, j, 'persist')); if (i >= 0) { G.trayT[i].splice(G.trayT[i].indexOf('persist'), 1); G.hp[k] = 1; G.stats.persist = (G.stats.persist || 0) + 1; } } // Persist: stay at 1
   if (!G.hp[k]) { G.over = true; G.win = false; } }

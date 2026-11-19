@@ -172,6 +172,7 @@ What the sim should hold after any rule change, and what to turn when it misses.
 - **Pairs with the Hunter and the Soarcerer are lowest** (46% Quick, 49% Full): the bot keeps whoever has the most HP on point, so the Soarcerer baselines on point less than a player who takes point on purpose would. A deliberate player was measured on 2026-11-19 ([history](#a-deliberate-player-the-soarcerer-on-point-always-baselining-2026-11-19)): the Soarcerer on point alone moves crews 0–3 points; on point and always baselining lifts Full 4-player crews to 72% (Quick 58%).
 - **Shifts are longer:** solo 19 rounds in Quick (was 17) and 21 in Full (was 18), from the extra Baseline dice. "About 30 minutes" for Full needs a table to time it.
 - **A deliberate player beats the Full 4-player target.** Always baselining: Quick 57 / 51 / 55%, Full 59 / 58 / 64%. The Soarcerer on point and always baselining: Quick 57 / 55 / 58%, Full 59 / 63 / 72% (600 games a crew size, 2026-11-19). Quick stays in 50–60% either way; Full 2p and 4p go over. The lever, if a table confirms it: Full's 4-player setup item or the Soarcerer's two Baseline dice.
+- **Agents decide wins** (2026-11-19, 600 games a crew size, [history](#how-much-the-agents-carry-2026-11-19)). With no agents in the item deck: Quick 41 / 22 / 21% against 54 / 53 / 52%, Full 41 / 28 / 28% against 57 / 57 / 58%. Crews lose 29–31 points, solo 13–16. No buff needed; what's left is making it visible, which needs a table.
 - **4-player deaths are pile-ups.** Of the deaths from 5+ HP in one round, 74–86% happened with 3–6 alarms in play (600 games, 2026-11-04, before this pass). A cap of 2 comebacks per row roll is the lever to try, if a table finds it unfair.
 - **The other proposed cards** (2026-11-04 history) are simmed but not in the deck.
 
@@ -215,6 +216,7 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `ENGPT` | the Engineer on point: `other` (default since 2026-11-05): a double of theirs can guard another analyst; `crewguard` (the whole crew), `two` (turn up to two dice), `dbl` (a turned die keeps its double), empty for none |
 | `RESPT` | proposal: a fight won with the Responder on point heals the lowest analyst this much (off) |
 | `SOANEW`, `SOAPERK`, `SOATUCK` | the Soarcerer: `SOANEW=basedie2` (default since 2026-11-05): on point, two more dice every round while baselining; `basedie` (one more), `both` (one more and the draw), `drawpoint` (each baseline on point draws an item, 2026-11-04), `twinown` (their agents count as two, earlier that day), `wilddbl` (any die a double for baselining, the rule before), `wildbase`, `up1` (a tuck under their agent also overclocks it) and `pair5` were tried; the old 2-die cost (`SOAPERK=auto`) and tuck draw (`SOATUCK=1`) are off |
+| `AGENTS=0` | the 7 agents are removed from the item deck, not replaced (11 consumables; a measurement, 2026-11-19) |
 | `POINT` | who's on point: `bot` (default, whoever has the most HP); `soa`, the Soarcerer whenever they're in the crew (a deliberate player, measured 2026-11-19) |
 | `HP` | starting HP; skips the tune-to-50% search |
 | `N6DICE` | n6: dice per analyst each round (default 1; on point +1) |
@@ -341,6 +343,25 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### How much the agents carry (2026-11-19)
+
+No rule changes. The owner wants agents to decide wins, not pad them. The last check (2026-11-01, older rules) found they carried little; today's tuck traits make most tucked agents Overclocked.
+
+`AGENTS=0` takes the 7 agents (Triage ×2, Containment ×2, Enrichment, Recovery, Watchlist) out of the item deck. They are removed, not replaced: the deck is the 11 consumables, reshuffled when it runs out. Solo starts with 2 consumables. A baselined alarm with no agent to go under is set aside, as the rules say, so it never comes back. The last row sends it back to the row instead (`TUCKOUT=0`), which takes the tuck's removal away too.
+
+`SYS=n6`, 600 games per crew size (the sim's seeds), Quick HP 10 / Full HP 13, 1p / 2p / 4p, 2026-11-19:
+
+| Item deck | Quick win | Full win | Baselines, Quick / Full |
+| --- | --- | --- | --- |
+| Normal (18 items) | 54 / 53 / 52% | 57 / 57 / 58% | 3.6 / 3.1 / 3.4 · 3.8 / 3.5 / 3.5 |
+| No agents (`AGENTS=0`) | 41 / 22 / 21% | 41 / 28 / 28% | 3.2 / 2.5 / 2.7 · 3.3 / 2.6 / 2.7 |
+| No agents, a baselined alarm goes back on the row (`AGENTS=0 TUCKOUT=0`) | 16 / 12 / 7% | 12 / 11 / 7% | 2.9 / 2.4 / 2.6 · 2.9 / 2.4 / 2.5 |
+
+- **Agents decide wins.** Without them crews lose 29–31 points in both modes, solo 13–16. That is far more than the 2026-11-01 check found.
+- **Taking alarms off the row is most of the rest.** With no agents, setting a baselined alarm aside is still worth 10–29 points; sent back to the row, crews fall to 7–12%. With agents, that removal is the tuck, so an agent's value is its own line plus the alarm it holds.
+- **Not tracked:** a count of rounds where an agent's die or effect changed a result. It needs each round replayed without the agent; not cheap, so it's left out.
+- No buff is needed. Whether players see what their agents did is a table question. Knob: `AGENTS=0` (default: agents in the deck).
 
 ### A deliberate player: the Soarcerer on point, always baselining (2026-11-19)
 

@@ -112,6 +112,7 @@ const HUNEND = process.env.HUNEND || '0', RESARR = process.env.RESARR || '0', BA
 // BASES lists which alarms have it: spray (once a round, reroll one more die), druid (comebacks don't hit on
 // arrival), mailer (the highest-Damage alarm deals 1 less), imp (on point rolls one more die), wyrmling (add 1 to
 // every row roll), mimic (after every won fight, heal 3 split across the crew). BASEPICK=always|never|bot.
+const NOAGENTS = process.env.AGENTS === '0'; // AGENTS=0 (measurement, 2026-11-19): the 7 agents are removed from the item deck, not replaced (11 consumables)
 const POINT = process.env.POINT || 'bot'; // POINT=soa (measurement, 2026-11-19): the Soarcerer is on point whenever they're in the crew
 const BASE = process.env.BASE !== '0', BASEPICK = process.env.BASEPICK || 'bot', BASEDICE = +(process.env.BASEDICE || 2); // 2 since 2026-11-04 (3 since 2026-11-01, was 4)
 // MORE=1 (default, 2026-11-04): all 15 alarms can be baselined (the 1-Damage five, the Kerberoast Enforcer and the
@@ -286,7 +287,7 @@ function newGame(sys, team, opt) {
     feed = shuffle([...story, ...core.slice(0, (MODE === 'full' ? +(process.env.DEALF || 14) : +(process.env.DEALQ || 8)) - story.length)], r); if (MODE === 'full' && STORYAT) { feed = core.slice(0, +(process.env.DEALF || 9)); storyDeck = shuffle(SITS_STORY.map(s => ({ sit: s })), r); } // STORYAT: story deck flips after these fights won // DEALQ, DEALF, STORYF: deal sizes mobs = feed.filter(c => !c.sit);
   } else { mobs = shuffle(D.mobs.filter(m => CLASSIC.includes(m.id)), r).slice(0, opt.deal || 6).map(m => mk(m)); feed = SIT && sys === 'n6' && FEED === 'mixed' ? shuffle([...mobs, ...SITS.map(s => ({ sit: s }))], r) : mobs; }
   return { storyDeck, sys, team, n, r, hp: team.map(() => opt.hp), max: opt.hp, feed, boss: mk(D.bosses[Math.floor(r() * 3)], true),
-    row: [], play: [], trayK: [], trayT: [], pendT: [], kit: shuffle(NEWITEMS ? KIT.slice() : KIT.flatMap(t => [t, t]), r), discard: [], tray: [], point: 0, over: false, win: false,
+    row: [], play: [], trayK: [], trayT: [], pendT: [], kit: shuffle(NEWITEMS ? KIT.filter(t => !NOAGENTS || !isAgent(t)) : KIT.flatMap(t => [t, t]), r), discard: [], tray: [], point: 0, over: false, win: false,
     stats: { rounds: 0, choice: 0, back: 0, sit: {}, ran: 0, focus: 0, flipped: 0 }, smart: opt.smart !== false,
     cond: team.map(() => ({ rattled: false, exposed: false, focused: false })), sits: shuffle(SITS, r), pending: [], addSix: 0, runNext: false, badgeHit: false, aug: [] };
 }

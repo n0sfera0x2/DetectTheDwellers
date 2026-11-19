@@ -172,12 +172,16 @@ const TRAIT = process.env.TRAITSET === 'agent' ? { imp: 'twin', druid: 'stealth'
   // round 2 it counts as two), Feedback (each round it works, its holder heals 1), Siphon, Callback, Hardened (it keeps
   // working against the Rogue AI).
   : process.env.TRAITSET === 'v4' ? { imp: 'overclock', wraith: 'twin', specter: 'signature', wyrmling: 'escalate', mimic: 'feedback', leech: 'siphon', bat: 'callback', druid: 'hardened' }
-  // TRAITSET=v5 (default, 2026-11-04): every trait changes the agent itself, never its holder or the row. Golden
+  // TRAITSET=v5 (2026-11-04): every trait changes the agent itself, never its holder or the row. Golden
   // (counts as two against the boss), Rooted (counts as two while its holder is at half HP or less), Stealth (takes no
   // item slot; the card says Siphon), Beacon (counts as two in a fight a comeback joined).
-  : { imp: 'overclock', wraith: 'twin', specter: 'golden', wyrmling: 'escalate', mimic: 'rooted', leech: 'stealth', bat: 'beacon', druid: 'hardened', locker: 'locked', zeroday: 'dayone', deepfake: 'mimica', ...(MORE ? { mailer: 'beacon', hydra: 'beacon', vibe: 'escalate', banshee: 'rooted', macro: 'targeted', spray: 'piercing', ogre: 'piercing' } : {}) };
+  : process.env.TRAITSET === 'v5' ? { imp: 'overclock', wraith: 'twin', specter: 'golden', wyrmling: 'escalate', mimic: 'rooted', leech: 'stealth', bat: 'beacon', druid: 'hardened', locker: 'locked', zeroday: 'dayone', deepfake: 'mimica', ...(MORE ? { mailer: 'beacon', hydra: 'beacon', vibe: 'escalate', banshee: 'rooted', macro: 'targeted', spray: 'piercing', ogre: 'piercing' } : {}) }
   // Targeted (2026-11-04): its agent counts as two while its holder is on point. Piercing: in a multi-alarm fight.
-const V4 = !['agent', 'hybrid', 'v3'].includes(process.env.TRAITSET); // v4 and v5: one tuck, permanent traits
+  // TRAITSET=v6 (default, 2026-11-19): no "counts as two" left, nothing to check each round. Twelve bands Overclock
+  // their agent; the Scavenger keeps Hardened, the LSASS Siphon keeps Siphon (Stealth here), and the Golden Ticket
+  // Ghost is Locked (Exfil can't take its agent).
+  : { imp: 'overclock', wraith: 'overclock', specter: 'locked', wyrmling: 'overclock', mimic: 'overclock', leech: 'stealth', bat: 'overclock', druid: 'hardened', locker: 'locked', zeroday: 'dayone', deepfake: 'mimica', ...(MORE ? { mailer: 'overclock', hydra: 'overclock', vibe: 'overclock', banshee: 'overclock', macro: 'overclock', spray: 'overclock', ogre: 'overclock' } : {}) };
+const V4 = !['agent', 'hybrid', 'v3'].includes(process.env.TRAITSET); // v4, v5 and v6: one tuck, permanent traits
 // KWOVER (2026-11-03): Evasive is gone; the Scavenger and the Golden Ticket Ghost are Exfil (still up at round end:
 // the crew discards an item).
 const KWOVER = process.env.EVASIVE === 'keep' ? {} : { druid: 'exfil', specter: 'exfil' };

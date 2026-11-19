@@ -15,7 +15,7 @@ The 63 cards, standard dice in four colours, and a few coins: crew dice (3 per p
 
 Pick who's on point and flip the top card of the feed. A situation asks you to choose. An alarm sets threat dice under its card. Everyone rolls (on point rolls two), and each die takes out a threat die showing exactly its number. A double counts as two dice, or guards you (a Responder's double may heal anyone 3 instead). Once a round you may take 1 damage to reroll a die. Whatever's left hits back.
 
-Win a fight and draw items: agents that work for the whole crew every round, and consumables you use once. Baseline any alarm (beat it with two more dice) and it slides under an agent, which changes for good: it counts as two, or overclocks, or takes no slot, or keeps working against the Rogue AI. Beaten alarms go on the row and roll to come back, often: they rejoin the fight. Full rules: [game/README.md](game/README.md#the-rules-now).
+Win a fight and draw items: agents that work for the whole crew every round, and consumables you use once. Baseline any alarm (beat it with two more dice) and it slides under an agent, which changes for good: most overclock it, and a few let it take no slot, keep working against the Rogue AI, or stay safe from Exfil. Beaten alarms go on the row and roll to come back, often: they rejoin the fight. Full rules: [game/README.md](game/README.md#the-rules-now).
 
 ## Feedback
 

@@ -90,7 +90,7 @@
   const slotsOf = (G, k) => G.n === 1 ? 6 : 4;
   // Siphon (2026-11-04): an agent with it takes no slot.
   const heldN = (G, k) => G.agents[k].filter(c => !traitsOn(G, c.uid, 'Siphon')).length + G.hand[k].length;
-  // How many agents of type t player k holds (every player's, without k). A Twin agent (the Grifter's trait) counts as two.
+  // How many agents of type t player k holds (every player's, without k). An Overclocked Triage or Enrichment Agent counts as two.
   // The Rogue AI: while it's in play, agents and their traits do nothing.
   const aiUp = G => G.play.some(m => m.boss && m.kw === 'ai');
   // Hardened (2026-11-03): an agent with it keeps working against the Rogue AI.
@@ -102,15 +102,13 @@
   const cardOf = (G, uid) => G.agents.flat().find(c => c.uid === uid);
   const tuckedOn = (G, uid) => G.aug.filter(a => a.host === uid).length;
   // Since 2026-11-03 one tucked alarm per agent, its trait changing that agent for good; since 2026-11-04 every trait
-  // changes the agent, never its holder or the row (sim.js TRAIT v5). Overclock: the agent's Overclocked line (Triage
-  // rolls one more, Enrichment one more turn, Containment cuts 1 more, Recovery heals 2 more). Twin: it counts as two.
-  // Escalate: from round 2 of a fight, two. Golden: two against the boss. Rooted: two while its holder is at half HP
-  // or less. Beacon: two in a fight a comeback joined. Targeted: two while its holder is on point. Piercing: two in a
-  // multi-alarm fight. Siphon (heldN): no slot. Hardened (live): works against the AI.
+  // changes the agent, never its holder or the row. Since 2026-11-19 (sim.js TRAIT v6) nothing is checked each round:
+  // Overclock: the agent's Overclocked line (Triage rolls two more, Enrichment one more turn, Containment cuts 1 more,
+  // Recovery heals 2 more, Watchlist two less). Siphon (heldN): no slot. Hardened (live): works against the AI.
+  // Locked (exfilable): Exfil can't take it.
   const upgraded = (G, uid) => traitsOn(G, uid, 'Overclock') > 0;
   const holderOf = (G, uid) => G.agents.findIndex(h => h.some(c => c.uid === uid));
-  const weight = (G, uid) => { const c = cardOf(G, uid), k = holderOf(G, uid); return 1 + traitsOn(G, uid, 'Twin') + (traitsOn(G, uid, 'Escalate') && G.round >= 2 ? 1 : 0)
-    + (traitsOn(G, uid, 'Golden') && G.play.some(m => m.boss) ? 1 : 0) + (traitsOn(G, uid, 'Rooted') && k >= 0 && G.hp[k] * 2 <= G.max ? 1 : 0) + (traitsOn(G, uid, 'Beacon') && G.cbJoin ? 1 : 0) + (traitsOn(G, uid, 'Targeted') && k === G.point ? 1 : 0) + (traitsOn(G, uid, 'Piercing') && G.play.length >= 2 ? 1 : 0) + (c && upgraded(G, uid) && (c.t === 'triage' || c.t === 'enrich') ? 1 : 0); };
+  const weight = (G, uid) => { const c = cardOf(G, uid); return 1 + (c && upgraded(G, uid) && (c.t === 'triage' || c.t === 'enrich') ? 1 : 0); };
   // The players holding agents that carry a trait: [{ k, uid, a }] (none while the Rogue AI is up).
   const traitHolders = (G, name) => aiUp(G) ? [] : G.aug.filter(a => a.host && CARDS.traitName(a.id) === name).map(a => ({ k: G.agents.findIndex(h => h.some(c => c.uid === a.host)), uid: a.host, a })).filter(x => x.k >= 0);
   // Every held agent with its holder: [{ c, k }].
@@ -216,7 +214,7 @@
     return back;
   }
   function enter(G, m) {
-    if (G.over) return; G.play.push(m); if (m.back > 0 && !m.boss) G.cbJoin = true; // a comeback joined: Beacon agents count as two
+    if (G.over) return; G.play.push(m); 
     if (m.kw === 'beacon') for (const b of rollRow(G, true, `${m.name}’s Beacon`)) enter(G, b);
   }
 
@@ -232,7 +230,7 @@
   function flip(G) {
     if (G.phase !== 'flip') fail('Not time to flip.');
     if (sitDue(G)) return revealSit(G);
-    G.fight++; G.round = 0; G.stats.flips++; G.engUsed = false; /* the Engineer's turn is once a fight (2026-11-05) */ G.play = []; G.cbJoin = false; G.beaten = []; G.sit = null; G.sitDone = false;
+    G.fight++; G.round = 0; G.stats.flips++; G.engUsed = false; /* the Engineer's turn is once a fight (2026-11-05) */ G.play = []; G.beaten = []; G.sit = null; G.sitDone = false;
     G.once = {};
     const pend = G.pending; G.pending = [];
     if (G.feed.length) {
@@ -643,7 +641,7 @@
     G.dice = []; G.undo = []; G.wildAll = false; G.blocks = G.team.map(() => false);
     if (G.over) return G;
     // Exfil (2026-11-03): each Exfil alarm still up at round end, the crew discards an item (their choice: phase 'exfil').
-    const ex = G.play.filter(m => m.kw === 'exfil' && left(m)).length, items = G.team.reduce((s, _, k) => s + heldN(G, k), 0);
+    const ex = G.play.filter(m => m.kw === 'exfil' && left(m)).length, items = G.team.reduce((s, _, k) => s + G.agents[k].filter(c => exfilable(G, c)).length + G.hand[k].length, 0);
     G.exfil = Math.min(ex, items); if (G.exfil) say(G, `Exfil: ${G.play.filter(m => m.kw === 'exfil' && left(m)).map(m => m.name).join(' and ')} ${ex > 1 ? 'are' : 'is'} still up. The crew discards ${G.exfil === 1 ? 'an item' : G.exfil + ' items'}.`, 'mob');
     for (const m of G.play) {
       m.up++;
@@ -655,9 +653,12 @@
     return afterFight(G);
   }
   // Exfil: discard an item someone holds (an agent takes what's tucked under it along). The last one starts the next round.
+  // Locked (2026-11-19, the Golden Ticket Ghost's band): Exfil can't take that agent.
+  const exfilable = (G, c) => !(traitsOn(G, c.uid, 'Locked') && !aiUp(G));
   function exfil(G, uid) {
     if (G.phase !== 'exfil' || !G.exfil) fail('Nothing to discard.');
     for (let k = 0; k < G.n; k++) for (const arr of [G.agents, G.hand]) { const i = arr[k].findIndex(c => c.uid === uid); if (i < 0) continue;
+      if (arr === G.agents && !exfilable(G, arr[k][i])) fail('That agent is Locked: Exfil can’t take it.');
       const [c] = arr[k].splice(i, 1); G.discard.push(c); if (arr === G.agents) loseAug(G, c.uid); G.stats.exfil = (G.stats.exfil || 0) + 1;
       say(G, `Exfil: ${nameOf(G.team[k])} discards the ${KIT_NAME[c.t]}.`, 'kit'); if (!--G.exfil) G.phase = 'roll'; return G; }
     fail('Pick an item someone holds.');
@@ -744,5 +745,5 @@
   }
 
   return { aug, enter, rollRow, backTop, watch, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
-    give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canHeal, heal, threat, heldN, exfil, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
+    give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canHeal, heal, threat, heldN, exfil, exfilable, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

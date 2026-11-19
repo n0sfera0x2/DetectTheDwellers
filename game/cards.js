@@ -77,23 +77,24 @@
   const BOSS_STEPS = [6, 4, 2];
   // Since 2026-11-03: one tucked alarm per agent, and each trait changes its agent for good, nothing once-a-round
   // (sim.js TRAIT v4). Since 2026-11-04 every trait changes the agent itself, never its holder or the row (TRAIT v5).
+  // Since 2026-11-19 nothing is checked each round (TRAIT v6): twelve bands Overclock their agent, three do their own thing.
   const BASE = {
     imp: 'Overclock: its agent’s Overclocked line applies.',
     druid: 'Hardened: its agent keeps working against the Rogue AI.',
-    specter: 'Golden: its agent counts as two against the boss.',
-    wyrmling: 'Escalate: from round 2 of a fight, its agent counts as two.',
-    mimic: 'Rooted: its agent counts as two while its holder is at half HP or less.',
+    specter: 'Locked: Exfil can’t take its agent.',
+    wyrmling: 'Overclock: its agent’s Overclocked line applies.',
+    mimic: 'Overclock: its agent’s Overclocked line applies.',
     leech: 'Siphon: its agent takes no item slot.',
-    bat: 'Beacon: its agent counts as two in any fight a comeback joins.',
-    wraith: 'Twin: its agent counts as two of itself.',
-    // Since 2026-11-04 every alarm has a line (sim.js MORE): the other seven reuse a trait or bring their keyword's.
-    mailer: 'Beacon: its agent counts as two in any fight a comeback joins.',
-    hydra: 'Beacon: its agent counts as two in any fight a comeback joins.',
-    vibe: 'Escalate: from round 2 of a fight, its agent counts as two.',
-    banshee: 'Rooted: its agent counts as two while its holder is at half HP or less.',
-    macro: 'Targeted: its agent counts as two while its holder is on point.',
-    spray: 'Piercing: its agent counts as two in a multi-alarm fight.',
-    ogre: 'Piercing: its agent counts as two in a multi-alarm fight.',
+    bat: 'Overclock: its agent’s Overclocked line applies.',
+    wraith: 'Overclock: its agent’s Overclocked line applies.',
+    // Since 2026-11-04 every alarm has a line (sim.js MORE).
+    mailer: 'Overclock: its agent’s Overclocked line applies.',
+    hydra: 'Overclock: its agent’s Overclocked line applies.',
+    vibe: 'Overclock: its agent’s Overclocked line applies.',
+    banshee: 'Overclock: its agent’s Overclocked line applies.',
+    macro: 'Overclock: its agent’s Overclocked line applies.',
+    spray: 'Overclock: its agent’s Overclocked line applies.',
+    ogre: 'Overclock: its agent’s Overclocked line applies.',
   };
   const traitName = id => BASE[id] ? BASE[id].split(':')[0] : '';
   // One tucked alarm per agent (2026-11-03; it was two, and two upgraded the agent: that is Overclock now).
@@ -166,8 +167,8 @@
   const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
 
   <div class="trow"><b>Fights won</b>${box('1: story')}${box(2)}${box('3: story, alarms +1')}${box(4)}${box('5: story')}${box(6)}</div>
-  <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Enrichment')}${box('Twin')}</div>
-  <div class="trow"><b>This fight</b>${box('Engineer')}${box('Hold the room: +1 item')}${box('Comeback joined')}</div>
+  <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Enrichment')}${box('Enrichment again')}</div>
+  <div class="trow"><b>This fight</b>${box('Engineer')}${box('Hold the room: +1 item')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
   <div class="note"><b>Escalating:</b> a coin each round. <b>Regen:</b> it puts back the last die taken.</div></div>`;
   // Situations (2026-10-30; shuffled into the feed with the alarms since 2026-11-02, the boss underneath). Who's on point is

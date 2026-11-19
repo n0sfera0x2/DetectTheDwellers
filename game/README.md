@@ -1,6 +1,6 @@
 # Detect the Dwellers
 
-**Status:** the rules below are current as of [a first-round Hunter, a once-a-fight Engineer, agents for multi-alarm fights](#a-first-round-hunter-a-once-a-fight-engineer-agents-for-multi-alarm-fights-2026-11-05) (2026-11-05). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
+**Status:** the rules below are current as of [tuck traits with nothing to check each round](#tuck-traits-with-nothing-to-check-each-round-2026-11-19) (2026-11-19). The sim (`SYS=n6`), the print-and-play PDF and the web version all play them. Play it at https://n0sfera0x2.github.io/DetectTheDwellers/. **Next step:** a table playtest (`docs/PLAYTEST.md`).
 
 ## The rules now
 
@@ -28,7 +28,7 @@ One boss, drawn at random, goes face down under the feed. A crew draws 2 items (
 
 **The row.** Beaten alarms always go back on the row, unless they were baselined. Roll the two amber dice: a row alarm comes back if the sum is at most its number. Comebacks return with their printed dice and join the fight; nobody is hit on arrival (since 2026-11-03, when every range also went one step wider: back on 2–3 to 2–6, 8–42% a roll). A coin marks an alarm the first time it comes back.
 
-**Baseline it.** Every alarm has a tuck band (since 2026-11-04). A newly flipped alarm, or a comeback (one more die), can be baselined; never the boss. Set the band's 2 dice too, all showing its main number's opposite side. Beat it with all of them and slide it under an agent someone holds, so only its blue **tuck band** shows below the agent card. That agent gains the band's **trait** for good: each one changes the agent itself, nothing once-a-round. **One** tucked alarm per agent. Once every agent holds one, a baselined alarm goes on the row with no trait. Tucked, the alarm is **off the row** (a card can't be in two places). Discard that agent and the alarm goes back on the row. No agents: set it aside until the next one is drawn.
+**Baseline it (optional).** When an alarm flips, or comes back, on point can make the fight harder for a lasting reward. Never the boss. Add the dice shown on the alarm’s **Baseline it** strip at the bottom of its card (a comeback adds one more). Take out every die, then slide the alarm under an agent card someone holds, so only that strip shows. The agent keeps the strip’s bonus for the rest of the shift (since 2026-11-19 nothing on a strip is checked each round). Twelve strips say **Overclock**: use the agent’s Overclocked line. **One** alarm per agent; once every agent holds one, a baselined alarm goes on the row with no bonus. A tucked alarm can’t come back (a card can’t be in two places), but if its agent is discarded, it goes back on the row. No agent yet? Set the alarm aside until someone draws one.
 
 **After a fight.** Coin the next **fights won** box on the shift tracker. Once 3 fights are won, every alarm (not the boss) deals 1 more Damage for the rest of the shift. **Full Shift:** after the 1st, 3rd and 5th, put the top story card on the feed; it's the next flip. Draw 2 items (solo 1) and decide who takes each.
 
@@ -37,25 +37,25 @@ One boss, drawn at random, goes face down under the feed. A crew draws 2 items (
 
 ### Alarms (15)
 
-Every alarm's dice come from `sim.js` `numbersFor`: a main number, repeated, with its neighbours. All 15 carry a tuck band, one trait each: the agent learns the alarm's own trick, turned around. Ten traits in all: the seven bands added on 2026-11-04 reuse a trait (Beacon, Escalate, Rooted) or bring their keyword's (Targeted, Piercing). Fileless is a d6 rule: there are no agent dice to stop, so Containment skips it (it cuts the highest-Damage alarm that isn't Fileless).
+Every alarm's dice come from `sim.js` `numbersFor`: a main number, repeated, with its neighbours. All 15 carry a tuck band, one trait each. Four traits since 2026-11-19: twelve bands **Overclock** their agent, and three keep a trick of their own (Hardened, Siphon, Locked). None of them is checked each round. Fileless is a d6 rule: there are no agent dice to stop, so Containment skips it (it cuts the highest-Damage alarm that isn't Fileless).
 
 | Card | Dice (1–2p) | Damage | Keyword | Back on | Tuck band (Baseline: 2 dice) |
 | --- | --- | --- | --- | --- | --- |
-| Mailer Daemon | 2 | 1 | Beacon: roll the row when it arrives or comes back | 2–6 | 2 × 5 · **Beacon:** its agent counts as two in any fight a comeback joins |
-| Macro Gremlin | 5 | 1 | Targeted: only on point takes its damage, doubled | 2–6 | 2 × 2 · **Targeted:** its agent counts as two while its holder is on point |
-| Password Sprayer | 4 | 1 | Piercing: blocks don’t stop it | 2–6 | 2 × 3 · **Piercing:** its agent counts as two in a multi-alarm fight |
-| MFA Banshee | 1 | 1 | Stalker: it only hits whoever has the lowest HP | 2–6 | 2 × 6 · **Rooted:** its agent counts as two while its holder is at half HP or less |
-| Vibe Coded App | 6 | 1 | Escalating: +1 Damage every round it stays up | 2–6 | 2 × 1 · **Escalate:** from round 2 of a fight, its agent counts as two |
-| PowerShell Wraith | 2 2 | 3 | Fileless: containment Agents don’t cut its Damage | 2–5 | 2 × 5 · **Twin:** its agent counts as two of itself |
+| Mailer Daemon | 2 | 1 | Beacon: roll the row when it arrives or comes back | 2–6 | 2 × 5 · **Overclock:** its agent’s Overclocked line applies |
+| Macro Gremlin | 5 | 1 | Targeted: only on point takes its damage, doubled | 2–6 | 2 × 2 · **Overclock:** its agent’s Overclocked line applies |
+| Password Sprayer | 4 | 1 | Piercing: blocks don’t stop it | 2–6 | 2 × 3 · **Overclock:** its agent’s Overclocked line applies |
+| MFA Banshee | 1 | 1 | Stalker: it only hits whoever has the lowest HP | 2–6 | 2 × 6 · **Overclock:** its agent’s Overclocked line applies |
+| Vibe Coded App | 6 | 1 | Escalating: +1 Damage every round it stays up | 2–6 | 2 × 1 · **Overclock:** its agent’s Overclocked line applies |
+| PowerShell Wraith | 2 2 | 3 | Fileless: containment Agents don’t cut its Damage | 2–5 | 2 × 5 · **Overclock:** its agent’s Overclocked line applies |
 | Living-off-the-Land Scavenger | 3 3 | 3 | Exfil: still up at round end, the crew discards an item | 2–5 | 2 × 4 · **Hardened:** its agent keeps working against the Rogue AI |
-| DNS Beacon Drone | 4 4 | 3 | Beacon: roll the row when it arrives or comes back | 2–5 | 2 × 3 · **Beacon:** its agent counts as two in any fight a comeback joins |
+| DNS Beacon Drone | 4 4 | 3 | Beacon: roll the row when it arrives or comes back | 2–5 | 2 × 3 · **Overclock:** its agent’s Overclocked line applies |
 | OAuth Consent Grifter | 1 | 3 | Targeted: only on point takes its damage, doubled | 2–4 | 2 × 6 · **Overclock:** its agent’s Overclocked line applies |
-| Rootkit Implant | 5 6 6 | 4 | Regen: at the end of each round, put back one die it lost | 2–4 | 2 × 1 · **Rooted:** its agent counts as two while its holder is at half HP or less |
-| Kerberoast Enforcer | 2 3 3 | 4 | Piercing: blocks don’t stop it | 2–4 | 2 × 4 · **Piercing:** its agent counts as two in a multi-alarm fight |
+| Rootkit Implant | 5 6 6 | 4 | Regen: at the end of each round, put back one die it lost | 2–4 | 2 × 1 · **Overclock:** its agent’s Overclocked line applies |
+| Kerberoast Enforcer | 2 3 3 | 4 | Piercing: blocks don’t stop it | 2–4 | 2 × 4 · **Overclock:** its agent’s Overclocked line applies |
 | LSASS Siphon | 1 1 | 4 | Regen: at the end of each round, put back one die it lost | 2–4 | 2 × 6 · **Siphon:** its agent takes no item slot |
-| PsExec Swarm | 3 4 4 | 4 | Beacon: roll the row when it arrives or comes back | 2–4 | 2 × 3 · **Beacon:** its agent counts as two in any fight a comeback joins |
-| Golden Ticket Ghost | 4 5 5 | 4 | Exfil: still up at round end, the crew discards an item | 2–3 | 2 × 2 · **Golden:** its agent counts as two against the boss |
-| Exfil Courier | 5 5 | 4 | Escalating: +1 Damage every round it stays up | 2–4 | 2 × 2 · **Escalate:** from round 2 of a fight, its agent counts as two |
+| PsExec Swarm | 3 4 4 | 4 | Beacon: roll the row when it arrives or comes back | 2–4 | 2 × 3 · **Overclock:** its agent’s Overclocked line applies |
+| Golden Ticket Ghost | 4 5 5 | 4 | Exfil: still up at round end, the crew discards an item | 2–3 | 2 × 2 · **Locked:** Exfil can’t take its agent |
+| Exfil Courier | 5 5 | 4 | Escalating: +1 Damage every round it stays up | 2–4 | 2 × 2 · **Overclock:** its agent’s Overclocked line applies |
 
 ### Bosses (3, one drawn at random)
 
@@ -123,7 +123,7 @@ The production deck's 18 situations with rules rewritten for the dice. Core card
 
 Conditions are cards kept in front of a player, one of each at most. **Rattled:** your next roll has no doubles. **Exposed:** next fight, each round anything hits you, take 1 more. **Focused:** once, after you roll, turn one of your dice to any number.
 
-**The shift tracker.** A reference card with coin boxes for everything the table would otherwise have to remember: each player's reroll and the Enrichment turns (this round); the Engineer's turn, Hold the room's bonus draw and whether a comeback joined, for Beacon agents (this fight); the fights won, with the story and threat marks; a pending Change Freeze, Pager Storm's Mute die and a Badge fall-back (waiting). It also says how to track Escalating and Regen. The web version tracks all of this itself.
+**The shift tracker.** A reference card with coin boxes for everything the table would otherwise have to remember: each player's reroll and the Enrichment turns, two for an Overclocked one (this round); the Engineer's turn and Hold the room's bonus draw (this fight); the fights won, with the story and threat marks; a pending Change Freeze, Pager Storm's Mute die and a Badge fall-back (waiting). It also says how to track Escalating and Regen. The web version tracks all of this itself.
 
 ### Components
 
@@ -131,18 +131,18 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-05 (late: the Hunter's extra die in a fight's first round only, the Engineer's turn once a fight, the Triage Agent rolls two in a multi-alarm fight, solo starts with 2 items, one an agent; the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer.
+Bot sims, `SYS=n6 N=600`, 2026-11-19 (the tuck traits of 2026-11-19: twelve bands Overclock, plus Hardened, Siphon and Locked; otherwise the rules of 2026-11-05: the Hunter's extra die in a fight's first round only, the Engineer's turn once a fight, the Triage Agent rolls two in a multi-alarm fight, solo starts with 2 items, one an agent; the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer. The decision and scare columns weren't rerun this pass; their values are from 2026-11-05.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 5 HP or less: one boss hit from 0) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 54% | 25 pts | 44% | 94% | 18.5 | 4.2 | 53% | 66% |
-| Quick, 2p | 50% | 21 pts | 52% | 96% | 12.1 | 1.4 | 50% | 76% |
-| Quick, 4p | 51% | 30 pts | 57% | 99% | 10.2 | 1.0 | 51% | 67% |
-| Full, 1p | 58% | 24 pts | 44% | 95% | 19.6 | 5.7 | 53% | 39% |
-| Full, 2p | 54% | 24 pts | 51% | 96% | 13.8 | 2.5 | 43% | 34% |
-| Full, 4p | 57% | 30 pts | 54% | 98% | 11.4 | 1.7 | 46% | 28% |
+| Quick, 1p | 54% | 23 pts | 43% | 94% | 18.1 | 4.1 | 53% | 66% |
+| Quick, 2p | 53% | 23 pts | 51% | 96% | 12.0 | 1.5 | 48% | 76% |
+| Quick, 4p | 52% | 29 pts | 53% | 99% | 10.1 | 0.9 | 48% | 67% |
+| Full, 1p | 57% | 21 pts | 44% | 95% | 19.2 | 5.7 | 50% | 39% |
+| Full, 2p | 57% | 23 pts | 50% | 96% | 13.5 | 2.3 | 46% | 34% |
+| Full, 4p | 58% | 28 pts | 51% | 98% | 11.4 | 1.6 | 43% | 28% |
 
-Solo by analyst: Quick Hunter 46%, Responder 63%, Engineer 50%, Soarcerer 61%; Full 50 / 69 / 52 / 64%. Pairs (600 games each): Quick 42% (Hunter + Soarcerer) to 58% (Responder + Engineer); Full 46% (Hunter + Soarcerer) to 60% (Responder + Engineer). Baselines per shift: about 3.1 in Quick and 3.3 in Full (was 1.6).
+Solo by analyst: Quick Hunter 45%, Responder 63%, Engineer 51%, Soarcerer 64%; Full 49 / 69 / 52 / 64%. Pairs (600 games each): Quick 43% (Hunter + Soarcerer) to 59% (Responder + Engineer); Full 51% (Hunter + Soarcerer) to 62% (Responder + Engineer). Baselines per shift: about 3.0–3.5 in Quick and 3.4–3.7 in Full.
 
 ### Targets
 
@@ -150,17 +150,17 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 54 / 50 / 51% | 58 / 54 / 57% | the mode's HP; solo: starting items; 3–4p: their setup item |
-| Spread across crew sizes | 10 points or less | 4 | 4 | 3–4p: the setup item (the + die is printed) |
-| Solo spread across analysts | 10 points or less | 17 (misses: the Hunter 46%) | 19 (misses: the Hunter 50%, the Responder 69%) | items and agents (the owner's call, 2026-11-05), not the analyst's ability |
-| Pairs, lowest to highest | within 15 points | 42–58% (16, misses) | 46–60% (14) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 25 / 21 / 30 | 24 / 24 / 30 | more decisions per roll |
-| Rounds with a real decision | 60% or more | 94 / 96 / 99% | 95 / 96 / 98% | the reroll; its cost |
-| Rounds with a real dice choice | 40% or more | 44 / 52 / 57% | 44 / 51 / 54% | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 53 / 50 / 51% | 53 / 43 / 46% | the boss's Damage; the threat timing (`ESC`) |
-| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 66 / 76 / 67% | 39 / 34 / 28% (all miss) | Full: its HP; 4p pile-ups |
-| Comebacks per shift | 3–6 | 4.2 / 1.4 / 1.0 (2p and 4p miss) | 5.7 / 2.5 / 1.7 (2p and 4p miss) | the row ranges (`ROWSHIFT`); the feed size |
-| Baselining worth doing | always beats never | +12 / +3 / +17 | +18 / +12 / +31 | the Baseline dice and the traits |
+| Win rate, every crew size | 50–60% | 54 / 53 / 52% | 57 / 57 / 58% | the mode's HP; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 2 | 1 | 3–4p: the setup item (the + die is printed) |
+| Solo spread across analysts | 10 points or less | 19 (misses: the Hunter 45%, the Soarcerer 64%) | 20 (misses: the Hunter 49%, the Responder 69%) | items and agents (the owner's call, 2026-11-05), not the analyst's ability |
+| Pairs, lowest to highest | within 15 points | 43–59% (16, misses) | 51–62% (11) | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 23 / 23 / 29 | 21 / 23 / 28 | more decisions per roll |
+| Rounds with a real decision | 60% or more | 94 / 96 / 99% (2026-11-05, not rerun) | 95 / 96 / 98% (2026-11-05, not rerun) | the reroll; its cost |
+| Rounds with a real dice choice | 40% or more | 43 / 51 / 53% | 44 / 50 / 51% | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 53 / 48 / 48% | 50 / 46 / 43% | the boss's Damage; the threat timing (`ESC`) |
+| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 66 / 76 / 67% (2026-11-05, not rerun) | 39 / 34 / 28% (all miss; 2026-11-05, not rerun) | Full: its HP; 4p pile-ups |
+| Comebacks per shift | 3–6 | 4.1 / 1.5 / 0.9 (2p and 4p miss) | 5.7 / 2.3 / 1.6 (2p and 4p miss) | the row ranges (`ROWSHIFT`); the feed size |
+| Baselining worth doing | always beats never | +12 / +6 / +18 | +17 / +15 / +32 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
 | The boss is a climax (Full) | beating it once there: 75% or less | 77 / 72 / 70% (1p over) | 72 / 66 / 68% | its row marks (`BOSSSTEPS`) |
 
@@ -230,7 +230,7 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `FEED` | `mixed` (default, 2026-11-02): situations shuffled into the feed. `split` (classic only): a situation before every flip after the first |
 | `TRAITS=0` | the 2026-11-01 crew-wide Baseline lines instead of agent traits |
 | `TRAITSET=agent` | the rejected agent-only traits (Twin, Stealth, Relay, Repair) |
-| `TRAITSET` | `v5` (default since 2026-11-04): every trait changes the agent; `v4` the set with Signature, Feedback, Siphon heals and Callback |
+| `TRAITSET` | `v6` (default since 2026-11-19): twelve bands Overclock their agent, plus Hardened, Siphon and Locked, nothing checked each round; `v5` the 2026-11-04 set with the conditional “counts as two” traits (Beacon, Escalate, Golden, Rooted, Targeted, Piercing, Twin); `v4` the set with Signature, Feedback, Siphon heals and Callback |
 | `STORYAT` | Full Shift: the fights won after which a story card is the next flip (default `2,4,6`); `STORYAT=0`: the old deal, 3 story cards shuffled into 11 |
 | `NEWCARDS` | proposed cards to add, comma-separated: `locker`, `zeroday`, `stuffer`, `deepfake` (alarms), `honeypot`, `watchlist`, `correl` (agents), `kill`, `firewall`, `takedown` (consumables) |
 | `DECK18` | the Watchlist Agent and Takedown Request in the item deck (default on; `DECK18=0` the 16-item deck) |
@@ -278,6 +278,16 @@ Add `?seed=123` to the URL to replay a shift.
 
 `prefers-reduced-motion` turns the motion off. Animations use transform, opacity and filter only.
 
+**Layout (2026-11-19): one table, one screen.** After a UI audit and critique found that a fight needed scrolling (1,678px tall on desktop, 3,110px on a phone), that the fixed dice dock covered the threat dice on phones and 1280×720 laptops, and that half the fight screen's text was under 12px, the page was rebuilt as one viewport-high table. Where the bullets below mention the mat's item groups, the side panel or the dock, read this instead.
+
+- From top to bottom: the shift bar (clock, feed bar, Sound, **Keys on/off**, Cards, Log, New); the **persistence row strip** (every row alarm with its back-on range, the last amber pair, what it brought back, lit); the **stage** (the fight, or the flip, situation, deal or tuck between fights); **your dice** right under the threat dice; one **plate per analyst** (HP, Incoming, on point, the ability, conditions, items as chips with an n/4 count, a tucked alarm as a band on its agent's chip); and **one instruction line** with the main buttons. Nothing is fixed over a tap target; the page itself never scrolls.
+- **Alarms are compact tiles:** scene, name, keyword, Damage, the threat dice (44px, 52px for a lone alarm on a laptop or desktop), what it does this round, Baseline it, and an **ⓘ** with This alarm, Keyword, Beaten and To hit. A lone alarm on a wide screen shows those rows beside it as **What now**. Three or more alarms on a phone become compact rows.
+- **Every printed card is one hover, tap or keyboard focus away** (the peek), so no card face is shrunk on the table: alarms, item and condition chips, the ability chip and row alarms all open the full card.
+- **Triage Agent dice sit in the tray** with the rest, marked as agent dice.
+- The plates scroll in their own box when a big crew holds many items; the stage keeps a floor so alarms never collapse. Between fights on a phone the plates show HP only, until the deal or the tuck.
+- **Safety nets:** End round asks once while a die can still hit, guard or heal (**End round anyway**); a round that would drop someone opens the instruction line with "Hunter drops this round".
+- **Access:** focus moves to the next die (or End round) after each placement; the gallery, log, boss reveal and end screen take focus, make the table inert, close on Esc where it makes sense, and give focus back; the ⓘ takes focus and stays open across re-renders; a persistent live region announces dice rolled, HP lost, guards, alarms down and row comebacks; round steps show state with colour and a ✓, not faded text; **Keys off** turns every single-key shortcut off and hides the hints (stored per browser); key hints are `aria-hidden` and the keys go in `aria-keyshortcuts`.
+
 **What it plays:** exactly the paper rules sheet ([The rules now](#the-rules-now)).
 
 - 1–4 players, each with their own analyst (Hunter, Responder, Engineer, Soarcerer), all at 10 HP.
@@ -303,8 +313,13 @@ Add `?seed=123` to the URL to replay a shift.
 | J | A double takes just its match |
 | U or Backspace | Undo |
 | E | End round |
+| X | Reroll the selected die (take 1) |
+| O | Engineer: turn to the opposite side |
+| B | Baseline it |
 | L | Log |
 | Esc | Back out of a double's second pick, deselect, or close |
+
+**Keys on/off** in the top bar turns all of these off except Esc (WCAG 2.1.4); the choice is kept per browser.
 
 **Files:**
 
@@ -325,6 +340,29 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### Tuck traits with nothing to check each round (2026-11-19)
+
+A design review after research into roguelike card games that ship on paper and on screen (the Slay the Spire board game's chief complaint is bookkeeping). Twelve of the 15 tuck bands gave the agent a conditional “counts as two” (seven traits: Beacon, Escalate, Golden, Rooted, Targeted, Piercing, Twin), and the table had to check each one every round. The owner had already rejected “counts as two” as swingy and hard to track.
+
+#### What changed
+
+- **Twelve bands say Overclock:** its agent’s Overclocked line applies, for good. That line is already printed on every agent card.
+- **Golden Ticket Ghost: Locked.** Exfil can’t take its agent (its own Exfil, turned around).
+- **Unchanged:** the Scavenger’s Hardened and the LSASS Siphon’s Siphon. Four traits in all, and none is checked each round.
+- **Shift tracker:** the Beacon “comeback joined” box is gone; the second Enrichment box reads “Enrichment again” (an Overclocked Enrichment Agent turns twice a round).
+- Sim: `TRAITSET=v6` (default); `TRAITSET=v5` plays the old set.
+
+#### What was tried (`SYS=n6`, 600 games a row, Quick HP 10 / Full HP 13, 1p / 2p / 4p, 2026-11-19)
+
+| Set | Quick win | Full win | Baselining vs never, Quick / Full |
+| --- | --- | --- | --- |
+| v5, the old traits | 54 / 50 / 51% | 58 / 54 / 57% | +12 / +3 / +17 · +18 / +12 / +31 |
+| Conditionals become Overclock, Twin stays | 54 / 53 / 53% | 58 / 57 / 58% | +12 / +6 / +19 · +18 / +15 / +32 |
+| **Shipped:** Twin becomes Overclock too, Golden Ticket Locked | 54 / 53 / 52% | 57 / 57 / 58% | +12 / +6 / +18 · +17 / +15 / +32 |
+| Burn it: slide the tucked alarm onto the row to Overclock its agent for one round | 48–50 / 47–49 / 44–47% | 47–53 / 47–52 / 49–53% | lower |
+
+Burn it lost 4–10 points with every bot timing tried (in a multi-alarm fight, at low HP, against the boss), though it raised comebacks by 0.4–1.4 a shift. **Cost:** twelve bands now say the same thing, so most alarms no longer teach their agent their own trick. A later pass could give a few their own permanent trait, Locked-style.
 
 ### A first-round Hunter, a once-a-fight Engineer, agents for multi-alarm fights (2026-11-05)
 

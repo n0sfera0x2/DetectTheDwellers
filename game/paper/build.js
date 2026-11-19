@@ -42,7 +42,7 @@ const rules = `<section class="page rules">
 </div>
 <div>
 <h2>Baseline it</h2>
-<p>Every alarm has a <b>tuck band</b>. A newly flipped alarm can be baselined (a comeback too, with one more die): set the band’s 2 dice as well. Beat it with them all and slide it under an agent someone holds, so only its band shows. That agent gains the band’s <b>trait</b> for good. <b>One</b> alarm per agent. Tucked, the alarm is <b>off the row</b>; discard the agent and it goes back on the row. No agents: set it aside until one is drawn.</p>
+<p><b>Baseline it (optional).</b> When an alarm flips, or comes back, you can make the fight harder for a lasting reward. Add the dice shown on its <b>Baseline it</b> strip at the bottom of the card (a comeback adds one more). Take out every die, then slide the alarm under an agent card so only that strip shows. The agent keeps the strip’s bonus for the rest of the shift. Most say <b>Overclock</b>: use the agent’s Overclocked line. <b>One</b> alarm per agent. A tucked alarm can’t come back, but if its agent is discarded, it goes back on the row. No agent yet? Set the alarm aside until someone draws one.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>

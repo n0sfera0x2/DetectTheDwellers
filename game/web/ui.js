@@ -1,21 +1,27 @@
-// Detect the Dwellers: the page script. Renders the engine state (CDEngine) with the shared paper card
-// markup (CDCards) and adds live state around the cards: the threat dice set under each card (taken ones turned
-// aside), slot highlights for the selected die, stamps, and the motion and sound of the real game (ui/ui.js): cards
-// flip in, comebacks get a Back stamp, a beaten mob goes down, dice tumble and land, short Web Audio stings.
-// Nothing is drawn on a card face. Inlined into web/index.html by web/build.js.
+// Detect the Dwellers: the page script. Renders the engine state (CDEngine) with the shared paper card markup
+// (CDCards). Since 2026-11-19 the game is one table on one screen: the shift bar,
+// the persistence row strip, the stage (the fight, or what happens between fights), your dice right under the threat
+// dice, a plate per analyst, and one instruction line with the main button. Nothing is fixed over a tap target and no
+// card face is shrunk: every printed card is one hover, tap or keyboard focus away (data-peek). Live state (threat dice
+// taken, stamps, highlights) sits around the cards, never on them. Overlays (gallery, log, boss reveal, end screen)
+// take focus and make the table inert; #live announces rolls, hits and comebacks; Keys on/off gates the single-key
+// shortcuts. Inlined into web/index.html by web/build.js.
 (function () {
   const E = window.CDEngine, A = window.CDCards, D = window.CD_DATA, ART = window.CD_ART || {};
   const app = document.getElementById('app'), live = document.getElementById('live');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const qs = new URLSearchParams(location.search || '');
-  const UI = { G: null, sel: null, more: null, guarding: null, dealTo: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false,
+  const KEYS_LS = 'cd-keys';
+  const keysOn = () => { try { return localStorage.getItem(KEYS_LS) !== '0'; } catch (e) { return true; } };
+  const UI = { G: null, sel: null, more: null, guarding: null, dealTo: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false, keys: keysOn(), info: null, opener: null, overlay: null,
     setup: { team: ['HUN', 'RES'], mode: 'quick' }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
   const nm = id => A.cls(id).name;
   const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
   const mmss = ms => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   const dataMob = id => D.mobs.find(m => m.id === id);
-  const cardFor = m => m.boss ? A.bossCard(A.boss(m.id)) : A.mobCard(dataMob(m.id));
   const cardKey = m => m.boss ? 'boss:' + m.id : 'mob:' + m.id;
+  // Key hints in running text: hidden on touch screens and while Keys is off (CSS .kh).
+  const kh = t => `<span class="kh"> (${t})</span>`;
   const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } };
 
   // ---- Art helpers (as ui/ui.js): scenes fill their frame; analyst thumbnails crop to the analyst and their screen ----
@@ -84,7 +90,7 @@
   function snap(G) { return G ? { hp: G.hp.slice(), inPlay: new Set(G.play.map(m => m.uid + ':' + m.back)), down: new Set(G.play.filter(m => !E.left(m)).map(m => m.uid)),
     off: offKeys(G), rows: G.rows.length, phase: G.phase, round: G.round, fight: G.fight, dice: G.dice.length, bossOut: G.bossOut, over: G.over, guards: G.dice.filter(d => d.used === 'guard').length } : null; }
   function diff(b, G) {
-    const fx = { enter: new Set(), ko: new Set(), struck: new Set(), hurt: new Set(), row: null, roll: false, boss: false, over: false, guard: false };
+    const fx = { enter: new Set(), ko: new Set(), struck: new Set(), hurt: new Set(), row: null, roll: false, boss: false, over: false, guard: false, hpBefore: b ? b.hp : [] };
     if (!b || !G) return fx;
     G.play.forEach(m => { if (!b.inPlay.has(m.uid + ':' + m.back)) fx.enter.add(m.uid); if (!E.left(m) && !b.down.has(m.uid)) fx.ko.add(m.uid); });
     offKeys(G).forEach(k => { if (!b.off.has(k)) fx.struck.add(k); });
@@ -139,6 +145,9 @@
     if (fx.over) Sound.play(G.win ? 'win' : 'loss', 300);
     const lines = [];
     if (fx.row) lines.push(`Row roll ${fx.row.pair[0]} plus ${fx.row.pair[1]}, ${fx.row.roll}: ${fx.row.back.length ? fx.row.back.join(', ') + ' came back' : 'nothing came back'}.`);
+    if (fx.roll) lines.push(`You rolled ${G.dice.map(d => `${d.n}${d.dbl ? ' (double)' : ''}${G.n > 1 ? ' for ' + E.dieOwner(G, d) : ''}`).join(', ')}.`);
+    fx.hurt.forEach(k => lines.push(`${nm(G.team[k])} takes ${fx.hpBefore[k] - G.hp[k]}, ${G.hp[k]} HP left.`));
+    if (fx.guard) lines.push('Guard set.');
     if (fx.ko.size) lines.push(G.play.filter(m => fx.ko.has(m.uid)).map(m => m.name).join(', ') + ' is down.');
     if (fx.over) lines.push(G.win ? 'Shift survived.' : 'Shift lost.');
     say(lines.join(' '));
@@ -158,10 +167,12 @@
     UI.sel = after ? after.i : null;
   }
   // A double with a take left stays selected for its second number; any other die moves on to the next one.
-  function doAssign(di, uid, p, q) { UI.more = null; act(() => E.assign(UI.G, di, uid, p, q)); if (!UI.err) { if (!(E.takesLeft(UI.G.dice[di]) && E.targets(UI.G, di).hits.length)) nextDie(); render(); } }
+  function doAssign(di, uid, p, q) { UI.more = null; act(() => E.assign(UI.G, di, uid, p, q)); if (!UI.err) { if (!(E.takesLeft(UI.G.dice[di]) && E.targets(UI.G, di).hits.length)) nextDie(); render(); focusNext(); } }
+  /** After a die is placed, keyboard focus moves on: the selected die, or End round once nothing is left to place. Never body. */
+  function focusNext() { const G = UI.G; if (!G) return; if (G.phase !== 'assign') return focusKey(G.phase === 'roll' ? 'roll' : 'flip'); focusKey(UI.sel != null ? 'die' + UI.sel : 'end'); }
   // Guard: a double guards only the player who rolled it (2026-11-03).
   function doGuard() { UI.more = null; const d = UI.G.dice[UI.sel]; if (E.guardable(UI.G, d).length > 1) { UI.guarding = UI.sel; render(); } else guardFor(d.k); } // the Engineer on point picks who
-  function guardFor(k) { const i = UI.sel; UI.guarding = null; act(() => E.guard(UI.G, i, k)); if (!UI.err) { nextDie(); render(); } }
+  function guardFor(k) { const i = UI.sel; UI.guarding = null; act(() => E.guard(UI.G, i, k)); if (!UI.err) { nextDie(); render(); focusNext(); } }
   function doPair(i, j) { UI.guarding = null; act(() => E.pair(UI.G, i, j)); if (!UI.err) { UI.sel = i; render(); } }
   // Tap a threat die under a card: the selected die takes it (the engine says why not). A double takes two, one tap each.
   function tapSlot(uid, p) {
@@ -191,7 +202,7 @@
   }
 
   // ---- Views --------------------------------------------------------------------------------------------------------
-  const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button>`;
+  const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button><button class="btn s keys" type="button" data-a="keys" data-k="keys" aria-pressed="${UI.keys}" title="Single-key shortcuts ${UI.keys ? 'on' : 'off'}">Keys ${UI.keys ? 'on' : 'off'}</button>`;
   const dbls = id => A.DOUBLES[id].map(n => A.pip(n, 18)).join('');
   const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '9 cards, then the boss. A story card after your 1st, 3rd and 5th win. The boss pulls the row. About 30 minutes.' };
   function vSetup() {
@@ -205,7 +216,7 @@
         <p class="lede"><b>22:00.</b> The SOC is yours until dawn, and the alarms are already going off. Something is moving 40 GB out the door. Something else is trying every password in the building. Knock one down and it comes back. Hold the line until <b>06:00</b>, because at 05:59 the real attack lands.</p>
         <p class="lede2"><b>Roll. Match. Survive.</b> Every alarm sets dice under its card. Knock them out with dice showing the same number before it hits back. Beat one the hard way and your agents learn its trick. Every shift deals a new night, and a different boss waits at the bottom.</p>
         <p class="t-note"><b>Tuned for 1–4 players,</b> co-op. A Quick Shift takes about 20 minutes.</p>
-        <p class="meta">Same cards as the print-and-play deck. <button class="lnk" type="button" data-a="cards" data-k="cards">See all ${A.mobs().length + A.BOSS_IDS.length + 2 + A.ANALYST_IDS.length + A.AGENT_IDS.length + A.CONS_IDS.length + A.SIT_IDS.length + A.COND_IDS.length} cards</button></p></section>
+        <p class="meta">Same cards as the print-and-play deck. <button class="lnk" type="button" data-a="cards" data-k="cards">See all ${A.mobs().length + A.BOSS_IDS.length + 2 + A.ANALYST_IDS.length + A.AGENT_IDS.length + A.CONS_IDS.length + A.SIT_IDS.length + A.COND_IDS.length} card designs</button></p></section>
       <section class="setup panel" aria-labelledby="crew-h"><h2 class="sech" id="crew-h">Crew · ${n} of 4</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>
         <p class="meta">One analyst per player, up to 4. Tap to add or drop.</p>
         <h2 class="sech" id="mode-h">Shift</h2><div class="modes" role="group" aria-labelledby="mode-h">${Object.entries(E.MODES).map(([k, M]) => `<button type="button" class="shiftm${UI.setup.mode === k ? ' on' : ''}" data-a="mode" data-m="${k}" data-k="mode${k}" aria-pressed="${UI.setup.mode === k}"><b>${M.label}</b><span class="meta">${MODE_SUB[k]}</span></button>`).join('')}</div>
@@ -213,43 +224,8 @@
           <button class="btn p w big" type="button" data-a="start" data-k="start">Clock in</button></div></section>
     </div></div>`;
   }
-  function vTop() {
-    const G = UI.G, fighting = G.phase === 'assign' || G.phase === 'roll', inc = fighting ? E.incoming(G) : null;
-    const between = G.phase === 'flip' || G.phase === 'deal' || G.phase === 'sit' || G.phase === 'tuck';
-    const F = flipped(G), T = G.feedTotal;
-    const label = (G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · card ${F} of ${T}` : between ? (G.feed.length ? `Next: card ${F + 1} of ${T}` : 'Next: the boss') : `Fight ${G.fight} · card ${F} of ${T} · round ${G.round || 1}`) + (E.threat(G) && !G.bossOut ? ` · Threat +${E.threat(G)}` : '');
-    const now = G.bossOut ? T : between && G.phase !== 'sit' ? -1 : F - 1, next = !G.bossOut && (G.phase === 'flip' || G.phase === 'deal') ? F : -1;
-    const bar = [...Array(T)].map((_, i) => `<i class="${i < F && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === T ? ' next' : ''}"></i>`;
-    const crew = G.team.map((id, k) => {
-      const hp = G.hp[k], n = inc ? inc.total[k] : 0, after = Math.max(0, hp - n);
-      const incl = inc ? (G.blocks[k] && !n ? `<span class="inc safe">${ICON.shield}<b>Blocking</b></span>` : n ? `<span class="inc">Incoming <b class="num">−${n}</b>${n >= hp ? ' · lethal' : ''}</span>` : '<span class="inc safe">Nothing incoming</span>') : `<span class="inc">${k === G.point ? '<b class="pt">On point</b>' : 'Off point'}</span>`;
-      return `<div class="pc${k === G.point ? ' on' : ''}" data-hp="${k}"><div class="pc-h">${k === G.point ? '<i class="dot" aria-hidden="true"></i>' : ''}<span class="nm">${esc(nm(id))}</span><span class="hpn"><b class="num">${hp}</b><span class="of">/${G.max}</span></span></div>${vConds(k)}
-        <span class="hpbar${hp / G.max <= .35 ? ' low' : ''}" aria-hidden="true"><i style="transform:scaleX(${after / G.max})"></i>${n ? `<i class="inci" style="transform:translateX(${after / G.max * 100}%) scaleX(${(hp - after) / G.max})"></i>` : ''}</span>${incl}</div>`;
-    }).join('');
-    return `<div class="gtop"><header class="top"><span class="brand">Detect the Dwellers<small>Night shift</small></span>
-      <div class="feed"><span class="fline"><time class="clk" data-clock>${clockNow()}</time><span class="meta c">${label}</span></span><span class="feedbar" aria-hidden="true">${bar}</span></div>
-      <nav class="tbtns">${soundBtn()}<button class="btn s" type="button" data-a="cards" data-k="cards" aria-pressed="${UI.cards}">Cards</button><button class="btn s" type="button" data-a="log" data-k="log" aria-pressed="${UI.drawer === 'log'}">Log</button><button class="btn s" type="button" data-a="quit" data-k="quit">New</button></nav></header>
-      <div class="crew" style="--n:${G.n}" aria-label="Crew HP">${crew}</div></div>`;
-  }
-  // The condition cards a player holds, small beside their HP (hover or tap one to read it full size).
-  function vConds(k) {
-    const G = UI.G, held = A.COND_IDS.filter(c => G.cond[k][c]); if (!held.length) return '';
-    return `<span class="t-conds" aria-label="${esc(nm(G.team[k]))} holds ${held.map(c => A.COND[c][0]).join(', ')}">${held.map(c => `<span class="t-condc ${c}" data-card="cond:${c}">${A.condCard(c)}<b aria-hidden="true">${A.COND[c][0]}</b></span>`).join('')}</span>`;
-  }
   // The amber pair: the two row dice, their sum, and what came back.
   const amber = n => `<span class="t-amb"><span class="f">${A.pip(n, 34)}</span></span>`;
-  function vRowRoll() {
-    const G = UI.G, r = G.lastRow;
-    if (!r || r.fight !== G.fight) return '';
-    const isNew = FX && FX.row === r;
-    return `<div class="pbanner t-rowroll${isNew ? ' new' : ''}${r.back.length ? ' hot' : ''}" data-roll="${r.roll}"><div class="t-pair" aria-hidden="true">${r.pair.map(amber).join('')}<b class="num">=${r.roll}</b></div><p><span class="lead">Row roll · ${esc(r.why)}.</span>
-      ${r.back.length ? `<b>${esc(r.back.join(', '))}</b> ${r.back.length > 1 ? 'come back' : 'comes back'} at full strength.` : 'The row stays quiet.'}
-      ${r.strikes.length ? `<span class="hit">${r.strikes.map(s => `${esc(s.name)} hits everyone for <b class="num">${s.dmg}</b>`).join('; ')}.</span>` : ''}</p></div>`;
-  }
-  function vBossBanner() {
-    const G = UI.G; if (!G.bossOut || G.round > 1) return '';
-    return `<div class="pbanner boss"><time class="clk f">05:59</time><p><span class="lead f">${esc(G.boss.name)} arrives.</span> The feed is empty: this is the last fight. ${esc(A.BOSS_TEXT[G.boss.id][0])}${E.MODES[G.mode].bossRow ? ` Full Shift: ${esc(A.BOSS_TEXT[G.boss.id][1])}` : ''}</p></div>`;
-  }
   // Read-aloud: on the flip, whoever is on point reads the new mob's flavour out, one line at a time (CSS only).
   const lines = t => String(t).split(/(?<=[.!?…])\s+/).filter(Boolean);
   function vAloud() {
@@ -268,24 +244,6 @@
       const label = `${v}${p >= m.printed ? ' (extra die for this crew)' : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
       return `<button class="${c}" data-a="slot" data-u="${m.uid}" data-p="${p}" data-k="slot${m.uid}-${p}" aria-label="${esc(label)}" ${off ? 'disabled' : ''}>${A.pip(v, 30)}${just ? '<i class="burst" aria-hidden="true"></i>' : ''}</button>`;
     }).join('')}</div>`;
-  }
-  function vMob(m) {
-    const G = UI.G, down = !E.left(m);
-    const dmg = E.dmgOf(G, m), inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null;
-    const enter = FX && FX.enter.has(m.uid), ko = FX && FX.ko.has(m.uid), struck = FX && [...FX.struck].some(k => k.startsWith(m.uid + '-'));
-    const lines = [];
-    if (down) lines.push('<span>Beaten. Goes back on the row at the end of the round.</span>');
-    else {
-      lines.push(`<span><b class="num">${E.left(m)}</b> of ${m.hits} dice left · hits for <b class="num">${dmg}</b>${dmg !== m.dmg ? ` <span class="hot">(${dmg > m.dmg ? '+' : ''}${dmg - m.dmg})</span>` : ''}</span>`);
-      if (inc) lines.push(inc.to.length ? `<span class="hot">At round end: ${inc.dmg} to ${inc.to.map(k => esc(nm(G.team[k]))).join(', ')}</span>` : '<span class="safe">At round end: blocked</span>');
-      if (E.canBaseline(G, m)) lines.push(`<button class="btn s cy" type="button" data-a="baseline" data-u="${m.uid}" data-k="base${m.uid}" aria-label="Baseline ${esc(m.name)}: set ${E.baseCost(G, m)} more dice">Baseline it <kbd>B</kbd></button>`);
-      if (m.based) lines.push(`<span>Baselining: beat every die, the ${A.baseDie(m.id)}s too, and the agents learn it</span>`);
-    }
-    if (G.n >= 3) lines.push(`<span>${G.n} players: + die set ${G.n - 2}× (marked +)</span>`);
-    const cls = ['t-slot', down ? 'down' : '', ko ? 'ko' : '', enter ? (m.back ? 'fresh' : 'flipin') : '', struck && !ko ? 'struck' : '', m.back && !down ? 'back' : ''].filter(Boolean).join(' ');
-    return `<div class="${cls}" data-card="${cardKey(m)}" data-uid="${m.uid}">${cardFor(m)}
-      ${m.back && !down ? `<span class="t-stamp bstamp${enter ? ' new' : ''}" aria-hidden="true">${m.back > 1 ? `Back ×${m.back}` : 'Came back'}</span>` : ''}${down ? `<span class="t-stamp beat${ko ? ' new' : ''}">Down</span>` : m.based ? '<span class="t-stamp bstamp base" aria-hidden="true">Baselining</span>' : ''}
-      ${vThreat(m)}<div class="t-under">${lines.join('')}</div></div>`;
   }
   // Between fights: the feed face down (the print card back) and who's on point, as analyst cards with portraits.
   function vFlipDesk() {
@@ -309,21 +267,6 @@
     const steps = [['row', 'Row', row ? 'Roll the amber dice' : 'Nothing on it'], ['roll', 'Roll', 'Everyone rolls'], ['match', 'Match', 'Dice take dice'], ['hits', 'Hits back', 'Alarms still up hit']];
     return `<ol class="t-steps" aria-label="The round">${steps.map(([id, h, s], i) => `<li class="${id === cur || (id === 'row' && cur === 'roll' && row) ? 'now' : ''}${id === 'row' && !row ? ' off' : ''}${(cur === 'match' && (id === 'row' || id === 'roll')) ? ' done' : ''}"${id === cur ? ' aria-current="step"' : ''}><b>${i + 1}. ${h}</b><span>${s}</span></li>`).join('')}</ol>`;
   }
-  function vTable() {
-    const G = UI.G;
-    const head = G.phase === 'flip' || G.phase === 'deal' || G.phase === 'sit' || G.phase === 'tuck' ? '' : vSteps() + `<div class="fhead"><span class="sech f">${G.bossOut ? 'Boss fight' : `Fight ${G.fight}`}${G.play.filter(m => E.left(m)).length > 1 ? ' · multi-alarm' : ''} · round ${G.round || 1} · ${esc(nm(G.team[G.point]))} on point</span><span class="sech a">Row · ${G.row.length}</span></div>`;
-    const bans = vBossBanner() + vRowRoll() + vAloud();
-    let body = '';
-    // A lone mob: the card, and beside it the banners and the round in plain words (as the real game's solo table).
-    if (G.play.length === 1) return `<section class="table solo" aria-label="The fight">${head}<div class="solo-b"><div class="inplay">${vMob(G.play[0])}</div><div class="sb">${bans ? `<div class="bans">${bans}</div>` : ''}${vBrief(G.play[0])}</div></div>${vAgents()}</section>`;
-    if (G.play.length) body = `${G.phase === 'roll' || G.phase === 'assign' ? `<p class="t-now"><b class="sech">What now</b> ${nowText(G)}</p>` : ''}<div class="inplay many">${G.play.map(vMob).join('')}</div>`;
-    else if (G.phase === 'sit' || (G.phase === 'flip' && G.sitDone)) body = vSit();
-    else if (G.phase === 'flip') body = vFlipDesk();
-    else if (G.phase === 'tuck') { const a = G.tuck[0], m = dataMob(a.id);
-      body = `<div class="t-tuckp"><div class="t-slot" data-card="mob:${a.id}">${A.mobCard(m)}<span class="t-stamp beat">Baselined</span></div><div class="sb"><h2 class="sech a">The agents learned it</h2><p class="status"><b>${esc(a.name)}</b> is baselined. Tuck it under an agent someone holds, below. That agent gains <b>${esc(A.traitName(a.id))}</b>: ${esc(A.BASE[a.id].replace(/^[^:]+: /, ''))} Pick the agent with care: discarding it loses the trait.</p><p class="meta">Tucked, it is off the persistence row. If that agent is discarded, it slides out and goes back on the row.</p></div></div>`; }
-    else if (G.phase === 'deal') body = vDeal();
-    return `<section class="table" aria-label="The fight">${head}${bans ? `<div class="bans">${bans}</div>` : ''}${body}${vAgents()}</section>`;
-  }
   // A situation on the mat where the mob would be: its card, one button per option under it, then the outcome (the
   // dice rolled, won or lost) and the next flip.
   const OK_LABEL = { lateral: 'Roll the row', travel: 'Roll 2 dice', ciso: 'Roll 2 dice', pentest: 'Everyone rolls', vendor: 'Take the hit', coffee: 'Drink up', honey: 'Heal up', budget: 'Draw 2 items', intel: 'Drop it', change: 'Brace', ioc: 'Reopen it' };
@@ -344,35 +287,6 @@
     }
     return `<div class="t-sit"><div class="sit-cards"><div class="t-sslot" data-card="sit:${S.id}">${A.sitCard(S.id)}</div></div><div class="sit-side"><h2 class="sech a">Situation · ${esc(sd.kind)}</h2>${acts}</div></div>`;
   }
-  // The items on the mat, below the mobs, grouped by who holds them: each player's agents full size in their slots
-  // (an empty slot is a dashed spot), a Triage Agent's die under its own card (or a dashed spot where it will land),
-  // as the physical die sits under the physical card; then their consumables in hand, small, each with Use.
-  function vAgents() {
-    const G = UI.G, tucking = G.phase === 'tuck', top = G.phase === 'deal' ? G.deal[0] : null, drawn = new Set(G.drawn.map(c => c.uid));
-    // A baselined alarm tucked under this agent: its name and Baseline line, as the tucked card's edge shows at the table.
-    // A baselined alarm tucked under this agent: the real card, slid under it so only its tuck band shows, as at the table.
-    const tucked = c => G.aug.filter(a => a.host === c.uid).map(a => `<div class="t-tuckc" data-card="mob:${a.id}" data-tucked="${a.id}" aria-label="${esc(a.name)} tucked under it: ${esc(A.BASE[a.id])}">${A.mobCard(dataMob(a.id))}</div>`).join('');
-    // With any Triage on the mat, every card keeps the die row's height so the buttons line up.
-    const anyT = G.agents.some(a => a.some(c => c.t === 'triage'));
-    const under = c => { if (c.t !== 'triage') return anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''; const ds = G.dice.filter(d => d.kuid === c.uid);
-      return `<div class="t-adice" role="group" aria-label="${esc(E.KIT_NAME[c.t])} die">${ds.length ? ds.map(d => dieHtml(d, G.dice.length)).join('') : `<span class="t-dph" aria-hidden="true">Rolls<br>${E.weight(G, c.uid) > 1 ? E.weight(G, c.uid) + ' dice' : '1 die'}</span>`}</div>`; };
-    const groups = G.team.map((id, k) => {
-      const ag = G.agents[k], slots = E.slotsOf(G, k), hand = G.hand[k], swap = top && E.dealFull(G, k) && UI.dealTo === k;
-      const cards = ag.map(c => `<div class="t-kslot${swap ? ' swap' : ''}" data-card="agent:${c.t}" data-kuid="${c.uid}">${A.agentCard(c.t)}${tucked(c)}${under(c)}
-        <div class="row"><span class="run">${swap ? 'Swap?' : 'Holding'}</span>${tucking ? `<button class="btn s cy" type="button" data-a="tuck" data-u="${c.uid}" data-k="tuck${c.uid}"${E.tuckedOn(G, c.uid) >= A.TUCK_CAP ? ' disabled' : ''} aria-label="Tuck ${esc(G.tuck[0].name)} under ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])}">${E.tuckedOn(G, c.uid) >= A.TUCK_CAP ? 'Full' : 'Tuck it here'}</button>`
-          : swap ? `<button class="btn s warn" type="button" data-a="drop" data-n="${k}" data-u="${c.uid}" data-k="drop${c.uid}" aria-label="Discard ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])} for the new ${esc(E.KIT_NAME[top.t])}">Discard it</button>` : ''}</div></div>`).join('');
-      const empty = Array.from({ length: Math.max(0, slots - E.heldN(G, k)) }, () => `<div class="t-kslot open"><div class="t-kempty">Item slot</div>${anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''}<div class="row"><span class="run">Empty</span></div></div>`).join('');
-      // Consumables sit in the same slots as agents (2026-11-03), each with Use (or Discard it when dealing to a full player).
-      const hcards = hand.map(c => { const can = E.canUse(G, c.t);
-        return `<div class="t-kslot cons${drawn.has(c.uid) && G.phase !== 'assign' ? ' new' : ''}${can ? ' live' : ''}${swap ? ' swap' : ''}" data-card="agent:${c.t}" data-huid="${c.uid}">${A.agentCard(c.t)}${anyT ? '<div class="t-adice" aria-hidden="true"></div>' : ''}
-          <div class="row"><span class="run">${swap ? 'Swap?' : c.t === 'takedown' && can && G.row.length > 1 ? 'Take down:' : 'Use once'}</span>${swap ? `<button class="btn s warn" type="button" data-a="drop" data-n="${k}" data-u="${c.uid}" data-k="drop${c.uid}" aria-label="Discard ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])} for the new ${esc(E.KIT_NAME[top.t])}">Discard it</button>`
-          : c.t === 'takedown' && can && G.row.length > 1 ? `<span class="tdown">${G.row.map(m => `<button class="btn s cy" type="button" data-a="use" data-u="${c.uid}" data-m="${m.uid}" data-k="use${c.uid}${m.uid}" aria-label="${esc(nm(id))}: take down ${esc(m.name)}">${esc(m.name)}</button>`).join('')}</span>`
-          : `<button class="btn s cy" type="button" data-a="use" data-u="${c.uid}" data-k="use${c.uid}" ${can ? '' : 'disabled'} aria-label="${esc(nm(id))}: use the ${esc(E.KIT_NAME[c.t])}">Use</button>`}</div></div>`; }).join('');
-      return `<div class="t-pk${k === G.point ? ' pt' : ''}${swap ? ' swap' : ''}" data-holder="${k}" role="group" aria-label="${esc(nm(id))}’s items"><h3 class="t-pkh"><span class="nm">${esc(nm(id))}</span><span class="cnt num">${E.heldN(G, k)}/${slots} items</span></h3>
-        <div class="t-pkb"><div class="t-kit">${cards}${hcards}${empty}</div></div></div>`;
-    }).join('');
-    return `<div class="t-agents"><h2 class="sech"><span>Items</span><span class="cnt num">deck ${G.kit.length}</span></h2><div class="t-crewkit" style="--n:${G.n}">${groups}</div></div>`;
-  }
   // Dealing: the item on top of the deal full size on the mat, the rest of the draw beside it, and a Give button per
   // player. An agent for a full player asks which of their agents to discard (on their cards below), or keep it out.
   function vDeal() {
@@ -392,47 +306,19 @@
   // What to do at this step, in one line (the "What now" panel, and above a multi-alarm fight).
   const nowText = G => G.phase === 'roll' ? (G.round >= 1 && G.row.length ? 'Roll: the row first, then everyone’s dice.' : 'Roll everyone’s dice.')
     : G.dice.some(x => !x.used) ? 'Tap one of your dice, then a glowing die under an alarm with the <b>same number</b>. A double takes two, or guards you.' : 'Every die is placed. <b>End the round</b>: alarms still up hit back.';
-  // "What now": what to do this step in a line or two, what this alarm does, and the full rules folded away.
-  function vBrief(m) {
-    const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null, dm = !m.boss && dataMob(m.id);
-    const perks = (G.team.includes('HUN') ? ' Hunter on point: one more die in the first round.' : '') + (G.team.includes('RES') ? ` Responder: a double may heal anyone ${A.RES_HEAL} instead of guarding.` : '') + (G.team.includes('SOA') ? ` Soarcerer on point: ${A.SOA_BASE_DICE} more dice while baselining.` : '') + (G.team.includes('ENG') ? ' Engineer: once a fight, turn a die to its opposite side; on point, a double can guard another analyst.' : '');
-    const now = nowText(G);
-    const hits = !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up at round end, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`;
-    const kw = m.boss ? '+2 Damage until it has lost two dice.' : `<b>${esc(A.kw[dm.ability])}.</b> ${esc(A.kwText[dm.ability])}`;
-    const beaten = m.boss ? 'Beat it and the shift is survived.' : m.based ? 'Beaten with its Baseline dice, it tucks under an agent, off the row.' : `Beaten, it goes on the persistence row: ${backPct(E.backTop(G, m))}% to come back on each row roll.`;
-    const rules = [['To hit', 'A die takes one die under it showing <b>exactly</b> its number. A double counts as two dice showing its number, or guards you. Two of your own dice showing the same number pair up as a double. Once a round you may take 1 to reroll one of your dice (not at 1 HP).' + perks],
-      ['Win the fight', `Draw ${G.n === 1 ? (D.kitSolo === 1 ? 'an item' : D.kitSolo + ' items') : D.kitPerFight + ' items'} and deal them.`],
-      ['Next', m.boss ? 'No more situations: this is the last fight.' : !G.feed.length ? 'The feed is empty: the boss is next.' : `${pl(G.feed.length, 'card')} face down, alarms and situations shuffled, then the boss.`]];
-    return `<div class="rbrief"><h2 class="sech">What now</h2><p class="now">${now}</p><ul>
-      <li><span class="phud f">This alarm</span><span>${hits}${G.cond.some(c => c.exposed) ? ` Exposed: anyone hit takes 1 more.` : ''}</span></li>
-      <li><span class="phud f">Keyword</span><span>${kw}</span></li><li><span class="phud a">Beaten</span><span>${beaten}</span></li></ul>
-      <details class="rules"><summary>Rules</summary><ul>${rules.map(([h, t]) => `<li><span class="phud c">${h}</span><span>${t}</span></li>`).join('')}</ul></details></div>`;
-  }
-  function vSide() {
-    const G = UI.G, r = G.lastRow;
-    // Each row mob as a small amber card: its scene, its number, and the 2d6 sums 2–12 that bring it back.
-    const rowHtml = G.row.length ? `<div class="t-rowlist">${G.row.map(m => `<div class="rcard"><span class="scr">${slice(ART[m.id])}</span><div class="rc-b"><b class="nm">${esc(m.name)}</b><span class="rng">${E.backTop(G, m) >= 2 ? `Back on 2–${E.backTop(G, m)}` : 'Stays put'} · <b>${backPct(E.backTop(G, m))}%</b> a roll</span>
-      <span class="t-track" aria-hidden="true">${Array.from({ length: 11 }, (_, i) => `<i class="${i + 2 <= E.backTop(G, m) ? 'on' : ''}${r && r.fight === G.fight && r.roll === i + 2 ? ' roll' : ''}">${i + 2}</i>`).join('')}</span></div></div>`).join('')}</div>`
-      : '<p class="empty">Empty. Beaten alarms land here and come back on the 2 amber dice.</p>';
-    return `<aside class="t-side">
-      <div class="panel pad"><h2 class="sech a"><span>Persistence row</span><span class="cnt"></span></h2>${rowHtml}</div>
-      <div class="panel pad"><h2 class="sech"><span>Crew cards</span><span class="cnt">${esc(nm(G.team[G.point]))} on point</span></h2><div class="t-crewcards">${G.team.map((id, k) => `<div class="t-cslot${k === G.point ? ' pt' : ''}" data-card="analyst:${id}">${A.analystCard(id)}${k === G.point ? '<div class="lbl">On point</div>' : ''}</div>`).join('')}
-        <div class="t-cslot" data-card="legend">${A.legend}</div></div></div>
-    </aside>`;
-  }
   function dieHtml(d, n) {
-    const G = UI.G, owner = d.src === 'agent' ? 'Agent' : d.src === 'crew' ? 'Crew' : SHORT[G.team[d.k]] + (d.src === 'surge' ? '+' : '');
+    const G = UI.G, owner = d.kuid ? 'Triage' : d.src === 'agent' ? 'Agent' : d.src === 'crew' ? 'Crew' : SHORT[G.team[d.k]] + (d.src === 'surge' ? '+' : '');
     const half = !d.used && d.takes && d.takes.length, gTo = d.used === 'guard' && d.guards != null && d.guards !== d.k ? SHORT[G.team[d.guards]] : '';
     const usedTo = d.used === 'guard' ? 'Guard' + (gTo ? ' for ' + nm(G.team[d.guards]) : '') : d.used === 'pair' ? 'paired with die ' + (d.pairedTo + 1) : d.used ? [...new Set(d.takes.map(x => (G.play.find(m => m.uid === x.uid) || { name: '?' }).name))].join(' and ') : '';
     const label = `${E.faceText(d)}, ${E.dieOwner(G, d)}${d.used ? ', used: ' + usedTo : half ? ', one take left' : ''}${d.paired != null ? ', paired with die ' + (d.paired + 1) : ''}${d.turned ? ', turned by Enrichment' : ''}${d.focused ? ', turned by Focused' : ''}${d.flipped ? ', turned to its opposite side: counts as one die' : ''}${d.rattled ? ', Rattled: no doubles' : ''}`;
     const pr = G.phase === 'assign' && E.pairs(G).some(p => p.includes(d.i));
     const t = !d.used && G.phase === 'assign' ? E.targets(G, d.i) : null, dead = t && !t.hits.length && !t.guard && !pr;
-    const cls = ['t-die', d.src === 'agent' || d.src === 'crew' ? 'agent' : '', d.dbl ? 'dbl' : '', d.used ? 'used' : '', half ? 'half' : '', d.used === 'guard' ? 'grd' : '', d.used === 'pair' ? 'pairx' : '', d.paired != null ? 'paired' : '', pr ? 'pairable' : '', dead ? 'dead' : ''].filter(Boolean).join(' ');
+    const cls = ['t-die', d.src === 'agent' || d.src === 'crew' || d.kuid ? 'agent' : '', d.dbl ? 'dbl' : '', d.used ? 'used' : '', half ? 'half' : '', d.used === 'guard' ? 'grd' : '', d.used === 'pair' ? 'pairx' : '', d.paired != null ? 'paired' : '', pr ? 'pairable' : '', dead ? 'dead' : ''].filter(Boolean).join(' ');
     return `<button class="${cls}" data-a="die" data-i="${d.i}" data-k="die${d.i}" aria-pressed="${UI.sel === d.i}" aria-label="Die ${d.i + 1}: ${esc(label)}" title="${esc(label)}">
       ${n <= 9 ? `<kbd aria-hidden="true">${d.i + 1}</kbd>` : ''}<span class="f">${A.pip(d.n, 40)}</span><span class="o">${d.used === 'guard' ? (gTo ? 'Guard ' + esc(gTo) : 'Guard') : d.used === 'pair' ? 'Paired' : d.used ? 'Used' : half ? '1 left' : d.paired != null ? 'Pair ×2' : d.dbl ? 'Double ×2' : esc(owner)}</span>${d.used === 'guard' || (t && t.guard && d.dbl) ? `<span class="gmark" aria-hidden="true">${ICON.shield}</span>` : ''}${d.turned ? '<span class="badge w">EN</span>' : d.flipped ? '<span class="badge c">OPP</span>' : d.focused ? '<span class="badge c">FO</span>' : d.rattled ? '<span class="badge r">RAT</span>' : ''}</button>`;
   }
-  function vDock() {
-    const G = UI.G; let hint = '', ctl = '';
+  function vHand() {
+    const G = UI.G; let hint = '', ctl = '', dice = '';
     if (G.phase === 'flip' && G.sitDone) {
       hint = `<b>Situation done.</b> ${esc(nm(G.team[G.point]))} stays on point through the next fight. ${G.feed.length ? 'Flip the next card' : 'Bring on the boss'}.`;
       ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the next card' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
@@ -440,13 +326,14 @@
       hint = `<b>Pick who’s on point</b>, then ${G.feed.length ? 'flip the top card: an alarm or a situation' : 'bring on the boss'}.`;
       ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the top card' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
     } else if (G.phase === 'sit') {
-      hint = `<b>${esc(A.SIT[G.sit.id].kind)}.</b> ${esc(nm(G.team[G.point]))} is on point: ${A.SIT[G.sit.id].opts ? 'choose on the mat (keys 1–' + (G.sit.id === 'chatter' ? 5 : 2) + ').' : 'resolve it (key 1).'}`;
+      hint = `<b>${esc(A.SIT[G.sit.id].kind)}.</b> ${esc(nm(G.team[G.point]))} is on point: ${A.SIT[G.sit.id].opts ? 'choose on the mat' + kh('keys 1–' + (G.sit.id === 'chatter' ? 5 : 2)) + '.' : 'resolve it' + kh('key 1') + '.'}`;
     } else if (G.phase === 'roll') {
       const usable = G.hand.some(h => h.some(c => E.canUse(G, c.t)));
       hint = G.round >= 1 ? '<b>New round.</b> Roll the row first, then everyone rolls.' : '<b>Fight!</b> Roll the dice.';
       if (G.round >= 1 && !G.row.length) hint = '<b>New round.</b> The row is empty, so just roll the dice.';
       if (G.freeze && G.row.length) hint += ' Change Freeze: the next row roll is skipped.';
-      if (usable) hint += ' Consumables: <b>Use</b> one in the dock first if you want.';
+      if (usable) hint += ' Consumables: <b>Use</b> one on your plate first if you want.';
+      if (G.round < 1 && G.play.some(m => E.canBaseline(G, m))) hint += ' Want a lasting reward? <b>Baseline it</b> adds dice to the alarm. Beat them all and one of your agents keeps its bonus.';
       ctl = `<div class="acts"><span class="inc grow">${incText()}</span><button class="btn p big" data-a="roll" data-k="roll">${G.round >= 1 && G.row.length ? 'Roll the row, then the dice' : 'Roll the dice'} <kbd>R</kbd></button></div>`;
     } else if (G.phase === 'assign') {
       const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null, prs = E.pairs(G);
@@ -454,7 +341,7 @@
       const picking = d && UI.guarding === d.i && t && t.guard;
       if (picking) hint = `<b>${esc(E.dieOwner(G, d))}: guard who?</b> A guard blocks any one player who isn’t blocking yet: you or a crewmate.`;
       else if (d && !d.used && d.takes.length) hint = `<b>${esc(E.dieOwner(G, d))}: double ${d.n}, one more ${d.n} to place.</b> ${t.hits.length ? 'Tap another matching die, under this alarm or another.' : `No ${d.n} left to take.`} Or pick another die.`;
-      else if (!d) hint = (G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under an alarm. Keys 1–9 pick dice.' : '<b>All dice placed.</b> End the round when you’re ready.') + (G.dice.some(x => E.canFocus(G, x)) ? ' Focused: pick one of your dice to turn it to any number.' : '') + (G.dice.some(x => E.canEng(G, x)) ? ' Engineer: pick one of your dice to turn it to its opposite side (once a round).' : '') + (G.hand.some(h => h.some(c => E.canUse(G, c.t))) ? ' Consumables: <b>Use</b> one in the dock.' : '') + prHint;
+      else if (!d) hint = (G.dice.some(x => !x.used) ? '<b>Tap a die</b>, then a matching die under an alarm.' + kh('keys 1–9 pick dice') : '<b>All dice placed.</b> End the round when you’re ready.') + (G.dice.some(x => E.canFocus(G, x)) ? ' Focused: pick one of your dice to turn it to any number.' : '') + (G.dice.some(x => E.canEng(G, x)) ? ' Engineer: pick one of your dice to turn it to its opposite side (once a fight).' : '') + (G.hand.some(h => h.some(c => E.canUse(G, c.t))) ? ' Consumables: <b>Use</b> one on your plate.' : '') + prHint;
       else if (d.used) hint = 'That die is used. <b>Undo</b> to take it back.';
       else hint = `<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? (d.dbl ? `A double counts as two ${d.n}s: tap up to two matching dice, under one alarm or two,${(E.engGuard(G, d) && G.n > 1 ? ' <b>or Guard</b> anyone' : ' <b>or Guard</b> yourself') + (E.canHeal(G, d) ? ', <b>or Heal</b> anyone ' + A.RES_HEAL : '')}.` : 'Tap a glowing die under an alarm that shows the same number.') + (t.hits.some(h => h.near) ? ' Dashed rings are one off: your perk matches them.' : '') + (t.hits.some(h => h.evade) ? ' <b>Evasive:</b> this double isn’t its number, so it takes any one of its dice and is spent.' : '') : (E.canHeal(G, d) ? `Nothing it can hit. <b>Guard</b> yourself, or <b>Heal</b> anyone ${A.RES_HEAL} with it.` : d.dbl && t.guard ? `Nothing it can hit. <b>Guard</b> yourself with it.` : `Nothing it can hit.${E.canReroll(G, d) ? ' <b>Reroll it for 1 HP?</b>' : ''}`)}${prs.some(p => p.includes(d.i)) ? prHint : ''}${t.focus ? ' <b>Focused:</b> turn it to any number.' : ''}${t.eng ? ` <b>Engineer:</b> turn it to its opposite side, a ${7 - d.n} (it counts as one die then).` : ''}${d.rattled ? ' Rattled: no doubles this roll.' : ''}${G.wildAll ? ' Every die matches anything this round.' : ''}${!d.crew ? ' Agent dice can’t hit the boss or guard.' : ''}`;
       const sel = d && !d.used;
@@ -462,8 +349,8 @@
       // Pair: a control right after the second of two matching dice, in the tray.
       const pairAt = new Map(prs.map(([i, j]) => [j, i]));
       const pairBtn = j => { const i = pairAt.get(j), n = G.dice[i].n; return `<button class="btn s cy t-pairb" type="button" data-a="pair" data-i="${i}" data-j="${j}" data-k="pair${i}-${j}" aria-label="Pair dice ${i + 1} and ${j + 1}: two ${n}s make a double ${n}"><span class="pp" aria-hidden="true">${A.pip(n, 16)}${A.pip(n, 16)}</span>Pair</button>`; };
-      ctl = `<div class="t-dice" role="group" aria-label="Crew dice">${G.dice.filter(x => !x.kuid).map(x => dieHtml(x, G.dice.length) + (pairAt.has(x.i) ? pairBtn(x.i) : '')).join('')}${ag ? `<span class="t-agnote">+ ${ag} agent ${ag === 1 ? 'die' : 'dice'} under ${ag === 1 ? 'its card' : 'their cards'}</span>` : ''}</div>
-        <div class="acts">
+      dice = `<div class="t-dice" role="group" aria-label="Your dice">${G.dice.map(x => dieHtml(x, G.dice.length) + (pairAt.has(x.i) ? pairBtn(x.i) : '')).join('')}</div>`;
+      ctl = `<div class="acts">
         ${picking ? `<span class="t-gpick" role="group" aria-label="Guard who"><span class="inc">Guard who?</span>${E.guardable(G, d).map(k => `<button class="btn cy grdb" type="button" data-a="guardfor" data-n="${k}" data-k="gfor${k}">${ICON.shield}${esc(nm(G.team[k]))}${k === d.k ? ' (you)' : ''} <kbd>${k + 1}</kbd></button>`).join('')}<button class="btn s" type="button" data-a="guardx" data-k="guardx">Cancel</button></span>`
           : sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard <kbd>G</kbd></button>` : ''}
         ${sel && E.canHeal(G, d) ? `<span class="t-gpick" role="group" aria-label="Heal who"><span class="inc">Heal ${A.RES_HEAL}:</span>${G.team.map((id, k) => `<button class="btn cy" type="button" data-a="heal" data-n="${k}" data-k="heal${k}"${G.hp[k] >= G.max ? ' disabled' : ''}>${esc(nm(id))}${k === d.k ? ' (you)' : ''}</button>`).join('')}</span>` : ''}
@@ -473,35 +360,50 @@
         ${sel && t.enrich ? `<span class="inc">${esc(SHORT[G.team[d.k]])}’s Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${A.pip(n, 20)}</button>`).join('')}</span>` : ''}
         <span class="inc grow dk">${incText()}</span>
         <button class="btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <kbd>U</kbd></button>
-        <button class="btn p" data-a="end" data-k="end">End round <kbd>E</kbd></button></div>`;
+        <button class="btn p" data-a="end" data-k="end">${endArmed(G) ? 'End round anyway' : 'End round'} <kbd>E</kbd></button></div>`;
     } else if (G.phase === 'exfil') {
       hint = `<b>Exfil.</b> The crew discards ${G.exfil === 1 ? 'an item' : G.exfil + ' items'}: tap one below. An agent takes what’s tucked under it along.`;
-      ctl = `<div class="t-dkit" role="group" aria-label="Discard an item">${G.team.map((id, k) => `<span class="t-dk"><b>${esc(SHORT[id])}</b>${[...G.agents[k], ...G.hand[k]].map(c => `<button class="btn s warn" type="button" data-a="exfil" data-u="${c.uid}" data-k="exfil${c.uid}">Discard ${esc(E.KIT_NAME[c.t])}</button>`).join('') || '<span class="chip">No items</span>'}</span>`).join('')}</div>`;
+      ctl = `<div class="t-dkit" role="group" aria-label="Discard an item">${G.team.map((id, k) => `<span class="t-dk"><b>${esc(SHORT[id])}</b>${[...G.agents[k], ...G.hand[k]].map(c => `<button class="btn s warn" type="button" data-a="exfil" data-u="${c.uid}" data-k="exfil${c.uid}"${G.agents[k].includes(c) && !E.exfilable(G, c) ? ' disabled title="Locked: Exfil can’t take it"' : ''}>Discard ${esc(E.KIT_NAME[c.t])}</button>`).join('') || '<span class="chip">No items</span>'}</span>`).join('')}</div>`;
     } else if (G.phase === 'tuck') {
-      hint = `<b>${esc(G.tuck[0].name)} is baselined.</b> Pick the agent it tucks under, whoever holds it: <b>Tuck it here</b> on the mat.`;
+      hint = `<b>You beat ${esc(G.tuck[0].name)} the hard way.</b> Pick the agent that keeps its bonus: tap <b>Tuck here</b> on a crew plate.`;
     } else if (G.phase === 'deal') {
       const c = G.deal[0], full = UI.dealTo != null && E.dealFull(G, UI.dealTo);
-      hint = full ? `<b>${esc(nm(G.team[UI.dealTo]))}’s slots are full.</b> Discard one of their items on the mat, or keep the new ${esc(E.KIT_NAME[c.t])} out.`
+      hint = full ? `<b>${esc(nm(G.team[UI.dealTo]))}’s slots are full.</b> Discard one of their items on their plate, or keep the new ${esc(E.KIT_NAME[c.t])} out.`
         : G.n === 1 ? `<b>Your item slots are full.</b> Discard one to take the ${esc(E.KIT_NAME[c.t])}, or keep it out.`
-        : `<b>Deal the ${esc(E.KIT_NAME[c.t])}</b>${G.deal.length > 1 ? ` (${G.deal.length} to deal)` : ''}: it takes one of that player’s item slots. Tap <b>Give to …</b> on the mat${G.n <= 4 ? ' (keys 1–' + G.n + ')' : ''}.`;
+        : `<b>Deal the ${esc(E.KIT_NAME[c.t])}</b>${G.deal.length > 1 ? ` (${G.deal.length} to deal)` : ''}: it takes one of that player’s item slots. Tap <b>Give to …</b>${G.n <= 4 ? kh('keys 1–' + G.n) : ''}.`;
     }
-    // Items by the dice: each player's items in the dock while fighting, consumables with Use.
-    const kit = (G.phase === 'roll' || G.phase === 'assign') ? `<div class="t-dkit" role="group" aria-label="Items">${G.team.map((id, k) => `<span class="t-dk"><b>${esc(SHORT[id])}</b>${[...G.agents[k].map(c => `<span class="chip ag">${esc(E.KIT_NAME[c.t])}</span>`), ...G.hand[k].map(c => `<button class="btn s cy" type="button" data-a="use" data-u="${c.uid}" data-k="duse${c.uid}" ${E.canUse(G, c.t) ? '' : 'disabled'}>Use ${esc(E.KIT_NAME[c.t])}</button>`)].join('') || '<span class="chip">No items</span>'}<span class="num slots">${E.heldN(G, k)}/${E.slotsOf(G, k)}</span></span>`).join('')}</div>` : '';
-    return `<div class="dock" role="region" aria-label="Dice tray"><div class="dockin">${kit}<p class="status" aria-live="polite">${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}</p>${ctl}</div></div>`;
+    return { hint: `${lethalLine(G)}${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}`, ctl, dice };
+  }
+  // Dice that can still do something this round: hit a threat die, guard or heal (2026-11-19 critique: End round went
+  // through with matchable dice unplaced, so one stray tap could end a shift).
+  const liveDice = G => G.phase !== 'assign' ? [] : G.dice.filter(x => !x.used && !(x.takes || []).length && (E.targets(G, x.i).hits.length || E.canGuard(G, x) || E.canHeal(G, x)));
+  const endKey = G => G.fight + ':' + G.round + ':' + G.dice.filter(x => x.used).length;
+  const endArmed = G => UI.endArm === endKey(G) && liveDice(G).length > 0;
+  /** The first End round while dice can still act asks instead; placing or undoing a die re-arms it. */
+  function confirmEnd(G) {
+    const live = liveDice(G); if (!live.length || UI.endArm === endKey(G)) return true;
+    UI.endArm = endKey(G); UI.err = true; UI.msg = `${live.length === 1 ? '1 die' : live.length + ' dice'} can still hit, guard or heal. Tap End round again to end it anyway.`;
+    return false;
+  }
+  /** A round that would drop someone: one flame line above the hint, naming who. */
+  function lethalLine(G) {
+    if (G.phase !== 'assign' && G.phase !== 'roll') return '';
+    const inc = E.incoming(G), who = G.team.map((id, k) => inc.total[k] >= G.hp[k] && G.hp[k] > 0 ? nm(id) : null).filter(Boolean);
+    return who.length ? `<span class="lethal">${esc(who.join(' and '))} ${who.length > 1 ? 'drop' : 'drops'} this round</span> unless you guard or take out more dice. ` : '';
   }
   function incText() {
     const G = UI.G, inc = E.incoming(G), tot = inc.total.reduce((a, b) => a + b, 0);
-    return tot ? `At round end: ${G.team.map((id, k) => `${esc(nm(id))} <b class="num">−${inc.total[k]}</b>${inc.exposed.includes(k) ? ' (Exposed +1)' : ''}`).join(' · ')}` : '<span class="safe">Nothing hits back this round.</span>';
+    return tot ? `At round end: ${G.team.map((id, k) => inc.total[k] ? `${esc(nm(id))} <b class="num">−${inc.total[k]}</b>${inc.exposed.includes(k) ? ' (Exposed +1)' : ''}` : `${esc(nm(id))} <span class="safe">safe</span>`).join(' · ')}` : '<span class="safe">Nothing hits back this round.</span>';
   }
   function vLog() {
     if (UI.drawer !== 'log') return '';
     const L = UI.G.log.slice().reverse();
-    return `<aside class="logp" aria-label="Game log"><div class="lh"><h2 class="sech">Log</h2><button class="btn s" data-a="log" data-k="logx">Close <kbd>Esc</kbd></button></div><div class="log">${L.map(l => `<p class="${l.kind}"><span class="t">${l.fight ? `F${l.fight}${l.round ? '·R' + l.round : ''}` : '—'}</span>${esc(l.text)}</p>`).join('')}</div></aside>`;
+    return `<aside class="logp" role="dialog" aria-modal="true" aria-label="Game log"><div class="lh"><h2 class="sech">Log</h2><button class="btn s" data-a="log" data-k="logx">Close <kbd>Esc</kbd></button></div><div class="log">${L.map(l => `<p class="${l.kind}"><span class="t">${l.fight ? `F${l.fight}${l.round ? '·R' + l.round : ''}` : '—'}</span>${esc(l.text)}</p>`).join('')}</div></aside>`;
   }
   function vGallery() {
     if (!UI.cards) return '';
     const all = [...A.mobs().map(m => ['mob:' + m.id, A.mobCard(m)]), ...A.BOSS_IDS.map(id => ['boss:' + id, A.bossCard(A.boss(id))]), ['legend', A.legend], ['tracker', A.tracker], ...A.ANALYST_IDS.map(id => ['analyst:' + id, A.analystCard(id)]), ...[...A.AGENT_IDS, ...A.CONS_IDS].map(t => ['agent:' + t, A.agentCard(t)]), ...A.SIT_IDS.map(id => ['sit:' + id, A.sitCard(id)]), ...A.COND_IDS.map(id => ['cond:' + id, A.condCard(id)])];
-    return `<div class="t-gallery" role="dialog" aria-label="All cards"><div class="in"><div class="lh"><h2 class="sech">Every card · the same as the print-and-play deck</h2><button class="btn s" data-a="cards" data-k="cardsx">Close <kbd>Esc</kbd></button></div>
+    return `<div class="t-gallery" role="dialog" aria-modal="true" aria-label="All cards"><div class="in"><div class="lh"><h2 class="sech">Every card · the same as the print-and-play deck</h2><button class="btn s" data-a="cards" data-k="cardsx">Close <kbd>Esc</kbd></button></div>
       <div class="grid">${all.map(([k, h]) => `<div class="t-gslot" data-card="${k}">${h}</div>`).join('')}</div></div></div>`;
   }
   // The boss reveal (as ui/ui.js): the boss card scans in over the table, with the one thing worth knowing.
@@ -522,7 +424,7 @@
     const artSvg = G.win ? (ART['win_' + G.boss.id] || ART.win) : km ? ART[km.id] : (who === G.boss.name ? A.SCENE.boss(G.boss.id) : ART.hero);
     const down = G.hp.findIndex(h => h <= 0);
     const roster = G.team.map((id, k) => `<li class="${!G.win && k === down ? 'down' : ''}"><span class="art">${crop(ART[id], SQUARE(id))}</span><span><span class="nm">${esc(nm(id))}</span><br><span class="num">${G.hp[k]}/${G.max}</span> <span class="meta">HP</span></span></li>`).join('');
-    return `<div class="t-end" role="dialog" aria-label="Shift over"><div class="end">
+    return `<div class="t-end" role="dialog" aria-modal="true" aria-label="Shift over"><div class="end">
       <article class="endcard ${G.win ? 'win' : 'loss'}"><div class="ec-art"><span class="art">${slice(artSvg)}</span><span class="stamp" aria-hidden="true">${G.win ? 'Contained' : 'Flatlined'}</span></div>
         <div class="ec-bd"><p class="meta ${G.win ? 'c' : 'f'}">${esc(E.MODES[G.mode].label)} · ${G.n}p · ${G.max} HP</p>
           <h2 class="logo" tabindex="-1">${G.win ? 'Shift survived' : 'Shift lost'}</h2>
@@ -538,12 +440,123 @@
     </div></div>`;
   }
 
+  // ==== The table (2026-11-19): one screen, no scrolling ===========================================================
+  // The whole round on one screen: the shift bar, the persistence row strip, the stage (the fight, or what happens
+  // between fights), your dice right under the threat dice, the crew plates, and one instruction line with the main
+  // button. Full printed cards are one hover, tap or focus away (data-peek): no shrunken card faces.
+  const KWN = m => m.boss ? A.boss(m.id).abilityName : A.kw[A.abilityOf(dataMob(m.id))];
+  const KWT = m => m.boss ? A.BOSS_TEXT[m.id][0] : A.kwText[A.abilityOf(dataMob(m.id))];
+  const artOf = m => m.boss ? A.SCENE.boss(m.id) : ART[m.id];
+  const fighting = G => G.play.length > 0;
+  // Chip names (the full name is on the card the chip opens, and in its label).
+  const KSHORT = { triage: 'Triage', contain: 'Containment', enrich: 'Enrichment', recover: 'Recovery', watchlist: 'Watchlist', surge: 'Surge', intel: 'Intel Feed', isolate: 'Isolation', coffee: 'Coffee', freeze: 'Freeze', takedown: 'Takedown' };
+  function vBar() {
+    const G = UI.G, F = flipped(G), T = G.feedTotal;
+    const between = G.phase === 'flip' || G.phase === 'deal' || G.phase === 'sit' || G.phase === 'tuck';
+    const label = (G.bossOut ? (G.over ? 'Boss fight' : `Boss fight · round ${G.round || 1}`) : G.phase === 'sit' ? `Situation · card ${F} of ${T}` : between ? (G.feed.length ? `Next: card ${F + 1} of ${T}` : 'Next: the boss') : `Fight ${G.fight} · card ${F} of ${T} · round ${G.round || 1}`) + (E.threat(G) && !G.bossOut ? ` · Threat +${E.threat(G)}` : '');
+    const now = G.bossOut ? T : between && G.phase !== 'sit' ? -1 : F - 1, next = !G.bossOut && (G.phase === 'flip' || G.phase === 'deal') ? F : -1;
+    const bar = [...Array(T)].map((_, i) => `<i class="${i < F && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === T ? ' next' : ''}"></i>`;
+    return `<header class="tb-bar"><span class="brand">Detect the Dwellers</span><span class="tb-feed"><span class="fline"><time class="clk" data-clock>${clockNow()}</time><span class="meta c">${label}</span></span><span class="feedbar" aria-hidden="true">${bar}</span></span>
+      <nav class="tb-btns">${soundBtn()}<button class="btn s" type="button" data-a="cards" data-k="cards" aria-pressed="${UI.cards}">Cards</button><button class="btn s" type="button" data-a="log" data-k="log" aria-pressed="${UI.drawer === 'log'}">Log</button><button class="btn s" type="button" data-a="quit" data-k="quit">New</button></nav></header>`;
+  }
+  // The persistence row, always in sight: each alarm on it with the sums that bring it back, the last amber pair, and
+  // whatever that roll brought back, lit.
+  function vRowStrip() {
+    const G = UI.G, r = G.lastRow && G.lastRow.fight === G.fight ? G.lastRow : null, isNew = r && FX && FX.row === r;
+    const roll = r ? `<span class="pbanner t-rowroll${isNew ? ' new' : ''}${r.back.length ? ' hot' : ''}" data-roll="${r.roll}" title="Row roll · ${esc(r.why)}"><span class="t-pair" aria-hidden="true">${r.pair.map(amber).join('')}<b class="num">=${r.roll}</b></span><span class="sr">Row roll ${r.roll}: ${r.back.length ? esc(r.back.join(', ')) + ' came back' : 'nothing came back'}.</span></span>` : '';
+    const came = r ? r.back.map(n => `<span class="tb-rc lit"><b>${esc(n)}</b><span class="num">Back</span></span>`).join('') : '';
+    const chips = G.row.map(m => { const top = E.backTop(G, m);
+      return `<span class="tb-rc" data-peek="${cardKey(m)}" tabindex="0" aria-label="${esc(m.name)}: ${top >= 2 ? `back on 2–${top}, ${backPct(top)}% a roll` : 'stays put'}"><b>${esc(m.name)}</b><span class="num">${top >= 2 ? `2–${top}` : '—'}</span></span>`; }).join('');
+    const freeze = G.freeze && G.row.length ? '<span class="tb-rc frz"><b>Change Freeze</b><span class="num">skip next</span></span>' : '';
+    const strikes = r && r.strikes && r.strikes.length ? `<span class="tb-rhit">${r.strikes.map(s => `${esc(s.name)} hits everyone for <b class="num">${s.dmg}</b>`).join('; ')}</span>` : '';
+    return `<div class="tb-row" role="region" aria-label="Persistence row"><span class="tb-rl">Row <b class="num">${G.row.length}</b></span>${roll}<div class="tb-rcs">${came}${freeze}${chips || (came ? '' : '<span class="tb-rempty">Empty. Beaten alarms land here and come back on the 2 amber dice.</span>')}${strikes}</div></div>`;
+  }
+  // One alarm, compact: scene, name, keyword, Damage; its threat dice right under it; what it does this round; ⓘ for the rest.
+  function infoRows(m) {
+    const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null;
+    const hits = !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up at round end, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`;
+    const beaten = m.boss ? 'Beat it and the shift is survived.' : m.based ? 'Beat it with the extra dice and it slides under an agent, which keeps its bonus. It can’t come back.' : `Beaten, it goes on the persistence row: ${backPct(E.backTop(G, m))}% to come back on each row roll.`;
+    return `<li><span class="phud f">This alarm</span><span>${hits}${G.cond.some(c => c.exposed) ? ' Exposed: anyone hit takes 1 more.' : ''}</span></li>
+      <li><span class="phud f">Keyword</span><span><b>${esc(KWN(m))}.</b> ${esc(KWT(m))}</span></li><li><span class="phud a">Beaten</span><span>${beaten}</span></li>
+      <li><span class="phud c">To hit</span><span>A die takes one die under it showing <b>exactly</b> its number. A double takes two, or guards you. Once a round you may take 1 to reroll one of your dice.</span></li>`;
+  }
+  /** On a wide screen a lone alarm gets its rules beside it instead of behind the ⓘ. */
+  const vBriefPanel = m => `<aside class="tb-brief" aria-label="About ${esc(m.name)}"><h2 class="sech">What now</h2><ul>${infoRows(m)}</ul></aside>`;
+  function vInfo(m) {
+    return `<details class="tb-i" data-info="${m.uid}"${UI.info === m.uid ? ' open' : ''}><summary aria-label="About ${esc(m.name)}" data-k="info${m.uid}">i</summary><ul tabindex="-1" role="group" aria-label="About ${esc(m.name)}">${infoRows(m)}</ul></details>`;
+  }
+  function vAlarm(m) {
+    const G = UI.G, down = !E.left(m), dmg = E.dmgOf(G, m), inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null;
+    const enter = FX && FX.enter.has(m.uid), ko = FX && FX.ko.has(m.uid), struck = FX && [...FX.struck].some(k => k.startsWith(m.uid + '-'));
+    const stamp = down ? `<span class="tb-st beat${ko ? ' new' : ''}">Down</span>` : m.based ? '<span class="tb-st base">Baselining</span>' : m.back ? `<span class="tb-st back${enter ? ' new' : ''}">${m.back > 1 ? `Back ×${m.back}` : 'Came back'}</span>` : '';
+    const hit = down ? 'Beaten · back on the row at round end' : inc ? (inc.to.length ? `<span class="hot">Hits <b class="num">${inc.dmg}</b> → ${inc.to.map(k => esc(SHORT[G.team[k]])).join(', ')}</span>` : '<span class="safe">Blocked</span>') : `Hits for <b class="num">${dmg}</b>`;
+    const base = !down && E.canBaseline(G, m) ? `<button class="btn s cy" type="button" data-a="baseline" data-u="${m.uid}" data-k="base${m.uid}" aria-label="Baseline ${esc(m.name)}: set ${E.baseCost(G, m)} more dice">Baseline +${E.baseCost(G, m)} <kbd>B</kbd></button>` : '';
+    const cls = ['tb-al', m.boss ? 'boss' : '', down ? 'down' : '', ko ? 'ko' : '', enter ? 'flipin' : '', struck && !ko ? 'struck' : '', m.back && !down ? 'back' : ''].filter(Boolean).join(' ');
+    return `<article class="${cls}" data-uid="${m.uid}" aria-label="${esc(m.name)}"><div class="tb-alh" data-peek="${cardKey(m)}" tabindex="0"><span class="tb-art" aria-hidden="true">${slice(artOf(m))}</span>
+      <span class="tb-alt"><b class="nm">${esc(m.name)}</b><span class="tb-kw"><b>${esc(KWN(m))}.</b> ${esc(KWT(m))}</span></span><span class="tb-dmg"><span>Damage</span><b class="num">${dmg}</b></span></div>${stamp}
+      ${vThreat(m)}<div class="tb-alf"><span class="tb-hit"><b class="num">${E.left(m)}</b>/${m.hits} left · ${hit}</span>${base}${vInfo(m)}</div></article>`;
+  }
+  function vStage() {
+    const G = UI.G;
+    if (fighting(G)) {
+      const live = G.play.filter(m => E.left(m)).length;
+      const boss = G.bossOut && G.round <= 1 ? `<p class="tb-note boss"><time class="clk f">05:59</time> <b>${esc(G.boss.name)} arrives.</b> This is the last fight. ${esc(A.BOSS_TEXT[G.boss.id][0])}</p>` : '';
+      const aloud = vAloud().replace('class="t-aloud"', 'class="t-aloud tb-note"');
+      return `<section class="tb-stage fight" aria-label="The fight">${vSteps()}${boss}${aloud}<div class="tb-als n${Math.min(G.play.length, 4)}${live > 1 ? ' multi' : ''}${G.play.length > 2 ? ' many' : ''}">${G.play.map(vAlarm).join('')}${G.play.length === 1 ? vBriefPanel(G.play[0]) : ''}</div></section>`;
+    }
+    let body = '';
+    if (G.phase === 'sit' || (G.phase === 'flip' && G.sitDone)) body = vSit();
+    else if (G.phase === 'flip') body = vFlipDesk();
+    else if (G.phase === 'tuck') { const a = G.tuck[0];
+      body = `<div class="t-tuckp"><div class="t-sslot" data-card="mob:${a.id}">${A.mobCard(dataMob(a.id))}</div><div class="sb"><h2 class="sech a">Pick an agent to keep the bonus</h2><p class="status">You beat <b>${esc(a.name)}</b> the hard way. Tap <b>Tuck here</b> on one of your agents below. That agent keeps its <b>${esc(A.traitName(a.id))}</b> bonus for the rest of the shift: ${esc(A.BASE[a.id].replace(/^[^:]+: /, ''))} Choose with care: if that agent is ever discarded, the bonus goes with it.</p><p class="meta">While it’s tucked, this alarm can’t come back. If its agent is discarded, it goes back on the row.</p></div></div>`; }
+    else if (G.phase === 'deal') body = vDeal();
+    return `<section class="tb-stage between">${body}</section>`;
+  }
+  // One plate per analyst: HP and what's coming, on point, the ability (peek the analyst card), conditions, and their
+  // items as chips (peek the item card). Tucked alarms show as a band on their agent's chip.
+  function vPlates() {
+    const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G) : null, tucking = G.phase === 'tuck', top = G.phase === 'deal' ? G.deal[0] : null;
+    return `<div class="tb-plates" style="--n:${G.n}" role="group" aria-label="Crew">${G.team.map((id, k) => {
+      const hp = G.hp[k], n = inc ? inc.total[k] : 0, after = Math.max(0, hp - n), swap = top && E.dealFull(G, k) && UI.dealTo === k;
+      const incl = inc ? (G.blocks[k] && !n ? `<span class="inc safe">${ICON.shield}<b>Blocking</b></span>` : n ? `<span class="inc">Incoming <b class="num">−${n}</b>${n >= hp ? ' · lethal' : ''}</span>` : '<span class="inc safe">Nothing incoming</span>') : '';
+      const drop = c => `<button class="btn s warn" type="button" data-a="drop" data-n="${k}" data-u="${c.uid}" data-k="drop${c.uid}" aria-label="Discard ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])} for the new ${esc(E.KIT_NAME[top.t])}">Discard</button>`;
+      const agents = G.agents[k].map(c => { const tk = G.aug.filter(a => a.host === c.uid), full = E.tuckedOn(G, c.uid) >= A.TUCK_CAP;
+        const btn = tucking ? `<button class="btn s cy" type="button" data-a="tuck" data-u="${c.uid}" data-k="tuck${c.uid}"${full ? ' disabled' : ''} aria-label="Tuck ${esc(G.tuck[0].name)} under ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])}">${full ? 'Full' : 'Tuck here'}</button>` : swap ? drop(c) : '';
+        return `<span class="tb-it ag${tk.length ? ' tk' : ''}" data-peek="agent:${c.t}" tabindex="0" aria-label="${esc(E.KIT_NAME[c.t])}${tk.length ? ', ' + tk.map(a => `${esc(a.name)} tucked: ${esc(A.BASE[a.id])}`).join('; ') : ''}"><span class="tb-ik">Agent</span><b>${esc(KSHORT[c.t] || E.KIT_NAME[c.t])}</b>${tk.map(a => `<i class="tb-band" data-peek="mob:${a.id}" title="${esc(a.name)} · ${esc(A.BASE[a.id])}">${esc(A.traitName(a.id))}</i>`).join('')}${btn}</span>`; }).join('');
+      const hand = G.hand[k].map(c => { const can = E.canUse(G, c.t);
+        const use = swap ? drop(c) : c.t === 'takedown' && can && G.row.length > 1 ? G.row.map(m => `<button class="btn s cy" type="button" data-a="use" data-u="${c.uid}" data-m="${m.uid}" data-k="use${c.uid}${m.uid}" aria-label="${esc(nm(id))}: take down ${esc(m.name)}">${esc(m.name)}</button>`).join('')
+          : `<button class="btn s cy" type="button" data-a="use" data-u="${c.uid}" data-k="use${c.uid}" ${can ? '' : 'disabled'} aria-label="${esc(nm(id))}: use the ${esc(E.KIT_NAME[c.t])}">Use</button>`;
+        return `<span class="tb-it cs${can ? ' live' : ''}" data-peek="agent:${c.t}" tabindex="0" aria-label="${esc(E.KIT_NAME[c.t])}, use once"><span class="tb-ik">Once</span><b>${esc(KSHORT[c.t] || E.KIT_NAME[c.t])}</b>${use}</span>`; }).join('');
+      const conds = A.COND_IDS.filter(c => G.cond[k][c]).map(c => `<span class="tb-cond" data-peek="cond:${c}" tabindex="0">${A.COND[c][0]}</span>`).join('');
+      return `<div class="tb-pl${k === G.point ? ' on' : ''}${swap ? ' swap' : ''}" data-hp="${k}"><div class="tb-plh">${k === G.point ? '<i class="dot" aria-hidden="true"></i>' : ''}<span class="nm">${esc(nm(id))}</span>${k === G.point ? '<span class="tb-pt">On point</span>' : ''}
+        <span class="tb-ab" data-peek="analyst:${id}" tabindex="0" title="${esc(A.PERK[id])}">${esc(STYLE[id])}</span>${conds}<span class="hpn"><b class="num">${hp}</b><span class="of">/${G.max}</span></span></div>
+        <span class="hpbar${hp / G.max <= .35 ? ' low' : ''}" aria-hidden="true"><i style="transform:scaleX(${after / G.max})"></i>${n ? `<i class="inci" style="transform:translateX(${after / G.max * 100}%) scaleX(${(hp - after) / G.max})"></i>` : ''}</span>
+        <div class="tb-plf">${incl}<span class="num tb-cnt" title="Item slots used">${E.heldN(G, k)}/${E.slotsOf(G, k)} items</span></div><span class="tb-its">${agents}${hand}${!agents && !hand ? '<span class="tb-none">No items</span>' : ''}</span></div>`; }).join('')}</div>`;
+  }
+
   // ---- Render and events ------------------------------------------------------------------------------------------
+  // Panels that scroll keep their place across re-renders (every action rebuilds the page).
+  const KEEP_SCROLL = ['.tb-stage', '.log', '.t-gallery .in', '.t-end', '.tb-rcs', '.tb-its'];
+  // The open overlay, topmost first: the card gallery, the log, the boss reveal, the end screen.
+  const overlayOf = () => UI.cards ? '.t-gallery' : UI.drawer === 'log' ? '.logp' : UI.G && UI.reveal && !UI.G.over ? '.reveal' : UI.G && UI.G.over ? '.t-end' : null;
   function render() {
     const k = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
-    app.innerHTML = UI.G ? `<div class="wrap game">${vTop()}<div class="t-main">${vTable()}${vSide()}</div></div>` + vDock() + vReveal() + vLog() + vGallery() + vEnd() : vSetup() + vGallery();
-    document.body.classList.toggle('ingame', !!UI.G);
-    if (k) focusKey(k);
+    const kept = KEEP_SCROLL.map(sel => [...app.querySelectorAll(sel)].map(e => e.scrollTop));
+    let h = null; if (UI.G) h = vHand();
+    app.innerHTML = UI.G ? `<div class="tb ph-${UI.G.phase}${E.MODES[UI.G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${vStage()}<div class="tb-foot">${h.dice ? `<div class="tb-dice${UI.G.dice.length > 5 ? ' many' : ''}">${h.dice}</div>` : ''}${vPlates()}<div class="tb-act"><p class="status">${h.hint}</p>${h.ctl}</div></div></div>` + vReveal() + vLog() + vGallery() + vEnd() : vSetup() + vGallery();
+    document.body.classList.toggle('ingame', !!UI.G); document.body.classList.toggle('nokeys', !UI.keys);
+    KEEP_SCROLL.forEach((sel, n) => app.querySelectorAll(sel).forEach((e, i) => { if (kept[n][i]) e.scrollTop = kept[n][i]; }));
+    // Shortcut hints are visual only: kbd stays out of button names, the key goes in aria-keyshortcuts (while Keys is on).
+    app.querySelectorAll('kbd').forEach(kb => { kb.setAttribute('aria-hidden', 'true'); const b = kb.closest('button'), t = kb.textContent.trim();
+      if (b && UI.keys && /^[A-Z0-9]$/i.test(t)) b.setAttribute('aria-keyshortcuts', t.toUpperCase()); });
+    // An open overlay holds focus: what's behind it is inert, focus moves in when it opens and back when it closes.
+    const ov = overlayOf(), el = ov && app.querySelector(ov);
+    [...app.children].forEach(c => { c.inert = !!el && !c.contains(el) && c !== el; });
+    if (ov !== UI.overlay) {
+      if (ov && el) { if (!UI.overlay) UI.opener = k; const f = el.querySelector('h2[tabindex], [data-a="unreveal"], .lh .btn, h2'); if (f) { if (!f.hasAttribute('tabindex') && f.tagName === 'H2') f.setAttribute('tabindex', '-1'); f.focus({ preventScroll: true }); } }
+      else if (!ov && UI.opener) { const back = UI.opener; UI.opener = null; UI.overlay = ov; return focusKey(back); }
+      UI.overlay = ov;
+    } else if (k) focusKey(k);
   }
   function focusKey(k) { const el = app.querySelector(`[data-k="${k}"]`); if (el && !el.disabled) el.focus({ preventScroll: true }); }
 
@@ -554,16 +567,19 @@
     : k.startsWith('analyst:') ? A.analystCard(k.slice(8)) : k.startsWith('agent:') ? A.agentCard(k.slice(6)) : k.startsWith('sit:') ? A.sitCard(k.slice(4)) : k.startsWith('cond:') ? A.condCard(k.slice(5)) : '';
   let peekKey = null, lastPtr = 'mouse';
   function showPeek(slot) {
-    const c = slot && slot.querySelector('.card'); if (!c || slot.closest('.t-gallery')) return hidePeek();
-    const r = c.getBoundingClientRect(); if (r.width >= 300) return hidePeek(); // already big enough to read
-    const k = slot.dataset.card; if (peekKey !== k) { peek.innerHTML = cardByKey(k); peekKey = k; }
+    if (!slot || slot.closest('.t-gallery')) return hidePeek(); const c = slot.querySelector('.card'), k = slot.dataset.peek || slot.dataset.card;
+    if (!slot.dataset.peek && (!c || c.getBoundingClientRect().width >= 300)) return hidePeek(); // already big enough to read
+    const r = (slot.dataset.peek ? slot : c).getBoundingClientRect(); if (peekKey !== k) { peek.innerHTML = cardByKey(k); peekKey = k; }
     const vw = window.innerWidth, vh = window.innerHeight, W = Math.min(360, vw - 16, (vh - 16) * 240 / 336), H = W * 336 / 240, gap = 12;
     let x = r.right + gap; if (x + W > vw - 8) x = r.left - gap - W; if (x < 8) x = (vw - W) / 2;
     const y = Math.max(8, Math.min(r.top + r.height / 2 - H / 2, vh - H - 8));
     peek.style.setProperty('--pz', (W / 240).toFixed(3)); peek.style.left = x + 'px'; peek.style.top = y + 'px'; peek.classList.add('on');
   }
   function hidePeek() { peek.classList.remove('on'); peekKey = null; }
-  const peekSlot = t => t && t.closest && t.closest('.card') && !t.closest('[data-a]') ? t.closest('[data-card]') : null;
+  const peekSlot = t => !t || !t.closest || t.closest('[data-a]') ? null : t.closest('[data-peek]') || (t.closest('.card') ? t.closest('[data-card]') : null);
+  app.addEventListener('focusin', e => { const s = e.target.closest && e.target.closest('[data-peek]'); if (s && e.target === s) showPeek(s); });
+  app.addEventListener('focusout', () => hidePeek());
+  document.addEventListener('scroll', hidePeek, { passive: true, capture: true });
   app.addEventListener('pointerdown', e => { lastPtr = e.pointerType || 'mouse'; }, { capture: true });
   app.addEventListener('mouseover', e => { if (lastPtr === 'touch') return; const s = peekSlot(e.target); if (s) showPeek(s); else hidePeek(); });
   app.addEventListener('mouseleave', hidePeek);
@@ -571,6 +587,13 @@
     if (s && !(peek.classList.contains('on') && peekKey === s.dataset.card)) showPeek(s); else hidePeek(); });
   window.addEventListener('scroll', hidePeek, { passive: true });
 
+  // The ⓘ sheet: a tap outside it, or Escape, closes it. Open, it takes focus; closed, focus goes back to its ⓘ.
+  // UI.info keeps it open across re-renders.
+  document.addEventListener('click', e => { app.querySelectorAll('.tb-i[open]').forEach(d => { if (!d.contains(e.target) || (!e.target.closest('summary') && !e.target.closest('ul'))) d.open = false; }); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') app.querySelectorAll('.tb-i[open]').forEach(d => { d.open = false; }); }, { capture: true });
+  app.addEventListener('toggle', e => { const d = e.target; if (!d.classList || !d.classList.contains('tb-i')) return;
+    if (d.open) { UI.info = d.dataset.info; const u = d.querySelector('ul'); if (u) u.focus({ preventScroll: true }); }
+    else if (UI.info === d.dataset.info) { UI.info = null; const sm = d.querySelector('summary'); if (sm && d.isConnected && (!document.activeElement || document.activeElement === document.body || d.contains(document.activeElement))) sm.focus({ preventScroll: true }); } }, true);
   app.addEventListener('click', e => {
     const G = UI.G;
     const b = e.target.closest && e.target.closest('[data-a]'); if (!b || b.disabled) return;
@@ -579,6 +602,7 @@
     if (a === 'start') return startGame();
     if (a === 'mode') { UI.setup.mode = b.dataset.m; return render(); }
     if (a === 'snd') { Sound.toggle(); return render(); }
+    if (a === 'keys') { UI.keys = !UI.keys; try { localStorage.setItem(KEYS_LS, UI.keys ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Keyboard shortcuts ${UI.keys ? 'on' : 'off'}.`); return render(); }
     if (a === 'cards') { UI.cards = !UI.cards; return render(); }
     if (a === 'log') { UI.drawer = UI.drawer === 'log' ? null : 'log'; return render(); }
     if (a === 'quit') { if (G && !G.over && !confirmQuit()) return; UI.G = null; UI.drawer = null; UI.dealTo = null; UI.reveal = false; UI.seed = (UI.seed * 7 + 13) % 1e9; return render(); }
@@ -604,6 +628,7 @@
     if (a === 'reroll') { const i = UI.sel; act(() => E.reroll(G, i)); return focusKey('die' + i); }
     if (a === 'turn') { const i = UI.sel; return act(() => E.enrichTurn(G, i, +b.dataset.n)); }
     if (a === 'undo') { UI.more = null; UI.guarding = null; act(() => E.unassign(G)); const last = G.dice.filter(d => !d.used).map(d => d.i); if (UI.sel == null || (G.dice[UI.sel] && G.dice[UI.sel].used)) UI.sel = last.length ? last[last.length - 1] : null; return render(); }
+    if (a === 'end' && !confirmEnd(G)) return render();
     if (a === 'end') { UI.sel = null; UI.more = null; UI.guarding = null; act(() => E.endRound(G)); return focusKey(G.phase === 'roll' ? 'roll' : 'flip'); }
     if (a === 'use') { act(() => E.use(G, b.dataset.u, null, b.dataset.m)); if (G.phase === 'assign' && UI.sel == null) { nextDie(); render(); } return; }
     if (a === 'give') { const k = +b.dataset.n; if (E.dealFull(G, k)) { UI.dealTo = k; UI.msg = ''; render(); return focusKey('keepout'); } UI.dealTo = null; act(() => E.give(G, k)); return focusAfterDeal(); }
@@ -615,6 +640,7 @@
   document.addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target || {}).tagName || '')) return;
     const G = UI.G, key = e.key.toLowerCase(), click = k => { const el = app.querySelector(`[data-a="${k}"]`); if (el && !el.disabled) { el.click(); e.preventDefault(); } };
+    if (!UI.keys && key !== 'escape') return; // Keys off (WCAG 2.1.4): no single-key shortcuts
     if (key === 'escape' && peek.classList.contains('on')) { hidePeek(); return; }
     if (key === 'escape') { if (UI.cards) UI.cards = false; else if (UI.drawer) UI.drawer = null; else if (UI.reveal) UI.reveal = false; else if (UI.guarding != null) UI.guarding = null; else UI.sel = null; return render(); }
     if (!G) return;

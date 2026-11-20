@@ -69,6 +69,26 @@
   "w": 64,
   "h": 64
  },
+ "full_ENG": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "full_HUN": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "full_RES": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "full_SOA": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
  "hero": {
   "frames": 5,
   "w": 256,

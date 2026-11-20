@@ -342,6 +342,30 @@
       "size": 32,
       "prompt": "a single ivory white six-sided die seen perfectly straight on from the front, one flat square face filling the frame, completely blank face with no pips or dots, rounded corners, thick black outline, subtle bevel shading on the edges, chunky retro pixel art game dice",
       "action": "none: traced into art/die.js; the pips are drawn there"
+    },
+    "full_HUN": {
+      "kind": "analyst (Adventure view)",
+      "size": 64,
+      "prompt": "full body pixel art character standing, entire figure visible from head down to the feet, feet on the ground at the bottom of the frame, cyberpunk threat hunter analyst, hooded night-shift operator in dark jacket and cargo pants with boots, glowing cyan visor, holding a glowing cyan scanner tablet, dark purple and black palette with cyan rim light, side view facing right (seed 29)",
+      "action": "idle breathing loop, standing in place, shoulders rise and fall gently, scanner screen flickers, visor glow pulses"
+    },
+    "full_RES": {
+      "kind": "analyst (Adventure view)",
+      "size": 64,
+      "prompt": "full body pixel art character standing, entire figure visible from head down to the feet, feet on the ground at the bottom of the frame, cyberpunk first responder analyst, short hair, dark tactical jacket and trousers with boots, cyan glowing headset, red emergency armband, holding a glowing cyan incident tablet, dark purple and black palette with cyan rim light, side view facing right (seed 29)",
+      "action": "idle breathing loop, standing in place, shoulders rise and fall gently, headset light pulses, tablet screen flickers"
+    },
+    "full_ENG": {
+      "kind": "analyst (Adventure view)",
+      "size": 64,
+      "prompt": "full body pixel art character standing, entire figure visible from head down to the feet, feet on the ground at the bottom of the frame, cyberpunk detection engineer analyst, hacker in a dark hoodie, jeans and sneakers, glasses glowing cyan, holding a small open laptop with green code, wrench on the belt, dark purple and black palette with cyan rim light, side view facing right (seed 29)",
+      "action": "idle loop, standing in place, typing on the laptop, code on the screen scrolls, glasses glint, slight breathing"
+    },
+    "full_SOA": {
+      "kind": "analyst (Adventure view)",
+      "size": 64,
+      "prompt": "full body pixel art character standing, entire figure visible from head down to the feet, feet on the ground at the bottom of the frame, cyberpunk sorcerer analyst orchestrator, techno-wizard in a long dark hooded robe with glowing cyan circuit runes, one hand raised controlling small floating cyan holographic windows, dark purple and black palette with cyan rim light, side view facing right (seed 11)",
+      "action": "idle casting loop, standing in place, robe sways gently, raised hand glows, floating holographic windows drift and orbit"
     }
   }
 }

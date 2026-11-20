@@ -518,21 +518,18 @@
   // three windows: the alarms, the crew (HP and each analyst's own dice), and the message with the commands. The pieces
   // (dice, threat dice, buttons) are the table view's own, so the fight plays exactly the same.
   const advPets = k => (UI.G.agents[k] || []).map((c, j) => `<span class="adv-pet" style="--j:${j}" data-peek="agent:${c.t}" tabindex="0" aria-label="${esc(E.KIT_NAME[c.t])}">${A.sprite(c.t)}</span>`).join('');
-  const advHp = (G, k) => { const pc = Math.max(0, G.hp[k] / G.max * 100); return `<span class="adv-hp${pc <= 35 ? ' low' : ''}" aria-hidden="true"><i style="width:${pc}%"></i></span>`; };
   // Each analyst's dice from the dice tray: every die button carries data-i, and G.dice[i].k is its owner.
   const advDiceBy = (G, html) => { const out = G.team.map(() => []); (String(html || '').match(/<button class="t-die[\s\S]*?<\/button>/g) || []).forEach(b => { const i = +(b.match(/data-i="(\d+)"/) || [])[1]; const d = G.dice[i]; out[d ? d.k : 0].push(b); }); return out.map(a => a.join('')); };
   function vAdventure(h) {
-    const G = UI.G, dice = advDiceBy(G, h.dice), FXh = FX ? FX.hurt : new Set();
-    const crew = G.team.map((id, k) => `<div class="adv-slot" style="--k:${k}"><figure class="adv-hero${k === G.point ? ' on' : ''}${G.hp[k] <= 0 ? ' ko' : ''}"><span class="adv-spr" data-peek="analyst:${id}" tabindex="0" aria-label="${esc(nm(id))}, ${G.hp[k]} HP">${A.sprite(id)}</span><span class="adv-pets">${advPets(k)}</span></figure></div>`).join('');
+    const G = UI.G, dice = advDiceBy(G, h.dice);
+    const crew = G.team.map((id, k) => `<div class="adv-slot" style="--k:${k}"><figure class="adv-hero${k === G.point ? ' on' : ''}${G.hp[k] <= 0 ? ' ko' : ''}"><span class="adv-spr" data-peek="analyst:${id}" tabindex="0" aria-label="${esc(nm(id))}, ${G.hp[k]} HP">${A.sprite('full_' + id) || A.sprite(id)}</span><span class="adv-pets">${advPets(k)}</span></figure></div>`).join('');
     const foes = G.play.map(m => { const down = !E.left(m), base = !down && E.canBaseline(G, m) ? `<button class="btn s cy" type="button" data-a="baseline" data-u="${m.uid}" data-k="base${m.uid}" aria-label="Baseline ${esc(m.name)}: set ${E.baseCost(G, m)} more dice">Baseline +${E.baseCost(G, m)} <kbd>B</kbd></button>` : '';
       return `<div class="adv-foe tb-al${m.boss ? ' boss' : ''}${down ? ' down' : ''}" data-uid="${m.uid}"><span class="adv-spr" data-peek="${cardKey(m)}" tabindex="0" style="--s:${m.boss ? 150 : 96}px">${artOf(m)}</span>
-        <span class="adv-tag"><b>${esc(m.name)}</b> <span class="adv-dmg" title="Damage">${E.dmgOf(G, m)}</span>${m.back && !down ? `<i class="adv-back">${m.back > 1 ? 'Back ×' + m.back : 'Came back'}</i>` : ''}${down ? '<i class="adv-back down">Down</i>' : ''}</span>${vThreat(m)}${base}</div>`; }).join('');
-    const alarms = G.play.map(m => `<li class="${E.left(m) ? '' : 'out'}"><b data-peek="${cardKey(m)}" tabindex="0">${esc(m.name)}</b><span class="num">${E.left(m)}/${m.hits}</span><span class="adv-kw">${esc(KWN(m))}</span></li>`).join('');
-    const status = G.team.map((id, k) => `<li class="${k === G.point ? 'on' : ''}${FXh.has(k) ? ' flash' : ''}" data-hp="${k}"><b>${esc(nm(id))}</b><span class="num">${G.hp[k]}/${G.max}</span>${advHp(G, k)}<span class="adv-dice">${dice[k]}</span></li>`).join('');
+        <span class="adv-tag"><b>${esc(m.name)}</b> <span class="adv-dmg" title="Damage">${E.dmgOf(G, m)}</span> <span class="adv-kw" title="${esc(KWT(m))}">${esc(KWN(m))}</span>${m.back && !down ? `<i class="adv-back">${m.back > 1 ? 'Back ×' + m.back : 'Came back'}</i>` : ''}${down ? '<i class="adv-back down">Down</i>' : ''}</span>${vThreat(m)}${base}</div>`; }).join('');
     const aloud = vAloud().replace('class="t-aloud"', 'class="t-aloud adv-omen"');
     return `<div class="tb adv ph-${G.phase}${E.MODES[G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${aloud}
       <section class="adv-field${G.bossOut ? ' boss' : ''}" aria-label="The fight"><div class="adv-crew" style="--n:${G.n}">${crew}</div><div class="adv-foes">${foes}</div></section>
-      <section class="adv-cmd"><div class="adv-win"><h2 class="adv-h">Alarms</h2><ul class="adv-list">${alarms}</ul></div><div class="adv-win adv-status"><h2 class="adv-h">Crew</h2><ul class="adv-list">${status}</ul></div><div class="adv-win adv-act"><p class="status">${h.hint}</p><div class="adv-menu">${h.ctl}</div></div></section></div>`;
+      <section class="adv-hud">${vPlates(dice)}<div class="adv-act" role="region" aria-label="What to do"><p class="status">${h.hint}</p><div class="adv-menu">${h.ctl}</div></div></section></div>`;
   }
   function vStage() {
     const G = UI.G;
@@ -552,7 +549,8 @@
   }
   // One plate per analyst: HP and what's coming, on point, the ability (peek the analyst card), conditions, and their
   // items as chips (peek the item card). Tucked alarms show as a band on their agent's chip.
-  function vPlates() {
+  // dice (Adventure view): each analyst's dice, by crew index, shown inside their plate.
+  function vPlates(dice) {
     const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G) : null, tucking = G.phase === 'tuck', top = G.phase === 'deal' ? G.deal[0] : null;
     return `<div class="tb-plates" style="--n:${G.n}" role="group" aria-label="Crew">${G.team.map((id, k) => {
       const hp = G.hp[k], n = inc ? inc.total[k] : 0, after = Math.max(0, hp - n), swap = top && E.dealFull(G, k) && UI.dealTo === k;
@@ -569,7 +567,7 @@
       return `<div class="tb-pl${k === G.point ? ' on' : ''}${swap ? ' swap' : ''}${hp <= 0 ? ' ko' : ''}" data-hp="${k}"><span class="tb-pa" data-peek="analyst:${id}" aria-hidden="true">${A.sprite(id)}</span><div class="tb-pb"><div class="tb-plh">${k === G.point ? '<i class="dot" aria-hidden="true"></i>' : ''}<span class="nm">${esc(nm(id))}</span>${k === G.point ? '<span class="tb-pt">On point</span>' : ''}
         <span class="tb-ab" data-peek="analyst:${id}" tabindex="0" title="${esc(A.PERK[id])}">${esc(STYLE[id])}</span>${conds}<span class="hpn"><b class="num">${hp}</b><span class="of">/${G.max}</span></span></div>
         <span class="hpbar${hp / G.max <= .35 ? ' low' : ''}" aria-hidden="true"><i style="transform:scaleX(${after / G.max})"></i>${n ? `<i class="inci" style="transform:translateX(${after / G.max * 100}%) scaleX(${(hp - after) / G.max})"></i>` : ''}</span>
-        <div class="tb-plf">${incl}<span class="num tb-cnt" title="Item slots used">${E.heldN(G, k)}/${E.slotsOf(G, k)} items</span></div><span class="tb-its">${agents}${hand}${!agents && !hand ? '<span class="tb-none">No items</span>' : ''}</span></div></div>`; }).join('')}</div>`;
+        <div class="tb-plf">${incl}<span class="num tb-cnt" title="Item slots used">${E.heldN(G, k)}/${E.slotsOf(G, k)} items</span></div><span class="tb-its">${agents}${hand}${!agents && !hand ? '<span class="tb-none">No items</span>' : ''}</span>${dice ? `<span class="adv-dice">${dice[k] || ''}</span>` : ''}</div></div>`; }).join('')}</div>`;
   }
 
   // ---- Render and events ------------------------------------------------------------------------------------------

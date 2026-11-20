@@ -1130,9 +1130,10 @@ test('page: Adventure view (a setting) lays the fight out as a battle scene that
   assert.equal(d.querySelectorAll('.adv-foe').length, G.play.length, 'every alarm on the field');
   assert.equal(d.querySelectorAll('.adv-foe [data-a="slot"]').length, G.play.reduce((n, m) => n + m.slots.length, 0), 'their threat dice under them');
   if (G.phase === 'roll') click('[data-a="roll"]'); assert.equal(G.phase, 'assign');
-  assert.equal(d.querySelectorAll('.adv-status [data-a="die"]').length, G.dice.length, 'every die, under its analyst');
-  G.dice.forEach(x => assert.ok(d.querySelector(`.adv-status li[data-hp="${x.k}"] [data-a="die"][data-i="${x.i}"]`), 'die ' + x.i + ' sits with its owner'));
-  const pickD = [...d.querySelectorAll('.adv-status [data-a="die"]')].find(b => +b.dataset.i !== w.CDUI.UI.sel), fi = +pickD.dataset.i; pickD.click(); assert.equal(w.CDUI.UI.sel, fi, 'a die picks up as in the table'); /* the roll already selected one; pick another */
+  assert.equal(d.querySelectorAll('.adv-hud [data-a="die"]').length, G.dice.length, 'every die, in its analyst’s plate');
+  G.dice.forEach(x => assert.ok(d.querySelector(`.adv-hud .tb-pl[data-hp="${x.k}"] [data-a="die"][data-i="${x.i}"]`), 'die ' + x.i + ' sits with its owner'));
+  assert.equal(d.querySelectorAll('.adv-hud .tb-pl').length, G.n, 'the table’s crew plates, items and all'); assert.ok(d.querySelectorAll('.adv-hero .spr[class*="spr-full_"]').length === G.n, 'full-body sprites on the field');
+  const pickD = [...d.querySelectorAll('.adv-hud [data-a="die"]')].find(b => +b.dataset.i !== w.CDUI.UI.sel), fi = +pickD.dataset.i; pickD.click(); assert.equal(w.CDUI.UI.sel, fi, 'a die picks up as in the table'); /* the roll already selected one; pick another */
   click('[data-a="menu"]'); click('.menup [data-a="adv"]'); assert.ok(d.querySelector('.tb-stage') && !d.querySelector('.adv-field'), 'off: the table again'); if (w.localStorage) assert.equal(w.localStorage.getItem('cd-adventure'), '0');
 });
 test('page: Guard covers the player who rolled the double, straight away; undo takes it back', { skip: !JSDOM && 'jsdom not installed' }, () => {

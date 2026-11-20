@@ -631,24 +631,29 @@ h2[tabindex="-1"]:focus{outline:none}
 .adv-tag{font-size:.8125rem;text-align:center;background:rgba(7,6,10,.75);padding:1px 6px;border-radius:3px}
 .adv-dmg{display:inline-block;min-width:20px;padding:0 4px;background:var(--fl);color:#111;font-weight:700;border-radius:3px}
 .adv-back{font-style:normal;font:700 10px var(--mono);color:#111;background:var(--am);padding:0 4px;margin-left:4px;text-transform:uppercase}.adv-back.down{background:var(--cy)}
-/* The windows below. */
-.adv-cmd{flex:none;display:grid;grid-template-columns:1fr 2fr 1.3fr;gap:8px;max-height:42vh;min-height:0}
-.adv-win{border:2px solid #9FB4FF;border-radius:6px;background:linear-gradient(#18224A,#0C1230);box-shadow:inset 0 0 0 2px #0A0E22;padding:8px 10px;color:#EEF;min-width:0;overflow:auto}
-.adv-h{margin:0 0 6px;font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#9FB4FF}
-.adv-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.adv-list li{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.adv-list li.out{opacity:.45;text-decoration:line-through}
-.adv-list li.on>b::before{content:"▶";color:#FFE14D;margin-right:4px}.adv-kw{font-size:.75rem;color:#B9C3E8}
-.adv-status li{display:grid;grid-template-columns:92px 48px 84px minmax(0,1fr);align-items:center;column-gap:8px}.adv-status .adv-dice{display:flex;flex-wrap:wrap;gap:4px} /* one line per analyst: name, HP, bar, their dice */
-.adv-status li.flash{animation:advhit .45s var(--ease)}@keyframes advhit{20%{background:rgba(255,90,42,.35)}}
+/* The HUD below (2026-11-20, modern in place of the retro windows): the table view's crew plates, each with that
+   analyst's dice and items, and the action panel. The plate portrait hides: the analyst is on the field. */
+.adv-hud{flex:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,340px);gap:10px;align-items:stretch;min-height:0;max-height:44vh}
+@media (max-height:780px) and (min-width:761px){.adv-hud{max-height:54vh}.adv-field{min-height:140px}.adv>.adv-omen{display:none}} /* short screens: room for the dice, the omen gives way */
+.adv-hud>.tb-plates{min-height:0;overflow-y:auto;align-content:start}
+.adv .tb-pl{grid-template-columns:minmax(0,1fr);padding:8px 10px;background:linear-gradient(180deg,rgba(20,24,40,.92),rgba(12,13,22,.92));border-color:#262D45}
+.adv .tb-pl.on{border-color:var(--cl);box-shadow:inset 3px 0 0 var(--cy)}
+.adv .tb-pa{display:none}
+.adv .tb-pl .adv-dice{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .adv-dice .t-die{width:50px;height:56px;padding:4px 2px 3px}.adv-dice .t-die .pip{width:32px;height:32px}.adv-dice .t-die .o{font-size:.5625rem}
-.adv-hp{display:block;width:84px;height:6px;background:#2A2030;border:1px solid #000}.adv-hp i{display:block;height:100%;background:#4DE38B}.adv-hp.low i{background:var(--fl)}
-.adv-act .status{margin:0 0 6px;font-size:.875rem}.adv-menu{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px}.adv-menu>:not(.btn):not(button){flex-basis:100%;text-align:right;white-space:normal;overflow:visible;text-overflow:clip}.adv-menu .btn::before{content:"▶";opacity:0;margin-right:6px;color:#FFE14D}.adv-menu .btn:hover::before,.adv-menu .btn:focus-visible::before{opacity:1}
+.adv-act{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden;padding:10px 12px;background:linear-gradient(180deg,rgba(20,24,40,.92),rgba(12,13,22,.92));border:1px solid #262D45;box-shadow:inset 3px 0 0 var(--cy)}
+.adv-act .status{margin:0;font-size:.9375rem;flex:0 1 auto;min-height:2.6em;overflow-y:auto} /* the message scrolls; the buttons never do */
+.adv-act>.adv-menu{flex:none}
+.adv-menu{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:6px;margin-top:auto;min-width:0}.adv-menu>*{min-width:0;max-width:100%}.adv-menu>:not(.btn):not(button){flex-basis:100%;white-space:normal;overflow:visible;text-overflow:clip} /* left-aligned: a narrow panel wraps instead of clipping */
+.adv-menu .btn.p{margin-left:auto}
+.adv-kw{font:600 10px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:#9FD7E6;margin-left:2px}
 @media (prefers-reduced-motion:reduce){.adv-pet{animation:none}.adv-hero{transition:none}}
 @media (max-width:760px){
-  .adv-status li{grid-template-columns:80px 44px minmax(0,1fr)}.adv-status .adv-dice{grid-column:1/-1}
   .adv-field{grid-template-columns:minmax(84px,auto) 1fr;padding:6px 8px}.adv-slot{padding-left:calc(var(--k) * 8px)}
   .adv-foe .t-td,.adv-foe .t-td .pip{width:30px!important;height:30px!important}
-  .adv-cmd{grid-template-columns:1fr;max-height:46vh;overflow:auto}.adv-cmd>.adv-win:first-child{display:none}
+  .adv-hud{grid-template-columns:1fr;max-height:60vh;overflow-y:auto;gap:6px}.adv-hud>.tb-plates{overflow:visible}.adv-field{min-height:132px}.adv>.adv-omen{display:none}
+  .adv .tb-pl{padding:6px 8px}.adv-dice .t-die{width:44px;height:50px}.adv-dice .t-die .pip{width:28px;height:28px}
+  .adv-act{position:sticky;bottom:0;z-index:2;max-height:34vh;box-shadow:inset 3px 0 0 var(--cy),0 -10px 18px rgba(7,6,10,.85)} /* the commands stay in view; the plates scroll behind */
 }
 
 /* The Menu (2026-11-20): settings in one panel (it borrows the Log drawer's frame). */
@@ -663,3 +668,5 @@ h2[tabindex="-1"]:focus{outline:none}
 .swt[aria-checked="true"]{border-color:var(--cy);color:var(--cy)}.swt[aria-checked="true"] i{background:#0E4B57}.swt[aria-checked="true"] i::after{transform:translateX(14px);background:var(--cy)}
 .swt:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.swt i,.swt i::after{transition:none}}
+.adv .tb-plates[style*="--n:3"] .tb-ab,.adv .tb-plates[style*="--n:4"] .tb-ab{display:none} /* 3–4 plates are narrow; the ability is a tap on the sprite */
+.adv .tb-plh{gap:4px}

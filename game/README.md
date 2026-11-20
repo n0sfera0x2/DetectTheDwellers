@@ -15,7 +15,7 @@
 
 One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 3). The number of alarms in a feed varies: about 4.3 in Quick, 5.6 in Full.
 
-**A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (3 players add one more die set to 6, 4 players two, as the card's bottom edge shows). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll.
+**A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (3 players roll one more threat die and set it as it lands, 4 players roll two, each time the alarm arrives or comes back; the card’s bottom edge shows them as dice to roll). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll.
 
 **A fight round.**
 
@@ -133,16 +133,16 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-20 (solo setup items by analyst: Hunter 3, Engineer 2, Responder 1, Soarcerer 1; Full Shift baselining one more die per player past 2; Escalating +2 Damage when it comes back; the tuck traits of 2026-11-19: twelve bands Overclock, plus Hardened, Siphon and Locked; otherwise the rules of 2026-11-05: the Hunter's extra die in a fight's first round only, the Engineer's turn once a fight, the Triage Agent rolls two in a multi-alarm fight, one solo setup item an agent; the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer. The decision and scare columns weren't rerun this pass; their values are from 2026-11-05.
+Bot sims, `SYS=n6 N=600`, 2026-11-20 (the crew’s extra threat dice rolled each time an alarm enters play; 4p rows rerun for it, the rest unchanged by it; solo setup items by analyst: Hunter 3, Engineer 2, Responder 1, Soarcerer 1; Full Shift baselining one more die per player past 2; Escalating +2 Damage when it comes back; the tuck traits of 2026-11-19: twelve bands Overclock, plus Hardened, Siphon and Locked; otherwise the rules of 2026-11-05: the Hunter's extra die in a fight's first round only, the Engineer's turn once a fight, the Triage Agent rolls two in a multi-alarm fight, one solo setup item an agent; the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer. The decision and scare columns weren't rerun this pass; their values are from 2026-11-05.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 5 HP or less: one boss hit from 0) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Quick, 1p | 54% | 25 pts | 44% | 94% | 18.7 | 4.1 | 52% | 66% |
 | Quick, 2p | 54% | 24 pts | 50% | 96% | 12.3 | 1.5 | 46% | 76% |
-| Quick, 4p | 53% | 29 pts | 53% | 99% | 10.2 | 0.9 | 48% | 67% |
+| Quick, 4p | 50% | 24 pts | 52% | 99% | 10.3 | 1.1 | 47% | 67% |
 | Full, 1p | 55% | 21 pts | 45% | 95% | 19.6 | 5.8 | 50% | 39% |
 | Full, 2p | 57% | 23 pts | 50% | 96% | 13.9 | 2.4 | 42% | 34% |
-| Full, 4p | 50% | 29 pts | 54% | 98% | 12.7 | 1.8 | 51% | 28% |
+| Full, 4p | 47% | 25 pts | 53% | 98% | 13.0 | 1.8 | 49% | 28% |
 
 Solo by analyst: Quick Hunter 56%, Responder 57%, Engineer 50%, Soarcerer 53%; Full 59 / 62 / 51 / 55% (2026-11-19, before the solo items by analyst: Quick 45 / 63 / 50 / 64%, Full 49 / 69 / 51 / 65%). Pairs (600 games each): Quick 43% (Hunter + Soarcerer) to 60% (Responder + Engineer); Full 51% (Hunter + Soarcerer) to 62% (Responder + Engineer). Baselines per shift: about 3.0–3.5 in Quick and 3.4–3.7 in Full.
 
@@ -152,21 +152,23 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 54 / 54 / 53% | 55 / 57 / 50% (4p at the floor) | the mode's HP; solo: starting items; 3–4p: their setup item |
-| Spread across crew sizes | 10 points or less | 1 | 7 | 3–4p: the setup item (the + die is printed) |
+| Win rate, every crew size | 50–60% | 54 / 54 / 50% (4p at the floor) | 55 / 57 / 47% (4p misses) | the mode's HP; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 4 | 10 | 3–4p: the setup item (the + dice are on the card) |
 | Solo spread across analysts | 10 points or less | 6 | 10 | items and agents (the owner’s call, 2026-11-05), not the analyst’s ability |
 | Pairs, lowest to highest | within 15 points | 43–60% (17, misses) | 51–62% (11) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 25 / 24 / 29 | 21 / 23 / 29 | more decisions per roll |
+| Skill gap (smart − random) | 20 points or more | 25 / 24 / 24 | 21 / 23 / 25 | more decisions per roll |
 | Rounds with a real decision | 60% or more | 94 / 96 / 99% (2026-11-05, not rerun) | 95 / 96 / 98% (2026-11-05, not rerun) | the reroll; its cost |
-| Rounds with a real dice choice | 40% or more | 44 / 50 / 53% | 45 / 50 / 54% | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 52 / 46 / 48% | 50 / 42 / 51% | the boss's Damage; the threat timing (`ESC`) |
+| Rounds with a real dice choice | 40% or more | 44 / 50 / 52% | 45 / 50 / 53% | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 52 / 46 / 47% | 50 / 42 / 49% | the boss's Damage; the threat timing (`ESC`) |
 | Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 66 / 76 / 67% (2026-11-05, not rerun) | 39 / 34 / 28% (all miss; 2026-11-05, not rerun) | Full: its HP; 4p pile-ups |
-| Comebacks per shift | solo 3–6; crews 1–3 (since 2026-11-20, was 3–6) | 4.1 / 1.5 / 0.9 (4p misses) | 5.8 / 2.4 / 1.8 | the row ranges (`ROWSHIFT`); the feed size |
+| Comebacks per shift | solo 3–6; crews 1–3 (since 2026-11-20, was 3–6) | 4.1 / 1.5 / 1.1 | 5.8 / 2.4 / 1.8 | the row ranges (`ROWSHIFT`); the feed size |
 | Baselining worth doing | always beats never | +12 / +6 / +18 | +17 / +15 / +32 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
 | The boss is a climax (Full) | beating it once there: 75% or less | 77 / 72 / 70% (1p over) | 72 / 66 / 68% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
+
+- **Full Shift 4p is under the floor** (47%, against 50–60%) since the crew’s extra threat dice are rolled (2026-11-20; it was 50% with them set to 6). Quick 4p sits at the floor (50%). A 6 is a double for every analyst, so a rolled die is harder to take out. Not yet turned: the 3–4 player setup item, or Full Shift HP for 4 players.
 
 - **Crews see 1–2 comebacks a shift** (Quick 1.5 / 0.9, Full 2.4 / 1.8 at 2p / 4p). Crews win fights in fewer rounds, so the row rolls less. Every way to get crews to 3–6 cost them wins ([history](#solo-items-by-analyst-full-shift-baselining-by-crew-size-2026-11-20)), so on 2026-11-20 the owner set the crew target to 1–3 until a table says otherwise. Quick 4p at 0.9 is just under it.
 - **The solo spread is closed** (6 Quick, 10 Full) by solo setup items printed on each analyst card (2026-11-20). The Engineer is now the lowest solo analyst (50 / 51%).
@@ -221,6 +223,7 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `SOANEW`, `SOAPERK`, `SOATUCK` | the Soarcerer: `SOANEW=basedie2` (default since 2026-11-05): on point, two more dice every round while baselining; `basedie` (one more), `both` (one more and the draw), `drawpoint` (each baseline on point draws an item, 2026-11-04), `twinown` (their agents count as two, earlier that day), `wilddbl` (any die a double for baselining, the rule before), `wildbase`, `up1` (a tuck under their agent also overclocks it) and `pair5` were tried; the old 2-die cost (`SOAPERK=auto`) and tuck draw (`SOATUCK=1`) are off |
 | `SOLOQ` | solo setup items by analyst (default since 2026-11-20 `HUN:3,RES:1,ENG:2,SOA:1`, the analyst cards; `SOLOQ=` gives everyone `QSOLO`) |
 | `BASEPLUS` | baselining adds one more die per player past 2 (default since 2026-11-20: `1` in Full Shift, `0` in Quick) |
+| `XROLL` | the crew’s extra threat dice (one per player past 2) are rolled each time an alarm enters play (`1`, default since 2026-11-20); `0` sets them to 6, the rule until then |
 | `ROWCREW` | proposal (2026-11-20): in a crew, every row range is this many steps wider (default 0) |
 | `AGENTS=0` | the 7 agents are removed from the item deck, not replaced (11 consumables; a measurement, 2026-11-19) |
 | `POINT` | who's on point: `bot` (default, whoever has the most HP); `soa`, the Soarcerer whenever they're in the crew (a deliberate player, measured 2026-11-19) |
@@ -351,6 +354,33 @@ The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### The crew’s extra threat dice are rolled (2026-11-20)
+
+#### What changed
+
+The owner’s call: a die on the 6 face read wrongly, and the extra dice should be rolled. A crew of 3 rolls one more threat die for each alarm and the boss, a crew of 4 rolls two, and they’re set under the card as they land. They’re rolled again every time the alarm comes into play: the flip, a comeback, the boss’s arrival. Until now they were set to 6.
+
+- **Cards:** the bottom strip shows **3 players +** one die to roll and **4 players +** two: a dashed die with a **?** (`cards.js` `rolled()`), never a face. The rules sheet says to roll them each time the alarm arrives or comes back.
+- **Page:** the engine rolls them on entry (`engine.js` `rollExtras`), and the log says what they rolled. The die keeps its **3P** or **4P** badge, and its label says “rolled for a crew of 3”.
+- **Sim:** `XROLL=1` (the default) rolls them on entry; `XROLL=0` is the old rule.
+
+#### Numbers
+
+Bot sims, 600 games per crew size, 2026-11-20, each mode at its HP. Solo and 2 players have no extra dice and came out identical under both rules.
+
+| 4 players | Set to 6 (`XROLL=0`) | Rolled (`XROLL=1`) |
+| --- | --- | --- |
+| Quick: win | 53% | 50% |
+| Quick: skill gap | 29 pts | 24 pts |
+| Full: win | 50% | 47% |
+| Full: skill gap | 29 pts | 25 pts |
+
+A 6 is a double for every analyst, so it was the easiest threat die to take out. A rolled die is harder, and Full Shift 4p fell below the 50% floor. Nothing else was tuned in this pass: the fix is the owner’s call (see **Open**).
+
+#### Tests
+
+`node --test game/web/spec.js` has 83 tests and all pass, one of them new: a crew of 3 or 4 rolls one extra die per player past 2 on entry, and over 60 seeds every face comes up. The card test now expects only the printed faces on the strip, then dice to roll. `npm test` has 83 tests and all pass. Screenshots are in `production/qa/evidence/2026-11-20-pass5-*.png`.
 
 ### The crew's extra dice spelled out, a spookier omen (2026-11-20)
 

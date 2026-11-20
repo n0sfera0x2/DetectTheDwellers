@@ -248,7 +248,9 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 // Responder (vs the biggest hitter) match one higher or lower too. N6DICE: dice per analyst (on point +1).
 // Bigger crews (2026-10-30, clustered dice): one more threat die showing 6 per player past three. Past two (the
 // first exact-numbers rule) left 3p at 36% and 4p at 19% once doubles stopped taking "any one more".
-const XFROM = +(process.env.XFROM || 2); // review 2: one + die per player past 2 (was 3), as six analysts stack up in a crew of four
+const XFROM = +(process.env.XFROM || 2);
+// XROLL (default since 2026-11-20): the crew's extra threat dice (one per player past XFROM) are rolled each time the alarm enters play, not set to 6. XROLL=0 is the old set-to-6 rule.
+const XROLL = (process.env.XROLL ?? '1') === '1'; // review 2: one + die per player past 2 (was 3), as six analysts stack up in a crew of four
 const N6DICE = +(process.env.N6DICE || 1), N6SOLO = +(process.env.N6SOLO || 3);
 // Clustered dice (2026-10-30): each mob has a main number and its dice bunch around it, e.g. main 2 prints
 // 1 2 2 2 3. Repeats make a double on the main number (it counts as two of that number) worth the most. MAIN
@@ -310,7 +312,7 @@ function rollRow(G, strike) {
   if (strike && !aug(G, 'druid')) for (const m of back.slice().sort((a, b) => b.dmg - a.dmg).slice(0, +(process.env.ARRIVE ?? 0))) { const cut = on(G, 'RES') && RESARR === '1' ? 1 : on(G, 'RES') && RESARR === 'once' && !G.resArr ? 99 : 0; if (cut === 99) G.resArr = true; G.team.forEach((id, k) => hurt(G, k, HUNNEW === 'immune' && id === 'HUN' ? 0 : Math.max(0, dmgOf(G, m) - cut - (on(G, 'RES') && RESARR === 'crew' && id !== 'RES' ? 1 : 0)))); } // the Responder: arrival hits deal 1 less (RESARR=once: the first arrival hit each fight deals nothing)
   return back;
 }
-function enter(G, m) { if ((HUNNEW === 'fewer' || HUNNEW === 'fewer2') && G.sys === 'n6' && on(G, 'HUN') && m.back > 0 && !m.boss && m.need) for (let i = HUNNEW === 'fewer2' ? 2 : 1; i > 0 && m.left > 1; i--) { m.need.pop(); m.left--; } if (m.kw === 'unknown' && m.need) m.need = m.need.map(() => 1 + d6(G)); if (m.back > 0 && !m.boss && m.need) for (let i = active(G, 'honeypot'); i > 0 && m.left > 1; i--) { m.need.pop(); m.left--; } G.play.push(m); if (m.back > 0) G.cbJoin = true; /* Beacon trait: a comeback joined */ if (m.kw === 'beacon') for (const b of rollRow(G, true)) enter(G, b); }
+function enter(G, m) { if (XROLL && G.sys === 'n6' && m.need && m.left === m.hits) { const x = Math.max(0, G.n - XFROM); m.need = m.need.map((v, i) => i >= m.base && i < m.base + x ? 1 + d6(G) : v); } /* XROLL: the crew's extra dice roll on entry */ if ((HUNNEW === 'fewer' || HUNNEW === 'fewer2') && G.sys === 'n6' && on(G, 'HUN') && m.back > 0 && !m.boss && m.need) for (let i = HUNNEW === 'fewer2' ? 2 : 1; i > 0 && m.left > 1; i--) { m.need.pop(); m.left--; } if (m.kw === 'unknown' && m.need) m.need = m.need.map(() => 1 + d6(G)); if (m.back > 0 && !m.boss && m.need) for (let i = active(G, 'honeypot'); i > 0 && m.left > 1; i--) { m.need.pop(); m.left--; } G.play.push(m); if (m.back > 0) G.cbJoin = true; /* Beacon trait: a comeback joined */ if (m.kw === 'beacon') for (const b of rollRow(G, true)) enter(G, b); }
 
 // The dice of one round: crew dice (one each, two on point, three solo), plus a die per running Triage Agent.
 function roll(G) {

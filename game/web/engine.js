@@ -213,8 +213,15 @@
     for (const m of strikes) G.team.forEach((id, k) => hurt(G, k, dmgOf(G, m), `${m.name} arrives`));
     return back;
   }
+  // The crew's extra threat dice (one per player past 2) are rolled each time an alarm or the boss enters play
+  // (2026-11-20; until then they were set to 6). They sit after the printed dice.
+  function rollExtras(G, m) {
+    const x = Math.max(0, G.n - CARDS.PAST); if (!x) return;
+    const v = []; for (let p = m.printed; p < m.printed + x && p < m.slots.length; p++) { m.slots[p] = 1 + d6(G); v.push(m.slots[p]); }
+    if (v.length) say(G, `${m.name}: the crew's ${v.length > 1 ? 'extra dice roll' : 'extra die rolls'} ${v.join(' and ')}.`, 'mob');
+  }
   function enter(G, m) {
-    if (G.over) return; G.play.push(m); 
+    if (G.over) return; rollExtras(G, m); G.play.push(m); 
     if (m.kw === 'beacon') for (const b of rollRow(G, true, `${m.name}’s Beacon`)) enter(G, b);
   }
 

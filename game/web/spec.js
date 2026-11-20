@@ -95,6 +95,19 @@ test('scaling: a 6 per player past two (review 2); solo and 2 players play the p
   const sorted = a => a.slice().sort((x, y) => x - y);
   for (const n of [1, 2, 3, 4]) for (const m of CARDS.mobs()) assert.deepEqual(sorted(SIM.slotsFor({ id: m.id, base: m.hits - 2 }, n)), sorted(CARDS.slotsFor(m, false, n)), `${m.id} ${n}p`);
 });
+test('a crew of 3 or 4 rolls its extra threat dice each time an alarm enters play (2026-11-20; they were set to 6)', () => {
+  for (const n of [2, 3, 4]) {
+    const G = game({ team: ['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), seed: 5 }); G.deal = []; G.phase = 'flip';
+    while (G.feed[0] && G.feed[0].sit) G.feed.push(G.feed.shift());
+    E.flip(G); const m = G.play.find(x => !x.boss), x = m.slots.slice(m.printed);
+    assert.equal(x.length, Math.max(0, n - CARDS.PAST), n + 'p: one extra die per player past 2');
+    assert.ok(x.every(v => v >= 1 && v <= 6), 'each a rolled number');
+    if (x.length) assert.ok(G.log.some(l => /the crew's extra di(e rolls|ce roll)/.test(l.text)), 'the roll is logged');
+  }
+  // Across seeds the extra die lands on every face, not always a 6.
+  const seen = new Set(); for (let seed = 1; seed <= 60; seed++) { const G = game({ team: ['HUN', 'RES', 'ENG'], seed }); G.deal = []; G.phase = 'flip'; while (G.feed[0] && G.feed[0].sit) G.feed.push(G.feed.shift()); E.flip(G); const m = G.play.find(x => !x.boss); seen.add(m.slots[m.printed]); }
+  assert.deepEqual([...seen].sort(), [1, 2, 3, 4, 5, 6]);
+});
 test('signature doubles: one number of your own plus the 6; every other die doubles only on a 6', () => {
   const want = { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6] };
   for (const [id, ns] of Object.entries(want)) for (let n = 1; n <= 6; n++) assert.equal(E.pipDie(n, id).dbl, ns.includes(n), `${id} ${n}`);
@@ -292,10 +305,11 @@ test('cards: the dice strip along the bottom, no symbols, no “players add”; 
   const strip = html => { const i = html.indexOf('class="dice"'), j = html.indexOf('class="base"'); assert.ok(i > 0, 'dice strip'); return html.slice(i, j > i ? j : undefined); };
   for (const m of CARDS.mobs()) {
     const h = CARDS.mobCard(m), d = CARDS.diceFor(m);
-    assert.deepEqual(pips(strip(h)), [...d.base, d.extra, d.extra, d.extra]); assert.match(h, /3 players<\/span><b>\+<\/b>/); assert.match(h, /4 players<\/span><b>\+<\/b>/); assert.doesNotMatch(h, /per player past/); assert.equal(d.extra, 6);
+    assert.deepEqual(pips(strip(h)), d.base, 'the strip shows only the printed faces'); assert.equal((strip(h).match(/aria-label="a rolled die"/g) || []).length, 3, 'then 1 + 2 dice to roll');
+    assert.match(h, /3 players<\/span><b>\+<\/b><svg class="pip rd"/); assert.match(h, /4 players<\/span><b>\+<\/b>/); assert.doesNotMatch(h, /per player past/);
     assert.ok(h.lastIndexOf('class="dice"') > h.indexOf('class="fl"'), 'the strip comes after the flavour: the bottom edge');
   }
-  const bh = CARDS.bossCard(CARDS.boss()), bd = CARDS.diceFor(CARDS.boss(), true); assert.deepEqual(pips(strip(bh)), [...bd.base, bd.extra, bd.extra, bd.extra]);
+  const bh = CARDS.bossCard(CARDS.boss()), bd = CARDS.diceFor(CARDS.boss(), true); assert.deepEqual(pips(strip(bh)), bd.base);
   const all = [...CARDS.mobs().map(CARDS.mobCard), bh, CARDS.legend, ...CARDS.ANALYST_IDS.map(CARDS.analystCard), ...[...CARDS.AGENT_IDS, ...CARDS.CONS_IDS].map(CARDS.agentCard)].join('');
   assert.doesNotMatch(all, /players add/i); assert.doesNotMatch(all, /Detect|Contain(?!ment)|Eradicate|symbol/);
   for (const id of CARDS.ANALYST_IDS) { const h = CARDS.analystCard(id); assert.match(h, /Your doubles/); assert.deepEqual(pips(h), CARDS.DOUBLES[id]); }

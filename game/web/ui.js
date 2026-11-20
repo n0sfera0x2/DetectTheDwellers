@@ -246,7 +246,7 @@
       const off = m.off[p], h = mine.find(x => x.p === p), pend = false, mo = false, just = FX && FX.struck.has(m.uid + '-' + p);
       const c = ['t-td', off ? 'off' : '', just ? 'just' : '', h ? (h.near ? 'tgt near' : 'tgt') : '', pend ? 'pend' : '', mo ? 'tgt more' : '', p >= m.printed ? 'xtra' : '', (t || more) && !off && !h && !mo && !pend ? 'dim' : ''].filter(Boolean).join(' ');
       const xi = p - m.printed, crewX = Math.max(0, UI.G.n - A.PAST), xp = xi < 0 ? '' : xi < crewX ? `${A.PAST + 1 + xi}P` : '+'; // a crew die says which crew size adds it; any other extra (Pager Storm) a plain +
-      const label = `${v}${xp ? (xp === '+' ? ' (extra die)' : ` (added for a crew of ${A.PAST + 1 + xi})`) : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
+      const label = `${v}${xp ? (xp === '+' ? ' (extra die)' : ` (rolled for a crew of ${A.PAST + 1 + xi})`) : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
       return `<button class="${c}" data-a="slot" data-u="${m.uid}" data-p="${p}"${xp ? ` data-xp="${xp}"` : ''} data-k="slot${m.uid}-${p}" aria-label="${esc(label)}" ${off ? 'disabled' : ''}>${PIP(v, 48)}${just ? '<i class="burst" aria-hidden="true"></i>' : ''}</button>`;
     }).join('')}</div>`;
   }

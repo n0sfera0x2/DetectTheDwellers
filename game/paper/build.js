@@ -11,7 +11,7 @@ const { C, pip, DOUBLES, cls, mobCard, bossCard, analystCard, agentCard, legend,
 const OUT = __dirname, HP = 13; // Full Shift starting HP (Quick: 10), 2026-11-04; the numbers are in the README
 
 // ---- Rules sheet -------------------------------------------------------------------------------------------
-const P = (n, px = 15) => pip(n, px);
+const P = (n, px = 15) => pip(n, px), ROLLED = px => require('../cards').rolled(px); // a die to roll (the crew's extra dice)
 const rules = `<section class="page rules">
 <h1>Detect the Dwellers</h1>
 <p class="lede">One night in the SOC. Match the numbers, hold the line, beat the boss at 05:59. 1–4 players, co-op.</p>
@@ -28,8 +28,8 @@ const rules = `<section class="page rules">
 <li>Set out the shift tracker: coin a box for anything once a round or fight; clear it as that ends.</li>
 </ol>
 <h2>Threat dice</h2>
-<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. <b>3 players:</b> add one more die, set to 6. <b>4 players:</b> add two, both set to 6. The card’s bottom edge shows it.</p>
-<p class="ex3"><span>Card</span>${[1, 2, 2, 3].map(n => P(n, 20)).join('')}<span>3 players</span><b>+</b>${P(6, 16)}<span>4 players</span><b>+</b>${P(6, 16)}${P(6, 16)}</p>
+<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. <b>3 players:</b> roll one more threat die and set it under the card as it lands. <b>4 players:</b> roll two. Roll them each time the alarm arrives or comes back.</p>
+<p class="ex3"><span>Card</span>${[1, 2, 2, 3].map(n => P(n, 20)).join('')}<span>3 players</span><b>+</b>${ROLLED(16)}<span>4 players</span><b>+</b>${ROLLED(16)}${ROLLED(16)}</p>
 <h2>A flip</h2>
 <ol>
 <li>Pick who’s on point. They stay on point through any situations until the next fight ends.</li>

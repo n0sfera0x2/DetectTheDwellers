@@ -838,13 +838,14 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   const EXTRA_CLASSES = [], ANALYST_ART = {};
   const cls = id => D.classes.find(c => c.id === id) || EXTRA_CLASSES.find(c => c.id === id);
   // The dice printed on a mob or boss card: the base dice (sim.js numbersFor, clustered round the mob's main number,
-  // printed low to high so they're quick to set out) and the + die a crew adds per player past three: always a 6.
+  // printed low to high so they're quick to set out) and the + die a crew adds per player past 2, rolled when the alarm
+  // enters play (2026-11-20; it was always a 6).
   // Base = one fewer than the mob's d20 hits; the boss two fewer than its two-player hits (same as sim.js).
   // Solo and 3 players play the base dice.
   const PAST = 2; // review 2: one + die per player past 2 (was 3), as six analysts' abilities stack in a bigger crew
   const diceFor = (m, boss) => {
     const base = boss ? m.hitsBase + D.bossAdd[2] - 2 : m.hits - 2; // two fewer than the d20 hits since 2026-10-31 (same as sim.js)
-    return { base: numbersFor(m.id, base).slice().sort((a, b) => a - b), extra: 6 };
+    return { base: numbersFor(m.id, base).slice().sort((a, b) => a - b), extra: 6 }; // extra: a placeholder; the crew's extra dice are rolled on entry (engine rollExtras, 2026-11-20)
   };
   // The dice a crew of n sets under the card: the base dice, then the + die once per player past three.
   const slotsFor = (m, boss, n) => { const d = diceFor(m, boss); return [...d.base, ...Array(Math.max(0, n - PAST)).fill(d.extra)]; };
@@ -858,10 +859,12 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   const KW_OVER = { druid: 'exfil', specter: 'exfil' }, abilityOf = m => KW_OVER[m.id] || m.ability;
   const kw = { exfil: 'Exfil', beacon: 'Beacon', noblock: 'Piercing', onpoint: 'Targeted', hardened: 'Evasive', regen: 'Regen', ramp: 'Escalating', lowest: 'Stalker', noagent: 'Fileless' };
   const kwText = { exfil: 'Still up at round end: the crew discards an item.', beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it. A double of another number takes out one die.', regen: 'At the end of each round, put back one die it lost.', ramp: '+2 Damage when it comes back.', lowest: 'It only hits whoever has the lowest HP.', noagent: 'Containment Agents don’t cut its Damage.' };
+  // A die to roll, not to set: a blank face with a ? (the crew's extra threat dice since 2026-11-20).
+  const rolled = px => `<svg class="pip rd" viewBox="0 0 16 16" width="${px}" height="${px}" style="display:inline-block;vertical-align:middle" role="img" aria-label="a rolled die"><rect x=".7" y=".7" width="14.6" height="14.6" rx="3.2" fill="#fff" stroke="${C.ink}" stroke-width="1.1" stroke-dasharray="2.2 1.4"/><text x="8" y="12" text-anchor="middle" font-family="'Chakra Petch',sans-serif" font-weight="700" font-size="11" fill="${C.ink}">?</text></svg>`;
   // The dice strip along the bottom edge: the dice to set under the card, then what a bigger crew adds, spelled out
-  // per crew size (2026-11-20: "+ ⚅ per player past 2" read as six dice, or a die per player on 6). On the table the
-  // physical dice sit just below it.
-  const crewAdds = (d, px) => [...Array(4 - PAST).keys()].map(k => `<span class="px"><span>${PAST + k + 1} players</span><b>+</b>${Array(k + 1).fill(pip(d.extra, px)).join('')}</span>`).join('');
+  // per crew size. Since 2026-11-20 the crew's extra dice are rolled when the alarm arrives (they were set to 6), so
+  // the strip shows a die to roll, never a face. On the table the physical dice sit just below it.
+  const crewAdds = (d, px) => [...Array(4 - PAST).keys()].map(k => `<span class="px"><span>${PAST + k + 1} players</span><b>+</b>${Array(k + 1).fill(rolled(px)).join('')}</span>`).join('');
   const strip = (d, px) => `<div class="dice"><div class="set">${d.base.map(n => pip(n, px)).join('')}</div>
   <div class="plus">${crewAdds(d, 14)}</div></div>`;
   // The keyword's icon from the game data, as the printed d20 mob cards show it.
@@ -1070,7 +1073,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:17px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
   return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, SOA_BASE_DICE, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, SOLO_ITEMS, soloLine, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
-    MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, sprite, artKeys };
+    MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, sprite, artKeys, rolled };
 });
 </script>
 <script>// Detect the Dwellers: the rules engine. DOM-free and deterministic given a seeded rng (opt.rnd or opt.seed).
@@ -1288,8 +1291,15 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
     for (const m of strikes) G.team.forEach((id, k) => hurt(G, k, dmgOf(G, m), `${m.name} arrives`));
     return back;
   }
+  // The crew's extra threat dice (one per player past 2) are rolled each time an alarm or the boss enters play
+  // (2026-11-20; until then they were set to 6). They sit after the printed dice.
+  function rollExtras(G, m) {
+    const x = Math.max(0, G.n - CARDS.PAST); if (!x) return;
+    const v = []; for (let p = m.printed; p < m.printed + x && p < m.slots.length; p++) { m.slots[p] = 1 + d6(G); v.push(m.slots[p]); }
+    if (v.length) say(G, `${m.name}: the crew's ${v.length > 1 ? 'extra dice roll' : 'extra die rolls'} ${v.join(' and ')}.`, 'mob');
+  }
   function enter(G, m) {
-    if (G.over) return; G.play.push(m); 
+    if (G.over) return; rollExtras(G, m); G.play.push(m); 
     if (m.kw === 'beacon') for (const b of rollRow(G, true, `${m.name}’s Beacon`)) enter(G, b);
   }
 
@@ -2071,7 +2081,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
       const off = m.off[p], h = mine.find(x => x.p === p), pend = false, mo = false, just = FX && FX.struck.has(m.uid + '-' + p);
       const c = ['t-td', off ? 'off' : '', just ? 'just' : '', h ? (h.near ? 'tgt near' : 'tgt') : '', pend ? 'pend' : '', mo ? 'tgt more' : '', p >= m.printed ? 'xtra' : '', (t || more) && !off && !h && !mo && !pend ? 'dim' : ''].filter(Boolean).join(' ');
       const xi = p - m.printed, crewX = Math.max(0, UI.G.n - A.PAST), xp = xi < 0 ? '' : xi < crewX ? `${A.PAST + 1 + xi}P` : '+'; // a crew die says which crew size adds it; any other extra (Pager Storm) a plain +
-      const label = `${v}${xp ? (xp === '+' ? ' (extra die)' : ` (added for a crew of ${A.PAST + 1 + xi})`) : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
+      const label = `${v}${xp ? (xp === '+' ? ' (extra die)' : ` (rolled for a crew of ${A.PAST + 1 + xi})`) : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
       return `<button class="${c}" data-a="slot" data-u="${m.uid}" data-p="${p}"${xp ? ` data-xp="${xp}"` : ''} data-k="slot${m.uid}-${p}" aria-label="${esc(label)}" ${off ? 'disabled' : ''}>${PIP(v, 48)}${just ? '<i class="burst" aria-hidden="true"></i>' : ''}</button>`;
     }).join('')}</div>`;
   }

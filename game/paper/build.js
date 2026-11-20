@@ -21,14 +21,14 @@ const rules = `<section class="page rules">
 <p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
 <h2>Setup</h2>
 <ol>
-<li>Pick the shift. <b>Quick:</b> everyone starts at <b>10 HP</b>. <b>Full:</b> <b>13 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
+<li>Pick the shift. Starting HP: <b>Quick</b> 10 (solo 11). <b>Full</b> 13 (solo 15, 3 players 14, 4 players 15), and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
 <li>Shuffle the <b>situation deck</b>, the 15 alarms and 9 situations. <b>Quick:</b> deal 8. <b>Full:</b> deal 9. That’s the <b>feed</b>. <b>Full</b> also shuffles the 9 <b>story</b> cards into their own deck.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
 <li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 3). Solo: deal until an agent comes up, shuffle the rest back, then draw until you hold your card’s Solo number.</li>
 <li>Set out the shift tracker: coin a box for anything once a round or fight; clear it as that ends.</li>
 </ol>
 <h2>Threat dice</h2>
-<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. <b>3 players:</b> roll one more threat die and set it under the card as it lands. <b>4 players:</b> roll two. Roll them each time the alarm arrives or comes back.</p>
+<p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. <b>3 players</b> roll one more and set it as it lands, <b>4 players</b> two, each time it arrives.</p>
 <p class="ex3"><span>Card</span>${[1, 2, 2, 3].map(n => P(n, 20)).join('')}<span>3 players</span><b>+</b>${ROLLED(16)}<span>4 players</span><b>+</b>${ROLLED(16)}${ROLLED(16)}</p>
 <h2>A flip</h2>
 <ol>
@@ -42,7 +42,7 @@ const rules = `<section class="page rules">
 </div>
 <div>
 <h2>Baseline it</h2>
-<p><b>Baseline it (optional).</b> When an alarm flips, or comes back, you can make the fight harder for a lasting reward. Add the dice on its <b>Baseline it</b> strip (+1 for a comeback; <b>Full, 3–4 players:</b> +1 per player past 2). Take out every die, then slide the alarm under an agent card so only that strip shows. The agent keeps the strip’s bonus for the rest of the shift. Most say <b>Overclock</b>: use the agent’s Overclocked line. <b>One</b> alarm per agent. A tucked alarm can’t come back, but if its agent is discarded, it goes back on the row. No agent yet? Set the alarm aside until someone draws one.</p>
+<p><b>Baseline it (optional).</b> When an alarm flips or comes back, you can make the fight harder for a lasting reward. Add the dice on its <b>Baseline it</b> strip (+1 for a comeback; <b>Full, 3–4 players:</b> +1 per player past 2). Take out every die, then slide the alarm under an agent card so only that strip shows. The agent keeps the strip’s bonus for the rest of the shift. Most say <b>Overclock</b>: use the agent’s Overclocked line. <b>One</b> alarm per agent. A tucked alarm can’t come back, but if its agent is discarded, it goes back on the row. No agent yet? Set the alarm aside until someone draws one.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>
@@ -51,11 +51,11 @@ const rules = `<section class="page rules">
 <li><b>Hits back.</b> Every alarm with dice left hits everyone who isn’t blocking, for its Damage. An alarm with no dice left is beaten.</li>
 </ol>
 <h2>Doubles</h2>
-<p>Your analyst card shows your doubles. The solo crew die: <b>only a 6</b>. A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
+<p>Your two <b>magic numbers</b> are doubles (not on the solo crew die or an agent’s die). A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
 <h2>After a fight</h2>
 <p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Coin the next <b>fights won</b> box: from 3 won, alarms (not the boss) deal <b>+1</b>. <b>Full:</b> after the 1st, 3rd and 5th, the top story card goes on the feed: flip it next. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. <b>Consumables</b> are used once. Both kinds take a slot: each player holds 4 items (solo 6). Full? Discard one to take another.</p>
 <h2>Situations and conditions</h2>
-<p>Most situations make you choose: stay or run, grab it or leave it. On point rolls any grab with spare dice. Conditions are cards you keep in front of you. <b>Rattled</b> and <b>Exposed</b> wear off; <b>Focused</b> waits until you use it. Nobody holds two of the same.</p>
+<p>Most situations make you choose. On point rolls any grab with spare dice. Conditions are cards you keep in front of you. <b>Rattled</b> and <b>Exposed</b> wear off; <b>Focused</b> waits until you use it. Nobody holds two of the same.</p>
 <h2>Win or lose</h2>
 <p>Beat the boss and you’ve survived the night. Anyone at 0 HP and the shift is lost.</p>
 </div>

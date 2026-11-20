@@ -10,8 +10,8 @@
 
 | Mode | Feed | HP | Solo starts with | Boss |
 | --- | --- | --- | --- | --- |
-| **Quick Shift** | deal 8 from the situation deck | 10 | the number on their analyst card (Hunter 3, Engineer 2, Responder 1, Soarcerer 1), one an agent | its core ability only |
-| **Full Shift** | deal 9 from the situation deck; after the 1st, 3rd and 5th fight won, the top story card is the next flip | 13 | the same | its core ability and its **Full Shift** row trigger |
+| **Quick Shift** | deal 8 from the situation deck | 10 (solo 11) | the number on their analyst card (Hunter 3, Engineer 2, Responder 1, Soarcerer 1), one an agent | its core ability only |
+| **Full Shift** | deal 9 from the situation deck; after the 1st, 3rd and 5th fight won, the top story card is the next flip | 13 (solo 15, 3 players 14, 4 players 15) | the same | its core ability and its **Full Shift** row trigger |
 
 One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 3). The number of alarms in a feed varies: about 4.3 in Quick, 5.6 in Full.
 
@@ -24,7 +24,7 @@ One boss, drawn at random, goes face down under the feed. A crew draws 2 items (
 3. **Match.** A die takes out one threat die showing exactly its number.
 4. **Hits back.** Every alarm with dice left hits everyone who isn't blocking, for its Damage. An alarm with no dice left is beaten.
 
-**Doubles.** Each analyst has two double numbers: their own plus the 6. The solo crew die doubles only on a 6. **Pairs:** two of your own dice showing the same number make a double. A double counts as two dice showing its number (under one alarm or two), **or** it guards: you block this round (only you; a Responder double may heal 3 instead). Never both.
+**Doubles.** Each analyst has two **magic numbers**, neighbours, and nobody has the 6 (since 2026-11-20; it was their own number plus the 6): a die of theirs that lands on one is a double. The solo crew die and an agent’s die never double. **Pairs:** two of your own dice showing the same number make a double. A double counts as two dice showing its number (under one alarm or two), **or** it guards: you block this round (only you; a Responder double may heal 3 instead). Never both.
 
 **The row.** Beaten alarms always go back on the row, unless they were baselined. Roll the two amber dice: a row alarm comes back if the sum is at most its number. Comebacks return with their printed dice and join the fight; nobody is hit on arrival (since 2026-11-03, when every range also went one step wider: back on 2–3 to 2–6, 8–42% a roll). A coin marks an alarm the first time it comes back.
 
@@ -73,12 +73,12 @@ The Full Shift trigger rolls the row at round end (the Operator's when it comes 
 
 One line each since 2026-11-03; no wild numbers. Only the Engineer's turn needs a coin. Forensics and the Shift Lead (review 2) were cut.
 
-| Analyst | Doubles | Ability |
+| Analyst | Magic numbers | Ability |
 | --- | --- | --- |
-| Hunter | 4, 6 | On point, you roll one more die in a fight’s first round. It’s never a double. (First round only since 2026-11-05.) |
-| Responder | 3, 6 | A double of yours can heal anyone 3 instead of guarding. |
-| Engineer | 1, 6 | Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead. (Both since 2026-11-05; the turn was once a round.) |
-| Soarcerer | 2, 6 | On point, while you baseline an alarm, roll two more dice. (Since 2026-11-05: every round of that fight.) |
+| Hunter | 4, 5 | On point, you roll one more die in a fight’s first round. It’s never a double. (First round only since 2026-11-05.) |
+| Responder | 3, 4 | A double of yours can heal anyone 3 instead of guarding. |
+| Engineer | 1, 2 | Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead. (Both since 2026-11-05; the turn was once a round.) |
+| Soarcerer | 2, 3 | On point, while you baseline an alarm, roll two more dice. (Since 2026-11-05: every round of that fight.) |
 
 Each analyst card also prints how many items a solo player starts with (since 2026-11-20): Hunter 3, Engineer 2, Responder 1, Soarcerer 1. One of them is always an agent.
 
@@ -133,18 +133,18 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-20 (the crew’s extra threat dice rolled each time an alarm enters play; 4p rows rerun for it, the rest unchanged by it; solo setup items by analyst: Hunter 3, Engineer 2, Responder 1, Soarcerer 1; Full Shift baselining one more die per player past 2; Escalating +2 Damage when it comes back; the tuck traits of 2026-11-19: twelve bands Overclock, plus Hardened, Siphon and Locked; otherwise the rules of 2026-11-05: the Hunter's extra die in a fight's first round only, the Engineer's turn once a fight, the Triage Agent rolls two in a multi-alarm fight, one solo setup item an agent; the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer. The decision and scare columns weren't rerun this pass; their values are from 2026-11-05.
+Bot sims, `SYS=n6 N=600`, 2026-11-20 (starting HP by crew size: Quick solo 11, Full solo 15 and 4p 15; two magic numbers per analyst, no 6, and the solo crew die and agent dice never double; the crew’s extra threat dice rolled each time an alarm enters play; solo setup items by analyst: Hunter 3, Engineer 2, Responder 1, Soarcerer 1; Full Shift baselining one more die per player past 2; Escalating +2 Damage when it comes back; the tuck traits of 2026-11-19: twelve bands Overclock, plus Hardened, Siphon and Locked; otherwise the rules of 2026-11-05: the Hunter's extra die in a fight's first round only, the Engineer's turn once a fight, the Triage Agent rolls two in a multi-alarm fight, one solo setup item an agent; the Engineer on point guards a crewmate, the Soarcerer on point baselines with two more dice; all 15 alarms baseline, HP 10 and 13, 3 setup items for 3–4 players). Every game deals its own feed and draws its own boss; crews are every combination of the four analysts (at 4 players, all four). "Any real decision" counts a round with a real dice choice or a reroll on offer. The decision and scare columns weren't rerun this pass; their values are from 2026-11-05.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 5 HP or less: one boss hit from 0) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 54% | 25 pts | 44% | 94% | 18.7 | 4.1 | 52% | 66% |
-| Quick, 2p | 54% | 24 pts | 50% | 96% | 12.3 | 1.5 | 46% | 76% |
-| Quick, 4p | 50% | 24 pts | 52% | 99% | 10.3 | 1.1 | 47% | 67% |
-| Full, 1p | 55% | 21 pts | 45% | 95% | 19.6 | 5.8 | 50% | 39% |
-| Full, 2p | 57% | 23 pts | 50% | 96% | 13.9 | 2.4 | 42% | 34% |
-| Full, 4p | 47% | 25 pts | 53% | 98% | 13.0 | 1.8 | 49% | 28% |
+| Quick, 1p | 54% | 23 pts | 43% | 94% | 18.0 | 3.9 | 56% | 66% |
+| Quick, 2p | 54% | 24 pts | 50% | 96% | 12.2 | 1.4 | 52% | 76% |
+| Quick, 4p | 51% | 24 pts | 49% | 99% | 11.0 | 1.0 | 51% | 67% |
+| Full, 1p | 50% | 15 pts | 44% | 95% | 19.8 | 5.6 | 53% | 39% |
+| Full, 2p | 58% | 21 pts | 51% | 96% | 13.4 | 2.4 | 43% | 34% |
+| Full, 4p | 54% | 29 pts | 51% | 98% | 14.3 | 1.7 | 56% | 28% |
 
-Solo by analyst: Quick Hunter 56%, Responder 57%, Engineer 50%, Soarcerer 53%; Full 59 / 62 / 51 / 55% (2026-11-19, before the solo items by analyst: Quick 45 / 63 / 50 / 64%, Full 49 / 69 / 51 / 65%). Pairs (600 games each): Quick 43% (Hunter + Soarcerer) to 60% (Responder + Engineer); Full 51% (Hunter + Soarcerer) to 62% (Responder + Engineer). Baselines per shift: about 3.0–3.5 in Quick and 3.4–3.7 in Full.
+Solo by analyst: Quick Hunter 59%, Responder 48%, Engineer 49%, Soarcerer 55%; Full 64 / 51 / 51 / 56% (with HP by crew size; at the old HP they were Quick 56 / 43 / 45 / 51%, Full 60 / 47 / 47 / 52%; with the 6 they were Quick 56 / 57 / 50 / 53%, Full 59 / 62 / 51 / 55%; 2026-11-19, before the solo items by analyst: Quick 45 / 63 / 50 / 64%, Full 49 / 69 / 51 / 65%). Pairs (600 games each): Quick 47% (Hunter + Soarcerer) to 59% (Responder + Engineer); Full 51% (Hunter + Soarcerer) to 63% (Responder + Engineer); 2-player HP didn’t change. Baselines per shift: about 3.0–3.5 in Quick and 3.4–3.7 in Full.
 
 ### Targets
 
@@ -152,21 +152,24 @@ What the sim should hold after any rule change, and what to turn when it misses.
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 54 / 54 / 50% (4p at the floor) | 55 / 57 / 47% (4p misses) | the mode's HP; solo: starting items; 3–4p: their setup item |
-| Spread across crew sizes | 10 points or less | 4 | 10 | 3–4p: the setup item (the + dice are on the card) |
-| Solo spread across analysts | 10 points or less | 6 | 10 | items and agents (the owner’s call, 2026-11-05), not the analyst’s ability |
-| Pairs, lowest to highest | within 15 points | 43–60% (17, misses) | 51–62% (11) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 25 / 24 / 24 | 21 / 23 / 25 | more decisions per roll |
+| Win rate, every crew size | 50–60% | 54 / 54 / 51% | 50 / 58 / 54% | the mode's HP; solo: starting items; 3–4p: their setup item |
+| Spread across crew sizes | 10 points or less | 3 | 8 | 3–4p: the setup item (the + dice are on the card) |
+| Solo spread across analysts | 10 points or less | 10 | 13 (misses) | items and agents (the owner’s call, 2026-11-05), not the analyst’s ability |
+| Pairs, lowest to highest | within 15 points | 47–59% (12) | 51–63% (12) | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 23 / 24 / 24 | 15 / 21 / 29 (1p misses) | more decisions per roll |
 | Rounds with a real decision | 60% or more | 94 / 96 / 99% (2026-11-05, not rerun) | 95 / 96 / 98% (2026-11-05, not rerun) | the reroll; its cost |
-| Rounds with a real dice choice | 40% or more | 44 / 50 / 52% | 45 / 50 / 53% | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 52 / 46 / 47% | 50 / 42 / 49% | the boss's Damage; the threat timing (`ESC`) |
+| Rounds with a real dice choice | 40% or more | 43 / 50 / 49% | 44 / 51 / 51% | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 56 / 52 / 51% | 53 / 43 / 56% | the boss's Damage; the threat timing (`ESC`) |
 | Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 66 / 76 / 67% (2026-11-05, not rerun) | 39 / 34 / 28% (all miss; 2026-11-05, not rerun) | Full: its HP; 4p pile-ups |
-| Comebacks per shift | solo 3–6; crews 1–3 (since 2026-11-20, was 3–6) | 4.1 / 1.5 / 1.1 | 5.8 / 2.4 / 1.8 | the row ranges (`ROWSHIFT`); the feed size |
+| Comebacks per shift | solo 3–6; crews 1–3 (since 2026-11-20, was 3–6) | 3.9 / 1.4 / 1.0 | 5.6 / 2.4 / 1.7 | the row ranges (`ROWSHIFT`); the feed size |
 | Baselining worth doing | always beats never | +12 / +6 / +18 | +17 / +15 / +32 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun this pass | not rerun this pass | the losing option's payoff |
 | The boss is a climax (Full) | beating it once there: 75% or less | 77 / 72 / 70% (1p over) | 72 / 66 / 68% | its row marks (`BOSSSTEPS`) |
 
 **Open:**
+
+- **Full Shift solo: the Hunter leads by 13 points** (64% against the Responder and Engineer at 51%), and Full solo’s skill gap is 15 points (target 20). Starting HP lifts every analyst alike, so it can’t close the spread; solo starting items can (the owner’s lever). Quick’s spread is 10, on target.
+- **3-player HP is a guess.** The sim reports 1, 2 and 4 players; Full 3p’s 14 HP sits between 2p (13) and 4p (15).
 
 - **Full Shift 4p is under the floor** (47%, against 50–60%) since the crew’s extra threat dice are rolled (2026-11-20; it was 50% with them set to 6). Quick 4p sits at the floor (50%). A 6 is a double for every analyst, so a rolled die is harder to take out. Not yet turned: the 3–4 player setup item, or Full Shift HP for 4 players.
 
@@ -223,6 +226,9 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `SOANEW`, `SOAPERK`, `SOATUCK` | the Soarcerer: `SOANEW=basedie2` (default since 2026-11-05): on point, two more dice every round while baselining; `basedie` (one more), `both` (one more and the draw), `drawpoint` (each baseline on point draws an item, 2026-11-04), `twinown` (their agents count as two, earlier that day), `wilddbl` (any die a double for baselining, the rule before), `wildbase`, `up1` (a tuck under their agent also overclocks it) and `pair5` were tried; the old 2-die cost (`SOAPERK=auto`) and tuck draw (`SOATUCK=1`) are off |
 | `SOLOQ` | solo setup items by analyst (default since 2026-11-20 `HUN:3,RES:1,ENG:2,SOA:1`, the analyst cards; `SOLOQ=` gives everyone `QSOLO`) |
 | `BASEPLUS` | baselining adds one more die per player past 2 (default since 2026-11-20: `1` in Full Shift, `0` in Quick) |
+| `HPN` | extra starting HP by crew size on top of `HP` (default since 2026-11-20: Quick `1:1`, Full `1:2,3:1,4:2`; `HPN=` turns it off) |
+| `MAGIC` | each analyst doubles on two magic numbers, no 6, and the solo crew die and agent dice never double (`1`, default since 2026-11-20); `0` is the old signature doubles (your number plus a 6) |
+| `MAGICSET` | overrides the magic numbers, e.g. `HUN:4,5;RES:3,5` (set B, a shared 5, was simmed and not taken) |
 | `XROLL` | the crew’s extra threat dice (one per player past 2) are rolled each time an alarm enters play (`1`, default since 2026-11-20); `0` sets them to 6, the rule until then |
 | `ROWCREW` | proposal (2026-11-20): in a crew, every row range is this many steps wider (default 0) |
 | `AGENTS=0` | the 7 agents are removed from the item deck, not replaced (11 consumables; a measurement, 2026-11-19) |
@@ -354,6 +360,56 @@ The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### Starting HP by crew size (2026-11-20)
+
+#### What changed
+
+The owner asked to close the gaps that two magic numbers left with more HP. A single HP per mode couldn’t: Full 2p was already 58%, near the ceiling. So starting HP now goes by crew size. **Quick:** solo 11, everyone else 10. **Full:** solo 15, 2 players 13, 3 players 14, 4 players 15. The page’s start bar shows the crew’s HP, and the rules sheet’s setup line lists it.
+
+#### Numbers
+
+Bot sims, 600 games per crew size, 2026-11-20. Extra HP over the mode’s (`HPN`):
+
+| Setting | Quick 1p / 2p / 4p | Full 1p / 2p / 4p | Solo spread Q / F |
+| --- | --- | --- | --- |
+| None (10 and 13 for everyone) | 49 / 54 / 51% | 48 / 58 / 45% | 13 / 13 |
+| Quick solo +1 (adopted) | **54** / 54 / 51% | | 10 / |
+| Quick solo +2 | 55 / 54 / 51% | | 11 / |
+| Full solo +1, 3p +1, 4p +2 | | 47 / 58 / 54% | / 15 |
+| Full solo +2, 3p +1, 4p +2 (adopted) | | **50** / 58 / **54**% | / 13 |
+| Full solo +2, 3p +2, 4p +3 | | 50 / 58 / 55% | / 13 |
+
+Every crew size is inside 50–60% again. Two things HP can’t do: close Full solo’s analyst spread (13 points) or its skill gap (15). Both are in **Open**. 3 players aren’t simmed; their HP sits between 2 and 4.
+
+#### Tests
+
+`node --test game/web/spec.js` has 84 tests and all pass, one of them new: starting HP for every mode and crew size, from the engine and a new game. `npm test` has 83 tests and all pass.
+
+### Two magic numbers each, no 6 (2026-11-20)
+
+#### What changed
+
+The owner’s call. A 6 was a double for every analyst, so it read as nobody’s number. Now each analyst has two **magic numbers**, neighbours, and a die of theirs that lands on one is a double: Hunter 4 and 5, Responder 3 and 4, Engineer 1 and 2, Soarcerer 2 and 3. The solo crew die and an agent’s die never double (they doubled on a 6).
+
+Analyst cards say “Your magic numbers: doubles”, the crew pick shows **Magic numbers**, and the dice legend and the rules sheet say both dice never double. The rules sheet and the legend card cut words to fit (no overflow).
+
+#### Numbers
+
+Bot sims, 600 games per crew size, 2026-11-20, each mode at its HP.
+
+| Win rate, 1p / 2p / 4p | Quick | Full |
+| --- | --- | --- |
+| Your number plus a 6 (`MAGIC=0`) | 54 / 54 / 50% | 55 / 57 / 47% |
+| One magic number each | 32 / 39 / 40% | 38 / 46 / 34% |
+| **Two, neighbours (adopted)** | **49 / 54 / 51%** | **48 / 58 / 45%** |
+| Two, a shared 5 (`MAGICSET`, not taken) | 50 / 55 / 51% | 52 / 59 / 44% |
+
+One number each halved everyone’s doubles, and every crew size fell 8–22 points. The owner chose two each, and the neighbours over the shared 5, so each analyst feels distinct. Solo and Full 4p sit just under the floor, and the solo spread is 13 points (see **Open**). Nothing else was tuned.
+
+#### Tests
+
+`node --test game/web/spec.js` has 83 tests and all pass. The doubles test now pins the new pairs, agent dice never double, and twelve fixtures that made a double from a 6 (or a single from a 3 or 4) use the new numbers. `npm test` has 83 tests and all pass.
 
 ### The crew’s extra threat dice are rolled (2026-11-20)
 

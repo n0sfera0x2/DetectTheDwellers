@@ -28,10 +28,12 @@
   const hd = (tg, hud) => `<div class="hd"><span class="tg">${tg}</span>${hud ? `<span class="hud">${hud}</span>` : ''}</div>`;
   // Exact numbers (2026-10-30). Every die is a standard pip d6 and reads as its number. A mob card prints the dice to
   // set under it; a rolled die takes out a die showing exactly its number. Which numbers are doubles depends on the
-  // analyst; every other die (the solo crew die, the Triage agent die) doubles only on a 6.
+  // analyst; every other die (the solo crew die, the Triage agent die) never doubles (2026-11-20; it doubled on a 6).
   // Same numbers as sim.js DOUBLES (web/spec.js checks they agree).
-  // Signature doubles (2026-10-31): one number of your own plus the 6 everyone has.
-  const DOUBLES = { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6], CREW: [6], AGENT: [6] };
+  // Magic numbers (2026-11-20, the owner's call): each analyst doubles on their own two numbers, neighbours, and nobody
+  // on a 6. Until then everyone doubled on their number plus a 6 (signature doubles, 2026-10-31), and the solo crew die
+  // and agent dice doubled only on a 6; now they never double.
+  const DOUBLES = { HUN: [4, 5], RES: [3, 4], ENG: [1, 2], SOA: [2, 3], CREW: [], AGENT: [] };
   const isDouble = (id, n) => (DOUBLES[id] || DOUBLES.CREW).includes(n);
   // The persistence row on 2d6: a row mob comes back if the sum is at most its number. The data's d20 ranges map by
   // tier (top 12+ → 5, 10–11 → 4, 8–9 → 3, 7 or less → 2): every beaten mob goes back to the row, so the odds sit
@@ -140,7 +142,7 @@
   const SOLO_ITEMS = { HUN: 3, RES: 1, ENG: 2, SOA: 1 };
   const soloLine = id => `Solo: start with ${SOLO_ITEMS[id]} item${SOLO_ITEMS[id] === 1 ? '' : 's'}.`;
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'on shift')}<div class="nm">${cls(id).name}</div>
-  <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
+  <div class="small">Your magic numbers: doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
   <div class="note">A double counts as two dice showing its number, or guards you. <b>${soloLine(id)}</b></div><div class="perk">${PERK[id]}</div></div>`;
   // Items (2026-10-31): the deck is items. Agents are passive: each player holds 2 (the Soarcerer 3; solo 4, or 5).
   // Since 2026-11-01 they work for the whole crew, and Triage rolls one more die of its holder's own. Consumables
@@ -169,7 +171,7 @@
   <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
   <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards you.</div>
-  <div class="note">The solo crew die: only a ${pip(6, 14)}. <b>Two of yours on one number: a double.</b></div>
+  <div class="note">Only magic numbers double. <b>Two of yours on one number: a double.</b></div>
   <div class="note"><b>Once a round, take 1 to reroll one of your own dice</b> (not at 1 HP).</div>
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
   <div class="note">Row: 2 amber dice; back if the sum is at most its number.</div></div>`;

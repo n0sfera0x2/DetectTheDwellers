@@ -24,9 +24,9 @@
   // Quick Shift solo starts with 1 (2026-11-02: solo ran 12 points ahead of a crew in the short feed).
   // A crew of 3 or 4 draws one more (2026-11-03: the Responder's doubles no longer guard, and 4p fell 9–15 points behind 2p).
   const startItems = (n, mode = 'full', id) => n === 1 ? (id && CARDS.SOLO_ITEMS[id]) || (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 1 : 0); // a crew of 3–4 draws 3 (4 for part of 2026-11-04)
-  // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
+  // A rolled pip die. who: the analyst's id (their two magic numbers double), or 'CREW' / 'AGENT' (never a double, since 2026-11-20).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
-  // A crew die's double after it changes number: its owner's doubles (the solo crew die: a 6), none if rolled Rattled.
+  // A crew die's double after it changes number: its owner's magic numbers (the solo crew die: never), none if rolled Rattled.
   const dieDbl = (G, d, n) => !d.rattled && !d.plain && CARDS.isDouble(d.src === 'crew' ? 'CREW' : G.team[d.k], n);
   // Every item's name, from the shared cards (agents and consumables).
   const KIT_NAME = Object.fromEntries(Object.entries(CARDS.ITEM).map(([t, v]) => [t, v[0]]));
@@ -45,7 +45,10 @@
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, soloItems: 2, bossRow: true } }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 1 }, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 2, 3: 1, 4: 2 }, soloItems: 2, bossRow: true } };
+  // Starting HP by crew size (2026-11-20, after two magic numbers each): the mode's HP plus hpBy. Quick: solo 11, else
+  // 10. Full: solo 15, 2 players 13, 3 players 14, 4 players 15. Same as sim.js HPN.
+  const startHp = (mode, n) => { const M = MODES[mode] || MODES.quick; return M.hp + ((M.hpBy || {})[n] || 0); }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
     if (n < 1 || n > 4) throw new Error('1–4 players');
@@ -57,7 +60,7 @@
         domain: boss ? null : m.domain, top: boss ? null : CARDS.rowTop(m.persist[1]), printed: d.base.length, extra: d.extra, hits: slots.length, slots,
         off: Array(slots.length).fill(false), offStack: [], back: 0, up: 0 }; };
     const mode = opt.mode || 'quick', M = MODES[mode]; if (!M) throw new Error('No such mode: ' + mode);
-    const hp = opt.hp || M.hp, sc = id => ({ sit: id, uid: 's-' + id });
+    const hp = opt.hp || startHp(mode, n), sc = id => ({ sit: id, uid: 's-' + id });
     const core = shuffle([...CARDS.mobs().map(m => mk(m, false)), ...CARDS.SIT_CORE.map(sc)], r), story = M.storyAt ? shuffle(CARDS.SIT_STORY.map(sc), r) : (shuffle(CARDS.SIT_STORY, r), []); // Quick shuffles it too: same seeds, same deals
     // opt.alarmsOnly (tests): the feed is all 15 alarms and no situations. opt.boss picks the boss.
     const feed = opt.alarmsOnly ? shuffle(CARDS.mobs().map(m => mk(m, false)), r) : shuffle(core.slice(0, M.deal), r), bossId = opt.boss || CARDS.BOSS_IDS[Math.floor(r() * CARDS.BOSS_IDS.length)];
@@ -751,6 +754,6 @@
     return G;
   }
 
-  return { aug, enter, rollRow, backTop, watch, baseline, canBaseline, tuck, HP, START_ITEMS, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
+  return { aug, enter, rollRow, backTop, watch, baseline, canBaseline, tuck, HP, startHp, START_ITEMS, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
     give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canHeal, heal, threat, heldN, exfil, exfilable, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

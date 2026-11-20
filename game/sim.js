@@ -24,7 +24,11 @@ const pipDie = dbl => KEY.map((s, i) => [s, dbl.includes(i + 1) ? 2 : 1]);
 // Signature doubles (2026-10-31): each analyst has one number of their own, plus the 6 everyone has. Was three numbers
 // each (Hunter 1 2 6, Responder 3 4 6, Engineer 2 4 6): half of every analyst's faces, too swingy. Which number
 // goes where moved solo wins by a few points at most; the gaps come from the abilities.
-const DOUBLES = { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6], PAT: [3, 6], FOR: [5, 6], LEAD: [2, 6], CREW: [6], AGENT: [6] };
+// MAGIC (default since 2026-11-20): each analyst doubles on their two magic numbers (neighbours, no 6), and the solo crew die and agent dice never double. MAGIC=0 is the old signature doubles (your number plus a 6; other dice only a 6).
+const MAGIC = (process.env.MAGIC ?? '1') === '1';
+// MAGICSET overrides the analysts' magic numbers, e.g. MAGICSET='HUN:4,5;RES:3,4;ENG:1,2;SOA:2,3'.
+const MAGICSET = Object.fromEntries((process.env.MAGICSET || '').split(';').filter(Boolean).map(x => { const [id, ns] = x.split(':'); return [id, ns.split(',').map(Number)]; }));
+const DOUBLES = MAGIC ? { HUN: [4, 5], RES: [3, 4], ENG: [1, 2], SOA: [2, 3], PAT: [3], FOR: [5], LEAD: [2], CREW: [], AGENT: [], ...MAGICSET } : { HUN: [4, 6], RES: [3, 6], ENG: [1, 6], SOA: [2, 6], PAT: [3, 6], FOR: [5, 6], LEAD: [2, 6], CREW: [6], AGENT: [6] };
 const CUSTOM = process.env.DICE === 'custom';
 const CUSTOM_DICE = {
   HUN: [['D', 2], ['D', 2], ['D', 1], ['C', 1], ['E', 1], ['E', 2]],
@@ -248,6 +252,9 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 // Responder (vs the biggest hitter) match one higher or lower too. N6DICE: dice per analyst (on point +1).
 // Bigger crews (2026-10-30, clustered dice): one more threat die showing 6 per player past three. Past two (the
 // first exact-numbers rule) left 3p at 36% and 4p at 19% once doubles stopped taking "any one more".
+// HPN: extra starting HP by crew size on top of the mode's HP, e.g. HPN='1:1,4:2' (solo +1, 4 players +2). Default since
+// 2026-11-20 (after two magic numbers each): Quick solo +1; Full solo +2, 3 players +1, 4 players +2. HPN='' turns it off.
+const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:2,3:1,4:2' : '1:1')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
 const XFROM = +(process.env.XFROM || 2);
 // XROLL (default since 2026-11-20): the crew's extra threat dice (one per player past XFROM) are rolled each time the alarm enters play, not set to 6. XROLL=0 is the old set-to-6 rule.
 const XROLL = (process.env.XROLL ?? '1') === '1'; // review 2: one + die per player past 2 (was 3), as six analysts stack up in a crew of four
@@ -289,7 +296,8 @@ function newGame(sys, team, opt) {
     const core = shuffle([...MOBS.map(m => mk(m)), ...SITS_CORE.map(s => ({ sit: s }))], r), story = shuffle(SITS_STORY.map(s => ({ sit: s })), r).slice(0, MODE === 'full' ? +(process.env.STORYF || 3) : 0);
     feed = shuffle([...story, ...core.slice(0, (MODE === 'full' ? +(process.env.DEALF || 14) : +(process.env.DEALQ || 8)) - story.length)], r); if (MODE === 'full' && STORYAT) { feed = core.slice(0, +(process.env.DEALF || 9)); storyDeck = shuffle(SITS_STORY.map(s => ({ sit: s })), r); } // STORYAT: story deck flips after these fights won // DEALQ, DEALF, STORYF: deal sizes mobs = feed.filter(c => !c.sit);
   } else { mobs = shuffle(D.mobs.filter(m => CLASSIC.includes(m.id)), r).slice(0, opt.deal || 6).map(m => mk(m)); feed = SIT && sys === 'n6' && FEED === 'mixed' ? shuffle([...mobs, ...SITS.map(s => ({ sit: s }))], r) : mobs; }
-  return { storyDeck, sys, team, n, r, hp: team.map(() => opt.hp), max: opt.hp, feed, boss: mk(D.bosses[Math.floor(r() * 3)], true),
+  const hpN = opt.hp + (HPN[n] || 0); // HPN: extra starting HP by crew size (2026-11-20)
+  return { storyDeck, sys, team, n, r, hp: team.map(() => hpN), max: hpN, feed, boss: mk(D.bosses[Math.floor(r() * 3)], true),
     row: [], play: [], trayK: [], trayT: [], pendT: [], kit: shuffle(NEWITEMS ? KIT.filter(t => !NOAGENTS || !isAgent(t)) : KIT.flatMap(t => [t, t]), r), discard: [], tray: [], point: 0, over: false, win: false,
     stats: { rounds: 0, choice: 0, back: 0, sit: {}, ran: 0, focus: 0, flipped: 0 }, smart: opt.smart !== false,
     cond: team.map(() => ({ rattled: false, exposed: false, focused: false })), sits: shuffle(SITS, r), pending: [], addSix: 0, runNext: false, badgeHit: false, aug: [] };

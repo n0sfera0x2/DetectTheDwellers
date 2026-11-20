@@ -212,7 +212,7 @@
     const team = UI.setup.team, n = team.length;
     const picks = A.ANALYST_IDS.map(id => { const on = team.includes(id);
       return `<button type="button" class="pick" data-a="pick" data-id="${id}" data-k="pick${id}" aria-pressed="${on}" ${!on && n >= 4 ? 'disabled' : ''}><span class="art">${A.sprite(id) || crop(ART[id], THUMB[id])}</span>
-        <span class="pk-t"><span class="pk-h"><span class="nm">${esc(nm(id))}</span><span class="style">${esc(STYLE[id])}</span></span><span class="dbl"><span class="phud">Doubles</span>${dbls(id)}</span><span class="pk-perk">${esc(A.PERK[id])} <span class="pk-solo">${esc(A.soloLine(id))}</span></span></span>
+        <span class="pk-t"><span class="pk-h"><span class="nm">${esc(nm(id))}</span><span class="style">${esc(STYLE[id])}</span></span><span class="dbl"><span class="phud">Magic numbers</span>${dbls(id)}</span><span class="pk-perk">${esc(A.PERK[id])} <span class="pk-solo">${esc(A.soloLine(id))}</span></span></span>
         <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
     return `<div class="wrap"><div class="intro-grid">
       <section class="hero"><span class="art">${A.sprite('hero') || slice(ART.hero)}</span><p class="meta c">Co-op · 1–4 players · one night in the SOC</p><h1 class="logo">Detect the Dwellers</h1>
@@ -223,7 +223,7 @@
       <section class="setup panel" aria-labelledby="crew-h"><h2 class="sech" id="crew-h">Crew · ${n} of 4</h2><div class="picks" role="group" aria-labelledby="crew-h">${picks}</div>
         <p class="meta">One analyst per player, up to 4. Tap to add or drop.</p>
         <h2 class="sech" id="mode-h">Shift</h2><div class="modes" role="group" aria-labelledby="mode-h">${Object.entries(E.MODES).map(([k, M]) => `<button type="button" class="shiftm${UI.setup.mode === k ? ' on' : ''}" data-a="mode" data-m="${k}" data-k="mode${k}" aria-pressed="${UI.setup.mode === k}"><b>${M.label}</b><span class="meta">${MODE_SUB[k]}</span></button>`).join('')}</div>
-        <div class="startbar"><p class="meta">${n === 1 ? 'Solo' : `${n} players`} · ${E.MODES[UI.setup.mode].label} · ${E.MODES[UI.setup.mode].hp} HP each · Survive until 06:00</p>
+        <div class="startbar"><p class="meta">${n === 1 ? 'Solo' : `${n} players`} · ${E.MODES[UI.setup.mode].label} · ${E.startHp(UI.setup.mode, n)} HP each · Survive until 06:00</p>
           <button class="btn p w big" type="button" data-a="start" data-k="start">Clock in</button></div></section>
     </div></div>`;
   }

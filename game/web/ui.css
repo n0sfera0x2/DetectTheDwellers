@@ -693,3 +693,14 @@ h2[tabindex="-1"]:focus{outline:none}
 .adv-foe .adv-spr{filter:drop-shadow(1px 0 0 rgba(255,214,200,.8)) drop-shadow(-1px 0 0 rgba(255,214,200,.8)) drop-shadow(0 1px 0 rgba(255,214,200,.8)) drop-shadow(0 -1px 0 rgba(255,214,200,.8)) drop-shadow(0 0 10px rgba(255,90,42,.35))}
 .adv-hero::after{left:5%;right:5%;bottom:-4px;height:14px;background:radial-gradient(ellipse at center,rgba(56,225,255,.35),rgba(56,225,255,0) 70%)}
 .adv-foe .adv-spr::after{content:"";position:absolute;left:5%;right:5%;bottom:-4px;height:14px;z-index:-1;border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,90,42,.3),rgba(255,90,42,0) 70%)}
+
+/* The die's pop-out menu (2026-11-20, Adventure view): the selected die's actions beside it, not in the panel. */
+.adv-pop{position:fixed;z-index:40;display:flex;flex-direction:column;align-items:stretch;gap:6px;width:max-content;max-width:min(300px,calc(100vw - 16px));padding:10px;border-radius:8px;background:rgba(14,16,28,.97);border:1px solid rgba(56,225,255,.45);box-shadow:0 12px 28px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.4)}
+.adv-pop::after{content:"";position:absolute;left:calc(var(--ax,50%) - 7px);bottom:-7px;width:12px;height:12px;background:inherit;border-right:1px solid rgba(56,225,255,.45);border-bottom:1px solid rgba(56,225,255,.45);transform:rotate(45deg)}
+.adv-pop.below::after{bottom:auto;top:-7px;transform:rotate(225deg)}
+.adv-pop-h{font:700 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#9FD7E6}
+.adv-pop .btn{width:100%;justify-content:space-between;min-height:36px}
+.adv-pop .t-gpick{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.adv-pop .t-gpick .inc{flex-basis:100%;font-size:.75rem;color:var(--mut)}.adv-pop .t-gpick .btn{width:auto;flex:1 1 auto}
+.adv-pop .rr{font-size:.75rem;color:var(--mut);text-align:right}
+.adv-pop .t-turn{display:flex;flex-wrap:wrap;gap:4px}.adv-pop>.inc{font-size:.75rem;color:var(--mut)}
+.adv-act .acts,.adv-menu .acts{display:contents}

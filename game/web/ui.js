@@ -334,7 +334,7 @@
       ${n <= 9 ? `<kbd aria-hidden="true">${d.i + 1}</kbd>` : ''}<span class="f">${PIP(d.n, 46)}</span><span class="o">${d.used === 'guard' ? (gTo ? 'Guard ' + esc(gTo) : 'Guard') : d.used === 'pair' ? 'Paired' : d.used ? 'Used' : half ? '1 left' : d.paired != null ? 'Pair ×2' : d.dbl ? 'Double ×2' : esc(owner)}</span>${d.used === 'guard' || (t && t.guard && d.dbl) ? `<span class="gmark" aria-hidden="true">${ICON.shield}</span>` : ''}${d.turned ? '<span class="badge w">EN</span>' : d.flipped ? '<span class="badge c">OPP</span>' : d.focused ? '<span class="badge c">FO</span>' : d.rattled ? '<span class="badge r">RAT</span>' : ''}</button>`;
   }
   function vHand() {
-    const G = UI.G; let hint = '', ctl = '', dice = '';
+    const G = UI.G; let hint = '', ctl = '', dice = '', dieCtl = '', roundCtl = '';
     if (G.phase === 'flip' && G.sitDone) {
       hint = `<b>Situation done.</b> ${esc(nm(G.team[G.point]))} stays on point through the next fight. ${G.feed.length ? 'Flip the next card' : 'Bring on the boss'}.`;
       ctl = `<div class="acts"><span class="grow"></span><button class="btn p big" data-a="flip" data-k="flip">${G.feed.length ? 'Flip the next card' : 'Bring on the boss'} <kbd>F</kbd></button></div>`;
@@ -366,17 +366,20 @@
       const pairAt = new Map(prs.map(([i, j]) => [j, i]));
       const pairBtn = j => { const i = pairAt.get(j), n = G.dice[i].n; return `<button class="btn s cy t-pairb" type="button" data-a="pair" data-i="${i}" data-j="${j}" data-k="pair${i}-${j}" aria-label="Pair dice ${i + 1} and ${j + 1}: two ${n}s make a double ${n}"><span class="pp" aria-hidden="true">${PIP(n, 16)}${PIP(n, 16)}</span>Pair</button>`; };
       dice = `<div class="t-dice" role="group" aria-label="Your dice">${G.dice.map(x => dieHtml(x, G.dice.length) + (pairAt.has(x.i) ? pairBtn(x.i) : '')).join('')}</div>`;
-      ctl = `<div class="acts">
-        ${picking ? `<span class="t-gpick" role="group" aria-label="Guard who"><span class="inc">Guard who?</span>${E.guardable(G, d).map(k => `<button class="btn cy grdb" type="button" data-a="guardfor" data-n="${k}" data-k="gfor${k}">${ICON.shield}${esc(nm(G.team[k]))}${k === d.k ? ' (you)' : ''} <kbd>${k + 1}</kbd></button>`).join('')}<button class="btn s" type="button" data-a="guardx" data-k="guardx">Cancel</button></span>`
+      // The die's own actions and the round's, apart (2026-11-20): Adventure view pops the die's out beside the die.
+      dieCtl = `        ${picking ? `<span class="t-gpick" role="group" aria-label="Guard who"><span class="inc">Guard who?</span>${E.guardable(G, d).map(k => `<button class="btn cy grdb" type="button" data-a="guardfor" data-n="${k}" data-k="gfor${k}">${ICON.shield}${esc(nm(G.team[k]))}${k === d.k ? ' (you)' : ''} <kbd>${k + 1}</kbd></button>`).join('')}<button class="btn s" type="button" data-a="guardx" data-k="guardx">Cancel</button></span>`
           : sel && t.guard ? `<button class="btn cy grdb" data-a="guard" data-k="guard">${ICON.shield}Guard <kbd>G</kbd></button>` : ''}
         ${sel && E.canHeal(G, d) ? `<span class="t-gpick" role="group" aria-label="Heal who"><span class="inc">Heal ${A.RES_HEAL}:</span>${G.team.map((id, k) => `<button class="btn cy" type="button" data-a="heal" data-n="${k}" data-k="heal${k}"${G.hp[k] >= G.max ? ' disabled' : ''}>${esc(nm(id))}${k === d.k ? ' (you)' : ''}</button>`).join('')}</span>` : ''}
         ${d && E.canReroll(G, d) ? `<button class="btn" data-a="reroll" data-k="reroll" aria-label="Take 1 damage to reroll this die">Reroll: take 1 <kbd>X</kbd></button>` : ''}${G.rerolled ? `<span class="inc rr">Rerolls left: ${G.team.map((id, k) => G.rerolled[k] ? '' : esc(SHORT[id])).filter(Boolean).join(', ') || 'none'}</span>` : ''}
         ${sel && t.eng ? `<button class="btn cy" data-a="eng" data-k="eng" aria-label="Engineer: turn this die to its opposite side, ${7 - d.n}">Opposite side (→ ${7 - d.n}) <kbd>O</kbd></button>` : ''}
         ${sel && t.focus ? `<span class="inc">Focused: turn to…</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s cy" data-a="focus" data-n="${n}" data-k="focus${n}" aria-label="Focused: turn this die to ${n}">${PIP(n, 20)}</button>`).join('')}</span>` : ''}
-        ${sel && t.enrich ? `<span class="inc">${esc(SHORT[G.team[d.k]])}’s Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${PIP(n, 20)}</button>`).join('')}</span>` : ''}
-        <span class="inc grow dk">${incText()}</span>
+        ${sel && t.enrich ? `<span class="inc">${esc(SHORT[G.team[d.k]])}’s Enrichment: turn to</span><span class="t-turn">${[1, 2, 3, 4, 5, 6].filter(n => n !== d.n).map(n => `<button class="btn s" data-a="turn" data-n="${n}" data-k="turn${n}" aria-label="Turn this die to ${n}">${PIP(n, 20)}</button>`).join('')}</span>` : ''}`;
+      roundCtl = `        <span class="inc grow dk">${incText()}</span>
         <button class="btn" data-a="undo" data-k="undo" ${G.undo.length ? '' : 'disabled'}>Undo <kbd>U</kbd></button>
-        <button class="btn p" data-a="end" data-k="end">${endArmed(G) ? 'End round anyway' : 'End round'} <kbd>E</kbd></button></div>`;
+        <button class="btn p" data-a="end" data-k="end">${endArmed(G) ? 'End round anyway' : 'End round'} <kbd>E</kbd></button>`;
+      ctl = `<div class="acts">
+        ${dieCtl}
+${roundCtl}</div>`;
     } else if (G.phase === 'exfil') {
       hint = `<b>Exfil.</b> The crew discards ${G.exfil === 1 ? 'an item' : G.exfil + ' items'}: tap one below. An agent takes what’s tucked under it along.`;
       ctl = `<div class="t-dkit" role="group" aria-label="Discard an item">${G.team.map((id, k) => `<span class="t-dk"><b>${esc(SHORT[id])}</b>${[...G.agents[k], ...G.hand[k]].map(c => `<button class="btn s warn" type="button" data-a="exfil" data-u="${c.uid}" data-k="exfil${c.uid}"${G.agents[k].includes(c) && !E.exfilable(G, c) ? ' disabled title="Locked: Exfil can’t take it"' : ''}>Discard ${esc(E.KIT_NAME[c.t])}</button>`).join('') || '<span class="chip">No items</span>'}</span>`).join('')}</div>`;
@@ -388,7 +391,7 @@
         : G.n === 1 ? `<b>Your item slots are full.</b> Discard one to take the ${esc(E.KIT_NAME[c.t])}, or keep it out.`
         : `<b>Deal the ${esc(E.KIT_NAME[c.t])}</b>${G.deal.length > 1 ? ` (${G.deal.length} to deal)` : ''}: it takes one of that player’s item slots. Tap <b>Give to …</b>${G.n <= 4 ? kh('keys 1–' + G.n) : ''}.`;
     }
-    return { hint: `${lethalLine(G)}${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}`, ctl, dice };
+    return { hint: `${lethalLine(G)}${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}`, ctl, dice, dieCtl, roundCtl, lethal: lethalLine(G) };
   }
   // Dice that can still do something this round: hit a threat die, guard or heal (2026-11-19 critique: End round went
   // through with matchable dice unplaced, so one stray tap could end a shift).
@@ -520,6 +523,21 @@
   const advPets = k => (UI.G.agents[k] || []).map((c, j) => `<span class="adv-pet" style="--j:${j}" data-peek="agent:${c.t}" tabindex="0" aria-label="${esc(E.KIT_NAME[c.t])}">${A.sprite(c.t)}</span>`).join('');
   // Each analyst's dice from the dice tray: every die button carries data-i, and G.dice[i].k is its owner.
   const advDiceBy = (G, html) => { const out = G.team.map(() => []); (String(html || '').match(/<button class="t-die[\s\S]*?<\/button>/g) || []).forEach(b => { const i = +(b.match(/data-i="(\d+)"/) || [])[1]; const d = G.dice[i]; out[d ? d.k : 0].push(b); }); return out.map(a => a.join('')); };
+  // A selected die's actions (Guard, Heal, Reroll, the turns) pop out beside it; placePop() anchors the menu after render.
+  const advPop = (G, h) => G.phase === 'assign' && UI.sel != null && /<button/.test(h.dieCtl || '') ? /* only when it has something to press */ `<div class="adv-pop" role="group" aria-label="Die ${UI.sel + 1}: actions"><span class="adv-pop-h">${esc(E.dieOwner(G, G.dice[UI.sel]))} · ${E.faceText(G.dice[UI.sel])}</span>${h.dieCtl}</div>` : '';
+  // The panel's line: short while a die is picked (its menu does the explaining), the full hint otherwise.
+  const advHint = (G, h) => { const d = G.phase === 'assign' && UI.sel != null ? G.dice[UI.sel] : null; if (!d || d.used || UI.msg) return h.hint;
+    const t = E.targets(G, d.i); return `${h.lethal}<b>${esc(E.dieOwner(G, d))}: ${E.faceText(d)}.</b> ${t.hits.length ? 'Tap a glowing die under an alarm' + (/<button/.test(h.dieCtl || '') ? ', or pick from its menu.' : '.') : /<button/.test(h.dieCtl || '') ? 'Nothing it can hit: pick from its menu.' : 'Nothing it can hit.'}`; };
+  function placePop() {
+    const pop = app.querySelector('.adv-pop'); if (!pop) return;
+    const die = UI.sel != null && app.querySelector(`.adv-hud [data-a="die"][data-i="${UI.sel}"]`); if (!die) { pop.hidden = true; return; }
+    const r = die.getBoundingClientRect(), w = pop.offsetWidth, ht = pop.offsetHeight;
+    let top = r.top - ht - 10, below = false; if (top < 8) { top = r.bottom + 10; below = true; }
+    const left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    pop.style.top = Math.round(top) + 'px'; pop.style.left = Math.round(left) + 'px'; pop.classList.toggle('below', below);
+    pop.style.setProperty('--ax', Math.round(r.left + r.width / 2 - left) + 'px');
+  }
+  addEventListener('resize', () => placePop());
   function vAdventure(h) {
     const G = UI.G, dice = advDiceBy(G, h.dice);
     const crew = G.team.map((id, k) => `<div class="adv-slot" style="--k:${k}"><figure class="adv-hero${k === G.point ? ' on' : ''}${G.hp[k] <= 0 ? ' ko' : ''}"><span class="adv-spr" data-peek="analyst:${id}" tabindex="0" aria-label="${esc(nm(id))}, ${G.hp[k]} HP">${A.sprite('full_' + id) || A.sprite(id)}</span><span class="adv-pets">${advPets(k)}</span></figure></div>`).join('');
@@ -532,7 +550,7 @@
     const aloud = vAloud().replace('class="t-aloud"', 'class="t-aloud adv-omen"');
     return `<div class="tb adv ph-${G.phase}${E.MODES[G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${aloud}
       <section class="adv-field${G.bossOut ? ' boss' : ''}" aria-label="The fight"><div class="adv-crew" style="--n:${G.n}">${crew}</div><div class="adv-foes">${foes}</div></section>
-      <section class="adv-hud">${vPlates(dice)}<div class="adv-act" role="region" aria-label="What to do"><p class="status">${h.hint}</p><div class="adv-menu">${bases}${h.ctl}</div></div></section></div>`;
+      <section class="adv-hud">${vPlates(dice)}<div class="adv-act" role="region" aria-label="What to do"><p class="status">${advHint(G, h)}</p><div class="adv-menu">${bases}${G.phase === 'assign' ? h.roundCtl : h.ctl}</div></div></section>${advPop(G, h)}</div>`;
   }
   function vStage() {
     const G = UI.G;
@@ -584,6 +602,7 @@
     let h = null; if (UI.G) h = vHand();
     if (UI.G && UI.adv && fighting(UI.G)) app.innerHTML = vAdventure(h) + vReveal() + vLog() + vMenu() + vGallery() + vEnd(); else
     app.innerHTML = UI.G ? `<div class="tb ph-${UI.G.phase}${E.MODES[UI.G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${vStage()}<div class="tb-foot">${h.dice ? `<div class="tb-dice${UI.G.dice.length > 5 ? ' many' : ''}">${h.dice}</div>` : ''}${vPlates()}<div class="tb-act"><p class="status">${h.hint}</p>${h.ctl}</div></div></div>` + vReveal() + vLog() + vMenu() + vGallery() + vEnd() : vSetup() + vMenu() + vGallery();
+    placePop();
     document.body.classList.toggle('ingame', !!UI.G); document.body.classList.toggle('nokeys', !UI.keys);
     KEEP_SCROLL.forEach((sel, n) => app.querySelectorAll(sel).forEach((e, i) => { if (kept[n][i]) e.scrollTop = kept[n][i]; }));
     // Shortcut hints are visual only: kbd stays out of button names, the key goes in aria-keyshortcuts (while Keys is on).

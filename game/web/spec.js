@@ -1134,6 +1134,10 @@ test('page: Adventure view (a setting) lays the fight out as a battle scene that
   G.dice.forEach(x => assert.ok(d.querySelector(`.adv-hud .tb-pl[data-hp="${x.k}"] [data-a="die"][data-i="${x.i}"]`), 'die ' + x.i + ' sits with its owner'));
   assert.equal(d.querySelectorAll('.adv-hud .tb-pl').length, G.n, 'the table’s crew plates, items and all'); assert.ok(d.querySelectorAll('.adv-hero .spr[class*="spr-full_"]').length === G.n, 'full-body sprites on the field');
   const pickD = [...d.querySelectorAll('.adv-hud [data-a="die"]')].find(b => +b.dataset.i !== w.CDUI.UI.sel), fi = +pickD.dataset.i; pickD.click(); assert.equal(w.CDUI.UI.sel, fi, 'a die picks up as in the table'); /* the roll already selected one; pick another */
+  // A picked die's own actions pop out beside it; the panel keeps only the round's (2026-11-20).
+  const pd = G.dice[fi]; if (E.canReroll(G, pd) || E.canGuard(G, pd)) { assert.ok(d.querySelector('.adv-pop'), 'its menu pops out');
+    if (E.canReroll(G, pd)) assert.ok(d.querySelector('.adv-pop [data-a="reroll"]'), 'Reroll in the menu'); if (E.canGuard(G, pd)) assert.ok(d.querySelector('.adv-pop [data-a="guard"]'), 'Guard in the menu'); }
+  assert.ok(!d.querySelector('.adv-act [data-a="guard"],.adv-act [data-a="reroll"],.adv-act [data-a="heal"]'), 'no die actions in the panel'); assert.ok(d.querySelector('.adv-act [data-a="end"]') && d.querySelector('.adv-act [data-a="undo"]'), 'the round’s in the panel');
   click('[data-a="menu"]'); click('.menup [data-a="adv"]'); assert.ok(d.querySelector('.tb-stage') && !d.querySelector('.adv-field'), 'off: the table again'); if (w.localStorage) assert.equal(w.localStorage.getItem('cd-adventure'), '0');
 });
 test('page: Guard covers the player who rolled the double, straight away; undo takes it back', { skip: !JSDOM && 'jsdom not installed' }, () => {

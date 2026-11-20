@@ -378,6 +378,8 @@ Look only; no rule changed. The owner asked for a fight screen that reads like a
 
 **Third pass, the same day (owner’s notes: “messy and cluttered”, “hard to see the characters”):** each alarm is now its sprite plus one translucent plate under its feet, holding the name, the Damage chip, a Back or Down marker, the keyword and the threat dice. That replaces three floating boxes. **Baseline** moved into the action panel (“Baseline LSASS Siphon +3”), so it’s with the other commands and still there whenever the table view offers it. For contrast, the backdrop is dimmed and desaturated, and every crew and alarm sprite gets a light outline, a soft glow and a pool of light at its feet. The crew grew to 128 px at most. They still shrink to fit, and the layout probe again found nothing cut off or out of view.
 
+**Fourth pass (owner: “clunky”, “UI gore”):** a picked die’s own actions (Guard, Heal and its targets, Reroll with the rerolls left, the Engineer’s and Enrichment turns, Focused) pop out in a small menu anchored above the die, with an arrow. The menu opens only when there’s something to press. The panel keeps one short line and the round’s controls: the round-end damage, Undo and End round. `ui.js` `vHand` now builds the die’s controls and the round’s apart (`dieCtl`, `roundCtl`); the table view joins them as before, so its markup didn’t change.
+
 #### Tests
 
 `node --test game/web/spec.js` has 85 tests and all pass, one of them new: Adventure view shows every analyst, every alarm with its threat dice, and each die beside its owner; a die picks up as in the table; and turning it off brings the table back. `npm test` has 83 tests and all pass. Screenshots are in `production/qa/evidence/2026-11-20-adventure-*.png`.

@@ -118,8 +118,10 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .t-amb .pip{width:36px;height:36px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.5))}.t-amb .pip rect{fill:var(--am);stroke:#1A1012}.t-amb .pip circle{fill:#1A1012}
 .t-amb.rolling{animation:dtumble .16s linear infinite}.t-amb.landed{animation:land .3s var(--ease)}
 /* The omen (2026-11-20): the alarm's flavour as an eerie italic line, a red seam, a faint flicker. */
-.t-aloud{position:relative;border:1px solid #2A1A24;border-left:3px solid var(--fl);background:linear-gradient(90deg,#1A0D14 0,#0C0A10 70%);padding:10px 16px 8px;box-shadow:inset 0 0 24px rgba(255,90,42,.08)}
-.t-aloud p.omen{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:1.1875rem;line-height:1.4;max-width:70ch;color:#EFE3F2;letter-spacing:.01em;text-shadow:0 0 10px rgba(56,225,255,.35),0 0 2px rgba(255,90,42,.4);animation:omen 5s steps(1,end) infinite}
+.t-aloud{position:relative;border:1px solid #2A1A24;border-left:3px solid var(--fl);background:linear-gradient(90deg,#1A0D14 0,#0C0A10 70%);padding:5px 14px;box-shadow:inset 0 0 24px rgba(255,90,42,.08)}
+/* IM Fell English Italic (fonts/): old print, a little uneven, like a note left by something. A red-and-cyan ghost
+   doubles the letters, and they flicker now and then. */
+.t-aloud p.omen{font-family:'IM Fell English',Georgia,serif;font-style:italic;font-size:1.25rem;line-height:1.25;max-width:80ch;color:#EFE3F2;letter-spacing:.005em;text-shadow:1px 0 0 rgba(255,90,42,.35),-1px 0 0 rgba(56,225,255,.3),0 0 12px rgba(56,225,255,.25);animation:omen 5s steps(1,end) infinite}
 .aloud{display:block;margin-top:4px;text-align:right;font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1.3;letter-spacing:.08em;text-transform:uppercase;color:#FF8A66}
 @keyframes omen{0%,100%{opacity:1}91%{opacity:.82}92%{opacity:1}96%{opacity:.9}97%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.t-aloud p.omen{animation:none}}
@@ -151,7 +153,8 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .t-td{position:relative;isolation:isolate;padding:0;border:0;background:none;width:36px;height:36px;line-height:0;border-radius:7px;cursor:pointer;transition:transform .18s var(--ease),opacity .18s}
 .t-td .pip{width:36px;height:36px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.5))}
 .t-td .pip rect{fill:#E9E1D8;stroke:#1A1012}
-.t-td.xtra::after{content:"+";position:absolute;top:-7px;right:-6px;font:700 11px/14px var(--mono);width:14px;height:14px;border-radius:50%;background:var(--am);color:#1A1012;text-align:center}
+/* The die a bigger crew adds says which crew size added it (3P, 4P), not "+" (2026-11-20). */
+.t-td.xtra::after{content:attr(data-xp);position:absolute;top:-8px;right:-8px;font:700 9px/13px var(--mono);letter-spacing:.02em;padding:0 3px;height:13px;border-radius:3px;background:var(--am);color:#1A1012;text-align:center}
 .t-td.off{transform:translateY(5px) rotate(-24deg) scale(.82);opacity:.32;cursor:default}
 .t-td.off .pip rect{fill:#7A6F69}.t-td.off::after{content:'';position:absolute;left:-3px;right:-3px;top:50%;height:2px;background:var(--fl);transform:rotate(-35deg);z-index:2}
 .t-td.just{animation:taken .45s var(--ease)}
@@ -177,7 +180,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .fdown::before,.fdown::after{content:"";position:absolute;inset:-1px;z-index:-1;background:#0E0B12;border:1px solid var(--rule2)}
 .fdown::before{transform:translate(calc(min(var(--stack,0),1) * 6px),calc(min(var(--stack,0),1) * 6px))}
 .fdown::after{transform:translate(calc(min(max(var(--stack,0) - 1,0),1) * 12px),calc(min(max(var(--stack,0) - 1,0),1) * 12px));z-index:-2}
-.fd-t{position:absolute;left:8%;right:8%;top:8%;font-weight:700;font-size:clamp(19px,1.9vw,24px);line-height:1.05;letter-spacing:.02em;text-transform:uppercase;text-wrap:balance}
+.fd-t{position:absolute;left:13%;right:13%;top:13%;font-weight:700;font-size:clamp(15px,1.5vw,19px);line-height:1.1;letter-spacing:.03em;text-transform:uppercase;text-wrap:balance;text-align:center;text-shadow:0 2px 0 #07060A,0 0 10px rgba(7,6,10,.9)} /* inside the pixel back's frame (2026-11-20) */
 .fd-b{position:absolute;left:0;right:0;bottom:0;padding:28px 6% 8%;display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(to top,rgba(7,6,10,.94) 55%,rgba(7,6,10,0))}
 .fd-b b{font-weight:700;font-size:0.8125rem;line-height:1.2;letter-spacing:.1em;text-transform:uppercase;color:var(--cy)}
 .fd-b span{display:inline-flex;align-items:center;min-height:40px;padding:6px 16px;background:var(--cy);color:#04141a;font-weight:700;font-size:0.875rem;letter-spacing:.06em;text-transform:uppercase;clip-path:var(--ch)}
@@ -403,7 +406,7 @@ body.ingame{overflow:hidden}
 .tb-stage .t-steps{margin:0}.tb-stage .t-steps li{padding:3px 8px}.tb-stage .t-steps li span{font-size:0.75rem}
 .tb-note{font-size:0.875rem;line-height:1.4;padding:6px 10px;border:1px solid var(--rule2);background:var(--s1)}
 .tb-note.boss{border-color:rgba(255,90,42,.6);background:rgba(255,90,42,.07)}.tb-note .clk{margin-right:4px}
-.t-aloud.tb-note p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:1.0625rem}.t-aloud.tb-note .aloud{font-size:0.6875rem}
+.t-aloud.tb-note p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:1.1875rem}
 .tb-als{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,360px));gap:14px 10px;justify-content:center;align-content:start;padding-top:6px}
 .tb-als.n1{grid-template-columns:minmax(0,440px)}
 @media (min-width:761px) and (min-height:700px){.tb-als.n1 .t-td,.tb-als.n1 .t-td .pip,.tb-als.n1 .t-threat.big .t-td,.tb-als.n1 .t-threat.big .t-td .pip{width:52px;height:52px}.tb-als.n1 .tb-art{width:112px;height:112px}.tb-als.n1 .tb-alh{grid-template-columns:112px minmax(0,1fr) auto}.tb-als.n1 .tb-alt .nm{font-size:1.125rem}.tb-als.n1 .tb-kw{font-size:0.875rem}}
@@ -591,3 +594,6 @@ h2[tabindex="-1"]:focus{outline:none}
   .tb-als .tb-al.boss .tb-alh{grid-template-columns:minmax(0,1fr) auto}
 }
 @media (max-height:780px) and (min-width:761px){.tb-als .tb-al.boss{padding-left:102px;min-height:98px}.tb-als .tb-al.boss .tb-alh{grid-template-columns:minmax(0,1fr) auto}}
+
+/* Crew pick: the doubles dice big enough to read (2026-11-20). */
+.pick .dbl .pip{width:26px;height:26px}

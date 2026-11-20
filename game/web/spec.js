@@ -292,10 +292,10 @@ test('cards: the dice strip along the bottom, no symbols, no “players add”; 
   const strip = html => { const i = html.indexOf('class="dice"'), j = html.indexOf('class="base"'); assert.ok(i > 0, 'dice strip'); return html.slice(i, j > i ? j : undefined); };
   for (const m of CARDS.mobs()) {
     const h = CARDS.mobCard(m), d = CARDS.diceFor(m);
-    assert.deepEqual(pips(strip(h)), [...d.base, d.extra]); assert.match(h, /per player past 2/); assert.equal(d.extra, 6);
+    assert.deepEqual(pips(strip(h)), [...d.base, d.extra, d.extra, d.extra]); assert.match(h, /3 players<\/span><b>\+<\/b>/); assert.match(h, /4 players<\/span><b>\+<\/b>/); assert.doesNotMatch(h, /per player past/); assert.equal(d.extra, 6);
     assert.ok(h.lastIndexOf('class="dice"') > h.indexOf('class="fl"'), 'the strip comes after the flavour: the bottom edge');
   }
-  const bh = CARDS.bossCard(CARDS.boss()), bd = CARDS.diceFor(CARDS.boss(), true); assert.deepEqual(pips(strip(bh)), [...bd.base, bd.extra]);
+  const bh = CARDS.bossCard(CARDS.boss()), bd = CARDS.diceFor(CARDS.boss(), true); assert.deepEqual(pips(strip(bh)), [...bd.base, bd.extra, bd.extra, bd.extra]);
   const all = [...CARDS.mobs().map(CARDS.mobCard), bh, CARDS.legend, ...CARDS.ANALYST_IDS.map(CARDS.analystCard), ...[...CARDS.AGENT_IDS, ...CARDS.CONS_IDS].map(CARDS.agentCard)].join('');
   assert.doesNotMatch(all, /players add/i); assert.doesNotMatch(all, /Detect|Contain(?!ment)|Eradicate|symbol/);
   for (const id of CARDS.ANALYST_IDS) { const h = CARDS.analystCard(id); assert.match(h, /Your doubles/); assert.deepEqual(pips(h), CARDS.DOUBLES[id]); }

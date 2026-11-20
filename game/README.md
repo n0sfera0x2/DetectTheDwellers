@@ -15,7 +15,7 @@
 
 One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 3). The number of alarms in a feed varies: about 4.3 in Quick, 5.6 in Full.
 
-**A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (3 or 4 players add the card's + die, a 6, per player past 2). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll.
+**A flip.** Pick who's on point; they stay on point through any situations until the next fight ends. Flip the top card of the feed. A situation: play it, then flip again. An alarm: set its threat dice just below the card, turned to the numbers printed on its bottom edge (3 players add one more die set to 6, 4 players two, as the card's bottom edge shows). On point may **baseline** it. If anything is on the row, roll the row. Two or more alarms in play is a multi-alarm fight. When the feed is empty, the boss arrives with one last row roll.
 
 **A fight round.**
 
@@ -351,6 +351,16 @@ The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### The crew's extra dice spelled out, a spookier omen (2026-11-20)
+
+#### What changed
+
+Wording and look only; the rule is unchanged (3 players add one threat die set to 6, 4 players add two).
+
+- **Extra dice, spelled out.** "+ ⚅ per player past 2" read as six dice, or as a die per player. The card strip now says **3 players + ⚅** and **4 players + ⚅⚅**, and the rules sheet says "3 players: add one more die, set to 6. 4 players: add two." On the page the die a crew adds is badged **3P** or **4P** (its label says "added for a crew of 3"). Any other extra die, like Pager Storm's, keeps a plain **+**. The boss card sets its crew lines beside its dice, and its art box went from 74 to 68 px to make room; the PDF reports no overflow.
+- **The omen:** IM Fell English Italic (OFL, embedded from `fonts/`), with a red-and-cyan ghost on the letters. The alarm-name byline is gone. On a 1280 px screen it's one 38 px line.
+- **Easier to read:** the doubles dice on the crew pick went from 18 to 26 px, and the feed card's title sits inside the card back's frame.
 
 ### No ink left on the page: pixel scenes and dice, a JRPG crew, a boss row (2026-11-20)
 

@@ -206,7 +206,7 @@
 
   // ---- Views --------------------------------------------------------------------------------------------------------
   const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button><button class="btn s keys" type="button" data-a="keys" data-k="keys" aria-pressed="${UI.keys}" title="Single-key shortcuts ${UI.keys ? 'on' : 'off'}">Keys ${UI.keys ? 'on' : 'off'}</button>`;
-  const dbls = id => A.DOUBLES[id].map(n => PIP(n, 18)).join('');
+  const dbls = id => A.DOUBLES[id].map(n => PIP(n, 26)).join('');
   const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '9 cards, then the boss. A story card after your 1st, 3rd and 5th win. The boss pulls the row. About 30 minutes.' };
   function vSetup() {
     const team = UI.setup.team, n = team.length;
@@ -236,7 +236,7 @@
     const m = G.play.find(x => !x.back && !x.boss), f = m && dataMob(m.id).flavor; if (!f) return '';
     const fresh = FX && FX.enter.has(m.uid) && !reduced();
     // On screen the flavour is an omen, not a read-aloud cue (2026-11-20): the print cards keep the table ritual.
-    return `<div class="t-aloud"><p class="omen${fresh ? ' reveal-ln' : ''}">${lines(f).map((s, i) => `<span class="ln" style="--i:${i}">${esc(s)}</span>`).join(' ')}</p><span class="aloud">— ${esc(m.name)}</span></div>`;
+    return `<div class="t-aloud"><p class="omen${fresh ? ' reveal-ln' : ''}" aria-label="${esc(m.name)}: ${esc(f)}">${lines(f).map((s, i) => `<span class="ln" style="--i:${i}">${esc(s)}</span>`).join(' ')}</p></div>`;
   }
   // The threat dice set under a card: one per slot, taken ones turned aside. Live state only, never on the card.
   function vThreat(m) {
@@ -245,8 +245,9 @@
     return `<div class="t-threat${m.slots.length > 6 ? ' big' : ''}" role="group" aria-label="Dice under ${esc(m.name)}">${m.slots.map((v, p) => {
       const off = m.off[p], h = mine.find(x => x.p === p), pend = false, mo = false, just = FX && FX.struck.has(m.uid + '-' + p);
       const c = ['t-td', off ? 'off' : '', just ? 'just' : '', h ? (h.near ? 'tgt near' : 'tgt') : '', pend ? 'pend' : '', mo ? 'tgt more' : '', p >= m.printed ? 'xtra' : '', (t || more) && !off && !h && !mo && !pend ? 'dim' : ''].filter(Boolean).join(' ');
-      const label = `${v}${p >= m.printed ? ' (extra die for this crew)' : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
-      return `<button class="${c}" data-a="slot" data-u="${m.uid}" data-p="${p}" data-k="slot${m.uid}-${p}" aria-label="${esc(label)}" ${off ? 'disabled' : ''}>${PIP(v, 48)}${just ? '<i class="burst" aria-hidden="true"></i>' : ''}</button>`;
+      const xi = p - m.printed, crewX = Math.max(0, UI.G.n - A.PAST), xp = xi < 0 ? '' : xi < crewX ? `${A.PAST + 1 + xi}P` : '+'; // a crew die says which crew size adds it; any other extra (Pager Storm) a plain +
+      const label = `${v}${xp ? (xp === '+' ? ' (extra die)' : ` (added for a crew of ${A.PAST + 1 + xi})`) : ''}${off ? ', taken' : h ? (h.near ? ', one off: your perk matches it' : ', matches') : mo ? ', take as one more' : ''}`;
+      return `<button class="${c}" data-a="slot" data-u="${m.uid}" data-p="${p}"${xp ? ` data-xp="${xp}"` : ''} data-k="slot${m.uid}-${p}" aria-label="${esc(label)}" ${off ? 'disabled' : ''}>${PIP(v, 48)}${just ? '<i class="burst" aria-hidden="true"></i>' : ''}</button>`;
     }).join('')}</div>`;
   }
   // Between fights: the feed face down (the print card back) and who's on point, as analyst cards with portraits.

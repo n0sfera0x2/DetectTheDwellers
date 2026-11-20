@@ -63,10 +63,12 @@
   const KW_OVER = { druid: 'exfil', specter: 'exfil' }, abilityOf = m => KW_OVER[m.id] || m.ability;
   const kw = { exfil: 'Exfil', beacon: 'Beacon', noblock: 'Piercing', onpoint: 'Targeted', hardened: 'Evasive', regen: 'Regen', ramp: 'Escalating', lowest: 'Stalker', noagent: 'Fileless' };
   const kwText = { exfil: 'Still up at round end: the crew discards an item.', beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it. A double of another number takes out one die.', regen: 'At the end of each round, put back one die it lost.', ramp: '+2 Damage when it comes back.', lowest: 'It only hits whoever has the lowest HP.', noagent: 'Containment Agents don’t cut its Damage.' };
-  // The dice strip along the bottom edge: the dice to set under the card, then the + die per player past three. On
-  // the table the physical dice sit just below it.
+  // The dice strip along the bottom edge: the dice to set under the card, then what a bigger crew adds, spelled out
+  // per crew size (2026-11-20: "+ ⚅ per player past 2" read as six dice, or a die per player on 6). On the table the
+  // physical dice sit just below it.
+  const crewAdds = (d, px) => [...Array(4 - PAST).keys()].map(k => `<span class="px"><span>${PAST + k + 1} players</span><b>+</b>${Array(k + 1).fill(pip(d.extra, px)).join('')}</span>`).join('');
   const strip = (d, px) => `<div class="dice"><div class="set">${d.base.map(n => pip(n, px)).join('')}</div>
-  <div class="plus"><b>+</b>${pip(d.extra, 18)}<span>per player past ${PAST}</span></div></div>`;
+  <div class="plus">${crewAdds(d, 14)}</div></div>`;
   // The keyword's icon from the game data, as the printed d20 mob cards show it.
   const KW_ICON = { exfil: '<path d="M2.5 8h8M7.5 4.5 11 8l-3.5 3.5M13.5 2.5v11"/>' };
   const kwIcon = m => { const k = KW_ICON[m.kw] ? { icon: KW_ICON[m.kw] } : D.keywords && D.keywords[m.kw]; return k ? `<svg class="kwi" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="#A8360F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${k.icon}</svg>` : ''; };
@@ -243,7 +245,7 @@
 .card>.tab{position:absolute;left:5px;top:5px;width:30px;height:4px;background:var(--pa)}
 .card .art{position:relative;flex:none;aspect-ratio:auto;height:92px;margin:0 -1px;overflow:hidden;background:#07060A;color:#F3E9E2;border:3px solid #07060A;outline:1px solid ${C.rule}}
 .card .art svg{position:absolute;inset:0;display:block;width:100%;height:100%}
-.card.boss .art{height:74px}.card.analyst .art{height:68px}.card.agent .art{height:128px}
+.card.boss .art{height:68px}.card.analyst .art{height:68px}.card.agent .art{height:128px}
 .hd{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:1px}
 .tg{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.04em;text-transform:uppercase;color:${C.ink};background:var(--pa);padding:0 5px;white-space:nowrap}
 .hud{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.04em;text-transform:uppercase;color:${C.am};white-space:nowrap}.card.cy .hud{color:${C.cy}}
@@ -253,11 +255,11 @@
 .dmg span{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.04em;text-transform:uppercase;color:${C.mut}}.dmg b{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px;line-height:20px;color:${C.ink};font-variant-numeric:tabular-nums}
 .kw{display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.3;background:#FCE6DC;border:1px solid ${C.fl};padding:3px 6px}.kw b{font-weight:700;text-transform:uppercase;font-size:11px;color:${C.ex}}.kw .kwi{flex:none;margin-top:1px}
 .fl{font-size:10px;line-height:1.35;color:${C.mut};border-top:1px solid ${C.rule};padding-top:4px}
-.card.mob .art{height:62px}.card.mob .dice{flex-direction:row;justify-content:center;gap:8px;padding:5px 8px 6px}.card.mob .plus span{max-width:54px;line-height:1.1;font-size:8.5px}
+.card.mob .art{height:62px}.card.mob .dice{flex-direction:row;justify-content:center;gap:8px;padding:5px 8px 6px}.card.mob .plus .px>span{font-size:8.5px;min-width:46px}
 .base{flex:none;box-sizing:border-box;height:44px;margin:-6.5px -7.5px 6.5px;padding:3px 8px 4px;background:#EAF6F8;border-top:1.5px dashed ${C.cy};font-size:9.5px;line-height:1.25;display:flex;flex-direction:column;gap:1px}.base .bt b{color:${C.cy};text-transform:uppercase;letter-spacing:.04em}.base .bh{display:flex;align-items:center;gap:2px}.base .bh b{font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:4px;color:${C.ink}}
 .dice{margin:auto -7.5px 6.5px;padding:6px 8px 7px;background:#fff;border-top:2px solid ${C.ink};display:flex;flex-direction:column;align-items:center;gap:4px;clip-path:polygon(0 0,100% 0,100% 100%,15px 100%,0 calc(100% - 15px))}
-.dice .set{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.boss .dice .set{max-width:150px}
-.dice .plus{display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:${C.mut}}.dice .plus b{font-size:14px;color:${C.ink}}
+.dice .set{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.boss .dice .set{max-width:112px}.card.boss .dice{flex-direction:row;justify-content:center;gap:8px}.card.boss .plus .px>span{font-size:8.5px;min-width:42px}
+.dice .plus{display:flex;flex-direction:column;align-items:flex-start;gap:2px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:${C.mut}}.dice .plus b{font-size:12px;color:${C.ink}}.dice .plus .px{display:flex;align-items:center;gap:3px;white-space:nowrap}.dice .plus .px>span{min-width:52px}
 .dbls{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.dface{background:#fff;border:1px solid ${C.rule};height:34px;display:flex;align-items:center;justify-content:center}
 .perk{font-size:11px;line-height:1.33;font-weight:600;background:#fff;border:1px solid ${C.cy};padding:4px 7px;margin-top:auto;margin-bottom:17px}
 .ex{display:flex;align-items:center;gap:5px;font-size:11px;color:${C.mut};background:#fff;border:1px solid ${C.rule};padding:5px 7px}

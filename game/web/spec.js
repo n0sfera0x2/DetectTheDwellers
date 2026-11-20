@@ -73,6 +73,16 @@ test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (th
   const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 3 : 2);
   for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 3, team.length + 'p draws 3');
   assert.deepEqual([E.MODES.quick.hp, E.MODES.full.hp], [10, 13]);
+  // Solo setup items by analyst (2026-11-20), the count printed on the analyst card: Hunter 3, Engineer 2, Responder and Soarcerer 1.
+  for (const [id, k] of Object.entries({ HUN: 3, ENG: 2, RES: 1, SOA: 1 })) for (const mode of ['quick', 'full']) {
+    assert.equal(E.startItems(1, mode, id), k, id + ' solo starts with ' + k);
+    const g = E.newGame({ team: [id], seed: 5, mode }); assert.equal(g.agents[0].length + g.hand[0].length, k, id + ' solo holds ' + k); assert.ok(g.agents[0].length >= 1, id + ' solo starts with an agent');
+    assert.match(CARDS.analystCard(id), new RegExp('Solo: start with ' + k + ' item'));
+  }
+  // Full Shift, 3–4 players (2026-11-20): baselining costs one more die per player past 2; Quick never does.
+  for (const [mode, n, k] of [['full', 2, 0], ['full', 3, 1], ['full', 4, 2], ['quick', 4, 0]]) {
+    const g = E.newGame({ team: ['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), seed: 3, mode }); assert.equal(E.baseCost(g, { back: 0 }), CARDS.BASE_N + k, mode + ' ' + n + 'p'); assert.equal(E.baseCost(g, { back: 1 }), CARDS.BASE_N + 1 + k);
+  }
   assert.equal(CARDS.ITEM_DECK.length, 18);
 });
 test('scaling: a 6 per player past two (review 2); solo and 2 players play the printed dice', () => {
@@ -800,7 +810,7 @@ test('pairs: not while Rattled (that roll has no doubles)', () => {
   throwsRule(() => E.pair(R, i[0], i[1]), /Rattled/);
   const N = roll(false); assert.deepEqual(E.pairs(N), [[0, 1]]); E.pair(N, 0, 1); assert.equal(N.dice[0].dbl, true);
 });
-test('baselining sets 2 dice at every crew size (3 until 2026-11-04), 4 players too (the alarm’s own + die stays)', () => {
+test('Quick Shift: baselining sets 2 dice at every crew size (3 until 2026-11-04), 4 players too (the alarm’s own + die stays); Full adds one per player past 2 since 2026-11-20', () => {
   for (const n of [1, 2, 3, 4]) {
     const team = ['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), { G, m } = flipBaselinable(team);
     const before = m.slots.length; assert.equal(before, CARDS.slotsFor(D.mobs.find(x => x.id === m.id), false, n).length, 'the + die at 4 players');

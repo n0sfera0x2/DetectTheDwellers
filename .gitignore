@@ -47,3 +47,10 @@ tools/ink/*/ink-art.json
 
 # macOS Finder metadata
 .DS_Store
+
+# Skills installed with `npx skills add` (local tooling, like .claude/)
+.agents/
+skills-lock.json
+
+# The paper build's intermediate HTML (node game/paper/build.js); the PDF is the artifact
+game/paper/chapter-dice-paper.html

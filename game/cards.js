@@ -126,9 +126,12 @@
     ENG: 'Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead.', // on point, and once a fight (was once a round), since 2026-11-05
     SOA: 'On point, while you baseline an alarm, roll two more dice.', // since 2026-11-05; 2026-11-04 (late): a baseline draws an item; earlier: your agents count as two
   };
+  // Solo setup items by analyst (2026-11-20): one is always an agent. Closes the solo spread with items, not abilities.
+  const SOLO_ITEMS = { HUN: 3, RES: 1, ENG: 2, SOA: 1 };
+  const soloLine = id => `Solo: start with ${SOLO_ITEMS[id]} item${SOLO_ITEMS[id] === 1 ? '' : 's'}.`;
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'on shift')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
-  <div class="note">A double counts as two dice showing its number, or guards you.</div><div class="perk">${PERK[id]}</div></div>`;
+  <div class="note">A double counts as two dice showing its number, or guards you. <b>${soloLine(id)}</b></div><div class="perk">${PERK[id]}</div></div>`;
   // Items (2026-10-31): the deck is items. Agents are passive: each player holds 2 (the Soarcerer 3; solo 4, or 5).
   // Since 2026-11-01 they work for the whole crew, and Triage rolls one more die of its holder's own. Consumables
   // don't take a slot: keep them in hand and use each once. [name, rule, art key].
@@ -235,7 +238,7 @@
 .card>.tab{position:absolute;left:5px;top:5px;width:30px;height:4px;background:var(--pa)}
 .card .art{position:relative;flex:none;aspect-ratio:auto;height:92px;margin:0 -1px;overflow:hidden;background:#07060A;color:#F3E9E2;border:3px solid #07060A;outline:1px solid ${C.rule}}
 .card .art svg{position:absolute;inset:0;display:block;width:100%;height:100%}
-.card.boss .art{height:74px}.card.analyst .art{height:82px}.card.agent .art{height:128px}
+.card.boss .art{height:74px}.card.analyst .art{height:68px}.card.agent .art{height:128px}
 .hd{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:1px}
 .tg{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.04em;text-transform:uppercase;color:${C.ink};background:var(--pa);padding:0 5px;white-space:nowrap}
 .hud{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.04em;text-transform:uppercase;color:${C.am};white-space:nowrap}.card.cy .hud{color:${C.cy}}
@@ -264,6 +267,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:9px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, SOA_BASE_DICE, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, SOA_BASE_DICE, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, SOLO_ITEMS, soloLine, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
 });

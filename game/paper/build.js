@@ -24,7 +24,7 @@ const rules = `<section class="page rules">
 <li>Pick the shift. <b>Quick:</b> everyone starts at <b>10 HP</b>. <b>Full:</b> <b>13 HP</b>, and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
 <li>Shuffle the <b>situation deck</b>, the 15 alarms and 9 situations. <b>Quick:</b> deal 8. <b>Full:</b> deal 9. That’s the <b>feed</b>. <b>Full</b> also shuffles the 9 <b>story</b> cards into their own deck.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
-<li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 3). Solo: deal until an agent comes up, shuffle the rest back, then draw 1 more.</li>
+<li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 3). Solo: deal until an agent comes up, shuffle the rest back, then draw until you hold your card’s Solo number.</li>
 <li>Set out the shift tracker: coin a box for anything once a round or fight; clear it as that ends.</li>
 </ol>
 <h2>Threat dice</h2>
@@ -42,7 +42,7 @@ const rules = `<section class="page rules">
 </div>
 <div>
 <h2>Baseline it</h2>
-<p><b>Baseline it (optional).</b> When an alarm flips, or comes back, you can make the fight harder for a lasting reward. Add the dice shown on its <b>Baseline it</b> strip at the bottom of the card (a comeback adds one more). Take out every die, then slide the alarm under an agent card so only that strip shows. The agent keeps the strip’s bonus for the rest of the shift. Most say <b>Overclock</b>: use the agent’s Overclocked line. <b>One</b> alarm per agent. A tucked alarm can’t come back, but if its agent is discarded, it goes back on the row. No agent yet? Set the alarm aside until someone draws one.</p>
+<p><b>Baseline it (optional).</b> When an alarm flips, or comes back, you can make the fight harder for a lasting reward. Add the dice on its <b>Baseline it</b> strip (+1 for a comeback; <b>Full, 3–4 players:</b> +1 per player past 2). Take out every die, then slide the alarm under an agent card so only that strip shows. The agent keeps the strip’s bonus for the rest of the shift. Most say <b>Overclock</b>: use the agent’s Overclocked line. <b>One</b> alarm per agent. A tucked alarm can’t come back, but if its agent is discarded, it goes back on the row. No agent yet? Set the alarm aside until someone draws one.</p>
 <h2>A fight round</h2>
 <ol>
 <li><b>Row.</b> From the second round on, roll the row first.</li>
@@ -84,7 +84,7 @@ fs.writeFileSync(path.join(OUT, 'chapter-dice-paper.html'), html);
   await p.setContent(html); await fontsReady(p);
   await p.pdf({ path: path.join(OUT, 'chapter-dice-paper.pdf'), format: 'Letter', printBackground: true, preferCSSPageSize: true });
   // Overflow check: nothing may spill out of a card or a page.
-  const over = await p.evaluate(() => [...document.querySelectorAll('.card,.page')].filter(e => e.scrollHeight > e.clientHeight + 2).map(e => (e.querySelector('.nm,h1') || e).textContent.slice(0, 40)));
+  const over = await p.evaluate(() => [...document.querySelectorAll('.card,.page')].filter(e => e.scrollHeight > e.clientHeight + 2).map(e => (e.querySelector('.nm,h1') || e).textContent.slice(0, 40) + ` (${e.scrollHeight}px in ${e.clientHeight}px)`));
   await b.close();
   console.log(`wrote chapter-dice-paper.pdf (${1 + pages.length} pages, ${cards.length} cards)` + (over.length ? `\nOVERFLOW: ${over.join(' | ')}` : '\nno overflow'));
 })().catch(e => { console.error(e); process.exit(1); });

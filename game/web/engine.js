@@ -23,7 +23,7 @@
   const START_ITEMS = { solo: 2, crew: 2 }; // items drawn at setup: solo 2 (since 2026-11-01), a crew of 2–4 draws 2
   // Quick Shift solo starts with 1 (2026-11-02: solo ran 12 points ahead of a crew in the short feed).
   // A crew of 3 or 4 draws one more (2026-11-03: the Responder's doubles no longer guard, and 4p fell 9–15 points behind 2p).
-  const startItems = (n, mode = 'full') => n === 1 ? (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 1 : 0); // a crew of 3–4 draws 3 (4 for part of 2026-11-04)
+  const startItems = (n, mode = 'full', id) => n === 1 ? (id && CARDS.SOLO_ITEMS[id]) || (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 1 : 0); // a crew of 3–4 draws 3 (4 for part of 2026-11-04)
   // A rolled pip die. who: the analyst's id (their doubles), or 'CREW' / 'AGENT' (only a 6 is a double).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   // A crew die's double after it changes number: its owner's doubles (the solo crew die: a 6), none if rolled Rattled.
@@ -71,7 +71,7 @@
       point: 0, phase: 'flip', fight: 0, won: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
       over: false, win: false, log: [], rows: [], lastRow: null, drawn: [], beaten: [],
       stats: { rounds: 0, back: 0, flips: 0, guards: 0, used: {}, gone: 0, healed: 0, sits: 0, items: { triage: 0, contain: 0, recover: 0, enrich: 0, surge: 0, intel: 0, isolate: 0, coffee: 0, freeze: 0, twin: 0, ghost: 0, scramble: 0, repair: 0, spotlight: 0, slip: 0, ticket: 0, momentum: 0, persist: 0, siphon: 0, callback: 0 } } };
-    const si = startItems(n, mode);
+    const si = startItems(n, mode, team[0]); // solo: the analyst card's count (2026-11-20)
     say(G, `Shift starts: ${team.map(nameOf).join(' + ')} at ${hp} HP. ${n === 1 ? 'You draw' : 'The crew draws'} ${si === 1 ? 'an item' : si + ' items'}.`);
     // Solo (2026-11-05): one of the starting items is an agent. Deal until an agent comes up; the rest go back.
     if (n === 1) { const j = G.kit.map(c => isAgent(c.t)).lastIndexOf(true); if (j >= 0) G.kit.push(G.kit.splice(j, 1)[0]); }
@@ -262,7 +262,8 @@
   // Before the first roll, on point may baseline the alarm just flipped (never a comeback or the boss): it sets the
   // four dice on its Baseline line, at every crew size. Beat it with them and it tucks under an agent.
   // Review 2: a comeback can be baselined too, with one more Baseline die; the Soarcerer makes it 2 (a comeback 3).
-  const baseCost = (G, m) => CARDS.BASE_N + (m.back ? 1 : 0);
+  // Full Shift, 3–4 players (2026-11-20): one more Baseline die per player past 2, like the alarm's + die.
+  const baseCost = (G, m) => CARDS.BASE_N + (m.back ? 1 : 0) + (G.mode === 'full' ? Math.max(0, G.n - 2) : 0);
   const canBaseline = (G, m) => !!m && G.phase === 'roll' && G.round === 0 && (m.uid === G.flipped || m.back > 0) && !m.boss && !m.based && !!CARDS.BASE[m.id] && G.play.includes(m);
   function baseline(G, uid) {
     const m = findMob(G, uid); if (!m) fail('That alarm isn’t in the fight.');

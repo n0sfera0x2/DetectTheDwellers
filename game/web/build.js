@@ -13,6 +13,8 @@ const SPR = require('../art/sprites'); // the pixel sprites (2026-11-20)
 const bg = f => 'data:image/png;base64,' + fs.readFileSync(path.join(__dirname, '../art/backdrops', f)).toString('base64');
 const ADV_BG = `:root{--bg-soc:url(${bg('soc.png')});--bg-aisle:url(${bg('aisle.png')})}`;
 // The omen's face (2026-11-20): IM Fell English Italic, OFL (fonts/IMFellEnglish-OFL.txt), for an alarm's flavour line.
+// Binary Defense's body face (2026-11-20): Epilogue, the brand's free fallback for PP Neue Machina. OFL, fonts/Epilogue-OFL.txt.
+const BRAND_FONT = `@font-face{font-family:'Epilogue';font-style:normal;font-weight:300 400;font-display:block;src:url(data:font/woff2;base64,${fs.readFileSync(path.join(__dirname, '../../fonts/Epilogue-Variable.woff2')).toString('base64')}) format('woff2')}`;
 const OMEN_FONT = `@font-face{font-family:'IM Fell English';font-style:italic;font-weight:400;font-display:block;src:url(data:font/woff2;base64,${fs.readFileSync(path.join(__dirname, '../../fonts/IMFellEnglish-Italic.woff2')).toString('base64')}) format('woff2')}`;
 const { CARD_CSS, MOB_IDS, BOSS_ID, BOSS_IDS, SIT_IDS, ANALYST_IDS, ANALYST_ART, artKeys } = require('../cards');
 
@@ -46,9 +48,10 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#07060A">
-<title>Detect the Dwellers</title>
+<title>Detect the Dwellers · A Binary Defense Adventure</title>
 <style>${fonts()}
 ${OMEN_FONT}
+${BRAND_FONT}
 ${CARD_CSS}
 ${SPR.css()}
 ${read('ui.css')}

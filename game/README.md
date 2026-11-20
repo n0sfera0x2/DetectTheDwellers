@@ -363,6 +363,21 @@ The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
 
+### Binary Defense brand: A Binary Defense Adventure (2026-11-20)
+
+#### What changed
+
+The owner asked for more of the Binary Defense brand, and for the landing page to say **A Binary Defense Adventure**. This is the page’s look only; the cards and the PDF keep their print palette.
+
+- **Landing page:** “A **Binary Defense** Adventure” as a brand caption above the title (uppercase, +10% tracking, “Binary Defense” in Flare). The brand line “Think fast. Fight smart. **Stay human.**” closes the intro, and the browser tab reads “Detect the Dwellers · A Binary Defense Adventure”. There’s no Binary Defense logo: none was available to embed, and the brand forbids re-typesetting it.
+- **Palette:** Kevlar `#0E0E0E` ground, Chrome `#EAEAEA` type, Smoke `#C2C2C2` for quiet text, panels in Kevlar shades. **Flare** `#FF5A2A` is now the call-to-action color (Clock in, Roll, End round) and highlights key words. The game’s cyan stays for in-play feedback (the picked die, on point).
+- **Squared, never rounded:** the menu switches, the alarm plates, the die pop-out and the chips lost their rounded corners. The dice keep theirs; they’re game pieces.
+- **Type:** body copy in **Epilogue** (OFL, `fonts/Epilogue-Variable.woff2`), the brand’s free fallback for PP Neue Machina. The game’s headings and labels keep Chakra Petch.
+
+#### Tests
+
+`node --test game/web/spec.js` has 85 tests and all pass. `npm test` has 83 tests and all pass. Screenshots are in `production/qa/evidence/2026-11-20-brand-*.png`.
+
 ### Adventure view (2026-11-20)
 
 #### What changed

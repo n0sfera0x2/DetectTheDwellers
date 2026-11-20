@@ -704,3 +704,17 @@ h2[tabindex="-1"]:focus{outline:none}
 .adv-pop .rr{font-size:.75rem;color:var(--mut);text-align:right}
 .adv-pop .t-turn{display:flex;flex-wrap:wrap;gap:4px}.adv-pop>.inc{font-size:.75rem;color:var(--mut)}
 .adv-act .acts,.adv-menu .acts{display:contents}
+
+
+/* ==== Binary Defense brand (2026-11-20) ============================================================================
+   Kevlar ground, Chrome type, Smoke and Carbon for quiet text and rules, Flare for the calls to action and key words
+   (the game's cyan stays for in-play feedback: the picked die, on point). Squared, never rounded. Body copy in
+   Epilogue (the brand's fallback for PP Neue Machina); the game's headings keep Chakra Petch. Captions: uppercase, +10%. */
+:root{--bg:#0E0E0E;--ink:#EAEAEA;--mut:#C2C2C2;--s1:#141414;--s2:#1B1B1B;--s3:#262626;--rule:rgba(234,234,234,.12);--rule2:rgba(234,234,234,.24);--carbon:#484848;--body:"Epilogue","PP Neue Machina",system-ui,sans-serif}
+body{background:var(--bg)}
+.lede,.lede2,.status,.pk-perk,.t-note,.mset-t span,.adv-act .status{font-family:var(--body);font-weight:400;letter-spacing:0}
+.lede{font-weight:300}
+.btn.p{--bd:var(--fl);--fill:var(--fl);--tx:#0E0E0E}.btn.p:hover:not(:disabled){--fill:var(--fl);--bd:#EAEAEA}
+.bd-cap{margin:0;font:400 0.8125rem/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}.bd-cap b{font-weight:400;color:var(--fl)}
+.bd-line{margin:4px 0 0;font:400 0.75rem/1.3 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}.bd-line b{font-weight:400;color:var(--fl)}
+.swt,.swt i,.swt i::after,.adv-plate,.adv-dmg,.adv-back,.adv-pop,.t-td.xtra::after{border-radius:0}

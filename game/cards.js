@@ -5,16 +5,20 @@
 // in the card's accent, a solid tab, and the art set in as a dark screen of fixed height per card type.
 // The web page and the print-and-play PDF both build from it.
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('../data/cards.json'), require('./sim').numbersFor, { ...require('../data/art.json'), ...require('./art/art.json') }, require('../data/art-print.json')); // art/art.json: the consumables' own scenes (art/scenes.js)
-  else root.CDCards = factory(root.CD_DATA, root.CD_NUMBERS, root.CD_ART || {}, root.CD_ART || {});
-})(typeof self !== 'undefined' ? self : this, function (D, numbersFor, ART, PRINT) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../data/cards.json'), require('./sim').numbersFor, { ...require('../data/art.json'), ...require('./art/art.json') }, require('../data/art-print.json'), require('./art/sprites').IDS); // art/art.json: the consumables' own scenes (art/scenes.js)
+  else root.CDCards = factory(root.CD_DATA, root.CD_NUMBERS, root.CD_ART || {}, root.CD_ART || {}, root.CD_SPRITES || []);
+})(typeof self !== 'undefined' ? self : this, function (D, numbersFor, ART, PRINT, SPRITES) {
   const C = { bg: '#F6F2EC', ink: '#1A1418', mut: '#5A4B43', rule: '#D8CEC3', cy: '#005F73', fl: '#FF5A2A', ex: '#A8360F', E: '#A8360F', am: '#8A4510' };
   // Ink & Static scenes, as the real game picks them: a mob by its id, the boss by its print scene (art-print.json
   // boss_<id>) else its art.json scene, an analyst by class id, an agent by kit_<type>. Print scenes mark their
   // ids with {{SID}}; one fixed suffix keeps the markup identical on paper and web (card parity).
+  // Since 2026-11-20 the analysts, alarms, bosses and items wear animated pixel sprites (art/sprites.js); the ink scene
+  // stays as the fallback, and the situations keep theirs.
+  const sprite = id => (SPRITES || []).includes(id) ? `<i class="spr spr-${id}"></i>` : '';
   const SCENE = {
-    mob: id => ART[id] || '', boss: id => String(PRINT['boss_' + id] || ART[id] || '').replace(/\{\{SID\}\}/g, 'cd'),
-    analyst: id => ART[ANALYST_ART[id] || id] || '', agent: t => ART['kit_' + t] || '', sit: id => ART['sit_' + id] || '',
+    mob: id => sprite(id) || ART[id] || '', boss: id => sprite(id) || String(PRINT['boss_' + id] || ART[id] || '').replace(/\{\{SID\}\}/g, 'cd'),
+    analyst: id => sprite(id) || ART[ANALYST_ART[id] || id] || '', agent: t => ART['kit_' + t] || '', sit: id => ART['sit_' + id] || '',
+    item: t => sprite(t) || ART[ITEM[t][2]] || '',
   };
   // The art.json / art-print.json keys the cards use, so web/build.js inlines only those.
   const artKeys = () => ({ art: [...MOB_IDS, ...ANALYST_IDS.map(id => ANALYST_ART[id] || id), ...[...AGENT_IDS, ...CONS_IDS].map(t => ITEM[t][2]), ...SIT_IDS.map(id => 'sit_' + id), ...BOSS_IDS], print: BOSS_IDS.map(id => 'boss_' + id) });
@@ -153,8 +157,8 @@
   };
   const ITEM = { ...AGENT, ...CONS }, isAgent = t => !!AGENT[t];
   const agentCard = t => isAgent(t)
-    ? `<div class="card agent cy">${tab}${art(ART[AGENT[t][2]] || '')}${hd('Agent', 'passive')}<div class="nm">${AGENT[t][0]}</div><div class="mode"><b>While you hold it</b> ${AGENT[t][1]}</div><div class="mode up"><b>Overclocked</b> ${AGENT[t][3]}</div></div>`
-    : `<div class="card agent use">${tab}${art(ART[CONS[t][2]] || '')}${hd('Consumable', 'use once')}<div class="nm">${CONS[t][0]}</div><div class="mode"><b>Use it</b> ${CONS[t][1]}</div></div>`;
+    ? `<div class="card agent cy">${tab}${art(SCENE.item(t))}${hd('Agent', 'passive')}<div class="nm">${AGENT[t][0]}</div><div class="mode"><b>While you hold it</b> ${AGENT[t][1]}</div><div class="mode up"><b>Overclocked</b> ${AGENT[t][3]}</div></div>`
+    : `<div class="card agent use">${tab}${art(SCENE.item(t))}${hd('Consumable', 'use once')}<div class="nm">${CONS[t][0]}</div><div class="mode"><b>Use it</b> ${CONS[t][1]}</div></div>`;
   const legend = `<div class="card ref am">${tab}${hd('Reference', 'every die')}<div class="nm">Dice</div>
   <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
@@ -268,5 +272,5 @@
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:9px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
   return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, SOA_BASE_DICE, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, SOLO_ITEMS, soloLine, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
-    MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, artKeys };
+    MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, sprite, artKeys };
 });

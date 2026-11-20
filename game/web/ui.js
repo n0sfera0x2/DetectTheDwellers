@@ -208,7 +208,7 @@
   function vSetup() {
     const team = UI.setup.team, n = team.length;
     const picks = A.ANALYST_IDS.map(id => { const on = team.includes(id);
-      return `<button type="button" class="pick" data-a="pick" data-id="${id}" data-k="pick${id}" aria-pressed="${on}" ${!on && n >= 4 ? 'disabled' : ''}><span class="art">${crop(ART[id], THUMB[id])}</span>
+      return `<button type="button" class="pick" data-a="pick" data-id="${id}" data-k="pick${id}" aria-pressed="${on}" ${!on && n >= 4 ? 'disabled' : ''}><span class="art">${A.sprite(id) || crop(ART[id], THUMB[id])}</span>
         <span class="pk-t"><span class="pk-h"><span class="nm">${esc(nm(id))}</span><span class="style">${esc(STYLE[id])}</span></span><span class="dbl"><span class="phud">Doubles</span>${dbls(id)}</span><span class="pk-perk">${esc(A.PERK[id])} <span class="pk-solo">${esc(A.soloLine(id))}</span></span></span>
         <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
     return `<div class="wrap"><div class="intro-grid">
@@ -256,7 +256,7 @@
       <div class="pd-side">${G.fight ? `<p class="status">${G.fight ? '<b>Fight won.</b> ' : ''}${boss ? 'The feed is empty. The boss is next.' : `${pl(al, 'alarm')} and ${pl(si, 'situation')} left in the feed, shuffled, then the boss.`}</p>` : '<p class="status"><b>22:00. The shift starts.</b> Pick who’s on point, then flip the top card of the feed. Alarms and situations are shuffled together.</p>'}
         
         <div class="pd-point"><h2 class="sech">On point</h2><div class="acards" role="group" aria-label="On point">${G.team.map((id, k) => { const on = G.point === k;
-          return `<button class="acard${on ? ' on' : ''}" type="button" data-a="point" data-n="${k}" data-k="point${k}" aria-pressed="${on}"><i class="tab" aria-hidden="true"></i><span class="scr">${crop(ART[id], THUMB[id])}</span><b class="nm">${esc(nm(id))}</b><span class="phud${on ? ' c' : ''}">${on ? 'On point · 2 dice' : `${G.hp[k]}/${G.max} HP`}</span></button>`; }).join('')}</div>
+          return `<button class="acard${on ? ' on' : ''}" type="button" data-a="point" data-n="${k}" data-k="point${k}" aria-pressed="${on}"><i class="tab" aria-hidden="true"></i><span class="scr">${A.sprite(id) || crop(ART[id], THUMB[id])}</span><b class="nm">${esc(nm(id))}</b><span class="phud${on ? ' c' : ''}">${on ? 'On point · 2 dice' : `${G.hp[k]}/${G.max} HP`}</span></button>`; }).join('')}</div>
         <p class="meta">On point rolls two dice${G.n === 1 ? '' : ' and takes Targeted hits'}.</p></div></div></div>`;
   }
   // The chance a row alarm comes back on one roll of the two amber dice (sum at most its number).
@@ -421,9 +421,9 @@
   function vEnd() {
     const G = UI.G; if (!G.over) return '';
     const ms = (UI.end || Date.now()) - UI.start, who = killer(), km = who && [...D.mobs].find(m => m.name === who);
-    const artSvg = G.win ? (ART['win_' + G.boss.id] || ART.win) : km ? ART[km.id] : (who === G.boss.name ? A.SCENE.boss(G.boss.id) : ART.hero);
+    const artSvg = G.win ? (ART['win_' + G.boss.id] || ART.win) : km ? A.SCENE.mob(km.id) : (who === G.boss.name ? A.SCENE.boss(G.boss.id) : ART.hero);
     const down = G.hp.findIndex(h => h <= 0);
-    const roster = G.team.map((id, k) => `<li class="${!G.win && k === down ? 'down' : ''}"><span class="art">${crop(ART[id], SQUARE(id))}</span><span><span class="nm">${esc(nm(id))}</span><br><span class="num">${G.hp[k]}/${G.max}</span> <span class="meta">HP</span></span></li>`).join('');
+    const roster = G.team.map((id, k) => `<li class="${!G.win && k === down ? 'down' : ''}"><span class="art">${A.sprite(id) || crop(ART[id], SQUARE(id))}</span><span><span class="nm">${esc(nm(id))}</span><br><span class="num">${G.hp[k]}/${G.max}</span> <span class="meta">HP</span></span></li>`).join('');
     return `<div class="t-end" role="dialog" aria-modal="true" aria-label="Shift over"><div class="end">
       <article class="endcard ${G.win ? 'win' : 'loss'}"><div class="ec-art"><span class="art">${slice(artSvg)}</span><span class="stamp" aria-hidden="true">${G.win ? 'Contained' : 'Flatlined'}</span></div>
         <div class="ec-bd"><p class="meta ${G.win ? 'c' : 'f'}">${esc(E.MODES[G.mode].label)} · ${G.n}p · ${G.max} HP</p>
@@ -446,7 +446,7 @@
   // button. Full printed cards are one hover, tap or focus away (data-peek): no shrunken card faces.
   const KWN = m => m.boss ? A.boss(m.id).abilityName : A.kw[A.abilityOf(dataMob(m.id))];
   const KWT = m => m.boss ? A.BOSS_TEXT[m.id][0] : A.kwText[A.abilityOf(dataMob(m.id))];
-  const artOf = m => m.boss ? A.SCENE.boss(m.id) : ART[m.id];
+  const artOf = m => m.boss ? A.SCENE.boss(m.id) : A.SCENE.mob(m.id); // the sprite (2026-11-20), else the ink scene
   const fighting = G => G.play.length > 0;
   // Chip names (the full name is on the card the chip opens, and in its label).
   const KSHORT = { triage: 'Triage', contain: 'Containment', enrich: 'Enrichment', recover: 'Recovery', watchlist: 'Watchlist', surge: 'Surge', intel: 'Intel Feed', isolate: 'Isolation', coffee: 'Coffee', freeze: 'Freeze', takedown: 'Takedown' };

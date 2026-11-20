@@ -302,16 +302,30 @@ test('cards: the dice strip along the bottom, no symbols, no “players add”; 
   assert.match(CARDS.legend, /exactly/); assert.match(CARDS.legend, /counts as <b>two<\/b> dice showing its number/); assert.match(CARDS.legend, /The solo crew die: only a /); assert.doesNotMatch(all, /[Aa]gent dice/);
   assert.doesNotMatch(all, /any one more/); assert.match(CARDS.legend, /Hits back:/); assert.match(CARDS.legend, /sum is at most its number/);
 });
-test('cards carry the game’s Ink & Static scenes: mob by id, boss print scene, analyst portrait, item scene', () => {
+test('cards carry their pixel sprite, else the Ink & Static scene: mob by id, boss print scene, analyst portrait, item scene', () => {
+  // Since 2026-11-20 the analysts, alarms, bosses and items wear animated sprites (art/sprites.js); the ink scene is the fallback.
   const ART = { ...require('../../data/art.json'), ...require('../art/art.json') }, PRINT = require('../../data/art-print.json');
-  const scene = html => { const m = /<div class="art">([\s\S]*?<\/svg>)<\/div>/.exec(html); assert.ok(m, 'art panel'); return m[1]; };
-  for (const m of CARDS.mobs()) { const h = CARDS.mobCard(m); assert.equal(scene(h), ART[m.id], m.id); assert.ok(h.indexOf('class="art"') < h.indexOf('class="nm"'), 'art on top'); }
-  assert.equal(scene(CARDS.bossCard(CARDS.boss())), PRINT['boss_' + CARDS.BOSS_ID].replace(/\{\{SID\}\}/g, 'cd'));
-  for (const id of CARDS.ANALYST_IDS) assert.equal(scene(CARDS.analystCard(id)), ART[CARDS.ANALYST_ART[id] || id], id);
-  for (const t of [...CARDS.AGENT_IDS, ...CARDS.CONS_IDS]) assert.equal(scene(CARDS.agentCard(t)), ART[CARDS.ITEM[t][2]], t);
+  const SPR = require('../art/sprites').IDS, spr = id => `<i class="spr spr-${id}"></i>`;
+  const scene = html => { const m = /<div class="art">([\s\S]*?(?:<\/svg>|<\/i>))<\/div>/.exec(html); assert.ok(m, 'art panel'); return m[1]; };
+  const want = (id, ink) => SPR.includes(id) ? spr(id) : ink;
+  for (const m of CARDS.mobs()) { const h = CARDS.mobCard(m); assert.equal(scene(h), want(m.id, ART[m.id]), m.id); assert.ok(h.indexOf('class="art"') < h.indexOf('class="nm"'), 'art on top'); }
+  assert.equal(scene(CARDS.bossCard(CARDS.boss())), want(CARDS.BOSS_ID, PRINT['boss_' + CARDS.BOSS_ID].replace(/\{\{SID\}\}/g, 'cd')));
+  for (const id of CARDS.ANALYST_IDS) assert.equal(scene(CARDS.analystCard(id)), want(id, ART[CARDS.ANALYST_ART[id] || id]), id);
+  for (const t of [...CARDS.AGENT_IDS, ...CARDS.CONS_IDS]) assert.equal(scene(CARDS.agentCard(t)), want(t, ART[CARDS.ITEM[t][2]]), t);
   // The web build inlines exactly the scenes the cards use (plus the page's own), so the page cards match print.
   const k = CARDS.artKeys(); assert.ok(k.art.every(x => ART[x]) && k.print.every(x => PRINT[x]));
   for (const t of CARDS.CONS_IDS) assert.ok(k.art.includes(CARDS.ITEM[t][2]), t);
+});
+test('every analyst, alarm, boss and item has a 5-frame sprite sheet, and the sprite CSS carries each one', () => {
+  const SPRITES = require('../art/sprites'), want = [...CARDS.ANALYST_IDS, ...CARDS.MOB_IDS, ...CARDS.BOSS_IDS, ...CARDS.AGENT_IDS, ...CARDS.CONS_IDS];
+  const css = SPRITES.css();
+  for (const id of want) {
+    assert.ok(SPRITES.IDS.includes(id), `sprite for ${id}`);
+    const png = fs.readFileSync(path.join(__dirname, '../art/sprites', id + '.png')), w = png.readUInt32BE(16), h = png.readUInt32BE(20);
+    assert.equal(w, h * SPRITES.FRAMES, `${id}: ${SPRITES.FRAMES} square frames side by side`);
+    assert.ok(css.includes(`.spr-${id}{background-image:url(data:image/png;base64,`), id);
+  }
+  assert.match(css, /prefers-reduced-motion:reduce\)\{\.spr\{animation:none\}/); assert.match(css, /@media print\{\.spr\{animation:none\}/);
 });
 
 // ---- Items: dealing, personal agents, consumables (sim.js NEWITEMS, PERSONAL, CONSFREE, slotsK) -------------------

@@ -75,7 +75,8 @@ h1{font-weight:700;font-size:22px;margin:0 0 6px;text-transform:uppercase;letter
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}.foot{margin-top:12px;font-size:10.5px!important;color:${C.mut}}
 .ex3{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:11.5px!important;background:#F6F2EC;border:1px solid #D8CEC3;padding:5px 8px}.rules li svg,.rules p svg{vertical-align:-3px}
 .page.cards{padding:0.25in 0.5in}.cards .grid{display:grid;grid-template-columns:repeat(3,2.5in);grid-auto-rows:3.5in;gap:0;justify-content:center;margin-top:0}
-${CARD_CSS}`;
+${CARD_CSS}
+${require('../art/sprites').css()}`; // the pixel sprites (2026-11-20): frame 0 on paper
 const html = `<!doctype html><html><head><meta charset="utf-8"><title>Detect the Dwellers: print and play</title><style>${css}</style></head><body>${rules}${pages.join('')}</body></html>`;
 fs.writeFileSync(path.join(OUT, 'chapter-dice-paper.html'), html);
 

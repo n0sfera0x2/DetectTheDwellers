@@ -8,6 +8,7 @@ const D = require('../../data/cards.json');
 const { fonts } = require('../../deck/render');
 const ART = { ...require('../../data/art.json'), ...require('../art/art.json') }, // + the consumables' scenes (../art/scenes.js)
   PRINT = require('../../data/art-print.json');
+const SPR = require('../art/sprites'); // the pixel sprites (2026-11-20)
 const { CARD_CSS, MOB_IDS, BOSS_ID, BOSS_IDS, SIT_IDS, ANALYST_IDS, ANALYST_ART, artKeys } = require('../cards');
 
 const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8');
@@ -40,13 +41,15 @@ const html = `<!doctype html>
 <title>Detect the Dwellers</title>
 <style>${fonts()}
 ${CARD_CSS}
+${SPR.css()}
 ${read('ui.css')}</style>
 </head>
 <body>
 <div id="app"></div><div id="live" class="sr" aria-live="polite" aria-atomic="true"></div>
 <script>window.CD_DATA = ${safe(JSON.stringify(data))};
 ${nf}window.CD_NUMBERS = numbersFor;
-window.CD_ART = ${safe(JSON.stringify(art))};</script>
+window.CD_ART = ${safe(JSON.stringify(art))};
+window.CD_SPRITES = ${JSON.stringify(SPR.IDS)};</script>
 <script>${safe(read('../cards.js'))}</script>
 <script>${safe(read('engine.js'))}</script>
 <script>${safe(read('ui.js'))}</script>

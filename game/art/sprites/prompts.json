@@ -1,0 +1,203 @@
+{
+  "_how": "PixelLab MCP, 2026-11-20. Still: create_image_pixen(description, width=height=size, no_background=true, outline=\"single color black outline\", detail: \"highly detailed\" for bosses else \"medium detail\", view \"side\" and direction east (analysts) / west (alarms) / south (bosses); none for items). Loop: animate_image(first_frame=the still, action, frame_count=4). Frames 0 (the still) to 4 go in src/<id>_f0..f4.png; node game/art/sprites.js stitches them.",
+  "sprites": {
+    "HUN": {
+      "kind": "analyst",
+      "size": 64,
+      "prompt": "cyberpunk threat hunter analyst, hooded night-shift operator in dark jacket holding a glowing cyan scanner, visor glowing cyan, dark purple and black palette with cyan rim light, full body, standing",
+      "action": "idle breathing loop, shoulders rise and fall gently, scanner screen flickers, visor glow pulses"
+    },
+    "RES": {
+      "kind": "analyst",
+      "size": 64,
+      "prompt": "cyberpunk first responder analyst, night-shift operator in a dark tactical jacket with a cyan glowing headset and a red emergency armband, holding a glowing cyan incident tablet, short hair, dark purple and black palette with cyan rim light, full body, standing",
+      "action": "idle breathing loop, shoulders rise and fall gently, headset light pulses, tablet screen flickers"
+    },
+    "ENG": {
+      "kind": "analyst",
+      "size": 64,
+      "prompt": "cyberpunk detection engineer analyst, hacker in a dark hoodie with glasses glowing cyan, holding a small glowing laptop with green code, wrench tool on belt, dark purple and black palette with cyan rim light, full body, standing",
+      "action": "idle breathing loop, typing on the laptop, code on the screen scrolls, glasses glint"
+    },
+    "SOA": {
+      "kind": "analyst",
+      "size": 64,
+      "prompt": "cyberpunk sorcerer analyst orchestrator, techno-wizard in a long dark hooded robe with glowing cyan circuit runes, raising a hand that controls floating glowing cyan holographic windows and tiny drones, dark purple and black palette with cyan rim light, full body, standing",
+      "action": "idle casting loop, robe sways gently, raised hand glows, floating holographic windows drift and orbit"
+    },
+    "mailer": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "Mailer Daemon monster: a mischievous imp made from a crumpled glowing envelope, tiny horns, wide grin, red bounce-back stamp on its belly, small bat wings, dark palette with cyan and red glow",
+      "action": "idle hover loop, bobbing up and down, bat wings flapping, grin twitching"
+    },
+    "macro": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "Macro Gremlin monster: a small green gremlin bursting out of a blue word document page, holding a glowing yellow Enable Content button, sharp teeth, big pointed ears, mischievous, dark palette with cyan and red glow",
+      "action": "idle loop, gremlin bounces with excitement, ears twitch, the button glow pulses"
+    },
+    "spray": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "Password Sprayer monster: a hunched goblin in a gas mask carrying a spray-paint canister that sprays glowing asterisk password characters, a ring of jangling keys on its belt, dark palette with cyan and red glow",
+      "action": "idle loop, hunched breathing, spray nozzle puffs glowing particles, keys jangle"
+    },
+    "banshee": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "MFA Banshee monster: a wailing ghostly woman made of pale cyan mist with long flowing hair, mouth wide open screaming, holding a buzzing smartphone showing an Approve button, notification bubbles around her, dark palette with cyan and red glow",
+      "action": "idle wailing loop, hair and robe billow in a ghostly wind, phone vibrates, notification bubbles pop"
+    },
+    "vibe": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "Vibe Coded App monster: a wobbly smiling slime blob shaped like a phone app icon with rounded corners, wearing sunglasses, leaking glowing golden API keys out of cracks, sparkle emoji floating around, dark palette with cyan and pink glow",
+      "action": "idle loop, slime body wobbles and jiggles, sparkles twinkle, drips ooze"
+    },
+    "wraith": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "PowerShell Wraith monster: a hooded floating wraith made of dark navy blue smoke, faceless hood with a glowing cyan prompt cursor where the face should be, ragged robe trailing into wisps, dark palette with cyan glow",
+      "action": "idle hover loop, floating up and down, ragged robe wisps trail and ripple, face glow flickers"
+    },
+    "druid": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "Living-off-the-Land Scavenger monster: a scrappy hunched raccoon-like scavenger in a patched cloak covered in moss and leaves, carrying a sack stuffed with stolen tools and wrenches, glowing eyes, dark palette with green and cyan glow",
+      "action": "idle loop, scavenger breathes and sniffs, sack sways, glowing green wisp in its paw flickers"
+    },
+    "bat": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "DNS Beacon Drone monster: a robotic bat drone with metal wings and a blinking red beacon light on its head, radar sonar rings emitting from it, small antenna, dark palette with cyan and red glow",
+      "action": "idle hover loop, wings flap, bobbing up and down, red beacon blinks, sonar rings pulse outward"
+    },
+    "imp": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "OAuth Consent Grifter monster: a smug little purple imp in a tiny suit and top hat, holding out a glowing contract scroll with a big green Accept button, sly grin, pointed tail, dark palette with cyan and magenta glow",
+      "action": "idle loop, imp waggles the contract scroll invitingly, tail swishes, tips hat, accept button glows"
+    },
+    "mimic": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "Rootkit Implant monster: a computer microchip mimic with its lid split open into a mouth full of sharp teeth and a long tongue, circuit legs like a spider, one glowing red eye, dark palette with cyan and red glow",
+      "action": "idle loop, chip mouth chomps open and closed, tongue lolls, spider legs shift, red eye glows"
+    },
+    "ogre": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "Kerberoast Enforcer monster: a huge brutish ogre bouncer in a black vest holding a flaming roasting spit with glowing paper tickets skewered on it, three-headed dog tattoo, dark palette with orange fire and cyan glow",
+      "action": "idle loop, ogre breathes heavily, shoulders heave, torch flame flickers"
+    },
+    "leech": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "LSASS Siphon monster: a fat glowing leech creature with a round sucker mouth full of teeth, its translucent body full of glowing cyan key and password symbols it has swallowed, slimy, dark palette with cyan and red glow",
+      "action": "idle loop, leech body pulses and squirms, mouth sucks open and closed, glowing symbols inside drift"
+    },
+    "hydra": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "PsExec Swarm monster: a three-headed hydra made of black terminal windows, each head a snake with a glowing cyan command prompt for eyes, cables for necks, dark palette with cyan and red glow",
+      "action": "idle loop, three snake heads sway and weave independently, eyes glow"
+    },
+    "specter": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "Golden Ticket Ghost monster: a translucent golden ghost in a conductor cap holding up a glowing golden ticket, crown shaped wisps, hollow glowing eyes, dark palette with gold and cyan glow",
+      "action": "idle hover loop, ghost floats up and down, wispy tail ripples, golden ticket shimmers"
+    },
+    "wyrmling": {
+      "kind": "alarm",
+      "size": 64,
+      "prompt": "Exfil Courier monster: a small baby dragon wyrmling wearing a courier backpack stuffed with glowing data files, small wings, carrying a cloud-shaped bag, determined grin, dark palette with cyan and orange glow",
+      "action": "idle loop, little dragon flaps its small wings and bounces on its feet, glowing data files in the backpack flicker"
+    },
+    "wyrm": {
+      "kind": "boss",
+      "size": 128,
+      "prompt": "The Lockjaw Syndicate boss: a massive armored ransomware dragon with a giant steel padlock for a jaw and chains wrapped around its body, glowing red eyes, clutching encrypted glowing files in its claws, black scales with red and cyan glow, menacing",
+      "action": "idle menacing loop, dragon breathes heavily, wings flex, chains sway, red eyes glow, flames flicker in its claws"
+    },
+    "apt": {
+      "kind": "boss",
+      "size": 128,
+      "prompt": "The Persistent Operator boss: a tall faceless shadow operative in a long black trench coat and hood, glowing red visor slit, many shadowy arms reaching out holding keyboards and keycards, cables trailing like roots into the ground, black and red with cyan glow, menacing",
+      "action": "idle menacing loop, coat sways, shadowy arms slowly writhe and shift, red visor glows and pulses"
+    },
+    "ai": {
+      "kind": "boss",
+      "size": 128,
+      "prompt": "The Rogue AI boss: a menacing floating server-rack titan with a single huge glowing red eye, cables writhing like tentacles, cracked black chassis, cyan circuit lines, red and cyan glow on dark background-free sprite",
+      "action": "idle loop, red eye pulsing and glancing side to side, cable tentacles slowly writhing, status lights blinking"
+    },
+    "triage": {
+      "kind": "agent",
+      "size": 64,
+      "prompt": "small friendly triage robot helper item, round hovering drone with a cyan screen face showing a sorting funnel icon, little arms, dark metal body with cyan glow, game inventory item",
+      "action": "idle hover loop, drone floats up and down, screen face blinks, little arms wave"
+    },
+    "contain": {
+      "kind": "agent",
+      "size": 64,
+      "prompt": "small friendly containment robot helper item, sturdy little boxy robot holding up a glowing cyan energy shield bubble, dark metal body with cyan glow, game inventory item",
+      "action": "idle loop, robot braces, energy shield bubble pulses and shimmers"
+    },
+    "enrich": {
+      "kind": "agent",
+      "size": 64,
+      "prompt": "small friendly enrichment robot helper item, little robot with a magnifying glass lens eye, holding a glowing cyan six-sided die, dark metal body with cyan glow, game inventory item",
+      "action": "idle loop, robot lens eye zooms and focuses, glowing die spins in its hand"
+    },
+    "recover": {
+      "kind": "agent",
+      "size": 64,
+      "prompt": "small friendly recovery medic robot helper item, little rounded robot with a glowing cyan cross on its chest carrying a small first aid kit, dark metal body with cyan glow, game inventory item",
+      "action": "idle loop, robot bobs gently, chest cross glows and pulses like a heartbeat"
+    },
+    "watchlist": {
+      "kind": "agent",
+      "size": 64,
+      "prompt": "small friendly watchlist sentry robot helper item, little periscope robot with a big glowing cyan eye lens on a tall neck, holding a clipboard list, dark metal body with cyan glow, game inventory item",
+      "action": "idle loop, periscope head swivels and looks around, big lens eye glows and blinks"
+    },
+    "surge": {
+      "kind": "consumable",
+      "size": 64,
+      "prompt": "glowing energy playbook item icon, a dark spellbook crackling with cyan lightning surge, pages flaring open, game inventory item",
+      "action": "lightning crackles and arcs around the book, pages flutter, sparks flicker"
+    },
+    "intel": {
+      "kind": "consumable",
+      "size": 64,
+      "prompt": "threat intel feed item icon, a glowing cyan crystal ball orb on a dark metal stand showing a tiny skull and data streams inside, game inventory item",
+      "action": "crystal ball glows and pulses, data streams swirl inside, skull flickers"
+    },
+    "isolate": {
+      "kind": "consumable",
+      "size": 64,
+      "prompt": "isolation script item icon, a rolled up glowing scroll with cyan code text, sealed inside a translucent cyan cube force field, game inventory item",
+      "action": "glowing code text scrolls along the scroll, shimmer pulses across it"
+    },
+    "coffee": {
+      "kind": "consumable",
+      "size": 64,
+      "prompt": "steaming coffee mug item icon, dark mug with a cyan glowing lightning bolt logo, wisps of steam rising, game inventory item",
+      "action": "steam wisps rising and curling, lightning logo glow pulsing"
+    },
+    "freeze": {
+      "kind": "consumable",
+      "size": 64,
+      "prompt": "change freeze item icon, a heavy padlock encased in a block of ice with frost crystals and a glowing cyan snowflake, game inventory item",
+      "action": "frost sparkles twinkle on the ice, snowflake glow pulses, icy mist drifts"
+    },
+    "takedown": {
+      "kind": "consumable",
+      "size": 64,
+      "prompt": "takedown request item icon, a big rubber stamp with a glowing red TAKEDOWN mark and an official sealed red document, game inventory item, dark palette with cyan glow",
+      "action": "stamp lifts and slams down onto the document, red mark glows"
+    }
+  }
+}

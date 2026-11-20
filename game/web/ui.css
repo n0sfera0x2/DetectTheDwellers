@@ -403,7 +403,7 @@ body.ingame{overflow:hidden}
 .t-aloud.tb-note p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:0.875rem}.t-aloud.tb-note .aloud{font-size:0.75rem}
 .tb-als{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,360px));gap:14px 10px;justify-content:center;align-content:start;padding-top:6px}
 .tb-als.n1{grid-template-columns:minmax(0,440px)}
-@media (min-width:761px) and (min-height:700px){.tb-als.n1 .t-td,.tb-als.n1 .t-td .pip,.tb-als.n1 .t-threat.big .t-td,.tb-als.n1 .t-threat.big .t-td .pip{width:52px;height:52px}.tb-als.n1 .tb-art{width:64px;height:64px}.tb-als.n1 .tb-alh{grid-template-columns:64px minmax(0,1fr) auto}.tb-als.n1 .tb-alt .nm{font-size:1.125rem}.tb-als.n1 .tb-kw{font-size:0.875rem}}
+@media (min-width:761px) and (min-height:700px){.tb-als.n1 .t-td,.tb-als.n1 .t-td .pip,.tb-als.n1 .t-threat.big .t-td,.tb-als.n1 .t-threat.big .t-td .pip{width:52px;height:52px}.tb-als.n1 .tb-art{width:112px;height:112px}.tb-als.n1 .tb-alh{grid-template-columns:112px minmax(0,1fr) auto}.tb-als.n1 .tb-alt .nm{font-size:1.125rem}.tb-als.n1 .tb-kw{font-size:0.875rem}}
 .tb-al{position:relative;display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line);background:var(--s1)}
 .tb-al.boss{border-color:rgba(255,90,42,.7)}.tb-al.back{border-color:var(--am)}.tb-al.down{opacity:.6}
 .tb-al.flipin{animation:flipin .45s var(--ease)}.tb-al.struck{animation:jolt .3s}

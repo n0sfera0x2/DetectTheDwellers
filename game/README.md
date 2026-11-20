@@ -273,6 +273,8 @@ node --test game/web/spec.js        # engine rules, jsdom click-through, card pa
 
 Add `?seed=123` to the URL to replay a shift.
 
+The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.js`, since 2026-11-20). To remake one, change its entry in `art/sprites/prompts.json`, regenerate its frames into `art/sprites/src/`, then run `node game/art/sprites.js` and rebuild.
+
 **Same cards as print.** `cards.js` holds the card markup and card CSS: mobs, the boss (with the bottom dice strip), analysts, agents, the dice reference, the pip faces and each analyst's doubles. `paper/build.js` and `web/build.js` both use it, so a card reads identically on the table and on paper. The web only adds live state around a card: the threat dice set just below it (taken ones turned aside, the crew's extra dice marked +), highlights on the dice the selected die can take, and "Came back" and "Beaten" stamps. Nothing is drawn on a card face; the parity test checks each card on the page against the shared function's output.
 
 **Look and feel (2026-10-30 restyle).** The page wears the d20 game's Ink & Static look: its tokens, fonts, chamfered buttons and panels, and the paper card frames. The cards carry the game's scenes, added in `cards.js` so print and web match: a mob by its id, the boss by its print scene (`art-print.json` `boss_wyrm`), an analyst by class id, an agent by `kit_<type>`, in an art panel of fixed height per card type. `web/build.js` inlines only those scenes plus the hero, the boss's win room and the card back. The motion and sound follow `ui/ui.js`:
@@ -349,6 +351,22 @@ Add `?seed=123` to the URL to replay a shift.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### Pixel sprites for every analyst, alarm, boss and item (2026-11-20)
+
+#### What changed
+
+Art only; no rule changed and the sim was not rerun. The 4 analysts, 15 alarms, 3 bosses and 11 items (5 agents, 6 consumables) now wear animated pixel sprites made with PixelLab. The situations, the hero, the win rooms and the card back keep their Ink & Static scenes.
+
+- **Sprites:** a 64 × 64 still for each analyst, alarm and item, and a 128 × 128 still for each boss (`create_image_pixen`). A 4-frame idle loop for each (`animate_image`): breathing, hovering, a blinking eye, steam. One dark palette with black outlines and the cyan accent. That's 66 generations.
+- **Files:** `art/sprites/src/<id>_f0..f4.png` hold the raw frames (frame 0 is the still). `node game/art/sprites.js` stitches them into `art/sprites/<id>.png`, one 5-frame sheet each. `art/sprites/prompts.json` keeps each prompt and motion so any sprite can be remade.
+- **Playback:** `art/sprites.js` writes one CSS block with a class per sprite. The loop ping-pongs (0 1 2 3 4 3 2 1, 150 ms a frame) so a last frame that drifts from the first never snaps back. Reduced motion and print show frame 0.
+- **Where they show:** `cards.js` `SCENE` picks the sprite first and falls back to the ink scene, so the page's cards and the PDF's match (card parity). On the page they're on the crew pick, the crew cards, the alarm tiles, the end-screen roster and the killer on a loss. A lone alarm's tile grew from 64 to 112 px on screens 761 px wide and 700 px tall or more.
+- **Size:** the page went from about 1.2 MB to 1.9 MB.
+
+#### Tests
+
+`node --test game/web/spec.js` has 81 tests and all pass: the art test now expects the sprite when one exists, and a new test checks that every analyst, alarm, boss and item has a 5-frame square sheet in the CSS, with no motion in print or under reduced motion. `npm test` has 83 tests and all pass. Screenshots are in `production/qa/evidence/2026-11-20-sprites-*.png`.
 
 ### Solo items by analyst, Full Shift baselining by crew size (2026-11-20)
 

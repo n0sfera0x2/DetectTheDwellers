@@ -208,7 +208,15 @@
   }
 
   // ---- Views --------------------------------------------------------------------------------------------------------
-  const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button><button class="btn s keys" type="button" data-a="keys" data-k="keys" aria-pressed="${UI.keys}" title="Single-key shortcuts ${UI.keys ? 'on' : 'off'}">Keys ${UI.keys ? 'on' : 'off'}</button><button class="btn s advt" type="button" data-a="adv" data-k="adv" aria-pressed="${UI.adv}" title="Adventure view: the fight as a battle scene">Adventure</button>`;
+  const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button><button class="btn s keys" type="button" data-a="keys" data-k="keys" aria-pressed="${UI.keys}" title="Single-key shortcuts ${UI.keys ? 'on' : 'off'}">Keys ${UI.keys ? 'on' : 'off'}</button>`;
+  // The Menu (2026-11-20): settings in one panel. On the opening screen and in the top bar.
+  const menuBtn = () => `<button class="btn s menub" type="button" data-a="menu" data-k="menu" aria-haspopup="dialog" aria-expanded="${UI.drawer === 'menu'}"><span aria-hidden="true">☰</span> Menu</button>`;
+  const sw = (a, on, label, desc) => `<li class="mset"><span class="mset-t"><b>${label}</b><span>${desc}</span></span><button class="swt" type="button" role="switch" aria-checked="${on}" data-a="${a}" data-k="m-${a}" aria-label="${label}"><i aria-hidden="true"></i><span>${on ? 'On' : 'Off'}</span></button></li>`;
+  function vMenu() {
+    if (UI.drawer !== 'menu') return '';
+    return `<aside class="logp menup" role="dialog" aria-modal="true" aria-label="Menu"><div class="lh"><h2 class="sech">Menu</h2><button class="btn s" data-a="menu" data-k="menux">Close <kbd>Esc</kbd></button></div>
+      <h3 class="msec">Settings</h3><ul class="msets">${sw('adv', UI.adv, 'Adventure view', 'Fights play out as a battle scene: your crew and their agents on one side, the alarms on the other.')}${sw('snd', Sound.on, 'Sound', 'Dice, hits and alarms.')}${sw('keys', UI.keys, 'Keyboard shortcuts', 'Single keys for the main actions (R to roll, E to end the round).')}</ul></aside>`;
+  }
   const dbls = id => A.DOUBLES[id].map(n => PIP(n, 26)).join('');
   const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '9 cards, then the boss. A story card after your 1st, 3rd and 5th win. The boss pulls the row. About 30 minutes.' };
   function vSetup() {
@@ -217,7 +225,7 @@
       return `<button type="button" class="pick" data-a="pick" data-id="${id}" data-k="pick${id}" aria-pressed="${on}" ${!on && n >= 4 ? 'disabled' : ''}><span class="art">${A.sprite(id) || crop(ART[id], THUMB[id])}</span>
         <span class="pk-t"><span class="pk-h"><span class="nm">${esc(nm(id))}</span><span class="style">${esc(STYLE[id])}</span></span><span class="dbl"><span class="phud">Magic numbers</span>${dbls(id)}</span><span class="pk-perk">${esc(A.PERK[id])} <span class="pk-solo">${esc(A.soloLine(id))}</span></span></span>
         <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
-    return `<div class="wrap"><div class="intro-grid">
+    return `<div class="wrap"><div class="setup-top">${menuBtn()}</div><div class="intro-grid">
       <section class="hero"><span class="art">${A.sprite('hero') || slice(ART.hero)}</span><p class="meta c">Co-op · 1–4 players · one night in the SOC</p><h1 class="logo">Detect the Dwellers</h1>
         <p class="lede"><b>22:00.</b> The SOC is yours until dawn, and the alarms are already going off. Something is moving 40 GB out the door. Something else is trying every password in the building. Knock one down and it comes back. Hold the line until <b>06:00</b>, because at 05:59 the real attack lands.</p>
         <p class="lede2"><b>Roll. Match. Survive.</b> Every alarm sets dice under its card. Knock them out with dice showing the same number before it hits back. Beat one the hard way and your agents learn its trick. Every shift deals a new night, and a different boss waits at the bottom.</p>
@@ -465,7 +473,7 @@
     const now = G.bossOut ? T : between && G.phase !== 'sit' ? -1 : F - 1, next = !G.bossOut && (G.phase === 'flip' || G.phase === 'deal') ? F : -1;
     const bar = [...Array(T)].map((_, i) => `<i class="${i < F && i !== now ? 'done' : ''}${i === now ? ' now' : ''}${i === next ? ' next' : ''}"></i>`).join('') + `<i class="boss${G.bossOut ? ' now' : ''}${next === T ? ' next' : ''}"></i>`;
     return `<header class="tb-bar"><span class="brand">Detect the Dwellers</span><span class="tb-feed"><span class="fline"><time class="clk" data-clock>${clockNow()}</time><span class="meta c">${label}</span></span><span class="feedbar" aria-hidden="true">${bar}</span></span>
-      <nav class="tb-btns">${soundBtn()}<button class="btn s" type="button" data-a="cards" data-k="cards" aria-pressed="${UI.cards}">Cards</button><button class="btn s" type="button" data-a="log" data-k="log" aria-pressed="${UI.drawer === 'log'}">Log</button><button class="btn s" type="button" data-a="quit" data-k="quit">New</button></nav></header>`;
+      <nav class="tb-btns">${menuBtn()}${soundBtn()}<button class="btn s" type="button" data-a="cards" data-k="cards" aria-pressed="${UI.cards}">Cards</button><button class="btn s" type="button" data-a="log" data-k="log" aria-pressed="${UI.drawer === 'log'}">Log</button><button class="btn s" type="button" data-a="quit" data-k="quit">New</button></nav></header>`;
   }
   // The persistence row, always in sight: each alarm on it with the sums that bring it back, the last amber pair, and
   // whatever that roll brought back, lit.
@@ -568,13 +576,13 @@
   // Panels that scroll keep their place across re-renders (every action rebuilds the page).
   const KEEP_SCROLL = ['.tb-stage', '.log', '.t-gallery .in', '.t-end', '.tb-rcs', '.tb-its'];
   // The open overlay, topmost first: the card gallery, the log, the boss reveal, the end screen.
-  const overlayOf = () => UI.cards ? '.t-gallery' : UI.drawer === 'log' ? '.logp' : UI.G && UI.reveal && !UI.G.over ? '.reveal' : UI.G && UI.G.over ? '.t-end' : null;
+  const overlayOf = () => UI.cards ? '.t-gallery' : UI.drawer === 'log' ? '.logp' : UI.drawer === 'menu' ? '.menup' : UI.G && UI.reveal && !UI.G.over ? '.reveal' : UI.G && UI.G.over ? '.t-end' : null;
   function render() {
     const k = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
     const kept = KEEP_SCROLL.map(sel => [...app.querySelectorAll(sel)].map(e => e.scrollTop));
     let h = null; if (UI.G) h = vHand();
-    if (UI.G && UI.adv && fighting(UI.G)) app.innerHTML = vAdventure(h) + vReveal() + vLog() + vGallery() + vEnd(); else
-    app.innerHTML = UI.G ? `<div class="tb ph-${UI.G.phase}${E.MODES[UI.G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${vStage()}<div class="tb-foot">${h.dice ? `<div class="tb-dice${UI.G.dice.length > 5 ? ' many' : ''}">${h.dice}</div>` : ''}${vPlates()}<div class="tb-act"><p class="status">${h.hint}</p>${h.ctl}</div></div></div>` + vReveal() + vLog() + vGallery() + vEnd() : vSetup() + vGallery();
+    if (UI.G && UI.adv && fighting(UI.G)) app.innerHTML = vAdventure(h) + vReveal() + vLog() + vMenu() + vGallery() + vEnd(); else
+    app.innerHTML = UI.G ? `<div class="tb ph-${UI.G.phase}${E.MODES[UI.G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${vStage()}<div class="tb-foot">${h.dice ? `<div class="tb-dice${UI.G.dice.length > 5 ? ' many' : ''}">${h.dice}</div>` : ''}${vPlates()}<div class="tb-act"><p class="status">${h.hint}</p>${h.ctl}</div></div></div>` + vReveal() + vLog() + vMenu() + vGallery() + vEnd() : vSetup() + vMenu() + vGallery();
     document.body.classList.toggle('ingame', !!UI.G); document.body.classList.toggle('nokeys', !UI.keys);
     KEEP_SCROLL.forEach((sel, n) => app.querySelectorAll(sel).forEach((e, i) => { if (kept[n][i]) e.scrollTop = kept[n][i]; }));
     // Shortcut hints are visual only: kbd stays out of button names, the key goes in aria-keyshortcuts (while Keys is on).
@@ -637,6 +645,7 @@
     if (a === 'keys') { UI.keys = !UI.keys; try { localStorage.setItem(KEYS_LS, UI.keys ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Keyboard shortcuts ${UI.keys ? 'on' : 'off'}.`); return render(); }
     if (a === 'cards') { UI.cards = !UI.cards; return render(); }
     if (a === 'log') { UI.drawer = UI.drawer === 'log' ? null : 'log'; return render(); }
+    if (a === 'menu') { UI.drawer = UI.drawer === 'menu' ? null : 'menu'; return render(); }
     if (a === 'quit') { if (G && !G.over && !confirmQuit()) return; UI.G = null; UI.drawer = null; UI.dealTo = null; UI.reveal = false; UI.seed = (UI.seed * 7 + 13) % 1e9; return render(); }
     if (a === 'copy') return copyResult();
     if (!G) return;

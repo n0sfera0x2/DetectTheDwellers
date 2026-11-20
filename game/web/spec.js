@@ -1119,8 +1119,11 @@ test('page: a situation flips on the mat, its choice resolves, its condition sho
 test('page: Adventure view (a setting) lays the fight out as a battle scene that plays the same; off brings the table back', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(8), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
   { const p = new JSDOM(fs.readFileSync(PAGE, 'utf8'), { runScripts: 'dangerously', url: 'file:///chapter-dice/index.html?seed=8', pretendToBeVisual: true }).window; assert.equal(p.CDUI.UI.adv, true, 'on for new players'); }
-  click('[data-a="start"]'); assert.equal(d.querySelector('[data-a="adv"]').getAttribute('aria-pressed'), 'false', 'this test starts in the table view; the button sits in the top bar');
-  click('[data-a="adv"]'); assert.equal(w.CDUI.UI.adv, true, 'turned on'); if (w.localStorage) assert.equal(w.localStorage.getItem('cd-adventure'), '1', 'remembered'); /* jsdom on file:// has no localStorage; the page copes */
+  // The switch lives in the Menu (2026-11-20), on the opening screen and in the top bar.
+  assert.ok(!d.querySelector('[data-a="adv"]'), 'no loose toggle'); click('.setup-top [data-a="menu"]'); assert.ok(d.querySelector('.menup'), 'the Menu opens on the opening screen');
+  assert.equal(d.querySelector('.menup [data-a="adv"]').getAttribute('aria-checked'), 'false', 'this test starts in the table view'); click('.menup [data-a="menu"]'); assert.ok(!d.querySelector('.menup'), 'Close shuts it');
+  click('[data-a="start"]'); click('.tb-bar [data-a="menu"]'); click('.menup [data-a="adv"]'); assert.equal(w.CDUI.UI.adv, true, 'turned on');
+  assert.equal(d.querySelector('.menup [data-a="adv"]').getAttribute('aria-checked'), 'true', 'the switch shows it'); click('.menup [data-a="menu"]'); if (w.localStorage) assert.equal(w.localStorage.getItem('cd-adventure'), '1', 'remembered'); /* jsdom on file:// has no localStorage; the page copes */
   pageDeal(w); alarmFirst(w); click('[data-a="flip"]');
   const G = w.CDUI.UI.G; assert.ok(d.querySelector('.adv-field'), 'the battle scene'); assert.ok(!d.querySelector('.tb-stage'), 'not the table');
   assert.equal(d.querySelectorAll('.adv-hero').length, G.n, 'every analyst on the field');
@@ -1130,7 +1133,7 @@ test('page: Adventure view (a setting) lays the fight out as a battle scene that
   assert.equal(d.querySelectorAll('.adv-status [data-a="die"]').length, G.dice.length, 'every die, under its analyst');
   G.dice.forEach(x => assert.ok(d.querySelector(`.adv-status li[data-hp="${x.k}"] [data-a="die"][data-i="${x.i}"]`), 'die ' + x.i + ' sits with its owner'));
   const pickD = [...d.querySelectorAll('.adv-status [data-a="die"]')].find(b => +b.dataset.i !== w.CDUI.UI.sel), fi = +pickD.dataset.i; pickD.click(); assert.equal(w.CDUI.UI.sel, fi, 'a die picks up as in the table'); /* the roll already selected one; pick another */
-  click('[data-a="adv"]'); assert.ok(d.querySelector('.tb-stage') && !d.querySelector('.adv-field'), 'off: the table again'); if (w.localStorage) assert.equal(w.localStorage.getItem('cd-adventure'), '0');
+  click('[data-a="menu"]'); click('.menup [data-a="adv"]'); assert.ok(d.querySelector('.tb-stage') && !d.querySelector('.adv-field'), 'off: the table again'); if (w.localStorage) assert.equal(w.localStorage.getItem('cd-adventure'), '0');
 });
 test('page: Guard covers the player who rolled the double, straight away; undo takes it back', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(8), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };

@@ -282,7 +282,7 @@ node --test game/web/spec.js        # engine rules, jsdom click-through, card pa
 
 Add `?seed=123` to the URL to replay a shift.
 
-**Adventure view** (the **Adventure** button in the top bar, on for new players, and turning it off is remembered per browser) turns a fight into a side-view battle scene. The crew stands on the left of a pixel SOC, with each agent bobbing beside whoever holds it like a pet. The alarms stand on the right with their threat dice, and the boss fights in a server aisle. Below are three windows: the alarms, the crew (HP and each analyst's own dice), and the message and commands. It uses the table view's own dice and buttons, so a fight plays the same. The backdrops are in `art/backdrops/` (PixelLab, 512 × 168).
+**Adventure view** (a switch in the **Menu**, on the opening screen and in the top bar; on for new players, and turning it off is remembered per browser) turns a fight into a side-view battle scene. The crew stands on the left of a pixel SOC, with each agent bobbing beside whoever holds it like a pet. The alarms stand on the right with their threat dice, and the boss fights in a server aisle. Below are three windows: the alarms, the crew (HP and each analyst's own dice), and the message and commands. It uses the table view's own dice and buttons, so a fight plays the same. The backdrops are in `art/backdrops/` (PixelLab, 512 × 168).
 
 The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.js`, since 2026-11-20). To remake one, change its entry in `art/sprites/prompts.json`, regenerate its frames into `art/sprites/src/`, then run `node game/art/sprites.js` and rebuild.
 
@@ -370,7 +370,7 @@ Every pass since the first d6 test, newest first. Each records what changed, wha
 Look only; no rule changed. The owner asked for a fight screen that reads like a classic JRPG battle, with the analysts’ sprites on the field and their agents beside them like pets, as a setting called **Adventure view**.
 
 - **How it was chosen:** a throwaway prototype rendered three layouts from the real game (side view, front row, lanes). The owner picked side view. The prototype was retired once the real view was in; its build target and files are gone from `main`.
-- **The view:** `ui.js` `vAdventure()`, toggled by the top bar’s **Adventure** button (`cd-adventure` in local storage). It’s on for new players (the owner’s call); turning it off is remembered. Only fights change; the flip, deal and situation screens are the same.
+- **The view:** `ui.js` `vAdventure()`, a switch in the **Menu** (`cd-adventure` in local storage). It’s on for new players (the owner’s call); turning it off is remembered. The Menu (its **Settings** section) also holds Sound and Keyboard shortcuts; it opens from the opening screen and the top bar, Escape closes it. Only fights change; the flip, deal and situation screens are the same.
 - **The scene:** two PixelLab backdrops in `art/backdrops/`, a SOC control room for fights and a server aisle for the boss. `web/build.js` inlines them as CSS variables.
 - **Nothing falls off:** the field sizes everything from its own height (CSS container units). A crew of three or four stands in two ranks. The alarms share one row, each capped at a share of the field’s height, and the row scrolls rather than clips. Measured at 1280 × 900, 1280 × 720 and 390 × 844 with 1–4 players and a boss: no analyst or alarm is cut off, and the page doesn’t scroll (it’s 1 px over, as it already was).
 

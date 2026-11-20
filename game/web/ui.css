@@ -650,3 +650,16 @@ h2[tabindex="-1"]:focus{outline:none}
   .adv-foe .t-td,.adv-foe .t-td .pip{width:30px!important;height:30px!important}
   .adv-cmd{grid-template-columns:1fr;max-height:46vh;overflow:auto}.adv-cmd>.adv-win:first-child{display:none}
 }
+
+/* The Menu (2026-11-20): settings in one panel (it borrows the Log drawer's frame). */
+.setup-top{display:flex;justify-content:flex-end;padding:10px 0 0}
+.menup .msec{margin:4px 0 0;font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.msets{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.mset{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--rule)}
+.mset-t{display:flex;flex-direction:column;gap:3px}.mset-t b{font-size:1rem}.mset-t span{font-size:.8125rem;line-height:1.35;color:var(--mut)}
+.swt{flex:none;display:inline-flex;align-items:center;gap:8px;padding:4px;border:1px solid var(--rule2);border-radius:999px;background:var(--s2);color:var(--mut);font:700 11px var(--mono);text-transform:uppercase;cursor:pointer;min-height:32px}
+.swt i{width:34px;height:20px;border-radius:999px;background:#2A2A33;position:relative;transition:background .15s}.swt i::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#C9C3BD;transition:transform .15s}
+.swt span{min-width:2.4em;padding-right:4px}
+.swt[aria-checked="true"]{border-color:var(--cy);color:var(--cy)}.swt[aria-checked="true"] i{background:#0E4B57}.swt[aria-checked="true"] i::after{transform:translateX(14px);background:var(--cy)}
+.swt:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.swt i,.swt i::after{transition:none}}

@@ -282,6 +282,8 @@ node --test game/web/spec.js        # engine rules, jsdom click-through, card pa
 
 Add `?seed=123` to the URL to replay a shift.
 
+**Adventure view** (the **Adventure** button in the top bar, on for new players, and turning it off is remembered per browser) turns a fight into a side-view battle scene. The crew stands on the left of a pixel SOC, with each agent bobbing beside whoever holds it like a pet. The alarms stand on the right with their threat dice, and the boss fights in a server aisle. Below are three windows: the alarms, the crew (HP and each analyst's own dice), and the message and commands. It uses the table view's own dice and buttons, so a fight plays the same. The backdrops are in `art/backdrops/` (PixelLab, 512 × 168).
+
 The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.js`, since 2026-11-20). To remake one, change its entry in `art/sprites/prompts.json`, regenerate its frames into `art/sprites/src/`, then run `node game/art/sprites.js` and rebuild.
 
 **Same cards as print.** `cards.js` holds the card markup and card CSS: mobs, the boss (with the bottom dice strip), analysts, agents, the dice reference, the pip faces and each analyst's doubles. `paper/build.js` and `web/build.js` both use it, so a card reads identically on the table and on paper. The web only adds live state around a card: the threat dice set just below it (taken ones turned aside, the crew's extra dice marked +), highlights on the dice the selected die can take, and "Came back" and "Beaten" stamps. Nothing is drawn on a card face; the parity test checks each card on the page against the shared function's output.
@@ -360,6 +362,21 @@ The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.
 ## History
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
+
+### Adventure view (2026-11-20)
+
+#### What changed
+
+Look only; no rule changed. The owner asked for a fight screen that reads like a classic JRPG battle, with the analysts’ sprites on the field and their agents beside them like pets, as a setting called **Adventure view**.
+
+- **How it was chosen:** a throwaway prototype rendered three layouts from the real game (side view, front row, lanes). The owner picked side view. The prototype was retired once the real view was in; its build target and files are gone from `main`.
+- **The view:** `ui.js` `vAdventure()`, toggled by the top bar’s **Adventure** button (`cd-adventure` in local storage). It’s on for new players (the owner’s call); turning it off is remembered. Only fights change; the flip, deal and situation screens are the same.
+- **The scene:** two PixelLab backdrops in `art/backdrops/`, a SOC control room for fights and a server aisle for the boss. `web/build.js` inlines them as CSS variables.
+- **Nothing falls off:** the field sizes everything from its own height (CSS container units). A crew of three or four stands in two ranks. The alarms share one row, each capped at a share of the field’s height, and the row scrolls rather than clips. Measured at 1280 × 900, 1280 × 720 and 390 × 844 with 1–4 players and a boss: no analyst or alarm is cut off, and the page doesn’t scroll (it’s 1 px over, as it already was).
+
+#### Tests
+
+`node --test game/web/spec.js` has 85 tests and all pass, one of them new: Adventure view shows every analyst, every alarm with its threat dice, and each die beside its owner; a die picks up as in the table; and turning it off brings the table back. `npm test` has 83 tests and all pass. Screenshots are in `production/qa/evidence/2026-11-20-adventure-*.png`.
 
 ### Starting HP by crew size (2026-11-20)
 

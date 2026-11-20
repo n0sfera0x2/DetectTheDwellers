@@ -12,9 +12,9 @@ Detect the Dwellers: a co-op dice-and-card game (1–4 players) set on a cyberpu
 | --- | --- |
 | `game/sim.js` | The bot and balance sim. `SYS=n6` is the game; knobs in the README. |
 | `game/cards.js` | The card markup and per-card rules text, shared by the print-and-play PDF and the web page (card parity). |
-| `game/web/` | The playable page: `engine.js` (DOM-free, seeded), `ui.js`, `ui.css`, `build.js` (writes `index.html`, one self-contained file), `spec.js` (`node --test game/web/spec.js`). |
+| `game/web/` | The playable page: `engine.js` (DOM-free, seeded), `ui.js` (the table view, plus Adventure view: a side-view battle scene, a setting), `ui.css`, `build.js` (writes `index.html`, one self-contained file), `spec.js` (`node --test game/web/spec.js`). |
 | `game/paper/build.js` | The rules sheet and 63 cut-out cards as a PDF. |
-| `game/art/` | The pixel art: `sprites.js` and `sprites/` (every analyst, alarm, boss, item and situation, plus the hero, card back and win scenes, all animated) and `die.js` (the pixel die). The ink scenes in `art.json` are only a fallback now. |
+| `game/art/` | The pixel art: `sprites.js` and `sprites/` (every analyst, alarm, boss, item and situation, plus the hero, card back and win scenes, all animated) `die.js` (the pixel die) and `backdrops/` (Adventure view's battle scenes). The ink scenes in `art.json` are only a fallback now. |
 
 A rule change touches the sim, `web/engine.js`, `cards.js` (and the paper rules sheet), then the README: update **The rules now** and **Where it stands** (check the **Targets** table), and add a dated section under History. Rebuild the page (`node game/web/build.js`) and the PDF (`node game/paper/build.js`), and run `node --test game/web/spec.js` and `npm test`.
 

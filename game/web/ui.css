@@ -597,3 +597,56 @@ h2[tabindex="-1"]:focus{outline:none}
 
 /* Crew pick: the doubles dice big enough to read (2026-11-20). */
 .pick .dbl .pip{width:26px;height:26px}
+
+/* ==== Adventure view (2026-11-20, a setting: the Adventure button) ===============================================
+   The fight as a side-view battle scene on a pixel SOC (the server aisle for the boss). The field sizes everything
+   from its own height (container units), so no analyst or alarm ever falls off it. */
+.btn.advt[aria-pressed="true"]{border-color:var(--cy);color:var(--cy)} /* the toggle: not .adv, which is the layout */
+.adv{display:flex;flex-direction:column;gap:8px;height:100dvh;padding-bottom:8px;box-sizing:border-box}
+.adv>.tb-bar,.adv>.tb-row,.adv>.adv-omen{flex:none}
+.adv-field{position:relative;flex:1;min-height:150px;container-type:size;display:grid;grid-template-columns:minmax(150px,1fr) 2fr;grid-template-rows:100%;padding:10px 24px 14px;overflow:hidden;border:1px solid #2B3A55;image-rendering:pixelated;
+  background:linear-gradient(rgba(7,6,10,.25),rgba(7,6,10,.15) 60%,rgba(7,6,10,.45)),var(--bg-soc) center bottom/cover no-repeat}
+.adv-field.boss{background:linear-gradient(rgba(7,6,10,.3),rgba(7,6,10,.2) 60%,rgba(7,6,10,.5)),var(--bg-aisle) center bottom/cover no-repeat}
+/* The crew: one staggered column; 3–4 analysts stand in two ranks so each keeps about half the field's height. */
+.adv-crew{display:grid;grid-template-rows:repeat(var(--n),minmax(0,1fr));height:100%;min-height:0;gap:2px}
+.adv-crew[style*="--n:3"],.adv-crew[style*="--n:4"]{grid-template-columns:1fr 1fr;grid-template-rows:repeat(2,minmax(0,1fr));column-gap:4px}
+.adv-slot{min-height:0;display:flex;align-items:center;padding-left:calc(var(--k) * 22px)}
+.adv-crew[style*="--n:3"] .adv-slot,.adv-crew[style*="--n:4"] .adv-slot{padding-left:0}
+.adv-crew[style*="--n:3"] .adv-slot:nth-child(even),.adv-crew[style*="--n:4"] .adv-slot:nth-child(even){padding-top:8%}
+.adv-hero{position:relative;margin:0;height:90%;max-height:96px;aspect-ratio:1;transition:transform .3s var(--ease)}
+.adv-hero .adv-spr{position:absolute;inset:0;cursor:zoom-in}.adv-hero.on{transform:translateX(16px)}.adv-hero.on .adv-spr{filter:drop-shadow(0 0 8px rgba(56,225,255,.7))}
+.adv-hero.ko{filter:grayscale(1) brightness(.5);transform:rotate(-80deg) translateY(20%)}
+.adv-hero::after{content:"";position:absolute;left:15%;right:15%;bottom:-2px;height:8px;border-radius:50%;background:rgba(0,0,0,.45);z-index:-1}
+.adv-pets{position:absolute;inset:0;pointer-events:none}
+.adv-pet{position:absolute;width:30%;aspect-ratio:1;left:calc(92% + var(--j) * 12%);top:calc(4% + var(--j) * 24%);pointer-events:auto;cursor:zoom-in;animation:advpet 2.2s ease-in-out infinite;animation-delay:calc(var(--j) * -.7s);filter:drop-shadow(0 0 4px rgba(56,225,255,.5))}
+@keyframes advpet{0%,100%{transform:translateY(0)}50%{transform:translateY(-18%)}}
+.adv-spr:has(>.spr),.adv-pet:has(>.spr){background:none}
+/* The alarms stand on the floor, each capped at a share of the field's height (the boss a bigger share). */
+.adv-foes{align-self:end;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);justify-content:center;align-items:end;gap:10px 16px;min-height:0;max-height:100%;overflow-y:auto;padding-bottom:4px} /* one row, sharing the width; scrolls rather than clips */
+.adv-foe{display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:none;padding:0}
+.adv-foe .adv-spr{position:relative;display:block;width:min(var(--s),40cqh,100%);height:auto;aspect-ratio:1;cursor:zoom-in}.adv-foe.boss .adv-spr{width:min(var(--s),52cqh,100%)}
+.adv-foe.down{opacity:.4;filter:grayscale(1)}
+.adv-foe .t-threat{justify-content:center;flex-wrap:wrap;max-width:280px;padding:0;gap:4px}.adv-foe .t-td,.adv-foe .t-td .pip{width:40px!important;height:40px!important}
+.adv-foes:has(>.adv-foe:nth-child(3)) .t-td,.adv-foes:has(>.adv-foe:nth-child(3)) .t-td .pip{width:32px!important;height:32px!important} /* three or more up: smaller dice */
+.adv-tag{font-size:.8125rem;text-align:center;background:rgba(7,6,10,.75);padding:1px 6px;border-radius:3px}
+.adv-dmg{display:inline-block;min-width:20px;padding:0 4px;background:var(--fl);color:#111;font-weight:700;border-radius:3px}
+.adv-back{font-style:normal;font:700 10px var(--mono);color:#111;background:var(--am);padding:0 4px;margin-left:4px;text-transform:uppercase}.adv-back.down{background:var(--cy)}
+/* The windows below. */
+.adv-cmd{flex:none;display:grid;grid-template-columns:1fr 2fr 1.3fr;gap:8px;max-height:42vh;min-height:0}
+.adv-win{border:2px solid #9FB4FF;border-radius:6px;background:linear-gradient(#18224A,#0C1230);box-shadow:inset 0 0 0 2px #0A0E22;padding:8px 10px;color:#EEF;min-width:0;overflow:auto}
+.adv-h{margin:0 0 6px;font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#9FB4FF}
+.adv-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.adv-list li{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.adv-list li.out{opacity:.45;text-decoration:line-through}
+.adv-list li.on>b::before{content:"▶";color:#FFE14D;margin-right:4px}.adv-kw{font-size:.75rem;color:#B9C3E8}
+.adv-status li{display:grid;grid-template-columns:92px 48px 84px minmax(0,1fr);align-items:center;column-gap:8px}.adv-status .adv-dice{display:flex;flex-wrap:wrap;gap:4px} /* one line per analyst: name, HP, bar, their dice */
+.adv-status li.flash{animation:advhit .45s var(--ease)}@keyframes advhit{20%{background:rgba(255,90,42,.35)}}
+.adv-dice .t-die{width:50px;height:56px;padding:4px 2px 3px}.adv-dice .t-die .pip{width:32px;height:32px}.adv-dice .t-die .o{font-size:.5625rem}
+.adv-hp{display:block;width:84px;height:6px;background:#2A2030;border:1px solid #000}.adv-hp i{display:block;height:100%;background:#4DE38B}.adv-hp.low i{background:var(--fl)}
+.adv-act .status{margin:0 0 6px;font-size:.875rem}.adv-menu{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px}.adv-menu>:not(.btn):not(button){flex-basis:100%;text-align:right;white-space:normal;overflow:visible;text-overflow:clip}.adv-menu .btn::before{content:"▶";opacity:0;margin-right:6px;color:#FFE14D}.adv-menu .btn:hover::before,.adv-menu .btn:focus-visible::before{opacity:1}
+@media (prefers-reduced-motion:reduce){.adv-pet{animation:none}.adv-hero{transition:none}}
+@media (max-width:760px){
+  .adv-status li{grid-template-columns:80px 44px minmax(0,1fr)}.adv-status .adv-dice{grid-column:1/-1}
+  .adv-field{grid-template-columns:minmax(84px,auto) 1fr;padding:6px 8px}.adv-slot{padding-left:calc(var(--k) * 8px)}
+  .adv-foe .t-td,.adv-foe .t-td .pip{width:30px!important;height:30px!important}
+  .adv-cmd{grid-template-columns:1fr;max-height:46vh;overflow:auto}.adv-cmd>.adv-win:first-child{display:none}
+}

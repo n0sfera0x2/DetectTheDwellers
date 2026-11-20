@@ -9,6 +9,9 @@ const { fonts } = require('../../deck/render');
 const ART = { ...require('../../data/art.json'), ...require('../art/art.json') }, // + the consumables' scenes (../art/scenes.js)
   PRINT = require('../../data/art-print.json');
 const SPR = require('../art/sprites'); // the pixel sprites (2026-11-20)
+// Adventure view's backdrops (2026-11-20, PixelLab): the SOC for a fight, the server aisle for the boss.
+const bg = f => 'data:image/png;base64,' + fs.readFileSync(path.join(__dirname, '../art/backdrops', f)).toString('base64');
+const ADV_BG = `:root{--bg-soc:url(${bg('soc.png')});--bg-aisle:url(${bg('aisle.png')})}`;
 // The omen's face (2026-11-20): IM Fell English Italic, OFL (fonts/IMFellEnglish-OFL.txt), for an alarm's flavour line.
 const OMEN_FONT = `@font-face{font-family:'IM Fell English';font-style:italic;font-weight:400;font-display:block;src:url(data:font/woff2;base64,${fs.readFileSync(path.join(__dirname, '../../fonts/IMFellEnglish-Italic.woff2')).toString('base64')}) format('woff2')}`;
 const { CARD_CSS, MOB_IDS, BOSS_ID, BOSS_IDS, SIT_IDS, ANALYST_IDS, ANALYST_ART, artKeys } = require('../cards');
@@ -48,7 +51,8 @@ const html = `<!doctype html>
 ${OMEN_FONT}
 ${CARD_CSS}
 ${SPR.css()}
-${read('ui.css')}</style>
+${read('ui.css')}
+${ADV_BG}</style>
 </head>
 <body>
 <div id="app"></div><div id="live" class="sr" aria-live="polite" aria-atomic="true"></div>

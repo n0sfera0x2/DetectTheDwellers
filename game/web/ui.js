@@ -15,7 +15,10 @@
   const qs = new URLSearchParams(location.search || '');
   const KEYS_LS = 'cd-keys';
   const keysOn = () => { try { return localStorage.getItem(KEYS_LS) !== '0'; } catch (e) { return true; } };
-  const UI = { G: null, sel: null, more: null, guarding: null, dealTo: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false, keys: keysOn(), info: null, opener: null, overlay: null,
+  // Adventure view (2026-11-20): the fight as a side-view battle scene. A setting, on for new players; turning it off is remembered.
+  const ADV_LS = 'cd-adventure';
+  const advOn = () => { try { return localStorage.getItem(ADV_LS) !== '0'; } catch (e) { return true; } };
+  const UI = { G: null, sel: null, more: null, guarding: null, dealTo: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false, keys: keysOn(), adv: advOn(), info: null, opener: null, overlay: null,
     setup: { team: ['HUN', 'RES'], mode: 'quick' }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
   const nm = id => A.cls(id).name;
   const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -205,7 +208,7 @@
   }
 
   // ---- Views --------------------------------------------------------------------------------------------------------
-  const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button><button class="btn s keys" type="button" data-a="keys" data-k="keys" aria-pressed="${UI.keys}" title="Single-key shortcuts ${UI.keys ? 'on' : 'off'}">Keys ${UI.keys ? 'on' : 'off'}</button>`;
+  const soundBtn = () => `<button class="btn s snd" type="button" data-a="snd" data-k="snd" aria-pressed="${Sound.on}" aria-label="Sound">${SPK(Sound.on)}<span>Sound</span></button><button class="btn s keys" type="button" data-a="keys" data-k="keys" aria-pressed="${UI.keys}" title="Single-key shortcuts ${UI.keys ? 'on' : 'off'}">Keys ${UI.keys ? 'on' : 'off'}</button><button class="btn s advt" type="button" data-a="adv" data-k="adv" aria-pressed="${UI.adv}" title="Adventure view: the fight as a battle scene">Adventure</button>`;
   const dbls = id => A.DOUBLES[id].map(n => PIP(n, 26)).join('');
   const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '9 cards, then the boss. A story card after your 1st, 3rd and 5th win. The boss pulls the row. About 30 minutes.' };
   function vSetup() {
@@ -501,6 +504,28 @@
       <span class="tb-alt"><b class="nm">${esc(m.name)}</b><span class="tb-kw"><b>${esc(KWN(m))}.</b> ${esc(KWT(m))}</span></span><span class="tb-dmg"><span>Damage</span><b class="num">${dmg}</b></span></div>${stamp}
       ${vThreat(m)}<div class="tb-alf"><span class="tb-hit"><b class="num">${E.left(m)}</b>/${m.hits} left · ${hit}</span>${base}${vInfo(m)}</div></article>`;
   }
+  // ==== Adventure view (2026-11-20, a setting) =====================================================================
+  // The fight as a side-view battle scene: the crew stands on the left of a pixel SOC (the server aisle for the boss),
+  // each agent bobbing beside whoever holds it; the alarms stand on the right with their threat dice under them. Below,
+  // three windows: the alarms, the crew (HP and each analyst's own dice), and the message with the commands. The pieces
+  // (dice, threat dice, buttons) are the table view's own, so the fight plays exactly the same.
+  const advPets = k => (UI.G.agents[k] || []).map((c, j) => `<span class="adv-pet" style="--j:${j}" data-peek="agent:${c.t}" tabindex="0" aria-label="${esc(E.KIT_NAME[c.t])}">${A.sprite(c.t)}</span>`).join('');
+  const advHp = (G, k) => { const pc = Math.max(0, G.hp[k] / G.max * 100); return `<span class="adv-hp${pc <= 35 ? ' low' : ''}" aria-hidden="true"><i style="width:${pc}%"></i></span>`; };
+  // Each analyst's dice from the dice tray: every die button carries data-i, and G.dice[i].k is its owner.
+  const advDiceBy = (G, html) => { const out = G.team.map(() => []); (String(html || '').match(/<button class="t-die[\s\S]*?<\/button>/g) || []).forEach(b => { const i = +(b.match(/data-i="(\d+)"/) || [])[1]; const d = G.dice[i]; out[d ? d.k : 0].push(b); }); return out.map(a => a.join('')); };
+  function vAdventure(h) {
+    const G = UI.G, dice = advDiceBy(G, h.dice), FXh = FX ? FX.hurt : new Set();
+    const crew = G.team.map((id, k) => `<div class="adv-slot" style="--k:${k}"><figure class="adv-hero${k === G.point ? ' on' : ''}${G.hp[k] <= 0 ? ' ko' : ''}"><span class="adv-spr" data-peek="analyst:${id}" tabindex="0" aria-label="${esc(nm(id))}, ${G.hp[k]} HP">${A.sprite(id)}</span><span class="adv-pets">${advPets(k)}</span></figure></div>`).join('');
+    const foes = G.play.map(m => { const down = !E.left(m), base = !down && E.canBaseline(G, m) ? `<button class="btn s cy" type="button" data-a="baseline" data-u="${m.uid}" data-k="base${m.uid}" aria-label="Baseline ${esc(m.name)}: set ${E.baseCost(G, m)} more dice">Baseline +${E.baseCost(G, m)} <kbd>B</kbd></button>` : '';
+      return `<div class="adv-foe tb-al${m.boss ? ' boss' : ''}${down ? ' down' : ''}" data-uid="${m.uid}"><span class="adv-spr" data-peek="${cardKey(m)}" tabindex="0" style="--s:${m.boss ? 150 : 96}px">${artOf(m)}</span>
+        <span class="adv-tag"><b>${esc(m.name)}</b> <span class="adv-dmg" title="Damage">${E.dmgOf(G, m)}</span>${m.back && !down ? `<i class="adv-back">${m.back > 1 ? 'Back ×' + m.back : 'Came back'}</i>` : ''}${down ? '<i class="adv-back down">Down</i>' : ''}</span>${vThreat(m)}${base}</div>`; }).join('');
+    const alarms = G.play.map(m => `<li class="${E.left(m) ? '' : 'out'}"><b data-peek="${cardKey(m)}" tabindex="0">${esc(m.name)}</b><span class="num">${E.left(m)}/${m.hits}</span><span class="adv-kw">${esc(KWN(m))}</span></li>`).join('');
+    const status = G.team.map((id, k) => `<li class="${k === G.point ? 'on' : ''}${FXh.has(k) ? ' flash' : ''}" data-hp="${k}"><b>${esc(nm(id))}</b><span class="num">${G.hp[k]}/${G.max}</span>${advHp(G, k)}<span class="adv-dice">${dice[k]}</span></li>`).join('');
+    const aloud = vAloud().replace('class="t-aloud"', 'class="t-aloud adv-omen"');
+    return `<div class="tb adv ph-${G.phase}${E.MODES[G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${aloud}
+      <section class="adv-field${G.bossOut ? ' boss' : ''}" aria-label="The fight"><div class="adv-crew" style="--n:${G.n}">${crew}</div><div class="adv-foes">${foes}</div></section>
+      <section class="adv-cmd"><div class="adv-win"><h2 class="adv-h">Alarms</h2><ul class="adv-list">${alarms}</ul></div><div class="adv-win adv-status"><h2 class="adv-h">Crew</h2><ul class="adv-list">${status}</ul></div><div class="adv-win adv-act"><p class="status">${h.hint}</p><div class="adv-menu">${h.ctl}</div></div></section></div>`;
+  }
   function vStage() {
     const G = UI.G;
     if (fighting(G)) {
@@ -548,6 +573,7 @@
     const k = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
     const kept = KEEP_SCROLL.map(sel => [...app.querySelectorAll(sel)].map(e => e.scrollTop));
     let h = null; if (UI.G) h = vHand();
+    if (UI.G && UI.adv && fighting(UI.G)) app.innerHTML = vAdventure(h) + vReveal() + vLog() + vGallery() + vEnd(); else
     app.innerHTML = UI.G ? `<div class="tb ph-${UI.G.phase}${E.MODES[UI.G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${vStage()}<div class="tb-foot">${h.dice ? `<div class="tb-dice${UI.G.dice.length > 5 ? ' many' : ''}">${h.dice}</div>` : ''}${vPlates()}<div class="tb-act"><p class="status">${h.hint}</p>${h.ctl}</div></div></div>` + vReveal() + vLog() + vGallery() + vEnd() : vSetup() + vGallery();
     document.body.classList.toggle('ingame', !!UI.G); document.body.classList.toggle('nokeys', !UI.keys);
     KEEP_SCROLL.forEach((sel, n) => app.querySelectorAll(sel).forEach((e, i) => { if (kept[n][i]) e.scrollTop = kept[n][i]; }));
@@ -607,6 +633,7 @@
     if (a === 'start') return startGame();
     if (a === 'mode') { UI.setup.mode = b.dataset.m; return render(); }
     if (a === 'snd') { Sound.toggle(); return render(); }
+    if (a === 'adv') { UI.adv = !UI.adv; try { localStorage.setItem(ADV_LS, UI.adv ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Adventure view ${UI.adv ? 'on' : 'off'}.`); return render(); }
     if (a === 'keys') { UI.keys = !UI.keys; try { localStorage.setItem(KEYS_LS, UI.keys ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Keyboard shortcuts ${UI.keys ? 'on' : 'off'}.`); return render(); }
     if (a === 'cards') { UI.cards = !UI.cards; return render(); }
     if (a === 'log') { UI.drawer = UI.drawer === 'log' ? null : 'log'; return render(); }

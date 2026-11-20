@@ -523,13 +523,16 @@
   function vAdventure(h) {
     const G = UI.G, dice = advDiceBy(G, h.dice);
     const crew = G.team.map((id, k) => `<div class="adv-slot" style="--k:${k}"><figure class="adv-hero${k === G.point ? ' on' : ''}${G.hp[k] <= 0 ? ' ko' : ''}"><span class="adv-spr" data-peek="analyst:${id}" tabindex="0" aria-label="${esc(nm(id))}, ${G.hp[k]} HP">${A.sprite('full_' + id) || A.sprite(id)}</span><span class="adv-pets">${advPets(k)}</span></figure></div>`).join('');
-    const foes = G.play.map(m => { const down = !E.left(m), base = !down && E.canBaseline(G, m) ? `<button class="btn s cy" type="button" data-a="baseline" data-u="${m.uid}" data-k="base${m.uid}" aria-label="Baseline ${esc(m.name)}: set ${E.baseCost(G, m)} more dice">Baseline +${E.baseCost(G, m)} <kbd>B</kbd></button>` : '';
+    // Each alarm: its sprite, then one compact plate (name, Damage, Back/Down, its keyword, its threat dice). Baseline is a
+    // command, so it sits in the action panel with the others (2026-11-20: the field was cluttered).
+    const foes = G.play.map(m => { const down = !E.left(m);
       return `<div class="adv-foe tb-al${m.boss ? ' boss' : ''}${down ? ' down' : ''}" data-uid="${m.uid}"><span class="adv-spr" data-peek="${cardKey(m)}" tabindex="0" style="--s:${m.boss ? 150 : 96}px">${artOf(m)}</span>
-        <span class="adv-tag"><b>${esc(m.name)}</b> <span class="adv-dmg" title="Damage">${E.dmgOf(G, m)}</span> <span class="adv-kw" title="${esc(KWT(m))}">${esc(KWN(m))}</span>${m.back && !down ? `<i class="adv-back">${m.back > 1 ? 'Back ×' + m.back : 'Came back'}</i>` : ''}${down ? '<i class="adv-back down">Down</i>' : ''}</span>${vThreat(m)}${base}</div>`; }).join('');
+        <div class="adv-plate"><div class="adv-ph"><b class="adv-nm">${esc(m.name)}</b><span class="adv-dmg" title="Damage ${E.dmgOf(G, m)}" aria-label="Damage ${E.dmgOf(G, m)}">${E.dmgOf(G, m)}</span>${m.back && !down ? `<i class="adv-back">${m.back > 1 ? 'Back ×' + m.back : 'Back'}</i>` : ''}${down ? '<i class="adv-back down">Down</i>' : ''}</div><span class="adv-kw" title="${esc(KWT(m))}">${esc(KWN(m))}</span>${vThreat(m)}</div></div>`; }).join('');
+    const bases = G.play.filter(m => E.left(m) && E.canBaseline(G, m)).map(m => `<button class="btn s cy" type="button" data-a="baseline" data-u="${m.uid}" data-k="base${m.uid}" aria-label="Baseline ${esc(m.name)}: set ${E.baseCost(G, m)} more dice">Baseline ${esc(m.name)} +${E.baseCost(G, m)} <kbd>B</kbd></button>`).join('');
     const aloud = vAloud().replace('class="t-aloud"', 'class="t-aloud adv-omen"');
     return `<div class="tb adv ph-${G.phase}${E.MODES[G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${aloud}
       <section class="adv-field${G.bossOut ? ' boss' : ''}" aria-label="The fight"><div class="adv-crew" style="--n:${G.n}">${crew}</div><div class="adv-foes">${foes}</div></section>
-      <section class="adv-hud">${vPlates(dice)}<div class="adv-act" role="region" aria-label="What to do"><p class="status">${h.hint}</p><div class="adv-menu">${h.ctl}</div></div></section></div>`;
+      <section class="adv-hud">${vPlates(dice)}<div class="adv-act" role="region" aria-label="What to do"><p class="status">${h.hint}</p><div class="adv-menu">${bases}${h.ctl}</div></div></section></div>`;
   }
   function vStage() {
     const G = UI.G;

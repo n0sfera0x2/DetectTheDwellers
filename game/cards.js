@@ -14,10 +14,11 @@
   // ids with {{SID}}; one fixed suffix keeps the markup identical on paper and web (card parity).
   // Since 2026-11-20 the analysts, alarms, bosses and items wear animated pixel sprites (art/sprites.js); the ink scene
   // stays as the fallback, and the situations keep theirs.
-  const sprite = id => (SPRITES || []).includes(id) ? `<i class="spr spr-${id}"></i>` : '';
+  const SCENES = ['hero', 'back', 'win_wyrm', 'win_apt', 'win_ai']; // art/sprites.js SCENES: they fill their box
+  const sprite = id => (SPRITES || []).includes(id) ? `<i class="spr spr-${id}${SCENES.includes(id) ? ' cover' : ''}"></i>` : '';
   const SCENE = {
     mob: id => sprite(id) || ART[id] || '', boss: id => sprite(id) || String(PRINT['boss_' + id] || ART[id] || '').replace(/\{\{SID\}\}/g, 'cd'),
-    analyst: id => sprite(id) || ART[ANALYST_ART[id] || id] || '', agent: t => ART['kit_' + t] || '', sit: id => ART['sit_' + id] || '',
+    analyst: id => sprite(id) || ART[ANALYST_ART[id] || id] || '', agent: t => ART['kit_' + t] || '', sit: id => sprite('sit_' + id) || ART['sit_' + id] || '',
     item: t => sprite(t) || ART[ITEM[t][2]] || '',
   };
   // The art.json / art-print.json keys the cards use, so web/build.js inlines only those.
@@ -258,7 +259,7 @@
 .dice .set{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.boss .dice .set{max-width:150px}
 .dice .plus{display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:${C.mut}}.dice .plus b{font-size:14px;color:${C.ink}}
 .dbls{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.dface{background:#fff;border:1px solid ${C.rule};height:34px;display:flex;align-items:center;justify-content:center}
-.perk{font-size:11px;line-height:1.33;font-weight:600;background:#fff;border:1px solid ${C.cy};padding:4px 7px;margin-top:auto;margin-bottom:11px}
+.perk{font-size:11px;line-height:1.33;font-weight:600;background:#fff;border:1px solid ${C.cy};padding:4px 7px;margin-top:auto;margin-bottom:17px}
 .ex{display:flex;align-items:center;gap:5px;font-size:11px;color:${C.mut};background:#fff;border:1px solid ${C.rule};padding:5px 7px}
 .note{font-size:11px;line-height:1.35;color:${C.mut}}.note svg{vertical-align:-2px}.note b{color:${C.ink}}
 .trow{display:flex;flex-wrap:wrap;gap:3px;align-items:center;font-size:10px;line-height:1.25}.trow b{width:100%;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:${C.am}}
@@ -269,7 +270,7 @@
 .srule{font-size:11px;line-height:1.3;font-weight:600}
 .opt{font-size:11px;line-height:1.3;background:#fff;border:1px solid ${C.rule};padding:3px 6px}.opt b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.am}}
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
-.mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:9px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
+.mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:17px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
   return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, SOA_BASE_DICE, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, SOLO_ITEMS, soloLine, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, sprite, artKeys };

@@ -1,5 +1,5 @@
 {
-  "_how": "PixelLab MCP, 2026-11-20. Still: create_image_pixen(description, width=height=size, no_background=true, outline=\"single color black outline\", detail: \"highly detailed\" for bosses else \"medium detail\", view \"side\" and direction east (analysts) / west (alarms) / south (bosses); none for items). Loop: animate_image(first_frame=the still, action, frame_count=4). Frames 0 (the still) to 4 go in src/<id>_f0..f4.png; node game/art/sprites.js stitches them.",
+  "_how": "PixelLab MCP, 2026-11-20. Still: create_image_pixen(description, width=height=size, no_background=true, outline=\"single color black outline\", detail: \"highly detailed\" for bosses else \"medium detail\", view \"side\" and direction east (analysts) / west (alarms) / south (bosses); none for items). Loop: animate_image(first_frame=the still, action, frame_count=4). Frames 0 (the still) to 4 go in src/<id>_f0..f4.png; node game/art/sprites.js stitches them. Scenes (hero, back, win_*) are opaque, no_background=false, detail \"highly detailed\", at the size given. Situations are sit_<id> (sit_coffee, sit_intel would clash with the items). die_blank is a still only, traced into art/die.js.",
   "sprites": {
     "HUN": {
       "kind": "analyst",
@@ -198,6 +198,150 @@
       "size": 64,
       "prompt": "takedown request item icon, a big rubber stamp with a glowing red TAKEDOWN mark and an official sealed red document, game inventory item, dark palette with cyan glow",
       "action": "stamp lifts and slams down onto the document, red mark glows"
+    },
+    "hero": {
+      "kind": "scene",
+      "size": "256x128",
+      "prompt": "pixel art scene, a dark cyberpunk security operations center at night, a lone hooded analyst seen from behind at a desk facing a wall of glowing monitors showing red alerts and graphs, server racks with blinking lights on both sides, rainy window with neon city lights, dark purple and black palette with cyan glow and red alarm lights",
+      "action": "monitors flicker, red alert triangles blink, rain streaks down the window, server rack lights blink, the analyst breathes slightly"
+    },
+    "back": {
+      "kind": "scene",
+      "size": "92x128",
+      "prompt": "minimal pixel art card back, solid near-black dark purple background with only a soft dark vignette, thin cyan pixel border line inset from the edge, one small glowing cyan eye icon centered horizontally near the bottom, symmetrical, empty and calm, no texture (outline: lineless, detail: low detail)",
+      "action": "the small eye slowly blinks closed and open, its cyan glow softly pulses, the border glow shimmers faintly"
+    },
+    "win_wyrm": {
+      "kind": "scene",
+      "size": "256x104",
+      "prompt": "pixel art victory scene in a cyberpunk server room at dawn, a huge black ransomware dragon with a padlock jaw lies defeated and bound in glowing cyan chains on the floor, monitors behind show green all clear checkmarks, warm orange sunrise light through the windows, dark palette with cyan and orange glow",
+      "action": "the chained dragon breathes slowly in defeat, cyan chains shimmer, sunrise light shimmers, green checkmarks glow"
+    },
+    "win_apt": {
+      "kind": "scene",
+      "size": "256x104",
+      "prompt": "pixel art victory scene in a cyberpunk server room at dawn, a tall faceless shadow operative in a black trench coat dissolving into black smoke and fading pixels, its many shadow arms falling away, unplugged cables on the floor, monitors show green all clear, warm orange sunrise light through the windows, dark palette with cyan and orange glow",
+      "action": "the shadow figure dissolves further into drifting black smoke and pixels, sunrise light shimmers, monitors glow"
+    },
+    "win_ai": {
+      "kind": "scene",
+      "size": "256x104",
+      "prompt": "pixel art victory scene in a cyberpunk server room at dawn, a giant server rack with a huge dark powered-down red eye, its cable tentacles limp on the floor, a big unplugged power cable in the foreground, monitors show green all clear, warm orange sunrise light through the windows, dark palette with cyan and orange glow",
+      "action": "the dead red eye flickers faintly one last time, sparks spit from the unplugged cable, server lights blink green"
+    },
+    "sit_travel": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "impossible travel icon: a glowing world globe with two location pins far apart connected by a dashed red flight arc and a small airplane, a warning exclamation mark, dark palette with cyan and red glow, game icon",
+      "action": "globe slowly rotates, the airplane flies along the red arc, warning sign blinks"
+    },
+    "sit_coffee": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "coffee run icon: a cardboard drink carrier tray holding four iced cold brew cups with straws, rain droplets on the cups, dark palette with cyan glow, game icon",
+      "action": "rain droplets fall and glisten on the cups, ice cubes clink"
+    },
+    "sit_blast": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "marketing blast icon: a big red megaphone blasting a swarm of envelopes and email icons outward, dark palette with cyan and red glow, game icon",
+      "action": "megaphone shakes as envelopes blast outward in a stream"
+    },
+    "sit_patch": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "patch tuesday icon: a wall calendar page marked Tuesday with a glowing cyan bandage patch and a shield with a checkmark, dark palette with cyan glow, game icon",
+      "action": "bandage patch glows and pulses, shield checkmark shines"
+    },
+    "sit_ciso": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "CISO wants a briefing icon: a ringing smartphone with an angry boss face on the screen next to a stack of presentation slides with bar charts and a red clock, dark palette with cyan and red glow, game icon",
+      "action": "phone vibrates and rings, angry face shakes, clock hands tick"
+    },
+    "sit_intel": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "threat intel drop icon: a parachute dropping a glowing cyan data crate stamped with a skull and crosshair, dark palette with cyan glow, game icon",
+      "action": "parachute sways gently side to side as the crate floats down, crate glows"
+    },
+    "sit_pentest": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "pentest day icon: a sneaky red team hacker in a bright hi-vis safety vest and hard hat carrying a laptop and lockpicks, dark palette with cyan and orange glow, game character icon",
+      "action": "sneaky idle loop, hacker looks around shiftily, fiddles with the lockpick"
+    },
+    "sit_pager": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "pager storm icon: a pile of old beepers and pagers vibrating and flashing red alerts, lightning bolts and alarm waves around them, dark palette with cyan and red glow, game icon",
+      "action": "pagers vibrate and rattle, red alert lights flash, lightning bolts flicker"
+    },
+    "sit_budget": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "budget approved icon: a document with a big green APPROVED stamp sitting on a pile of glowing gold coins and cash, dark palette with cyan and gold glow, game icon",
+      "action": "gold coins glint and sparkle, approved stamp glows"
+    },
+    "sit_insider": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "the badge that wasn't icon: an employee ID badge on a lanyard with a blank ghostly faceless photo, glowing red in a dark doorway of a server room, dark palette with cyan and red glow, spooky game icon",
+      "action": "badge swings slowly on its lanyard, ghostly faceless photo flickers, red glow pulses"
+    },
+    "sit_lateral": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "lateral whispers icon: three small computer terminals connected by glowing red dotted lines with a ghostly shadow hand creeping from one to the next, dark palette with cyan and red glow, spooky game icon",
+      "action": "red dotted connection lines pulse from terminal to terminal, terminal screens flicker"
+    },
+    "sit_ceo": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "the CEO's inbox icon: an open email envelope with a forged wire transfer check sticking out, a fake wax signature seal, a dollar sign and a red clock, dark palette with cyan and red glow, game icon",
+      "action": "a forged check flutters out of the envelope, wax seal glints, red clock ticks"
+    },
+    "sit_change": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "ghost in the change window icon: a translucent spooky ghost reaching through a glowing brick firewall and turning a big switch, dark palette with cyan and red glow, spooky game icon",
+      "action": "ghost wavers and flickers translucently, slowly turning the switch, firewall glow pulses"
+    },
+    "sit_chatter": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "dark web chatter icon: a hooded shadowy figure behind a glowing laptop with a red price tag hanging from it and speech bubbles with skulls, dark palette with cyan and red glow, spooky game icon",
+      "action": "hooded figure types on the laptop, skull speech bubbles bob and float, screen glow flickers"
+    },
+    "sit_usb": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "the janitor's USB icon: a suspicious USB flash drive with a paper label reading SALARIES lying on a break room table, glowing red evil eye on it, dark palette with cyan and red glow, spooky game icon",
+      "action": "the red evil eye on the USB drive blinks and glows menacingly"
+    },
+    "sit_ioc": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "old case new IOC icon: a dusty manila case file folder with a big glowing red fingerprint and hash code bursting out of it, dark palette with cyan and red glow, game icon",
+      "action": "red fingerprint glows and pulses, hash code characters flicker out of the folder"
+    },
+    "sit_honey": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "honeytoken tripped icon: a glowing golden honey jar with a key inside caught in a snapping steel bear trap, alarm sparks, dark palette with cyan and gold glow, game icon",
+      "action": "honey jar glows and shimmers, bear trap jaws twitch, alarm sparks flash"
+    },
+    "sit_vendor": {
+      "kind": "situation",
+      "size": 64,
+      "prompt": "vendor breach notice icon: a cracked broken shipping box leaking glowing payroll documents with a red warning envelope letter on top, dark palette with cyan and red glow, game icon",
+      "action": "documents flutter out of the broken box, red warning envelope pulses"
+    },
+    "die_blank": {
+      "kind": "die",
+      "size": 32,
+      "prompt": "a single ivory white six-sided die seen perfectly straight on from the front, one flat square face filling the frame, completely blank face with no pips or dots, rounded corners, thick black outline, subtle bevel shading on the edges, chunky retro pixel art game dice",
+      "action": "none: traced into art/die.js; the pips are drawn there"
     }
   }
 }

@@ -352,6 +352,26 @@ The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.
 
 Every pass since the first d6 test, newest first. Each records what changed, what the sim measured, and the knobs it added. Numbers in a section are true for the rules of that date only.
 
+### No ink left on the page: pixel scenes and dice, a JRPG crew, a boss row (2026-11-20)
+
+#### What changed
+
+Art and layout only; no rule changed and the sim was not rerun. This follows on from the first sprite pass below.
+
+- **The last ink art is gone from the page.** The 18 situations have animated 64 px sprites (`sit_<id>`, because `coffee` and `intel` are item ids too). The hero, the feed's card back and the three boss win rooms are animated pixel scenes that fill their boxes (`.spr.cover`). The page build drops every ink scene a sprite replaces, so `CD_ART` is empty.
+- **Pixel dice.** PixelLab's blank die is traced into `art/die.js` (a 32 × 32 text map) with 4 × 4 pips drawn on its front face, so every number reads exactly and the page's colour rules still apply (amber row dice, grey taken dice, cyan picks). A roll flashes random faces while the die snaps through quarter turns with a hop, then lands with a squash. PixelLab's own tumble animation was tried and dropped: it never turned the die over, and half its frames showed an X instead of a face. The print cards keep their vector pips.
+- **JRPG crew.** Each crew plate shows its analyst's sprite facing the alarms. The analyst on point steps forward and glows, a hit shakes them, and a downed analyst slumps grey.
+- **The boss row.** With alarms beside it, the boss takes the whole top row with a 128 px sprite, and the comebacks line up underneath.
+- **The omen.** On the page an alarm's flavour is now an italic serif line with a red seam and a faint flicker, signed with the alarm's name. The "read it aloud" cue is gone; the print cards keep it for the table.
+- **Fixes.** The crew picks are all one height (`.picks` rows are `1fr`). The Overclocked line on agent cards and the perk on analyst cards cleared the cut corner of the frame (at least 16.8 px under the last line; it was 10). The Came back, Back ×2, Down and Baselining stamps sit in their own band instead of over the alarm's name.
+- **Bigger dice, same layout.** Threat dice went from 44 to 48 px (58 for a lone alarm), the dice tray from 36 to 46 px, and phones step up too. The boss's sprite sits in a left column beside its name and dice, so its row stays short. On a 1280 × 900 screen a boss fight with three comebacks now fits the fight area exactly (447 of 447 px). Shorter screens scroll the fight area as they did before; the page itself never scrolls (it is 1 px over at every size, as it was before this pass).
+- **A quieter card back:** a dark field, a thin cyan frame and a small blinking eye low down, so the feed's title reads clean. The first back (a big eye emblem with circuitry everywhere) and a second try (circuitry still everywhere, eye off-centre) were dropped.
+- **Sprites:** `art/sprites.js` now reads each sheet's frame count and size from `art/sprites/meta.json`, written by the stitch. `prompts.json` has all 57 prompts.
+
+#### Tests
+
+`node --test game/web/spec.js` has 82 tests and all pass. The sprite test now also covers the situations and scenes, and a new test checks that the pixel die shows exactly n pips and can be recoloured. Screenshots are in `production/qa/evidence/2026-11-20-pass2-*.png`: the landing page, the flip with the card back, a fight, a mid-roll frame, the rolled dice, the boss row (1280 and 390 px wide) and the PDF situation cards.
+
 ### Pixel sprites for every analyst, alarm, boss and item (2026-11-20)
 
 #### What changed

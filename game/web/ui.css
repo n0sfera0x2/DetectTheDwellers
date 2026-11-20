@@ -59,7 +59,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .hero{display:flex;flex-direction:column;gap:14px}.hero .art{border:1px solid var(--rule);aspect-ratio:200/96}
 .t-note{border:1px solid rgba(255,90,42,.5);background:rgba(255,90,42,.08);padding:8px 12px;font-size:0.9375rem;max-width:60ch}.t-note b{color:#FFB49C}
 .setup{display:flex;flex-direction:column;gap:12px;padding:18px 20px 0}
-.picks{display:grid;gap:6px}
+.picks{display:grid;gap:6px;grid-auto-rows:1fr} /* every crew row as tall as the tallest, so the portraits match (2026-11-20) */
 .pick{display:grid;grid-template-columns:132px minmax(0,1fr) auto;align-items:center;gap:14px;width:100%;padding:0 12px 0 0;border:1px solid var(--rule2);background:var(--s2);text-align:left;cursor:pointer;min-height:96px;transition:border-color .15s}
 .pick .art{height:100%;aspect-ratio:3/2;min-height:96px}.pick .nm{font-size:1.0625rem}
 .pick .pk-t{display:flex;flex-direction:column;gap:3px;padding:8px 0}.pick .pk-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
@@ -117,9 +117,12 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .t-amb{display:block;width:36px;height:36px;line-height:0}.t-amb .f{display:block}
 .t-amb .pip{width:36px;height:36px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.5))}.t-amb .pip rect{fill:var(--am);stroke:#1A1012}.t-amb .pip circle{fill:#1A1012}
 .t-amb.rolling{animation:dtumble .16s linear infinite}.t-amb.landed{animation:land .3s var(--ease)}
-.t-aloud{border:1px solid var(--cl);background:#0C171B;padding:8px 14px}
-.aloud{display:block;margin-bottom:3px;font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1.3;letter-spacing:.06em;text-transform:uppercase;color:var(--cy)}
-.t-aloud p{font-size:1rem;line-height:1.45;max-width:70ch}
+/* The omen (2026-11-20): the alarm's flavour as an eerie italic line, a red seam, a faint flicker. */
+.t-aloud{position:relative;border:1px solid #2A1A24;border-left:3px solid var(--fl);background:linear-gradient(90deg,#1A0D14 0,#0C0A10 70%);padding:10px 16px 8px;box-shadow:inset 0 0 24px rgba(255,90,42,.08)}
+.t-aloud p.omen{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:1.1875rem;line-height:1.4;max-width:70ch;color:#EFE3F2;letter-spacing:.01em;text-shadow:0 0 10px rgba(56,225,255,.35),0 0 2px rgba(255,90,42,.4);animation:omen 5s steps(1,end) infinite}
+.aloud{display:block;margin-top:4px;text-align:right;font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1.3;letter-spacing:.08em;text-transform:uppercase;color:#FF8A66}
+@keyframes omen{0%,100%{opacity:1}91%{opacity:.82}92%{opacity:1}96%{opacity:.9}97%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.t-aloud p.omen{animation:none}}
 .reveal-ln .ln{display:inline;animation:lnin .5s var(--ease) both;animation-delay:calc(var(--i) * 420ms + 380ms)}
 @keyframes lnin{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:none}}
 .status{font-size:1rem;line-height:1.45;color:var(--ink);max-width:70ch}.status b{color:var(--cy);font-weight:700}.status .err{color:#FF9478}.status .lethal{display:block;color:var(--fl);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
@@ -400,7 +403,7 @@ body.ingame{overflow:hidden}
 .tb-stage .t-steps{margin:0}.tb-stage .t-steps li{padding:3px 8px}.tb-stage .t-steps li span{font-size:0.75rem}
 .tb-note{font-size:0.875rem;line-height:1.4;padding:6px 10px;border:1px solid var(--rule2);background:var(--s1)}
 .tb-note.boss{border-color:rgba(255,90,42,.6);background:rgba(255,90,42,.07)}.tb-note .clk{margin-right:4px}
-.t-aloud.tb-note p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:0.875rem}.t-aloud.tb-note .aloud{font-size:0.75rem}
+.t-aloud.tb-note p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:1.0625rem}.t-aloud.tb-note .aloud{font-size:0.6875rem}
 .tb-als{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,360px));gap:14px 10px;justify-content:center;align-content:start;padding-top:6px}
 .tb-als.n1{grid-template-columns:minmax(0,440px)}
 @media (min-width:761px) and (min-height:700px){.tb-als.n1 .t-td,.tb-als.n1 .t-td .pip,.tb-als.n1 .t-threat.big .t-td,.tb-als.n1 .t-threat.big .t-td .pip{width:52px;height:52px}.tb-als.n1 .tb-art{width:112px;height:112px}.tb-als.n1 .tb-alh{grid-template-columns:112px minmax(0,1fr) auto}.tb-als.n1 .tb-alt .nm{font-size:1.125rem}.tb-als.n1 .tb-kw{font-size:0.875rem}}
@@ -434,7 +437,16 @@ body.ingame{overflow:hidden}
 .tb-dice .t-dice{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
 .tb-dice .t-die{width:60px;height:68px}.tb-dice .t-die .pip{width:36px;height:36px}
 .tb-plates{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
-.tb-pl{display:flex;flex-direction:column;gap:4px;min-width:0;padding:6px 8px;border:1px solid var(--rule);background:var(--s1)}
+.tb-pl{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;min-width:0;padding:6px 8px 6px 6px;border:1px solid var(--rule);background:var(--s1)}
+.tb-pb{display:flex;flex-direction:column;gap:4px;min-width:0}
+/* JRPG party (2026-11-20): each analyst's sprite faces the alarms; on point steps forward and glows, down slumps grey. */
+.tb-pa{position:relative;align-self:center;width:64px;height:64px;cursor:zoom-in;transition:transform .3s var(--ease),filter .3s}
+.tb-pa .spr{background-color:transparent}.tb-pa:has(>.spr){background:radial-gradient(ellipse 60% 18% at 50% 92%,rgba(56,225,255,.18),transparent 70%)}
+.tb-pl.on .tb-pa{transform:translateX(6px);filter:drop-shadow(0 0 6px rgba(56,225,255,.55))}
+.tb-pl.ko .tb-pa{filter:grayscale(1) brightness(.6);transform:rotate(-8deg) translateY(4px)}
+.tb-pl.flash .tb-pa{animation:pahit .45s var(--ease)}
+@keyframes pahit{0%,100%{transform:none}20%{transform:translateX(-5px);filter:brightness(2) sepia(1) hue-rotate(-30deg) saturate(4)}40%{transform:translateX(4px)}60%{transform:translateX(-2px)}}
+@media (prefers-reduced-motion:reduce){.tb-pa{transition:none}.tb-pl.flash .tb-pa{animation:none}}
 .tb-pl.on{border-color:var(--cl);background:#0E171B}.tb-pl.swap{border-color:var(--fl)}
 .tb-plh{display:flex;align-items:center;gap:6px;min-width:0}.tb-plh .nm{font-size:0.875rem;white-space:nowrap}.tb-plh .dot{width:7px;height:7px;background:var(--cy);flex:none}
 .tb-pt{font-family:var(--mono);font-size:0.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cy)}
@@ -473,7 +485,7 @@ body.ingame{overflow:hidden}
   .tb-foot{gap:6px;padding:6px 0 8px}
   .tb-dice .t-die{width:52px;height:58px;padding:4px 2px 3px}.tb-dice .t-die .pip{width:32px;height:32px}.tb-dice .t-die .o{font-size:0.625rem}.tb-dice .t-dice{gap:6px}
   .tb-plates{grid-template-columns:repeat(min(var(--n),2),minmax(0,1fr));gap:6px}
-  .tb-pl{padding:4px 6px}.tb-plh .nm{font-size:0.8125rem}.tb-ab{display:none}.tb-plh .hpn b{font-size:1rem}
+  .tb-pl{padding:4px 6px;grid-template-columns:36px minmax(0,1fr);gap:5px}.tb-pa{width:36px;height:36px;align-self:start}.tb-pl.on .tb-pa{transform:translateX(3px)}.tb-plh .nm{font-size:0.8125rem}.tb-ab{display:none}.tb-plh .hpn b{font-size:1rem}
   .tb-it{font-size:0.75rem;min-height:30px}.tb-it .tb-ik{display:none}.tb-it .btn.s{min-height:28px;padding:2px 8px}.tb-pl{gap:3px}.tb-plf .inc{font-size:0.75rem}
   .tb-st{right:64px;top:-9px;font-size:0.6875rem;padding:1px 6px}.tb-als.multi .tb-st{right:auto;left:6px}.tb-als.multi .tb-dmg{padding:1px 5px}.tb-als.multi .tb-dmg b{font-size:1.0625rem}
   .tb-als.multi .tb-al{padding:6px;gap:4px}.tb-als.multi .tb-alt .nm{font-size:0.8125rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tb-als.multi .tb-alf{flex-wrap:nowrap}.tb-als.multi .tb-hit{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem}.tb-als.multi .tb-i summary{width:40px;height:32px}.tb-als.multi .t-threat{padding:2px 0}
@@ -537,3 +549,45 @@ h2[tabindex="-1"]:focus{outline:none}
 /* A fight with room to spare sits in the middle of the stage, not at its top. */
 .tb-stage.fight .tb-als{margin-block:auto}
 @media (max-width:760px){.tb.ph-tuck .tb-stage .t-sslot{--z:.5}.tb.ph-tuck .tb-stage .t-tuckp .status{font-size:0.875rem}}
+
+/* A stamped alarm (Came back, Down, Baselining) keeps its stamp in its own band above the name (2026-11-20). */
+.tb-als .tb-al:has(>.tb-st){padding-top:18px}
+
+/* Pixel dice (2026-11-20, art/die.js): crisp cells, no vector stroke. Rolling, the face snaps through quarter turns
+   with a hop, like a sprite tumble, while ui.js flashes random faces; it lands with a squash. */
+.pip.px rect{stroke:none!important}
+.t-die.rolling,.t-amb.rolling{animation:none}
+.t-die.rolling .f,.t-amb.rolling .f{display:block;animation:pxroll .32s steps(1,end) infinite}
+@keyframes pxroll{0%{transform:rotate(0) translateY(0)}25%{transform:rotate(90deg) translateY(-6px)}50%{transform:rotate(180deg) translateY(-9px)}75%{transform:rotate(270deg) translateY(-4px)}}
+.t-die.landed .f,.t-amb.landed .f{animation:pxland .28s steps(3,end)}
+@keyframes pxland{0%{transform:scale(1.25,.75)}50%{transform:scale(.9,1.1)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.t-die.rolling .f,.t-amb.rolling .f,.t-die.landed .f,.t-amb.landed .f{animation:none}}
+
+/* The boss row (2026-11-20): with alarms beside it, the boss takes the whole top row with a large sprite, and the
+   comebacks line up underneath. Alone, it keeps the lone-alarm layout (brief panel beside it). */
+.tb-als:not(.n1) .tb-al.boss{grid-column:1/-1;order:-1;width:100%;max-width:760px;justify-self:center}
+.tb-als .tb-al.boss .tb-art{display:block;width:128px;height:128px}
+.tb-als .tb-al.boss .tb-alh{grid-template-columns:128px minmax(0,1fr) auto}
+.tb-als .tb-al.boss .tb-alt .nm{font-size:1.25rem}.tb-als .tb-al.boss .tb-kw{display:block}
+@media (max-width:760px){.tb-als .tb-al.boss .tb-art{width:72px;height:72px}.tb-als .tb-al.boss .tb-alh{grid-template-columns:72px minmax(0,1fr) auto}}
+@media (max-width:760px){.tb-als.multi .tb-al.boss .tb-alt .nm{white-space:normal;overflow:visible}}
+
+/* Bigger pixel dice (2026-11-20): the pixel face is ~60% of the die, so each size steps up where the layout has room. */
+.tb-al .t-td,.tb-al .t-td .pip,.tb-al .t-threat.big .t-td,.tb-al .t-threat.big .t-td .pip{width:48px;height:48px}
+.tb-dice .t-die{width:66px;height:76px}.tb-dice .t-die .pip{width:46px;height:46px}
+@media (min-width:761px) and (min-height:700px){.tb-als.n1 .t-td,.tb-als.n1 .t-td .pip,.tb-als.n1 .t-threat.big .t-td,.tb-als.n1 .t-threat.big .t-td .pip{width:58px;height:58px}}
+@media (max-height:780px) and (min-width:761px){.tb-dice .t-die{width:60px;height:68px}.tb-dice .t-die .pip{width:42px;height:42px}}
+@media (max-width:760px){
+  .tb-al .t-td,.tb-al .t-td .pip,.tb-al .t-threat.big .t-td,.tb-al .t-threat.big .t-td .pip{width:42px;height:42px}
+  .tb-dice .t-die{width:56px;height:64px}.tb-dice .t-die .pip{width:40px;height:40px}
+  .tb-dice.many .t-die{width:50px;height:58px}.tb-dice.many .t-die .pip{width:34px;height:34px}
+  .tb-als.multi .t-td,.tb-als.multi .t-td .pip{width:38px;height:38px}
+}
+@media (max-height:780px) and (min-width:761px){.tb-als .tb-al.boss .tb-art{width:80px;height:80px}.tb-als .tb-al.boss .tb-alh{grid-template-columns:80px minmax(0,1fr) auto}.tb-als .tb-al.boss .t-td,.tb-als .tb-al.boss .t-td .pip{width:44px;height:44px}}
+/* The boss's sprite sits in a left column beside its name, dice and footer, not above them: the row stays short. */
+@media (min-width:761px){
+  .tb-als .tb-al.boss{padding-left:152px;min-height:146px}
+  .tb-als .tb-al.boss .tb-art{position:absolute;left:10px;top:9px}
+  .tb-als .tb-al.boss .tb-alh{grid-template-columns:minmax(0,1fr) auto}
+}
+@media (max-height:780px) and (min-width:761px){.tb-als .tb-al.boss{padding-left:102px;min-height:98px}.tb-als .tb-al.boss .tb-alh{grid-template-columns:minmax(0,1fr) auto}}

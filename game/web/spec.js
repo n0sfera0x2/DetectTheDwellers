@@ -316,16 +316,30 @@ test('cards carry their pixel sprite, else the Ink & Static scene: mob by id, bo
   const k = CARDS.artKeys(); assert.ok(k.art.every(x => ART[x]) && k.print.every(x => PRINT[x]));
   for (const t of CARDS.CONS_IDS) assert.ok(k.art.includes(CARDS.ITEM[t][2]), t);
 });
-test('every analyst, alarm, boss and item has a 5-frame sprite sheet, and the sprite CSS carries each one', () => {
-  const SPRITES = require('../art/sprites'), want = [...CARDS.ANALYST_IDS, ...CARDS.MOB_IDS, ...CARDS.BOSS_IDS, ...CARDS.AGENT_IDS, ...CARDS.CONS_IDS];
+test('every analyst, alarm, boss, item and situation has a 5-frame sprite sheet, the scenes too, and the CSS carries each one', () => {
+  const SPRITES = require('../art/sprites'), M = require('../art/sprites/meta.json');
+  const want = [...CARDS.ANALYST_IDS, ...CARDS.MOB_IDS, ...CARDS.BOSS_IDS, ...CARDS.AGENT_IDS, ...CARDS.CONS_IDS, ...CARDS.SIT_IDS.map(id => 'sit_' + id), ...SPRITES.SCENES];
   const css = SPRITES.css();
   for (const id of want) {
     assert.ok(SPRITES.IDS.includes(id), `sprite for ${id}`);
     const png = fs.readFileSync(path.join(__dirname, '../art/sprites', id + '.png')), w = png.readUInt32BE(16), h = png.readUInt32BE(20);
-    assert.equal(w, h * SPRITES.FRAMES, `${id}: ${SPRITES.FRAMES} square frames side by side`);
+    assert.equal(M[id].frames, SPRITES.FRAMES, `${id}: ${SPRITES.FRAMES} frames`);
+    assert.equal(w, M[id].w * M[id].frames, `${id}: frames side by side`); assert.equal(h, M[id].h, id);
+    if (!SPRITES.SCENES.includes(id)) assert.equal(M[id].w, M[id].h, `${id}: square`);
     assert.ok(css.includes(`.spr-${id}{background-image:url(data:image/png;base64,`), id);
   }
+  for (const id of SPRITES.SCENES) assert.match(SPRITES.html(id), /class="spr spr-[a-z_]+ cover"/, id);
+  for (const id of CARDS.SIT_IDS) assert.match(CARDS.sitCard(id), new RegExp(`class="spr spr-sit_${id}"`), id);
   assert.match(css, /prefers-reduced-motion:reduce\)\{\.spr\{animation:none\}/); assert.match(css, /@media print\{\.spr\{animation:none\}/);
+});
+test('the pixel die shows exactly n pips, recolourable like the vector die', () => {
+  const { pixDie } = require('../art/die');
+  for (let n = 1; n <= 6; n++) {
+    const h = pixDie(n, 40), p = /<path class="p" d="([^"]*)"/.exec(h)[1];
+    assert.equal((p.match(/M/g) || []).length, n, `${n} pips`);
+    assert.match(h, /^<svg class="pip px"[^>]*width="40"[^>]*aria-label="/); assert.match(h, new RegExp(`aria-label="${n}"`));
+    assert.ok(/<rect /.test(h), 'body cells are rects, so .pip rect{fill} recolours them');
+  }
 });
 
 // ---- Items: dealing, personal agents, consumables (sim.js NEWITEMS, PERSONAL, CONSFREE, slotsK) -------------------

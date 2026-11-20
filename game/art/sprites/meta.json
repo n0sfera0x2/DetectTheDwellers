@@ -1,0 +1,282 @@
+{
+ "ENG": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "HUN": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "RES": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "SOA": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "ai": {
+  "frames": 5,
+  "w": 128,
+  "h": 128
+ },
+ "apt": {
+  "frames": 5,
+  "w": 128,
+  "h": 128
+ },
+ "back": {
+  "frames": 5,
+  "w": 92,
+  "h": 128
+ },
+ "banshee": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "bat": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "coffee": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "contain": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "druid": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "enrich": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "freeze": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "hero": {
+  "frames": 5,
+  "w": 256,
+  "h": 128
+ },
+ "hydra": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "imp": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "intel": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "isolate": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "leech": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "macro": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "mailer": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "mimic": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "ogre": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "recover": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_blast": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_budget": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_ceo": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_change": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_chatter": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_ciso": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_coffee": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_honey": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_insider": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_intel": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_ioc": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_lateral": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_pager": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_patch": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_pentest": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_travel": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_usb": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "sit_vendor": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "specter": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "spray": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "surge": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "takedown": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "triage": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "vibe": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "watchlist": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "win_ai": {
+  "frames": 5,
+  "w": 256,
+  "h": 104
+ },
+ "win_apt": {
+  "frames": 5,
+  "w": 256,
+  "h": 104
+ },
+ "win_wyrm": {
+  "frames": 5,
+  "w": 256,
+  "h": 104
+ },
+ "wraith": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ },
+ "wyrm": {
+  "frames": 5,
+  "w": 128,
+  "h": 128
+ },
+ "wyrmling": {
+  "frames": 5,
+  "w": 64,
+  "h": 64
+ }
+}

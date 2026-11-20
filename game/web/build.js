@@ -28,6 +28,9 @@ Object.entries(ANALYST_ART).forEach(([id, k]) => { art[id] = ART[k]; });
 // Each boss's win room (the random boss, 2026-11-02).
 BOSS_IDS.forEach(id => { art['win_' + id] = (ART._win && ART._win[id]) || ART['win_' + id] || ART[id]; });
 Object.entries(art).forEach(([k, v]) => { if (!v) throw new Error('missing art: ' + k); });
+// Since 2026-11-20 every one of these has a pixel sprite (art/sprites.js), so the page drops the ink scene it replaces:
+// alarms, analysts, bosses (and their print scenes), items (kit_*, cons_*), situations, the hero, the back, the wins.
+for (const k of Object.keys(art)) { const id = k.startsWith('boss_') ? k.slice(5) : k; if (SPR.IDS.includes(id) || /^(kit_|cons_)/.test(k) || k === 'win') delete art[k]; }
 // numbersFor, lifted from the sim so the page's mob dice are the sim's and the paper's.
 const sim = read('../sim.js'), nf = sim.match(/^function numbersFor\([\s\S]*?\n}\n/m)[0];
 const safe = s => s.replace(/<\/script/gi, '<\\/script');
@@ -50,6 +53,7 @@ ${read('ui.css')}</style>
 ${nf}window.CD_NUMBERS = numbersFor;
 window.CD_ART = ${safe(JSON.stringify(art))};
 window.CD_SPRITES = ${JSON.stringify(SPR.IDS)};</script>
+<script>${safe(read('../art/die.js'))}</script>
 <script>${safe(read('../cards.js'))}</script>
 <script>${safe(read('engine.js'))}</script>
 <script>${safe(read('ui.js'))}</script>

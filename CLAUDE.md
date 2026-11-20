@@ -14,7 +14,7 @@ Detect the Dwellers: a co-op dice-and-card game (1–4 players) set on a cyberpu
 | `game/cards.js` | The card markup and per-card rules text, shared by the print-and-play PDF and the web page (card parity). |
 | `game/web/` | The playable page: `engine.js` (DOM-free, seeded), `ui.js`, `ui.css`, `build.js` (writes `index.html`, one self-contained file), `spec.js` (`node --test game/web/spec.js`). |
 | `game/paper/build.js` | The rules sheet and 63 cut-out cards as a PDF. |
-| `game/art/` | The consumables' Ink & Static scenes, and the pixel sprites (`sprites.js`, `sprites/`): every analyst, alarm, boss and item, animated. |
+| `game/art/` | The pixel art: `sprites.js` and `sprites/` (every analyst, alarm, boss, item and situation, plus the hero, card back and win scenes, all animated) and `die.js` (the pixel die). The ink scenes in `art.json` are only a fallback now. |
 
 A rule change touches the sim, `web/engine.js`, `cards.js` (and the paper rules sheet), then the README: update **The rules now** and **Where it stands** (check the **Targets** table), and add a dated section under History. Rebuild the page (`node game/web/build.js`) and the PDF (`node game/paper/build.js`), and run `node --test game/web/spec.js` and `npm test`.
 

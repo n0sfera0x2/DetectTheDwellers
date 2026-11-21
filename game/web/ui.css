@@ -234,6 +234,8 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .t-die kbd{position:absolute;top:-4px;left:-2px;font-size:0.625rem;padding:1px 3px;border:0;background:var(--s3);color:var(--mut);opacity:1}
 .t-die:hover:not(:disabled){--fill:var(--s3)}
 .t-die.agent{--bd:var(--cy)}.t-die.agent .pip rect{fill:#BFE3EA}
+/* The second-colour die (2026-11-21): the solo crew die and the Hunter's extra die never double. One dark look for both. */
+.t-die.never{--bd:#8A8287}.t-die.never .pip rect{fill:#3A3438;stroke:#C2C2C2}.t-die.never .pip path.p{fill:#EAEAEA}.t-die.never .o{color:#C2C2C2;letter-spacing:.04em}
 /* A double: amber face ring and label, like the d20's natural 18-20 */
 .t-die.dbl{--bd:var(--am)}.t-die.dbl .pip rect{stroke:var(--am);stroke-width:1.8}.t-die.dbl .o{color:var(--am)}
 .t-die.dead .o{color:var(--off)}
@@ -718,3 +720,15 @@ body{background:var(--bg)}
 .bd-cap{margin:0;font:400 0.8125rem/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}.bd-cap b{font-weight:400;color:var(--fl)}
 .bd-line{margin:4px 0 0;font:400 0.75rem/1.3 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}.bd-line b{font-weight:400;color:var(--fl)}
 .swt,.swt i,.swt i::after,.adv-plate,.adv-dmg,.adv-back,.adv-pop,.t-td.xtra::after{border-radius:0}
+
+/* Agents acting (2026-11-21): the pet pulses / the chip flashes, and a short callout floats over it. */
+.adv-pet,.tb-it.ag{position:relative}
+.acting{animation:act-pulse .8s ease-out 2 var(--act-d,0ms) both}
+.tb-it.ag.acting{animation-name:act-flash}
+.act-call{position:absolute;left:50%;bottom:100%;z-index:6;transform:translate(-50%,calc(var(--i,0) * -18px));white-space:nowrap;pointer-events:none;
+  font:700 11px/16px var(--mono);letter-spacing:.04em;padding:0 6px;background:#0E0E0E;color:#EAEAEA;border:1px solid var(--cy);
+  animation:act-rise 1.6s ease-out var(--act-d,0ms) both}
+@keyframes act-pulse{0%{filter:drop-shadow(0 0 0 var(--cy))}35%{filter:drop-shadow(0 0 8px var(--cy)) brightness(1.35)}100%{filter:none}}
+@keyframes act-flash{0%{box-shadow:0 0 0 0 var(--cy)}35%{box-shadow:0 0 0 3px var(--cy);background:rgba(90,200,220,.25)}100%{box-shadow:none}}
+@keyframes act-rise{0%{opacity:0;margin-bottom:0}12%{opacity:1}80%{opacity:1}100%{opacity:0;margin-bottom:14px}}
+@media (prefers-reduced-motion:reduce){.acting{animation:none;outline:2px solid var(--cy)}.act-call{animation:none}}

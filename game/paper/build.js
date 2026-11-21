@@ -18,7 +18,7 @@ const rules = `<section class="page rules">
 <div class="cols">
 <div>
 <h2>You need</h2>
-<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 1 in a second colour for the solo crew die, 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
+<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 2 in a second colour (the solo crew die, the Hunter’s extra die), 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
 <h2>Setup</h2>
 <ol>
 <li>Pick the shift. Starting HP: <b>Quick</b> 10 (solo 11). <b>Full</b> 13 (solo 15, 3 players 14, 4 players 15), and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
@@ -51,7 +51,7 @@ const rules = `<section class="page rules">
 <li><b>Hits back.</b> Every alarm with dice left hits everyone who isn’t blocking, for its Damage. An alarm with no dice left is beaten.</li>
 </ol>
 <h2>Doubles</h2>
-<p>Your two <b>magic numbers</b> are doubles (not on the solo crew die or an agent’s die). A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
+<p>Your two <b>magic numbers</b> are doubles (a second-colour die never doubles). A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
 <h2>After a fight</h2>
 <p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Coin the next <b>fights won</b> box: from 3 won, alarms (not the boss) deal <b>+1</b>. <b>Full:</b> after the 1st, 3rd and 5th, the top story card goes on the feed: flip it next. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. <b>Consumables</b> are used once. Both kinds take a slot: each player holds 4 items (solo 6). Full? Discard one to take another.</p>
 <h2>Situations and conditions</h2>

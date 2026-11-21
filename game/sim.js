@@ -257,6 +257,9 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:2,3:1,4:2' : '1:1')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
 const XFROM = +(process.env.XFROM || 2);
 // XROLL (default since 2026-11-20): the crew's extra threat dice (one per player past XFROM) are rolled each time the alarm enters play, not set to 6. XROLL=0 is the old set-to-6 rule.
+// PAGERROLL (default since 2026-11-21): Pager Storm’s Mute adds a rolled threat die, not a 6. BASECAP (default 5 since 2026-11-21): Baseline dice show 7 − main, capped so they never land on 6.
+// ROWADD (default 0): at 3–4 players, every row roll counts this much lower, so alarms come back on that many more numbers (issue #8 option A).
+const PAGERROLL = (process.env.PAGERROLL ?? "1") === "1", BASECAP = +(process.env.BASECAP ?? 5), ROWADD = +(process.env.ROWADD ?? 0);
 const XROLL = (process.env.XROLL ?? '1') === '1'; // review 2: one + die per player past 2 (was 3), as six analysts stack up in a crew of four
 const N6DICE = +(process.env.N6DICE || 1), N6SOLO = +(process.env.N6SOLO || 3);
 // Clustered dice (2026-10-30): each mob has a main number and its dice bunch around it, e.g. main 2 prints
@@ -314,7 +317,7 @@ function hurt(G, k, n) { if (n <= 0 || G.over) return; G.hp[k] = Math.max(0, G.h
 function rollRow(G, strike) {
   if (!G.row.length) return []; const two = G.sys !== 'd20' && ROW === '2d6';
   let a1 = 1 + d6(G), a2 = 1 + d6(G); if (two && traitN(G, 'callback') && Math.min(a1, a2) <= 3) { if (a1 < a2) a1 = 1 + d6(G); else a2 = 1 + d6(G); G.stats.callback = (G.stats.callback || 0) + 1; } // Callback: reroll one amber die
-  const r = two ? a1 + a2 + (TRAITS ? traitN(G, 'scramble') : aug(G, 'wyrmling') ? 1 : 0) : d20(G), back = G.row.filter(m => two ? r <= rowTop(m.persist[1], G) - (G.play ? active(G, 'watchlist') + G.tray.filter((x, i) => x === 'watchlist' && upgraded(G, i) && (!aiUp(G) || has(G, i, 'hardened'))).length : 0) : r >= m.persist[0] && r <= m.persist[1]);
+  const r = two ? a1 + a2 - (G.n >= 3 ? ROWADD : 0) + (TRAITS ? traitN(G, 'scramble') : aug(G, 'wyrmling') ? 1 : 0) : d20(G), back = G.row.filter(m => two ? r <= rowTop(m.persist[1], G) - (G.play ? active(G, 'watchlist') + G.tray.filter((x, i) => x === 'watchlist' && upgraded(G, i) && (!aiUp(G) || has(G, i, 'hardened'))).length : 0) : r >= m.persist[0] && r <= m.persist[1]);
   G.row = G.row.filter(m => !back.includes(m)); back.forEach(m => { m.left = m.hits; m.need = needFor(G.sys, m, G.n); m.back++; m.up = 0; });
   G.stats.back += back.length;
   if (strike && !aug(G, 'druid')) for (const m of back.slice().sort((a, b) => b.dmg - a.dmg).slice(0, +(process.env.ARRIVE ?? 0))) { const cut = on(G, 'RES') && RESARR === '1' ? 1 : on(G, 'RES') && RESARR === 'once' && !G.resArr ? 99 : 0; if (cut === 99) G.resArr = true; G.team.forEach((id, k) => hurt(G, k, HUNNEW === 'immune' && id === 'HUN' ? 0 : Math.max(0, dmgOf(G, m) - cut - (on(G, 'RES') && RESARR === 'crew' && id !== 'RES' ? 1 : 0)))); } // the Responder: arrival hits deal 1 less (RESARR=once: the first arrival hit each fight deals nothing)
@@ -719,9 +722,9 @@ function play(sys, team, opt) {
     if (!boss && G.badgeSkip) { G.badgeSkip = false; G.stats.ran++; G.row.push(m); continue; } // fell back: on the row, unfought
     relay(G);
     if (BASE && m && !boss && (!m.back || BASEBACK) && BASES.includes(m.id) && (BASEPICK === 'always' || BASEPICK === 'bot' && BASECHEAP && dmgOf(G, m) <= 1 && Math.min(...G.hp) > 3 || BASEPICK === 'bot' && Math.min(...G.hp) >= G.max * +(process.env.BASEHP || 0.8))) {
-      const v = 7 - numbersFor(m.id, 1)[0], nb = (SOAAUTO && on(G, 'SOA') ? 2 : BASEDICE) + (m.back ? 1 : 0) + ((process.env.BASEPLUS ?? (MODE === 'full' ? '1' : '0')) !== '1' ? 0 : Math.max(0, G.n - XFROM)) /* BASEPLUS (Full Shift default since 2026-11-20): baselining adds one more die per player past 2 */; m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }
+      const v = Math.min(BASECAP, 7 - numbersFor(m.id, 1)[0]), nb = (SOAAUTO && on(G, 'SOA') ? 2 : BASEDICE) + (m.back ? 1 : 0) + ((process.env.BASEPLUS ?? (MODE === 'full' ? '1' : '0')) !== '1' ? 0 : Math.max(0, G.n - XFROM)) /* BASEPLUS (Full Shift default since 2026-11-20): baselining adds one more die per player past 2 */; m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }
     if (m.fewer && m.left > 1) { m.need.pop(); m.left--; m.fewer = 0; } // Forensics read it first: one fewer die
-    if (G.addSix) { m.need.push(...Array(G.addSix).fill(6)); m.left += G.addSix; G.addSix = 0; }
+    if (G.addSix) { m.need.push(...Array.from({ length: G.addSix }, () => PAGERROLL ? 1 + d6(G) : 6)); m.left += G.addSix; G.addSix = 0; } // Pager Storm muted: PAGERROLL (default since 2026-11-21) rolls the die, PAGERROLL=0 sets it to 6
     if (G.addMain) { const v = numbersFor(m.id, 1)[0]; m.need.push(...Array(G.addMain).fill(v)); m.left += G.addMain; G.addMain = 0; } // Ghost in the Change Window
     if (G.nextPlus) { m.plus = G.nextPlus; G.nextPlus = 0; } // The CEO's Inbox: this visit only
     const back = rowRoll(G, !boss); if (G.over) break;

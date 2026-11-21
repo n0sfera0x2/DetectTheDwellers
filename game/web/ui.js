@@ -330,9 +330,9 @@
     const label = `${E.faceText(d)}, ${E.dieOwner(G, d)}${d.used ? ', used: ' + usedTo : half ? ', one take left' : ''}${d.paired != null ? ', paired with die ' + (d.paired + 1) : ''}${d.turned ? ', turned by Enrichment' : ''}${d.focused ? ', turned by Focused' : ''}${d.flipped ? ', turned to its opposite side: counts as one die' : ''}${d.rattled ? ', Rattled: no doubles' : ''}`;
     const pr = G.phase === 'assign' && E.pairs(G).some(p => p.includes(d.i));
     const t = !d.used && G.phase === 'assign' ? E.targets(G, d.i) : null, dead = t && !t.hits.length && !t.guard && !pr;
-    const cls = ['t-die', d.src === 'agent' || d.src === 'crew' || d.kuid ? 'agent' : '', d.dbl ? 'dbl' : '', d.used ? 'used' : '', half ? 'half' : '', d.used === 'guard' ? 'grd' : '', d.used === 'pair' ? 'pairx' : '', d.paired != null ? 'paired' : '', pr ? 'pairable' : '', dead ? 'dead' : ''].filter(Boolean).join(' ');
+    const cls = ['t-die', d.never ? 'never' : d.src === 'agent' || d.kuid ? 'agent' : '', d.dbl ? 'dbl' : '', d.used ? 'used' : '', half ? 'half' : '', d.used === 'guard' ? 'grd' : '', d.used === 'pair' ? 'pairx' : '', d.paired != null ? 'paired' : '', pr ? 'pairable' : '', dead ? 'dead' : ''].filter(Boolean).join(' ');
     return `<button class="${cls}" data-a="die" data-i="${d.i}" data-k="die${d.i}" aria-pressed="${UI.sel === d.i}" aria-label="Die ${d.i + 1}: ${esc(label)}" title="${esc(label)}">
-      ${n <= 9 ? `<kbd aria-hidden="true">${d.i + 1}</kbd>` : ''}<span class="f">${PIP(d.n, 46)}</span><span class="o">${d.used === 'guard' ? (gTo ? 'Guard ' + esc(gTo) : 'Guard') : d.used === 'pair' ? 'Paired' : d.used ? 'Used' : half ? '1 left' : d.paired != null ? 'Pair ×2' : d.dbl ? 'Double ×2' : esc(owner)}</span>${d.used === 'guard' || (t && t.guard && d.dbl) ? `<span class="gmark" aria-hidden="true">${ICON.shield}</span>` : ''}${d.turned ? '<span class="badge w">EN</span>' : d.flipped ? '<span class="badge c">OPP</span>' : d.focused ? '<span class="badge c">FO</span>' : d.rattled ? '<span class="badge r">RAT</span>' : ''}</button>`;
+      ${n <= 9 ? `<kbd aria-hidden="true">${d.i + 1}</kbd>` : ''}<span class="f">${PIP(d.n, 46)}</span><span class="o">${d.used === 'guard' ? (gTo ? 'Guard ' + esc(gTo) : 'Guard') : d.used === 'pair' ? 'Paired' : d.used ? 'Used' : half ? '1 left' : d.paired != null ? 'Pair ×2' : d.dbl ? 'Double ×2' : d.never ? 'No ×2' : esc(owner)}</span>${d.used === 'guard' || (t && t.guard && d.dbl) ? `<span class="gmark" aria-hidden="true">${ICON.shield}</span>` : ''}${d.turned ? '<span class="badge w">EN</span>' : d.flipped ? '<span class="badge c">OPP</span>' : d.focused ? '<span class="badge c">FO</span>' : d.rattled ? '<span class="badge r">RAT</span>' : ''}</button>`;
   }
   function vHand() {
     const G = UI.G; let hint = '', ctl = '', dice = '', dieCtl = '', roundCtl = '';
@@ -521,7 +521,7 @@ ${roundCtl}</div>`;
   // each agent bobbing beside whoever holds it; the alarms stand on the right with their threat dice under them. Below,
   // three windows: the alarms, the crew (HP and each analyst's own dice), and the message with the commands. The pieces
   // (dice, threat dice, buttons) are the table view's own, so the fight plays exactly the same.
-  const advPets = k => (UI.G.agents[k] || []).map((c, j) => `<span class="adv-pet" style="--j:${j}" data-peek="agent:${c.t}" tabindex="0" aria-label="${esc(E.KIT_NAME[c.t])}">${A.sprite(c.t)}</span>`).join('');
+  const advPets = k => (UI.G.agents[k] || []).map((c, j) => `<span class="adv-pet" style="--j:${j}" data-au="${c.uid}" data-peek="agent:${c.t}" tabindex="0" aria-label="${esc(E.KIT_NAME[c.t])}">${A.sprite(c.t)}</span>`).join('');
   // Each analyst's dice from the dice tray: every die button carries data-i, and G.dice[i].k is its owner.
   const advDiceBy = (G, html) => { const out = G.team.map(() => []); (String(html || '').match(/<button class="t-die[\s\S]*?<\/button>/g) || []).forEach(b => { const i = +(b.match(/data-i="(\d+)"/) || [])[1]; const d = G.dice[i]; out[d ? d.k : 0].push(b); }); return out.map(a => a.join('')); };
   // A selected die's actions (Guard, Heal, Reroll, the turns) pop out beside it; placePop() anchors the menu after render.
@@ -580,7 +580,7 @@ ${roundCtl}</div>`;
       const drop = c => `<button class="btn s warn" type="button" data-a="drop" data-n="${k}" data-u="${c.uid}" data-k="drop${c.uid}" aria-label="Discard ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])} for the new ${esc(E.KIT_NAME[top.t])}">Discard</button>`;
       const agents = G.agents[k].map(c => { const tk = G.aug.filter(a => a.host === c.uid), full = E.tuckedOn(G, c.uid) >= A.TUCK_CAP;
         const btn = tucking ? `<button class="btn s cy" type="button" data-a="tuck" data-u="${c.uid}" data-k="tuck${c.uid}"${full ? ' disabled' : ''} aria-label="Tuck ${esc(G.tuck[0].name)} under ${esc(nm(id))}’s ${esc(E.KIT_NAME[c.t])}">${full ? 'Full' : 'Tuck here'}</button>` : swap ? drop(c) : '';
-        return `<span class="tb-it ag${tk.length ? ' tk' : ''}" data-peek="agent:${c.t}" tabindex="0" aria-label="${esc(E.KIT_NAME[c.t])}${tk.length ? ', ' + tk.map(a => `${esc(a.name)} tucked: ${esc(A.BASE[a.id])}`).join('; ') : ''}"><span class="tb-ik">Agent</span><b>${esc(KSHORT[c.t] || E.KIT_NAME[c.t])}</b>${tk.map(a => `<i class="tb-band" data-peek="mob:${a.id}" title="${esc(a.name)} · ${esc(A.BASE[a.id])}">${esc(A.traitName(a.id))}</i>`).join('')}${btn}</span>`; }).join('');
+        return `<span class="tb-it ag${tk.length ? ' tk' : ''}" data-au="${c.uid}" data-peek="agent:${c.t}" tabindex="0" aria-label="${esc(E.KIT_NAME[c.t])}${tk.length ? ', ' + tk.map(a => `${esc(a.name)} tucked: ${esc(A.BASE[a.id])}`).join('; ') : ''}"><span class="tb-ik">Agent</span><b>${esc(KSHORT[c.t] || E.KIT_NAME[c.t])}</b>${tk.map(a => `<i class="tb-band" data-peek="mob:${a.id}" title="${esc(a.name)} · ${esc(A.BASE[a.id])}">${esc(A.traitName(a.id))}</i>`).join('')}${btn}</span>`; }).join('');
       const hand = G.hand[k].map(c => { const can = E.canUse(G, c.t);
         const use = swap ? drop(c) : c.t === 'takedown' && can && G.row.length > 1 ? G.row.map(m => `<button class="btn s cy" type="button" data-a="use" data-u="${c.uid}" data-m="${m.uid}" data-k="use${c.uid}${m.uid}" aria-label="${esc(nm(id))}: take down ${esc(m.name)}">${esc(m.name)}</button>`).join('')
           : `<button class="btn s cy" type="button" data-a="use" data-u="${c.uid}" data-k="use${c.uid}" ${can ? '' : 'disabled'} aria-label="${esc(nm(id))}: use the ${esc(E.KIT_NAME[c.t])}">Use</button>`;
@@ -603,7 +603,7 @@ ${roundCtl}</div>`;
     let h = null; if (UI.G) h = vHand();
     if (UI.G && UI.adv && fighting(UI.G)) app.innerHTML = vAdventure(h) + vReveal() + vLog() + vMenu() + vGallery() + vEnd(); else
     app.innerHTML = UI.G ? `<div class="tb ph-${UI.G.phase}${E.MODES[UI.G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${vStage()}<div class="tb-foot">${h.dice ? `<div class="tb-dice${UI.G.dice.length > 5 ? ' many' : ''}">${h.dice}</div>` : ''}${vPlates()}<div class="tb-act"><p class="status">${h.hint}</p>${h.ctl}</div></div></div>` + vReveal() + vLog() + vMenu() + vGallery() + vEnd() : vSetup() + vMenu() + vGallery();
-    placePop();
+    placePop(); showActs();
     document.body.classList.toggle('ingame', !!UI.G); document.body.classList.toggle('nokeys', !UI.keys);
     KEEP_SCROLL.forEach((sel, n) => app.querySelectorAll(sel).forEach((e, i) => { if (kept[n][i]) e.scrollTop = kept[n][i]; }));
     // Shortcut hints are visual only: kbd stays out of button names, the key goes in aria-keyshortcuts (while Keys is on).
@@ -617,6 +617,21 @@ ${roundCtl}</div>`;
       else if (!ov && UI.opener) { const back = UI.opener; UI.opener = null; UI.overlay = ov; return focusKey(back); }
       UI.overlay = ov;
     } else if (k) focusKey(k);
+  }
+  // Agents acting (2026-11-21): each new entry in G.acts pulses its pet (Adventure view) or flashes its chip (table view),
+  // with a short callout. Renders rebuild the DOM, so a fresh act is re-applied, its animation resumed where it was.
+  const ACT_MS = 1600;
+  function showActs() {
+    const G = UI.G; if (!G || !G.acts) return; const now = Date.now();
+    if (UI.actGame !== G) { UI.actGame = G; UI.actSeen = G.actSeq || 0; UI.fresh = []; return; } // a new or loaded game: nothing to replay
+    for (const a of G.acts) if (a.seq > (UI.actSeen || 0)) UI.fresh.push({ ...a, at: now });
+    UI.actSeen = Math.max(UI.actSeen || 0, G.actSeq || 0); UI.fresh = UI.fresh.filter(a => now - a.at < ACT_MS);
+    const byUid = new Map(); UI.fresh.forEach(a => byUid.set(a.uid, [...(byUid.get(a.uid) || []), a]));
+    byUid.forEach((list, uid) => app.querySelectorAll(`[data-au="${uid}"]`).forEach(el => {
+      el.classList.add('acting'); el.style.setProperty('--act-d', `-${now - list[0].at}ms`);
+      list.forEach((a, i) => { const c = document.createElement('span'); c.className = 'act-call'; c.style.setProperty('--i', i); c.style.setProperty('--act-d', `-${now - a.at}ms`); c.textContent = a.text; c.setAttribute('role', 'status'); el.appendChild(c); });
+    }));
+    clearTimeout(UI.actT); if (UI.fresh.length) UI.actT = setTimeout(() => app.querySelectorAll('.acting').forEach(el => { el.classList.remove('acting'); el.querySelectorAll('.act-call').forEach(c => c.remove()); }), ACT_MS - Math.min(...UI.fresh.map(a => now - a.at)));
   }
   function focusKey(k) { const el = app.querySelector(`[data-k="${k}"]`); if (el && !el.disabled) el.focus({ preventScroll: true }); }
 

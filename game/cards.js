@@ -28,7 +28,8 @@
   const hd = (tg, hud) => `<div class="hd"><span class="tg">${tg}</span>${hud ? `<span class="hud">${hud}</span>` : ''}</div>`;
   // Exact numbers (2026-10-30). Every die is a standard pip d6 and reads as its number. A mob card prints the dice to
   // set under it; a rolled die takes out a die showing exactly its number. Which numbers are doubles depends on the
-  // analyst; every other die (the solo crew die, the Triage agent die) never doubles (2026-11-20; it doubled on a 6).
+  // analyst; the second-colour die (the solo crew die, the Hunter's extra die) never doubles (2026-11-21). A Triage die is
+  // its holder's own die and doubles on their numbers.
   // Same numbers as sim.js DOUBLES (web/spec.js checks they agree).
   // Magic numbers (2026-11-20, the owner's call): each analyst doubles on their own two numbers, neighbours, and nobody
   // on a 6. Until then everyone doubled on their number plus a 6 (signature doubles, 2026-10-31), and the solo crew die
@@ -111,7 +112,8 @@
   const traitName = id => BASE[id] ? BASE[id].split(':')[0] : '';
   // One tucked alarm per agent (2026-11-03; it was two, and two upgraded the agent: that is Overclock now).
   const TUCK_CAP = 1;
-  const baseDie = id => 7 - numbersFor(id, 1)[0];
+  // Baseline dice show the main number's opposite side, capped at 5 so they never land on 6 (2026-11-21; nobody doubles on a 6).
+  const BASE_CAP = 5, baseDie = id => Math.min(BASE_CAP, 7 - numbersFor(id, 1)[0]);
   // The tuck band (2026-11-02 review): a fixed-height band on the bottom edge, in the agents' colour. Beaten with its
   // Baseline dice, the card slides under an agent until only this band shows below it; several stack, band under band.
   const baseLine = m => BASE[m.id] ? `<div class="base"><span class="bh"><b>Baseline it</b>${Array(BASE_N).fill(pip(baseDie(m.id), 14)).join('')}</span><span class="bt">${BASE[m.id].replace(/^([^:]+):/, '<b>$1:</b>')}</span></div>` : '';
@@ -133,7 +135,7 @@
   }
   const PERK = {
     // One passive line each since 2026-11-03, nothing to track but the Engineer's turn. Same as sim.js.
-    HUN: 'On point, you roll one more die in a fight’s first round. It’s never a double.', // first round only since 2026-11-05
+    HUN: 'On point, you roll one more die in a fight’s first round: a second-colour die, so never a double.', // first round only since 2026-11-05
     RES: 'A double of yours can heal anyone 3 instead of guarding.',
     ENG: 'Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead.', // on point, and once a fight (was once a round), since 2026-11-05
     SOA: 'On point, while you baseline an alarm, roll two more dice.', // since 2026-11-05; 2026-11-04 (late): a baseline draws an item; earlier: your agents count as two
@@ -171,7 +173,7 @@
   <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
   <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards you.</div>
-  <div class="note">Only magic numbers double. <b>Two of yours on one number: a double.</b></div>
+  <div class="note">Only magic numbers double. A second-colour die never does. <b>Two of yours on one number: a double.</b></div>
   <div class="note"><b>Once a round, take 1 to reroll one of your own dice</b> (not at 1 HP).</div>
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
   <div class="note">Row: 2 amber dice; back if the sum is at most its number.</div></div>`;
@@ -184,7 +186,7 @@
   <div class="trow"><b>Fights won</b>${box('1: story')}${box(2)}${box('3: story, alarms +1')}${box(4)}${box('5: story')}${box(6)}</div>
   <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Enrichment')}${box('Enrichment again')}</div>
   <div class="trow"><b>This fight</b>${box('Engineer')}${box('Hold the room: +1 item')}</div>
-  <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${pip(6, 12)}`)}${box('Fall back: next alarm to the row')}</div>
+  <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${rolled(12)}`)}${box('Fall back: next alarm to the row')}</div>
   <div class="note"><b>Regen:</b> at round end it puts back the last die taken.</div></div>`;
   // Situations (2026-10-30; shuffled into the feed with the alarms since 2026-11-02, the boss underneath). Who's on point is
   // picked. The real game's situations (names, scenes and story lines from the data) with rules rewritten for the
@@ -196,7 +198,7 @@
   const SIT_IDS = [...SIT_CORE, ...SIT_STORY];
   const SIT = {
     insider: { kind: 'Stay or run', opts: [['Hold the room', 'On point takes Exposed. Win the next fight: draw an item.'], ['Fall back', 'Draw 2 items. The next alarm that flips goes straight on the row, unfought. Not the boss.']] },
-    pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP. Draw an item.'], ['Mute it', `The next alarm sets one more threat die: a ${pip(6, 13)}.`]] },
+    pager: { kind: 'Stay or run', opts: [['Ride it out', 'Everyone loses 2 HP. Draw an item.'], ['Mute it', `The next alarm rolls one more threat die: ${rolled(13)}.`]] },
     usb: { kind: 'Grab', opts: [['Grab it', 'On point rolls 3 dice. Any pair: draw 2 items and take Focused. No pair: take Rattled.'], ['Leave it', 'Draw an item.']] },
     chatter: { kind: 'Grab', opts: [['Dig in', `On point picks 1–4 dice and rolls them. Any ${pip(6, 13)}: draw 2 items. None: lose 1 HP per die.`], ['Let it go', 'Nothing happens.']] },
     lateral: { kind: 'Event', rule: 'Roll the row now. Anything that comes back joins the next fight.' },

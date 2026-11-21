@@ -28,7 +28,7 @@
   const hd = (tg, hud) => `<div class="hd"><span class="tg">${tg}</span>${hud ? `<span class="hud">${hud}</span>` : ''}</div>`;
   // Exact numbers (2026-10-30). Every die is a standard pip d6 and reads as its number. A mob card prints the dice to
   // set under it; a rolled die takes out a die showing exactly its number. Which numbers are doubles depends on the
-  // analyst; the second-colour die (the solo crew die, the Hunter's extra die) never doubles (2026-11-21). A Triage die is
+  // analyst; the second-colour die (the solo crew die, the Hunter's extra die) never doubles alone, though it can pair (2026-11-21). A Triage die is
   // its holder's own die and doubles on their numbers.
   // Same numbers as sim.js DOUBLES (web/spec.js checks they agree).
   // Magic numbers (2026-11-20, the owner's call): each analyst doubles on their own two numbers, neighbours, and nobody
@@ -135,7 +135,7 @@
   }
   const PERK = {
     // One passive line each since 2026-11-03, nothing to track but the Engineer's turn. Same as sim.js.
-    HUN: 'On point, you roll one more die in a fight’s first round: a second-colour die, so never a double.', // first round only since 2026-11-05
+    HUN: 'On point, you roll one more die in a fight’s first round: a second-colour die. It can pair, but never doubles alone.', // first round only since 2026-11-05
     RES: 'A double of yours can heal anyone 3 instead of guarding.',
     ENG: 'Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead.', // on point, and once a fight (was once a round), since 2026-11-05
     SOA: 'On point, while you baseline an alarm, roll two more dice.', // since 2026-11-05; 2026-11-04 (late): a baseline draws an item; earlier: your agents count as two
@@ -173,7 +173,7 @@
   <div class="ex">${pip(4, 24)}<span>takes out a</span>${pip(4, 24)}<span>exactly</span></div>
   <div class="ex">${pip(2, 24)}<span>double takes</span>${pip(2, 24)}${pip(2, 24)}<span>anywhere</span></div>
   <div class="kw">A double counts as <b>two</b> dice showing its number, <b>or</b> guards you.</div>
-  <div class="note">Only magic numbers double. A second-colour die never does. <b>Two of yours on one number: a double.</b></div>
+  <div class="note">Only magic numbers double; a second-colour die never does. <b>Two of yours on one number: a double, any colour.</b></div>
   <div class="note"><b>Once a round, take 1 to reroll one of your own dice</b> (not at 1 HP).</div>
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
   <div class="note">Row: 2 amber dice; back if the sum is at most its number.</div></div>`;

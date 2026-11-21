@@ -27,7 +27,7 @@
   // A rolled pip die. who: the analyst's id (their two magic numbers double), or 'CREW' / 'AGENT' (never a double, since 2026-11-20).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   // A crew die's double after it changes number: its owner's magic numbers (the solo crew die: never), none if rolled Rattled.
-  // never: the second-colour die (the solo crew die, the Hunter's extra die) never doubles, whatever it shows (2026-11-21).
+  // never: the second-colour die (the solo crew die, the Hunter's extra die) never doubles on its own, whatever it shows; it can still pair (2026-11-21).
   const dieDbl = (G, d, n) => !d.rattled && !d.plain && !d.never && CARDS.isDouble(d.src === 'crew' ? 'CREW' : G.team[d.k], n);
   // Every item's name, from the shared cards (agents and consumables).
   const KIT_NAME = Object.fromEntries(Object.entries(CARDS.ITEM).map(([t, v]) => [t, v[0]]));
@@ -495,7 +495,7 @@
     if (m.kw === 'hardened' && !d.dbl) return `${m.name} is Evasive: only a double hits it.`;
     return `No ${d.n} left under ${m.name} for that die.`;
   }
-  const dieOwner = (G, d) => d.crew ? nameOf(G.team[d.k]) + (d.never ? (d.src === 'crew' ? ' (crew die, never doubles)' : ' (extra die, never doubles)') : d.src === 'crew' ? ' (crew die)' : d.src === 'surge' ? ' (Surge Playbook)' : d.src === 'triage' ? ' (Triage Agent)' : '') : `${nameOf(G.team[d.k])}’s Triage Agent`;
+  const dieOwner = (G, d) => d.crew ? nameOf(G.team[d.k]) + (d.never ? (d.src === 'crew' ? ' (crew die, doubles only in a pair)' : ' (extra die, doubles only in a pair)') : d.src === 'crew' ? ' (crew die)' : d.src === 'surge' ? ' (Surge Playbook)' : d.src === 'triage' ? ' (Triage Agent)' : '') : `${nameOf(G.team[d.k])}’s Triage Agent`;
   // A double guards: it blocks any one player who isn't blocking yet (target; default the die's owner).
   function guard(G, di, target) {
     if (G.phase !== 'assign') fail('Roll first.');

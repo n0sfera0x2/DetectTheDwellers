@@ -24,7 +24,7 @@ One boss, drawn at random, goes face down under the feed. A crew draws 2 items (
 3. **Match.** A die takes out one threat die showing exactly its number.
 4. **Hits back.** Every alarm with dice left hits everyone who isn't blocking, for its Damage. An alarm with no dice left is beaten.
 
-**Doubles.** Each analyst has two **magic numbers**, neighbours, and nobody has the 6 (since 2026-11-20; it was their own number plus the 6): a die of theirs that lands on one is a double. A **second-colour die** never doubles: the solo crew die and the Hunter’s extra die (since 2026-11-21; a Triage die is its holder’s own and doubles). **Pairs:** two of your own dice showing the same number make a double. A double counts as two dice showing its number (under one alarm or two), **or** it guards: you block this round (only you; a Responder double may heal 3 instead). Never both.
+**Doubles.** Each analyst has two **magic numbers**, neighbours, and nobody has the 6 (since 2026-11-20; it was their own number plus the 6): a die of theirs that lands on one is a double. A **second-colour die** never doubles on its own, though it can still pair: the solo crew die and the Hunter’s extra die (since 2026-11-21; a Triage die is its holder’s own and doubles). **Pairs:** two of your own dice showing the same number make a double. A double counts as two dice showing its number (under one alarm or two), **or** it guards: you block this round (only you; a Responder double may heal 3 instead). Never both.
 
 **The row.** Beaten alarms always go back on the row, unless they were baselined. Roll the two amber dice: a row alarm comes back if the sum is at most its number. Comebacks return with their printed dice and join the fight; nobody is hit on arrival (since 2026-11-03, when every range also went one step wider: back on 2–3 to 2–6, 8–42% a roll). A coin marks an alarm the first time it comes back.
 
@@ -75,7 +75,7 @@ One line each since 2026-11-03; no wild numbers. Only the Engineer's turn needs 
 
 | Analyst | Magic numbers | Ability |
 | --- | --- | --- |
-| Hunter | 4, 5 | On point, you roll one more die in a fight’s first round: a second-colour die, so never a double. (First round only since 2026-11-05.) |
+| Hunter | 4, 5 | On point, you roll one more die in a fight’s first round: a second-colour die. It can pair, but never doubles alone. (First round only since 2026-11-05.) |
 | Responder | 3, 4 | A double of yours can heal anyone 3 instead of guarding. |
 | Engineer | 1, 2 | Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead. (Both since 2026-11-05; the turn was once a round.) |
 | Soarcerer | 2, 3 | On point, while you baseline an alarm, roll two more dice. (Since 2026-11-05: every round of that fight.) |
@@ -372,7 +372,7 @@ From the 5-component design review (issues #5, #6, #7). Since the magic numbers 
 
 - **Pager Storm’s Mute rolls its die.** The next alarm rolls one more threat die when it arrives (it was a 6). The card and the shift tracker show the dashed rolled die. Sim: `PAGERROLL` (default `1`; `0` is the old 6).
 - **Baseline dice never show a 6.** They show the main number’s opposite side, capped at 5: MFA Banshee, OAuth Consent Grifter and LSASS Siphon baseline with 5s now. Sim: `BASECAP` (default `5`; `6` is the old rule). Rootkit Implant (5 6 6) and Vibe Coded App keep their printed 6s as the two deliberately hard alarms (the owner’s call).
-- **The second-colour die.** The solo crew die and the Hunter’s extra die never double, and now they look it: the second-colour die at the table (2 in the box), one dark die marked “No ×2” on the page. The legend card says it once (“A second-colour die never does”), and the Hunter’s card names it. A Triage die is its holder’s own die and still doubles on their numbers (the review had it wrong; the owner kept it).
+- **The second-colour die.** The solo crew die and the Hunter’s extra die never double, and now they look it: the second-colour die at the table (2 in the box), one dark die marked “Pairs only” on the page. The legend card says it once (“a second-colour die never does. Two of yours on one number: a double, any colour”), and the Hunter’s card names it. A Triage die is its holder’s own die and still doubles on their numbers (the review had it wrong; the owner kept it).
 - **Agents acting.** When an agent does something, its pet in Adventure view pulses with a short callout (“Containment −4”, “Recovery +3 HP”, “Triage +1 die”, “Enrichment 2→5”, “Watchlist holds 1”), and its chip flashes in the table view. The engine lists the acts in `G.acts`; no rule reads them. Reduced motion keeps the callout and drops the pulse.
 
 | `SYS=n6`, 600 games per crew size, 2026-11-21 | Quick 1p / 2p / 4p | Full 1p / 2p / 4p |

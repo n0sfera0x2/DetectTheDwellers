@@ -51,7 +51,7 @@ const rules = `<section class="page rules">
 <li><b>Hits back.</b> Every alarm with dice left hits everyone who isn’t blocking, for its Damage. An alarm with no dice left is beaten.</li>
 </ol>
 <h2>Doubles</h2>
-<p>Your two <b>magic numbers</b> are doubles (a second-colour die never doubles). A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
+<p>Your two <b>magic numbers</b> are doubles (a second-colour die never doubles alone, but it can pair). A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
 <h2>After a fight</h2>
 <p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Coin the next <b>fights won</b> box: from 3 won, alarms (not the boss) deal <b>+1</b>. <b>Full:</b> after the 1st, 3rd and 5th, the top story card goes on the feed: flip it next. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. <b>Consumables</b> are used once. Both kinds take a slot: each player holds 4 items (solo 6). Full? Discard one to take another.</p>
 <h2>Situations and conditions</h2>

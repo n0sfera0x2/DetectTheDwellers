@@ -236,7 +236,7 @@ test('after a fight: every beaten alarm goes back to the row, comebacks too, wit
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, D.kitPerFight);
   // Since 2026-11-03 the Hunter no longer ends a comeback: it goes back on the row like any other.
   const H = fight(['HUN', 'ENG'], ['imp'], {}); const hi = mob(H, 'imp'); hi.back = 1; hi.off = hi.off.map(() => true); H.dice = []; E.endRound(H);
-  assert.ok(H.row.includes(hi)); assert.equal(H.gone.length, 0); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die in a fight’s first round: a second-colour die, so never a double.');
+  assert.ok(H.row.includes(hi)); assert.equal(H.gone.length, 0); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die in a fight’s first round: a second-colour die. It can pair, but never doubles alone.');
 });
 test('end of round: mobs hit back; Piercing ignores blocks; Targeted hits only on point, doubled', () => {
   const G = fight(['ENG', 'SOA'], ['spray', 'imp'], { dice: [[0, 1], [1, 2]], point: 1 }); // their magic numbers: doubles. spray 1 pierces; imp 3 on point, doubled
@@ -304,7 +304,7 @@ test('roll: on point rolls two (a Hunter on point three); solo rolls two of thei
   const S = newG({ team: ['ENG'], seed: 9 }); S.agents = [[]]; E.flip(S); if (S.phase === 'roll') E.roll(S);
   assert.equal(S.dice.length, D.soloDice); assert.deepEqual(S.dice.map(d => d.src), ['own', 'own', 'crew']);
   for (const d of S.dice) assert.ok(d.n >= 1 && d.n <= 6);
-  assert.equal(S.dice[2].dbl, false); assert.equal(S.dice[2].never, true, 'the crew die is the second-colour die'); assert.match(E.dieOwner(S, S.dice[2]), /never doubles/);
+  assert.equal(S.dice[2].dbl, false); assert.equal(S.dice[2].never, true, 'the crew die is the second-colour die'); assert.match(E.dieOwner(S, S.dice[2]), /doubles only in a pair/);
   assert.ok(S.dice.filter(d => d.src === 'own').every(d => !d.never), 'your own dice can double');
   assert.ok(G.dice.filter(d => d.src === 'triage').every(d => !d.never), 'a Triage die is its holder’s own die, not a second-colour die');
   assert.equal(S.dice[0].dbl, CARDS.DOUBLES.ENG.includes(S.dice[0].n));
@@ -322,7 +322,7 @@ test('cards: the dice strip along the bottom, no symbols, no “players add”; 
   const all = [...CARDS.mobs().map(CARDS.mobCard), bh, CARDS.legend, ...CARDS.ANALYST_IDS.map(CARDS.analystCard), ...[...CARDS.AGENT_IDS, ...CARDS.CONS_IDS].map(CARDS.agentCard)].join('');
   assert.doesNotMatch(all, /players add/i); assert.doesNotMatch(all, /Detect|Contain(?!ment)|Eradicate|symbol/);
   for (const id of CARDS.ANALYST_IDS) { const h = CARDS.analystCard(id); assert.match(h, /Your magic numbers/); assert.deepEqual(pips(h), CARDS.DOUBLES[id]); }
-  assert.match(CARDS.legend, /exactly/); assert.match(CARDS.legend, /counts as <b>two<\/b> dice showing its number/); assert.match(CARDS.legend, /Only magic numbers double\./); assert.doesNotMatch(all, /[Aa]gent dice/);
+  assert.match(CARDS.legend, /exactly/); assert.match(CARDS.legend, /counts as <b>two<\/b> dice showing its number/); assert.match(CARDS.legend, /Only magic numbers double; a second-colour die never does\. <b>Two of yours on one number: a double, any colour\.<\/b>/); assert.doesNotMatch(all, /[Aa]gent dice/);
   assert.doesNotMatch(all, /any one more/); assert.match(CARDS.legend, /Hits back:/); assert.match(CARDS.legend, /sum is at most its number/);
 });
 test('cards carry their pixel sprite, else the Ink & Static scene: mob by id, boss print scene, analyst portrait, item scene', () => {
@@ -732,7 +732,7 @@ test('Focused: once, turn one of your own dice to any number; it reads as that n
 test('Hunter: no wild numbers; a Hunter 1 matches only a 1 (on point they roll one more die: see the roll test)', () => {
   const G = fight(['HUN', 'RES'], ['wyrmling'], { dice: [[0, 1]] }); const w = setSlots(mob(G, 'wyrmling'), [1, 4, 5]); w.back = 1;
   assert.deepEqual(hitsOn(G, 0, w), [1], 'a comeback: exact numbers'); const B = fight(['HUN', 'RES'], ['boss'], { dice: [[0, 1]] }); assert.ok(!E.canHit(B, B.dice[0], B.boss) || !E.canHit(B, B.dice[0], B.boss).wild, 'the boss: exact too');
-  assert.equal(E.hunts, undefined); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die in a fight’s first round: a second-colour die, so never a double.');
+  assert.equal(E.hunts, undefined); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die in a fight’s first round: a second-colour die. It can pair, but never doubles alone.');
 });
 test('Engineer: once a fight (since 2026-11-05), turn one of their dice to its opposite side; it counts as one die', () => {
   const G = fight(['ENG', 'SOA'], ['spray'], { dice: [[0, 6], [0, 5], [1, 3]] }); G.rerolled = [false, false]; G.undo = [{}]; G.engUsed = false;

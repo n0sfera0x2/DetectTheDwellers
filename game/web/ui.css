@@ -129,6 +129,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 @keyframes lnin{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:none}}
 .status{font-size:1rem;line-height:1.45;color:var(--ink);max-width:70ch}.status b{color:var(--cy);font-weight:700}.status .err{color:#FF9478}.status .lethal{display:block;color:var(--fl);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .status.pad{padding:16px 14px}
+.status .st-li{display:block;margin-top:6px;padding-left:12px;position:relative}.status .st-li::before{content:"";position:absolute;left:0;top:.6em;width:5px;height:5px;background:var(--cy)}
 
 /* A lone mob: one centred pair, the card and beside it the banners and the round in plain words */
 
@@ -230,7 +231,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .t-die::before,.t-die::after{content:"";position:absolute;z-index:-1;clip-path:var(--ch)}.t-die::before{inset:0;background:var(--bd)}.t-die::after{inset:1.5px;background:var(--fill)}
 .t-die .f{line-height:0;display:flex}.t-die .pip{width:40px;height:40px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.5))}
 .t-die .pip rect{fill:#F3E9E2;stroke:#1A1012}
-.t-die .o{font-family:var(--mono);font-weight:600;font-size:0.6563rem;line-height:1.05;letter-spacing:.03em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+.t-die .o{font-family:var(--mono);font-weight:600;font-size:0.6563rem;line-height:.95;letter-spacing:.03em;text-transform:uppercase;color:var(--mut);white-space:normal;text-align:center;max-width:100%;overflow-wrap:normal} /* a two-word label (Pairs only, Double ×2) stacks rather than spilling out of the die */
 .t-die kbd{position:absolute;top:-4px;left:-2px;font-size:0.625rem;padding:1px 3px;border:0;background:var(--s3);color:var(--mut);opacity:1}
 .t-die:hover:not(:disabled){--fill:var(--s3)}
 .t-die.agent{--bd:var(--cy)}.t-die.agent .pip rect{fill:#BFE3EA}

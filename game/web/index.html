@@ -244,6 +244,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 @keyframes lnin{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:none}}
 .status{font-size:1rem;line-height:1.45;color:var(--ink);max-width:70ch}.status b{color:var(--cy);font-weight:700}.status .err{color:#FF9478}.status .lethal{display:block;color:var(--fl);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .status.pad{padding:16px 14px}
+.status .st-li{display:block;margin-top:6px;padding-left:12px;position:relative}.status .st-li::before{content:"";position:absolute;left:0;top:.6em;width:5px;height:5px;background:var(--cy)}
 
 /* A lone mob: one centred pair, the card and beside it the banners and the round in plain words */
 
@@ -345,7 +346,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .t-die::before,.t-die::after{content:"";position:absolute;z-index:-1;clip-path:var(--ch)}.t-die::before{inset:0;background:var(--bd)}.t-die::after{inset:1.5px;background:var(--fill)}
 .t-die .f{line-height:0;display:flex}.t-die .pip{width:40px;height:40px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.5))}
 .t-die .pip rect{fill:#F3E9E2;stroke:#1A1012}
-.t-die .o{font-family:var(--mono);font-weight:600;font-size:0.6563rem;line-height:1.05;letter-spacing:.03em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+.t-die .o{font-family:var(--mono);font-weight:600;font-size:0.6563rem;line-height:.95;letter-spacing:.03em;text-transform:uppercase;color:var(--mut);white-space:normal;text-align:center;max-width:100%;overflow-wrap:normal} /* a two-word label (Pairs only, Double ×2) stacks rather than spilling out of the die */
 .t-die kbd{position:absolute;top:-4px;left:-2px;font-size:0.625rem;padding:1px 3px;border:0;background:var(--s3);color:var(--mut);opacity:1}
 .t-die:hover:not(:disabled){--fill:var(--s3)}
 .t-die.agent{--bd:var(--cy)}.t-die.agent .pip rect{fill:#BFE3EA}
@@ -2338,8 +2339,9 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
       hint = G.round >= 1 ? '<b>New round.</b> Roll the row first, then everyone rolls.' : '<b>Fight!</b> Roll the dice.';
       if (G.round >= 1 && !G.row.length) hint = '<b>New round.</b> The row is empty, so just roll the dice.';
       if (G.freeze && G.row.length) hint += ' Change Freeze: the next row roll is skipped.';
-      if (usable) hint += ' Consumables: <b>Use</b> one on your plate first if you want.';
-      if (G.round < 1 && G.play.some(m => E.canBaseline(G, m))) hint += ' Want a lasting reward? <b>Baseline it</b> adds dice to the alarm. Beat them all and one of your agents keeps its bonus.';
+      /* options before the roll: one line each, not one long paragraph */
+      if (usable) hint += '<span class="st-li"><b>Use</b> a consumable on your plate first, if you want.</span>';
+      if (G.round < 1 && G.play.some(m => E.canBaseline(G, m))) hint += '<span class="st-li"><b>Baseline it</b> for a lasting reward: it adds dice to the alarm, and once you beat them all, one of your agents keeps its bonus.</span>';
       ctl = `<div class="acts"><span class="inc grow">${incText()}</span><button class="btn p big" data-a="roll" data-k="roll">${G.round >= 1 && G.row.length ? 'Roll the row, then the dice' : 'Roll the dice'} <kbd>R</kbd></button></div>`;
     } else if (G.phase === 'assign') {
       const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null, prs = E.pairs(G);
@@ -2660,7 +2662,10 @@ ${roundCtl}</div>`;
     else if (UI.info === d.dataset.info) { UI.info = null; const sm = d.querySelector('summary'); if (sm && d.isConnected && (!document.activeElement || document.activeElement === document.body || d.contains(document.activeElement))) sm.focus({ preventScroll: true }); } }, true);
   app.addEventListener('click', e => {
     const G = UI.G;
-    const b = e.target.closest && e.target.closest('[data-a]'); if (!b || b.disabled) return;
+    const b = e.target.closest && e.target.closest('[data-a]');
+    /* a click on empty space puts the picked die down, closing its actions (2026-11-22) */
+    if (!b && G && G.phase === 'assign' && UI.sel != null && !e.target.closest('.adv-pop, .tb-i, .menup, kbd')) { UI.sel = null; UI.more = null; UI.guarding = null; UI.msg = ''; return render(); }
+    if (!b || b.disabled) return;
     const a = b.dataset.a;
     if (a === 'pick') { const s = UI.setup.team, id = b.dataset.id, j = s.indexOf(id); if (j >= 0) { if (s.length > 1) s.splice(j, 1); } else if (s.length < 4) s.push(id); return render(); }
     if (a === 'start') return startGame();

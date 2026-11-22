@@ -349,8 +349,9 @@
       hint = G.round >= 1 ? '<b>New round.</b> Roll the row first, then everyone rolls.' : '<b>Fight!</b> Roll the dice.';
       if (G.round >= 1 && !G.row.length) hint = '<b>New round.</b> The row is empty, so just roll the dice.';
       if (G.freeze && G.row.length) hint += ' Change Freeze: the next row roll is skipped.';
-      if (usable) hint += ' Consumables: <b>Use</b> one on your plate first if you want.';
-      if (G.round < 1 && G.play.some(m => E.canBaseline(G, m))) hint += ' Want a lasting reward? <b>Baseline it</b> adds dice to the alarm. Beat them all and one of your agents keeps its bonus.';
+      /* options before the roll: one line each, not one long paragraph */
+      if (usable) hint += '<span class="st-li"><b>Use</b> a consumable on your plate first, if you want.</span>';
+      if (G.round < 1 && G.play.some(m => E.canBaseline(G, m))) hint += '<span class="st-li"><b>Baseline it</b> for a lasting reward: it adds dice to the alarm, and once you beat them all, one of your agents keeps its bonus.</span>';
       ctl = `<div class="acts"><span class="inc grow">${incText()}</span><button class="btn p big" data-a="roll" data-k="roll">${G.round >= 1 && G.row.length ? 'Roll the row, then the dice' : 'Roll the dice'} <kbd>R</kbd></button></div>`;
     } else if (G.phase === 'assign') {
       const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null, prs = E.pairs(G);
@@ -671,7 +672,10 @@ ${roundCtl}</div>`;
     else if (UI.info === d.dataset.info) { UI.info = null; const sm = d.querySelector('summary'); if (sm && d.isConnected && (!document.activeElement || document.activeElement === document.body || d.contains(document.activeElement))) sm.focus({ preventScroll: true }); } }, true);
   app.addEventListener('click', e => {
     const G = UI.G;
-    const b = e.target.closest && e.target.closest('[data-a]'); if (!b || b.disabled) return;
+    const b = e.target.closest && e.target.closest('[data-a]');
+    /* a click on empty space puts the picked die down, closing its actions (2026-11-22) */
+    if (!b && G && G.phase === 'assign' && UI.sel != null && !e.target.closest('.adv-pop, .tb-i, .menup, kbd')) { UI.sel = null; UI.more = null; UI.guarding = null; UI.msg = ''; return render(); }
+    if (!b || b.disabled) return;
     const a = b.dataset.a;
     if (a === 'pick') { const s = UI.setup.team, id = b.dataset.id, j = s.indexOf(id); if (j >= 0) { if (s.length > 1) s.splice(j, 1); } else if (s.length < 4) s.push(id); return render(); }
     if (a === 'start') return startGame();

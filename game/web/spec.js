@@ -1163,6 +1163,9 @@ test('page: Adventure view (a setting) lays the fight out as a battle scene that
   G.dice.forEach(x => assert.ok(d.querySelector(`.adv-hud .tb-pl[data-hp="${x.k}"] [data-a="die"][data-i="${x.i}"]`), 'die ' + x.i + ' sits with its owner'));
   assert.equal(d.querySelectorAll('.adv-hud .tb-pl').length, G.n, 'the table’s crew plates, items and all'); assert.ok(d.querySelectorAll('.adv-hero .spr[class*="spr-full_"]').length === G.n, 'full-body sprites on the field');
   const pickD = [...d.querySelectorAll('.adv-hud [data-a="die"]')].find(b => +b.dataset.i !== w.CDUI.UI.sel), fi = +pickD.dataset.i; pickD.click(); assert.equal(w.CDUI.UI.sel, fi, 'a die picks up as in the table'); /* the roll already selected one; pick another */
+  // A click on empty space puts the die down and closes its actions; picking it again brings them back (2026-11-22).
+  d.querySelector('.adv-field').dispatchEvent(new w.MouseEvent('click', { bubbles: true })); assert.equal(w.CDUI.UI.sel, null, 'a click off puts the die down'); assert.ok(!d.querySelector('.adv-pop'), 'its actions close');
+  d.querySelector(`.adv-hud [data-a="die"][data-i="${fi}"]`).click(); assert.equal(w.CDUI.UI.sel, fi, 'picked up again');
   // A picked die's own actions pop out beside it; the panel keeps only the round's (2026-11-20).
   const pd = G.dice[fi]; if (E.canReroll(G, pd) || E.canGuard(G, pd)) { assert.ok(d.querySelector('.adv-pop'), 'its menu pops out');
     if (E.canReroll(G, pd)) assert.ok(d.querySelector('.adv-pop [data-a="reroll"]'), 'Reroll in the menu'); if (E.canGuard(G, pd)) assert.ok(d.querySelector('.adv-pop [data-a="guard"]'), 'Guard in the menu'); }

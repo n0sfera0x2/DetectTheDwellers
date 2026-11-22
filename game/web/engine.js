@@ -46,9 +46,10 @@
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 1 }, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 2, 3: 1, 4: 2 }, soloItems: 2, bossRow: true } };
-  // Starting HP by crew size (2026-11-20, after two magic numbers each): the mode's HP plus hpBy. Quick: solo 11, else
-  // 10. Full: solo 15, 2 players 13, 3 players 14, 4 players 15. Same as sim.js HPN.
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 1, 3: 3, 4: 3 }, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 2, 3: 3, 4: 4 }, soloItems: 2, bossRow: true } };
+  // Starting HP by crew size (2026-11-20, after two magic numbers each; 3–4 players more since 2026-11-22, with the row's
+  // crew bonus): the mode's HP plus hpBy. Quick: solo 11, 2 players 10, 3–4 players 13. Full: solo 15, 2 players 13,
+  // 3 players 16, 4 players 17. Same as sim.js HPN.
   const startHp = (mode, n) => { const M = MODES[mode] || MODES.quick; return M.hp + ((M.hpBy || {})[n] || 0); }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
@@ -199,20 +200,22 @@
   // Change Freeze: the next row roll that would roll is skipped (any kind: a flip, a round, a Beacon, Lateral Whispers).
   // Watchlist Agent (2026-11-04): every row alarm comes back on one less (Overclocked: two less), per agent.
   const watch = G => running(G, 'watchlist') + G.agents.flat().filter(c => c.t === 'watchlist' && live(G, c.uid) && upgraded(G, c.uid)).length;
-  const backTop = (G, m) => m.top - watch(G);
+  // 3–4 players (2026-11-22, issue #8): every row alarm comes back on one more number. Same as sim.js ROWADD.
+  const crewRow = G => G.n > CARDS.PAST ? 1 : 0;
+  const backTop = (G, m) => m.top + crewRow(G) - watch(G);
   function rollRow(G, strike, why) {
     if (!G.row.length) return [];
     if (G.freeze) { G.freeze = false; G.stats.frozen = (G.stats.frozen || 0) + 1; G.stats.items.freeze++; say(G, `Change Freeze: no row roll (${why}).`, 'row'); return []; }
     const plus = traitCount(G, 'Scramble'), pair = [1 + d6(G), 1 + d6(G)];
     const wl = watch(G), roll = pair[0] + pair[1] + plus, back = G.row.filter(m => roll <= backTop(G, m));
-    const held = wl ? G.row.filter(m => roll <= m.top && !back.includes(m)) : []; if (held.length) { G.stats.items.watchlist = (G.stats.items.watchlist || 0) + held.length; actAll(G, 'watchlist', `Watchlist holds ${held.length}`); }
+    const held = wl ? G.row.filter(m => roll <= m.top + crewRow(G) && !back.includes(m)) : []; if (held.length) { G.stats.items.watchlist = (G.stats.items.watchlist || 0) + held.length; actAll(G, 'watchlist', `Watchlist holds ${held.length}`); }
     G.row = G.row.filter(m => !back.includes(m));
     back.forEach(m => { m.off = Array(m.hits).fill(false); m.offStack = []; m.back++; m.up = 0; });
     G.stats.back += back.length;
     const top2 = [] /* since 2026-11-03 comebacks don't hit on arrival: they rejoin the fight */, ghost = traitCount(G, 'Ghost') > 0, strikes = ghost ? [] : top2;
     // What the traits did: Ghost's arrival damage stopped, Scramble's comebacks that its +1 kept on the row.
     if (ghost && top2.length) { const n = top2.reduce((s, m) => s + dmgOf(G, m), 0) * G.n; G.stats.items.ghost += n; say(G, `Ghost: ${top2.map(m => m.name).join(' and ')} ${top2.length > 1 ? 'come' : 'comes'} back without hitting anyone (${n} damage stopped).`, 'kit'); }
-    if (plus) { const kept = G.row.filter(m => m.top === roll - 1); G.stats.items.scramble += kept.length; if (kept.length) say(G, `Scramble: the +1 keeps ${kept.map(m => m.name).join(' and ')} on the row.`, 'kit'); }
+    if (plus) { const kept = G.row.filter(m => backTop(G, m) === roll - 1); G.stats.items.scramble += kept.length; if (kept.length) say(G, `Scramble: the +1 keeps ${kept.map(m => m.name).join(' and ')} on the row.`, 'kit'); }
     const rec = { roll, pair, plus, why, back: back.map(m => m.name), strikes: strikes.map(m => ({ name: m.name, dmg: dmgOf(G, m) })), seq: G.rows.length + 1, fight: G.fight, round: G.round };
     G.rows.push(rec); G.lastRow = rec;
     say(G, `Row roll ${pair.join(' + ')}${plus ? ' + 1 (Scramble)' : ''} = ${roll} (${why}): ${back.length ? back.map(m => m.name).join(', ') + (back.length > 1 ? ' come back.' : ' comes back.') : 'nothing comes back.'}`, 'row');
@@ -760,6 +763,6 @@
     return G;
   }
 
-  return { aug, enter, rollRow, backTop, watch, baseline, canBaseline, tuck, HP, startHp, START_ITEMS, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
+  return { aug, enter, rollRow, backTop, crewRow, watch, baseline, canBaseline, tuck, HP, startHp, START_ITEMS, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
     give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canHeal, heal, threat, heldN, exfil, exfilable, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

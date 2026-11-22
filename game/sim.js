@@ -253,13 +253,14 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 // Bigger crews (2026-10-30, clustered dice): one more threat die showing 6 per player past three. Past two (the
 // first exact-numbers rule) left 3p at 36% and 4p at 19% once doubles stopped taking "any one more".
 // HPN: extra starting HP by crew size on top of the mode's HP, e.g. HPN='1:1,4:2' (solo +1, 4 players +2). Default since
-// 2026-11-20 (after two magic numbers each): Quick solo +1; Full solo +2, 3 players +1, 4 players +2. HPN='' turns it off.
-const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:2,3:1,4:2' : '1:1')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
+// 2026-11-20 (after two magic numbers each): Quick solo +1; Full solo +2, 3 players +1, 4 players +2. Since 2026-11-22
+// 3–4 players get more, with ROWADD=1: Quick 3–4 players +3; Full 3 players +3, 4 players +4. HPN='' turns it off.
+const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:2,3:3,4:4' : '1:1,3:3,4:3')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
 const XFROM = +(process.env.XFROM || 2);
 // XROLL (default since 2026-11-20): the crew's extra threat dice (one per player past XFROM) are rolled each time the alarm enters play, not set to 6. XROLL=0 is the old set-to-6 rule.
 // PAGERROLL (default since 2026-11-21): Pager Storm’s Mute adds a rolled threat die, not a 6. BASECAP (default 5 since 2026-11-21): Baseline dice show 7 − main, capped so they never land on 6.
-// ROWADD (default 0): at 3–4 players, every row roll counts this much lower, so alarms come back on that many more numbers (issue #8 option A).
-const PAGERROLL = (process.env.PAGERROLL ?? "1") === "1", BASECAP = +(process.env.BASECAP ?? 5), ROWADD = +(process.env.ROWADD ?? 0);
+// ROWADD (default 1 since 2026-11-22, issue #8): at 3–4 players, every row roll counts this much lower, so alarms come back on that many more numbers.
+const PAGERROLL = (process.env.PAGERROLL ?? "1") === "1", BASECAP = +(process.env.BASECAP ?? 5), ROWADD = +(process.env.ROWADD ?? 1);
 const XROLL = (process.env.XROLL ?? '1') === '1'; // review 2: one + die per player past 2 (was 3), as six analysts stack up in a crew of four
 const N6DICE = +(process.env.N6DICE || 1), N6SOLO = +(process.env.N6SOLO || 3);
 // Clustered dice (2026-10-30): each mob has a main number and its dice bunch around it, e.g. main 2 prints

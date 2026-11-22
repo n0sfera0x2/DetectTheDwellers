@@ -108,12 +108,21 @@ test('a crew of 3 or 4 rolls its extra threat dice each time an alarm enters pla
   const seen = new Set(); for (let seed = 1; seed <= 60; seed++) { const G = game({ team: ['HUN', 'RES', 'ENG'], seed }); G.deal = []; G.phase = 'flip'; while (G.feed[0] && G.feed[0].sit) G.feed.push(G.feed.shift()); E.flip(G); const m = G.play.find(x => !x.boss); seen.add(m.slots[m.printed]); }
   assert.deepEqual([...seen].sort(), [1, 2, 3, 4, 5, 6]);
 });
-test('starting HP by crew size (2026-11-20): Quick solo 11, else 10; Full solo 15, 2p 13, 3p 14, 4p 15', () => {
-  const want = { quick: [11, 10, 10, 10], full: [15, 13, 14, 15] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
+test('starting HP by crew size (2026-11-20; 3–4 players more since 2026-11-22): Quick solo 11, 2p 10, 3–4p 13; Full solo 15, 2p 13, 3p 16, 4p 17', () => {
+  const want = { quick: [11, 10, 13, 13], full: [15, 13, 16, 17] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
   for (const [mode, hps] of Object.entries(want)) hps.forEach((hp, i) => {
     assert.equal(E.startHp(mode, i + 1), hp, `${mode} ${i + 1}p`);
     const G = game({ team: team.slice(0, i + 1), seed: 1, mode, hp: undefined }); /* the helper pins E.HP; this one plays the real start */ assert.equal(G.max, hp); assert.ok(G.hp.every(h => h === hp));
   });
+});
+test('the row at 3–4 players (2026-11-22, issue #8): every row alarm comes back on one more number; solo and duo as printed', () => {
+  const team = ['HUN', 'RES', 'ENG', 'SOA'];
+  for (const n of [1, 2, 3, 4]) {
+    const G = game({ team: team.slice(0, n), seed: 3 }), m = G.feed.find(x => !x.sit && !x.boss);
+    assert.equal(E.backTop(G, m), m.top + (n >= 3 ? 1 : 0) - E.watch(G), n + 'p back-on top'); assert.equal(E.crewRow(G), n >= 3 ? 1 : 0);
+    /* printed back on 2–11: at 3–4 players that is 2–12, so every roll brings it back */
+    if (n >= 3 && !E.watch(G)) { m.top = 11; G.row = [m]; G.feed = G.feed.filter(x => x !== m); for (let i = 0; i < 30; i++) { G.row = [m]; assert.ok(E.rollRow(G, false, 'test').includes(m), n + 'p: back on 12'); } }
+  }
 });
 test('magic numbers (2026-11-20): each analyst doubles on their own two numbers, never a 6; the solo crew die and agent dice never double', () => {
   const want = { HUN: [4, 5], RES: [3, 4], ENG: [1, 2], SOA: [2, 3] };

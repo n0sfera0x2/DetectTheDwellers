@@ -176,7 +176,7 @@
   <div class="note">Only magic numbers double; a second-colour die never does. <b>Two of yours on one number: a double, any colour.</b></div>
   <div class="note"><b>Once a round, take 1 to reroll one of your own dice</b> (not at 1 HP).</div>
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
-  <div class="note">Row: 2 amber dice; back if the sum is at most its number.</div></div>`;
+  <div class="note">Row: 2 amber dice; back if the sum is at most its number (3–4 players: +1).</div></div>`;
 
   // The shift tracker (2026-11-01): the table's memory for every once-a-round, once-a-fight and waiting effect. Coins
   // go on its boxes when something is used; a row is cleared when its round or fight ends. Paper only: the web tracks it.

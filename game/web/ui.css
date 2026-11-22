@@ -723,7 +723,7 @@ body{background:var(--bg)}
 .swt,.swt i,.swt i::after,.adv-plate,.adv-dmg,.adv-back,.adv-pop,.t-td.xtra::after{border-radius:0}
 
 /* Agents acting (2026-11-21): the pet pulses / the chip flashes, and a short callout floats over it. */
-.adv-pet,.tb-it.ag{position:relative}
+.tb-it.ag{position:relative} /* .adv-pet is already absolute, which anchors its callout; making it relative hid every pet (2026-11-22) */
 .acting{animation:act-pulse .8s ease-out 2 var(--act-d,0ms) both}
 .tb-it.ag.acting{animation-name:act-flash}
 .act-call{position:absolute;left:50%;bottom:100%;z-index:6;transform:translate(-50%,calc(var(--i,0) * -18px));white-space:nowrap;pointer-events:none;

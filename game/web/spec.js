@@ -1150,7 +1150,7 @@ test('page: a situation flips on the mat, its choice resolves, its condition sho
 
 test('Adventure view: agent pets stay absolutely placed beside their analyst (a later position rule once hid every pet, 2026-11-22)', () => {
   const css = fs.readFileSync(require('path').join(__dirname, 'ui.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  assert.match(css, /\.adv-pet\{position:absolute;width:30%/, 'the pet rule places it absolutely');
+  assert.match(css, /\.adv-pet\{position:absolute;/, 'the pet rule places it absolutely');
   const later = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter(([, sel, body]) => sel.split(',').some(x => x.trim() === '.adv-pet') && /position:(?!absolute)/.test(body));
   assert.deepEqual(later.map(m => m[0].trim()), [], 'no rule moves .adv-pet off absolute');
 });

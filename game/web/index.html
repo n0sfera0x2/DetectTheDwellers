@@ -736,7 +736,7 @@ h2[tabindex="-1"]:focus{outline:none}
 .adv-hero.ko{filter:grayscale(1) brightness(.5);transform:rotate(-80deg) translateY(20%)}
 .adv-hero::after{content:"";position:absolute;left:15%;right:15%;bottom:-2px;height:8px;border-radius:50%;background:rgba(0,0,0,.45);z-index:-1}
 .adv-pets{position:absolute;inset:0;pointer-events:none}
-.adv-pet{position:absolute;width:30%;aspect-ratio:1;left:calc(92% + var(--j) * 12%);top:calc(4% + var(--j) * 24%);pointer-events:auto;cursor:zoom-in;animation:advpet 2.2s ease-in-out infinite;animation-delay:calc(var(--j) * -.7s);filter:drop-shadow(0 0 4px rgba(56,225,255,.5))}
+.adv-pet{position:absolute;width:36%;aspect-ratio:1;left:calc(92% + var(--j) * 12%);top:calc(4% + var(--j) * 24%);pointer-events:auto;cursor:zoom-in;animation:advpet 2.2s ease-in-out infinite;animation-delay:calc(var(--j) * -.7s);filter:drop-shadow(0 0 4px rgba(56,225,255,.5))}
 @keyframes advpet{0%,100%{transform:translateY(0)}50%{transform:translateY(-18%)}}
 .adv-spr:has(>.spr),.adv-pet:has(>.spr){background:none}
 /* The alarms stand on the floor, each capped at a share of the field's height (the boss a bigger share). */
@@ -809,6 +809,7 @@ h2[tabindex="-1"]:focus{outline:none}
 .adv-hero .adv-spr,.adv-foe .adv-spr{filter:drop-shadow(1px 0 0 rgba(233,246,255,.85)) drop-shadow(-1px 0 0 rgba(233,246,255,.85)) drop-shadow(0 1px 0 rgba(233,246,255,.85)) drop-shadow(0 -1px 0 rgba(233,246,255,.85)) drop-shadow(0 0 8px rgba(56,225,255,.35))}
 .adv-hero.on .adv-spr{filter:drop-shadow(1px 0 0 #E9F6FF) drop-shadow(-1px 0 0 #E9F6FF) drop-shadow(0 1px 0 #E9F6FF) drop-shadow(0 -1px 0 #E9F6FF) drop-shadow(0 0 12px rgba(56,225,255,.75))}
 .adv-foe .adv-spr{filter:drop-shadow(1px 0 0 rgba(255,214,200,.8)) drop-shadow(-1px 0 0 rgba(255,214,200,.8)) drop-shadow(0 1px 0 rgba(255,214,200,.8)) drop-shadow(0 -1px 0 rgba(255,214,200,.8)) drop-shadow(0 0 10px rgba(255,90,42,.35))}
+.adv-pet>.spr{filter:drop-shadow(1px 0 0 rgba(233,246,255,.9)) drop-shadow(-1px 0 0 rgba(233,246,255,.9)) drop-shadow(0 1px 0 rgba(233,246,255,.9)) drop-shadow(0 -1px 0 rgba(233,246,255,.9))} /* agents get the heroes’ outline (2026-11-22); on the sprite, so the pet’s act pulse still animates its own filter */
 .adv-hero::after{left:5%;right:5%;bottom:-4px;height:14px;background:radial-gradient(ellipse at center,rgba(56,225,255,.35),rgba(56,225,255,0) 70%)}
 .adv-foe .adv-spr::after{content:"";position:absolute;left:5%;right:5%;bottom:-4px;height:14px;z-index:-1;border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,90,42,.3),rgba(255,90,42,0) 70%)}
 

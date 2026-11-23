@@ -762,6 +762,8 @@ h2[tabindex="-1"]:focus{outline:none}
 .adv-act{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden;padding:10px 12px;background:linear-gradient(180deg,rgba(20,24,40,.92),rgba(12,13,22,.92));border:1px solid #262D45;box-shadow:inset 3px 0 0 var(--cy)}
 .adv-act .status{margin:0;font-size:.9375rem;flex:0 1 auto;min-height:2.6em;overflow-y:auto} /* the message scrolls; the buttons never do */
 .adv-act>.adv-menu{flex:none}
+/* The round's steps in Adventure view (2026-11-23): the table view's strip, labels only, so it fits the command panel. */
+.adv-act>.t-steps{flex:none;flex-wrap:nowrap;margin:0;gap:3px}.adv-act>.t-steps li{flex:1 1 auto;padding:2px 5px;min-width:0}.adv-act>.t-steps li span{display:none}.adv-act>.t-steps li b{font-size:0.625rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adv-menu{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:6px;margin-top:auto;min-width:0}.adv-menu>*{min-width:0;max-width:100%}.adv-menu>:not(.btn):not(button){flex-basis:100%;white-space:normal;overflow:visible;text-overflow:clip} /* left-aligned: a narrow panel wraps instead of clipping */
 .adv-menu .btn.p{margin-left:auto}
 .adv-kw{font:600 10px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:#9FD7E6;margin-left:2px}
@@ -1271,10 +1273,10 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 1, 3: 3, 4: 3 }, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 2, 3: 3, 4: 4 }, soloItems: 2, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 1, 3: 2, 4: 3 }, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 2, 3: 2, 4: 4 }, soloItems: 2, bossRow: true } };
   // Starting HP by crew size (2026-11-20, after two magic numbers each; 3–4 players more since 2026-11-22, with the row's
-  // crew bonus): the mode's HP plus hpBy. Quick: solo 11, 2 players 10, 3–4 players 13. Full: solo 15, 2 players 13,
-  // 3 players 16, 4 players 17. Same as sim.js HPN.
+  // crew bonus): the mode's HP plus hpBy. Quick: solo 11, 2 players 10, 3 players 12, 4 players 13. Full: solo 15, 2 players 13,
+  // 3 players 15, 4 players 17 (3 players one lower since 2026-11-23). Same as sim.js HPN.
   const startHp = (mode, n) => { const M = MODES[mode] || MODES.quick; return M.hp + ((M.hpBy || {})[n] || 0); }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
@@ -2546,7 +2548,7 @@ ${roundCtl}</div>`;
     const aloud = vAloud().replace('class="t-aloud"', 'class="t-aloud adv-omen"');
     return `<div class="tb adv ph-${G.phase}${E.MODES[G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${aloud}
       <section class="adv-field${G.bossOut ? ' boss' : ''}" aria-label="The fight"><div class="adv-crew" style="--n:${G.n}">${crew}</div><div class="adv-foes">${foes}</div></section>
-      <section class="adv-hud">${vPlates(dice)}<div class="adv-act" role="region" aria-label="What to do"><p class="status">${advHint(G, h)}</p><div class="adv-menu">${bases}${G.phase === 'assign' ? h.roundCtl : h.ctl}</div></div></section>${advPop(G, h)}</div>`;
+      <section class="adv-hud">${vPlates(dice)}<div class="adv-act" role="region" aria-label="What to do">${vSteps()}<p class="status">${advHint(G, h)}</p><div class="adv-menu">${bases}${G.phase === 'assign' ? h.roundCtl : h.ctl}</div></div></section>${advPop(G, h)}</div>`;
   }
   function vStage() {
     const G = UI.G;

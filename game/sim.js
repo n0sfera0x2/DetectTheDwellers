@@ -255,7 +255,7 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 // HPN: extra starting HP by crew size on top of the mode's HP, e.g. HPN='1:1,4:2' (solo +1, 4 players +2). Default since
 // 2026-11-20 (after two magic numbers each): Quick solo +1; Full solo +2, 3 players +1, 4 players +2. Since 2026-11-22
 // 3–4 players get more, with ROWADD=1: Quick 3–4 players +3; Full 3 players +3, 4 players +4. HPN='' turns it off.
-const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:2,3:3,4:4' : '1:1,3:3,4:3')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
+const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:2,3:2,4:4' : '1:1,3:2,4:3')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
 const XFROM = +(process.env.XFROM || 2);
 // XROLL (default since 2026-11-20): the crew's extra threat dice (one per player past XFROM) are rolled each time the alarm enters play, not set to 6. XROLL=0 is the old set-to-6 rule.
 // PAGERROLL (default since 2026-11-21): Pager Storm’s Mute adds a rolled threat die, not a 6. BASECAP (default 5 since 2026-11-21): Baseline dice show 7 − main, capped so they never land on 6.
@@ -735,8 +735,8 @@ function play(sys, team, opt) {
   return G;
 }
 
-// Every crew of the six analysts (2026-11-02 review 2: Forensics and Shift Lead): 6 solos, 15 pairs, 15 fours.
-function teams(ids = ANALYSTS) { const c = (a, n) => n === 0 ? [[]] : a.flatMap((x, i) => c(a.slice(i + 1), n - 1).map(r => [x, ...r])); return { 1: c(ids, 1), 2: c(ids, 2), 4: c(ids, 4) }; }
+// Every crew of the analysts: solos, pairs, threes (reported since 2026-11-23; 3-player HP had never been measured) and fours.
+function teams(ids = ANALYSTS) { const c = (a, n) => n === 0 ? [[]] : a.flatMap((x, i) => c(a.slice(i + 1), n - 1).map(r => [x, ...r])); return { 1: c(ids, 1), 2: c(ids, 2), 3: c(ids, 3), 4: c(ids, 4) }; }
 const ANALYSTS = (process.env.ANALYSTS || 'HUN,RES,ENG,SOA').split(','); // Forensics and the Shift Lead cut 2026-11-03 (FOR, LEAD still run)
 module.exports = { SITS, play, teams, ANALYSTS, rng, DICE, symbolsFor, numbersFor, slotsFor, XFROM, ROWSHIFT, pipDie, rowTop, KEY, DOUBLES };
 
@@ -748,7 +748,7 @@ if (require.main === module) {
   const pct = x => Math.round(x * 100) + '%';
   for (const sys of (process.env.SYS || 'd20,n6').split(',')) {
     const hp = process.env.HP ? +process.env.HP : tune(sys); console.log(`\n== ${sys} · HP ${hp} ${process.env.HP ? '(set by HP)' : '(tuned to ~50% at 2p)'} ==`);
-    for (const n of [1, 2, 4]) { const s = run(sys, TEAMS[n], hp), r = run(sys, TEAMS[n], hp, false); console.log(`${n}p  win ${pct(s.win)} | random placement ${pct(r.win)} (skill gap ${Math.round((s.win - r.win) * 100)} pts) | rounds with a real dice choice ${pct(s.choice)} | rounds ${s.rounds.toFixed(1)} | comebacks ${s.back.toFixed(1)} | losses before the boss ${pct(s.early)}`); }
+    for (const n of [1, 2, 3, 4]) { const s = run(sys, TEAMS[n], hp), r = run(sys, TEAMS[n], hp, false); console.log(`${n}p  win ${pct(s.win)} | random placement ${pct(r.win)} (skill gap ${Math.round((s.win - r.win) * 100)} pts) | rounds with a real dice choice ${pct(s.choice)} | rounds ${s.rounds.toFixed(1)} | comebacks ${s.back.toFixed(1)} | losses before the boss ${pct(s.early)}`); }
     const solo = ANALYSTS.map(id => [id, run(sys, [[id]], hp).win]);
     console.log('solo by analyst: ' + solo.map(([id, w]) => `${id} ${pct(w)}`).join(' · ') + `  (spread ${Math.round((Math.max(...solo.map(x => x[1])) - Math.min(...solo.map(x => x[1]))) * 100)} pts)`);
     const pairs = TEAMS[2].map(t => [t, run(sys, [t], hp).win]);

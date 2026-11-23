@@ -552,7 +552,7 @@ ${roundCtl}</div>`;
     const aloud = vAloud().replace('class="t-aloud"', 'class="t-aloud adv-omen"');
     return `<div class="tb adv ph-${G.phase}${E.MODES[G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${aloud}
       <section class="adv-field${G.bossOut ? ' boss' : ''}" aria-label="The fight"><div class="adv-crew" style="--n:${G.n}">${crew}</div><div class="adv-foes">${foes}</div></section>
-      <section class="adv-hud">${vPlates(dice)}<div class="adv-act" role="region" aria-label="What to do"><p class="status">${advHint(G, h)}</p><div class="adv-menu">${bases}${G.phase === 'assign' ? h.roundCtl : h.ctl}</div></div></section>${advPop(G, h)}</div>`;
+      <section class="adv-hud">${vPlates(dice)}<div class="adv-act" role="region" aria-label="What to do">${vSteps()}<p class="status">${advHint(G, h)}</p><div class="adv-menu">${bases}${G.phase === 'assign' ? h.roundCtl : h.ctl}</div></div></section>${advPop(G, h)}</div>`;
   }
   function vStage() {
     const G = UI.G;

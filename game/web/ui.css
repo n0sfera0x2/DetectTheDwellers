@@ -647,6 +647,8 @@ h2[tabindex="-1"]:focus{outline:none}
 .adv-act{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden;padding:10px 12px;background:linear-gradient(180deg,rgba(20,24,40,.92),rgba(12,13,22,.92));border:1px solid #262D45;box-shadow:inset 3px 0 0 var(--cy)}
 .adv-act .status{margin:0;font-size:.9375rem;flex:0 1 auto;min-height:2.6em;overflow-y:auto} /* the message scrolls; the buttons never do */
 .adv-act>.adv-menu{flex:none}
+/* The round's steps in Adventure view (2026-11-23): the table view's strip, labels only, so it fits the command panel. */
+.adv-act>.t-steps{flex:none;flex-wrap:nowrap;margin:0;gap:3px}.adv-act>.t-steps li{flex:1 1 auto;padding:2px 5px;min-width:0}.adv-act>.t-steps li span{display:none}.adv-act>.t-steps li b{font-size:0.625rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adv-menu{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:6px;margin-top:auto;min-width:0}.adv-menu>*{min-width:0;max-width:100%}.adv-menu>:not(.btn):not(button){flex-basis:100%;white-space:normal;overflow:visible;text-overflow:clip} /* left-aligned: a narrow panel wraps instead of clipping */
 .adv-menu .btn.p{margin-left:auto}
 .adv-kw{font:600 10px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:#9FD7E6;margin-left:2px}

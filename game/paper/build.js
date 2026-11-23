@@ -21,7 +21,7 @@ const rules = `<section class="page rules">
 <p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 2 in a second colour (the solo crew die, the Hunter’s extra die), 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
 <h2>Setup</h2>
 <ol>
-<li>Pick the shift. Starting HP: <b>Quick</b> 10 (solo 11, 3–4 players 13). <b>Full</b> 13 (solo 15, 3 players 16, 4 players 17), and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
+<li>Pick the shift. Starting HP: <b>Quick</b> 10 (solo 11, 3 players 12, 4 players 13). <b>Full</b> 13 (solo 15, 3 players 15, 4 players 17), and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
 <li>Shuffle the <b>situation deck</b>, the 15 alarms and 9 situations. <b>Quick:</b> deal 8. <b>Full:</b> deal 9. That’s the <b>feed</b>. <b>Full</b> also shuffles the 9 <b>story</b> cards into their own deck.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
 <li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 3). Solo: deal until an agent comes up, shuffle the rest back, then draw until you hold your card’s Solo number.</li>

@@ -109,7 +109,7 @@ test('a crew of 3 or 4 rolls its extra threat dice each time an alarm enters pla
   assert.deepEqual([...seen].sort(), [1, 2, 3, 4, 5, 6]);
 });
 test('starting HP by crew size (2026-11-20; 3–4 players more since 2026-11-22): Quick solo 11, 2p 10, 3–4p 13; Full solo 15, 2p 13, 3p 16, 4p 17', () => {
-  const want = { quick: [11, 10, 13, 13], full: [15, 13, 16, 17] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
+  const want = { quick: [11, 10, 12, 13], full: [15, 13, 15, 17] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
   for (const [mode, hps] of Object.entries(want)) hps.forEach((hp, i) => {
     assert.equal(E.startHp(mode, i + 1), hp, `${mode} ${i + 1}p`);
     const G = game({ team: team.slice(0, i + 1), seed: 1, mode, hp: undefined }); /* the helper pins E.HP; this one plays the real start */ assert.equal(G.max, hp); assert.ok(G.hp.every(h => h === hp));
@@ -1169,6 +1169,8 @@ test('page: Adventure view (a setting) lays the fight out as a battle scene that
   assert.equal(d.querySelectorAll('.adv-foe [data-a="slot"]').length, G.play.reduce((n, m) => n + m.slots.length, 0), 'their threat dice under them');
   if (G.phase === 'roll') click('[data-a="roll"]'); assert.equal(G.phase, 'assign');
   assert.equal(d.querySelectorAll('.adv-hud [data-a="die"]').length, G.dice.length, 'every die, in its analyst’s plate');
+  // The round's steps show in Adventure view too (2026-11-23), with Match lit while dice are placed.
+  assert.equal(d.querySelectorAll('.adv-act > .t-steps li').length, 4, 'Row, Roll, Match, Hits back in the command panel'); assert.match(d.querySelector('.adv-act > .t-steps li.now').textContent, /Match/, 'Match is the step now');
   // An agent acting (2026-11-21): its pet pulses with a callout; an act from before this render never replays.
   G.agents[0] = [...G.agents[0], { uid: 'zz1', t: 'contain' }]; w.CDUI.render(); assert.ok(!d.querySelector('.act-call'), 'nothing new, no callout');
   G.acts.push({ seq: ++G.actSeq, k: 0, uid: 'zz1', t: 'contain', text: 'Containment −2' }); w.CDUI.render();

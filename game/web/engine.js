@@ -46,10 +46,10 @@
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 1, 3: 3, 4: 3 }, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 2, 3: 3, 4: 4 }, soloItems: 2, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 1, 3: 2, 4: 3 }, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 2, 3: 2, 4: 4 }, soloItems: 2, bossRow: true } };
   // Starting HP by crew size (2026-11-20, after two magic numbers each; 3–4 players more since 2026-11-22, with the row's
-  // crew bonus): the mode's HP plus hpBy. Quick: solo 11, 2 players 10, 3–4 players 13. Full: solo 15, 2 players 13,
-  // 3 players 16, 4 players 17. Same as sim.js HPN.
+  // crew bonus): the mode's HP plus hpBy. Quick: solo 11, 2 players 10, 3 players 12, 4 players 13. Full: solo 15, 2 players 13,
+  // 3 players 15, 4 players 17 (3 players one lower since 2026-11-23). Same as sim.js HPN.
   const startHp = (mode, n) => { const M = MODES[mode] || MODES.quick; return M.hp + ((M.hpBy || {})[n] || 0); }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;

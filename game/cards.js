@@ -40,7 +40,8 @@
   // tier (top 12+ → 5, 10–11 → 4, 8–9 → 3, 7 or less → 2): every beaten mob goes back to the row, so the odds sit
   // three lower than they did when a comeback was gone for good. Same as sim.js rowTop (ROWSHIFT 3).
   // Since 2026-11-03 one step wider (2–3 to 2–6), and comebacks no longer hit on arrival (sim.js ROWSHIFT 2, ARRIVE 0).
-  const rowTop = N => N >= 12 ? 6 : N >= 10 ? 5 : N >= 8 ? 4 : 3;
+  // Since 2026-11-23 one more step wider (2–4 to 2–7; sim.js ROWSHIFT 1), so alarms come back more often.
+  const rowTop = N => N >= 12 ? 7 : N >= 10 ? 6 : N >= 8 ? 5 : 4;
   // Analysts that aren't in the game data, with borrowed portraits. None since 2026-11-03 (Forensics and the Shift Lead
   // were cut); the hooks stay for the next one.
   const EXTRA_CLASSES = [], ANALYST_ART = {};

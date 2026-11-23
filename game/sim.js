@@ -56,7 +56,7 @@ const P2 = k => { let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6
 const rowTopNear = N => { let best = 2; for (let k = 2; k <= 12; k++) if (Math.abs(P2(k) - N / 20) < Math.abs(P2(best) - N / 20)) best = k; return best; };
 // ROWSHIFT lowers every tier by that much. Default 3 (2026-10-30): with every beaten mob going back to the row, the
 // old tiers (8/7/6/5) spiral (shift 2 needs 97 HP for half the games); shift 3 gives 2–5/2–4/2–3 and ~6 comebacks a game.
-const ROWSHIFT = +(process.env.ROWSHIFT ?? 2); // 2 since 2026-11-03 (one step wider), with no arrival hits (ARRIVE 0)
+const ROWSHIFT = +(process.env.ROWSHIFT ?? 1); // 1 since 2026-11-23 (one more step wider, the owner's ask); 2 since 2026-11-03, with no arrival hits (ARRIVE 0)
 const ROWCREW = +(process.env.ROWCREW || 0); // ROWCREW=n (proposal, 2026-11-20): in a crew (2+ players) every row range is n steps wider
 const rowTop = (N, G) => process.env.ROWMAP === 'near' ? rowTopNear(N) : (N >= 12 ? 8 : N >= 10 ? 7 : N >= 8 ? 6 : 5) - ROWSHIFT + (G && G.n > 1 ? ROWCREW : 0);
 // PERSIST=always (n6 default, 2026-10-30): a beaten mob always goes back to the row; nothing removes it for good.
@@ -255,7 +255,7 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 // HPN: extra starting HP by crew size on top of the mode's HP, e.g. HPN='1:1,4:2' (solo +1, 4 players +2). Default since
 // 2026-11-20 (after two magic numbers each): Quick solo +1; Full solo +2, 3 players +1, 4 players +2. Since 2026-11-22
 // 3–4 players get more, with ROWADD=1: Quick 3–4 players +3; Full 3 players +3, 4 players +4. HPN='' turns it off.
-const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:2,3:2,4:4' : '1:1,3:2,4:3')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
+const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:5,2:1,3:3,4:7' : '1:3,2:1,3:3,4:5')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
 const XFROM = +(process.env.XFROM || 2);
 // XROLL (default since 2026-11-20): the crew's extra threat dice (one per player past XFROM) are rolled each time the alarm enters play, not set to 6. XROLL=0 is the old set-to-6 rule.
 // PAGERROLL (default since 2026-11-21): Pager Storm’s Mute adds a rolled threat die, not a 6. BASECAP (default 5 since 2026-11-21): Baseline dice show 7 − main, capped so they never land on 6.
@@ -546,7 +546,7 @@ function score(G, left, blocks) {
 
 function fight(G, mobs) {
   G.play = []; G.cbJoin = false; G.mimicAs = G.tray.map((x, i) => has(G, i, 'mimica') ? ['triage', 'contain', 'enrich', 'recover', 'honeypot', 'watchlist', 'correl'].find(t => G.tray.some((y, j) => j !== i && y === t)) || null : null); G.rrFight = null; G.engUsed = false; G.resUsed = false; G.patUsed = false; G.soaKeep = (SOAPERK === 'keep' || G.n === 1 && process.env.SOASOLOKEEP === '1') && on(G, 'SOA'); G.soaRoll = G.n === 1 && !SOAAUTO && (process.env.SOASOLOKEEP || 'roll') === 'roll' && on(G, 'SOA');
-  G.ticket = TRAITS ? traitN(G, 'ticket') : 0; G.slipK = G.team.map((_, k) => G.tray.reduce((n, _, i) => n + (G.trayK[i] === k ? has(G, i, 'slip') : 0), 0)); G.resArr = false; G.hunEnded = false; mobs.forEach(m => enter(G, m)); let round = 0; // ticket and slip: once a fight
+  G.ticket = TRAITS ? traitN(G, 'ticket') : 0; G.slipK = G.team.map((_, k) => G.tray.reduce((n, _, i) => n + (G.trayK[i] === k ? has(G, i, 'slip') : 0), 0)); G.resArr = false; G.hunEnded = false; G.fightN = mobs.length; mobs.forEach(m => enter(G, m)); let round = 0; // ticket and slip: once a fight
   while (!G.over && G.play.length) {
     round++; G.round = round; G.stats.rounds++; if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rowRoll(G, true)) enter(G, b); if (G.over) return;
     const boss = G.play.some(m => m.boss);
@@ -624,6 +624,9 @@ function fight(G, mobs) {
   G.tray.forEach((_, i) => { const k = G.trayK[i], h = has(G, i, 'repair') * 2; if (h) G.hp[k] = Math.min(G.max, G.hp[k] + h); }); // Repair
   if (PERSONAL) G.team.forEach((_, k) => { G.hp[k] = Math.min(G.max, G.hp[k] + activeK(G, 'recover', k) * D.recoverHeal); });
   else spread(G, Math.floor(HEALX * ((aiUp(G) ? 0 : G.tray.filter((x, i) => x === 'recover' && upgraded(G, i)).length * 2) + active(G, 'recover') * (D.recoverHeal + (on(G, 'PAT') && (PATPERK !== 'nudge' || process.env.PATREC === '1') ? D.perks.PAT.recover : 0)))));
+  // DRAWMULTI (proposal, 2026-11-23): a won fight draws 1, or 2 when it began against two or more alarms (one came back off the row). 'crew' = crews only, 'all' = solo too.
+  const multi = G.fightN > 1; if (multi) G.stats.multiWon = (G.stats.multiWon || 0) + 1;
+  if (process.env.DRAWMULTI && (process.env.DRAWMULTI === 'all' || G.n > 1)) draw(G, (multi ? 2 : 1) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) : 0) + (G.bonusDraw || 0)); else
   draw(G, (process.env.DRAWS ? (G.n === 1 ? +process.env.DRAWS.split(',')[0] : +process.env.DRAWS.split(',')[1] * (process.env.DRAWPER === '1' ? G.n : 1)) : G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) + (G.n === 1 ? +(process.env.SOASOLODRAW || 0) : 0) : 0) + (G.bonusDraw || 0)); G.bonusDraw = 0;
 }
 function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hp.indexOf(Math.min(...G.hp)); if (G.hp[k] >= G.max) return; G.hp[k]++; } }

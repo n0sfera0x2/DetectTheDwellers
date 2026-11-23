@@ -63,7 +63,7 @@ test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (th
   assert.deepEqual(SIM.numbersFor('mailer', 5).sort(), [1, 2, 2, 2, 3]); assert.deepEqual(SIM.numbersFor('imp', 5).sort(), [1, 1, 1, 2, 2]);
   assert.equal(CARDS.mobs().length, 15); assert.deepEqual(CARDS.BOSS_IDS, ['wyrm', 'apt', 'ai']);
   const G = E.newGame({ team: ['HUN', 'RES'], seed: 3 });
-  assert.equal(G.hp[0], E.MODES.quick.hp); assert.equal(E.newGame({ team: ['HUN', 'RES'], seed: 3, mode: 'full' }).hp[0], E.MODES.full.hp);
+  assert.equal(G.hp[0], E.MODES.quick.hp + E.MODES.quick.hpBy[2]); assert.equal(E.newGame({ team: ['HUN', 'RES'], seed: 3, mode: 'full' }).hp[0], E.MODES.full.hp + E.MODES.full.hpBy[2]);
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, 2); assert.equal(G.kit.length, CARDS.ITEM_DECK.length - 2);
   // Solo starts with 2 items in both modes, one of them an agent (since 2026-11-05; 1 on 2026-11-04), and deals itself.
   const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
@@ -108,8 +108,8 @@ test('a crew of 3 or 4 rolls its extra threat dice each time an alarm enters pla
   const seen = new Set(); for (let seed = 1; seed <= 60; seed++) { const G = game({ team: ['HUN', 'RES', 'ENG'], seed }); G.deal = []; G.phase = 'flip'; while (G.feed[0] && G.feed[0].sit) G.feed.push(G.feed.shift()); E.flip(G); const m = G.play.find(x => !x.boss); seen.add(m.slots[m.printed]); }
   assert.deepEqual([...seen].sort(), [1, 2, 3, 4, 5, 6]);
 });
-test('starting HP by crew size (2026-11-20; 3–4 players more since 2026-11-22): Quick solo 11, 2p 10, 3–4p 13; Full solo 15, 2p 13, 3p 16, 4p 17', () => {
-  const want = { quick: [11, 10, 12, 13], full: [15, 13, 15, 17] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
+test('starting HP by crew size (raised 2026-11-23 with the wider row): Quick solo 13, 2p 11, 3p 13, 4p 15; Full solo 18, 2p 14, 3p 16, 4p 20', () => {
+  const want = { quick: [13, 11, 13, 15], full: [18, 14, 16, 20] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
   for (const [mode, hps] of Object.entries(want)) hps.forEach((hp, i) => {
     assert.equal(E.startHp(mode, i + 1), hp, `${mode} ${i + 1}p`);
     const G = game({ team: team.slice(0, i + 1), seed: 1, mode, hp: undefined }); /* the helper pins E.HP; this one plays the real start */ assert.equal(G.max, hp); assert.ok(G.hp.every(h => h === hp));
@@ -210,19 +210,19 @@ test('the row: comebacks return with all their dice and join the fight; nobody i
   assert.deepEqual(G.hp, [E.HP, E.HP].map((h, k) => G.max), 'no arrival hits'); assert.equal(G.lastRow.strikes.length, 0);
   assert.equal(G.lastRow.pair.length, 2); assert.equal(G.lastRow.roll, G.lastRow.pair[0] + G.lastRow.pair[1]);
 });
-test('the row on 2d6: one step wider since 2026-11-03 (2–3 to 2–6); a mob comes back if the sum is at most its number', () => {
-  for (const [N, k] of [[13, 6], [12, 6], [11, 5], [10, 5], [9, 4], [8, 4], [7, 3], [5, 3]]) { assert.equal(CARDS.rowTop(N), k); assert.equal(SIM.rowTop(N), k); }
+test('the row on 2d6: one more step wider since 2026-11-23 (2–4 to 2–7); a mob comes back if the sum is at most its number', () => {
+  for (const [N, k] of [[13, 7], [12, 7], [11, 6], [10, 6], [9, 5], [8, 5], [7, 4], [5, 4]]) { assert.equal(CARDS.rowTop(N), k); assert.equal(SIM.rowTop(N), k); }
   const G = newG({ team: ['ENG', 'SOA'], seed: 2 });
   const tops = Object.fromEntries(G.feed.map(m => [m.id, m.top]));
-  for (const [id, t] of Object.entries({ mailer: 6, spray: 6, druid: 5, imp: 4, mimic: 4, wyrmling: 4 })) if (tops[id]) assert.equal(tops[id], t, id);
+  for (const [id, t] of Object.entries({ mailer: 7, spray: 7, druid: 6, imp: 5, mimic: 5, wyrmling: 5 })) if (tops[id]) assert.equal(tops[id], t, id);
   const take = id => { const m = G.feed.find(x => x.id === id); G.feed = G.feed.filter(x => x !== m); return m; };
-  const imp = take('imp'), spray = take('spray'), druid = take('druid'); // back on 2–4, 2–6, 2–5
+  const imp = take('imp'), spray = take('spray'), druid = take('druid'); // back on 2–5, 2–7, 2–6
   G.row = [imp, spray, druid];
-  const seq = [2.5 / 6, 1.5 / 6]; G.r = () => seq.shift(); // the amber pair rolls 3 + 2 = 5
+  const seq = [2.5 / 6, 2.5 / 6]; G.r = () => seq.shift(); // the amber pair rolls 3 + 3 = 6
   const back = E.rollRow(G, false, 'test');
-  assert.deepEqual(G.lastRow.pair, [3, 2]); assert.equal(G.lastRow.roll, 5);
+  assert.deepEqual(G.lastRow.pair, [3, 3]); assert.equal(G.lastRow.roll, 6);
   assert.deepEqual(back.map(m => m.id).sort(), ['druid', 'spray']); assert.deepEqual(G.row, [imp]);
-  assert.match(CARDS.mobCard(D.mobs.find(m => m.id === 'imp')), /back on 2–4/);
+  assert.match(CARDS.mobCard(D.mobs.find(m => m.id === 'imp')), /back on 2–5/);
 });
 test('Beacon rolls the row when it arrives; the boss arrives with no arrival hits', () => {
   const G = newG({ team: ['ENG', 'SOA'], seed: 4 });

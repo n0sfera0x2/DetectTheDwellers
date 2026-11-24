@@ -11,7 +11,7 @@
 | Mode | Feed | HP | Setup items | Boss |
 | --- | --- | --- | --- | --- |
 | **Quick Shift** | deal 8 from the situation deck | 10 (solo 13, 2 players 11, 3 players 13, 4 players 13) | 1 per player, split however the crew likes (since 2026-11-23); solo 2 (since 2026-11-24) | its core ability only |
-| **Full Shift** | deal 9 from the situation deck; after the 1st, 3rd and 5th fight won, the top story card is the next flip | 13 (solo 18, 2 players 14, 3 players 16, 4 players 18) | the same | its core ability and its **Full Shift** row trigger |
+| **Full Shift** | deal 9 from the situation deck; after the 1st, 3rd and 5th fight won, the top story card is the next flip | 13 (solo 14, 2 players 14, 3 players 16, 4 players 18) | the same | its core ability and its **Full Shift** row trigger |
 
 One boss, drawn at random, goes face down under the feed. A crew draws 2 items (3 or 4 players: 3). The number of alarms in a feed varies: about 4.3 in Quick, 5.6 in Full.
 
@@ -50,9 +50,9 @@ Every alarm's dice come from `sim.js` `numbersFor`: a main number, repeated, wit
 | Living-off-the-Land Scavenger | 3 3 | 3 | Exfil: still up at round end, the crew discards an item | 2–6 | 2 × 4 · **Hardened:** its agent keeps working against the Rogue AI |
 | DNS Beacon Drone | 4 4 | 3 | Beacon: roll the row when it arrives or comes back | 2–6 | 2 × 3 · **Overclock:** its agent’s Overclocked line applies |
 | OAuth Consent Grifter | 1 | 3 | Targeted: only on point takes its damage, doubled | 2–5 | 2 × 5 · **Overclock:** its agent’s Overclocked line applies |
-| Rootkit Implant | 5 6 6 | 4 | Regen: at the end of each round, put back one die it lost | 2–5 | 2 × 1 · **Overclock:** its agent’s Overclocked line applies |
+| Rootkit Implant | 5 6 6 | 4 | Regen: at round end, if no die took one of its dice, put back one it lost | 2–5 | 2 × 1 · **Overclock:** its agent’s Overclocked line applies |
 | Kerberoast Enforcer | 2 3 3 | 4 | Piercing: blocks don’t stop it | 2–5 | 2 × 4 · **Overclock:** its agent’s Overclocked line applies |
-| LSASS Siphon | 1 1 | 4 | Regen: at the end of each round, put back one die it lost | 2–5 | 2 × 5 · **Siphon:** its agent takes no item slot |
+| LSASS Siphon | 1 1 | 4 | Regen: at round end, if no die took one of its dice, put back one it lost | 2–5 | 2 × 5 · **Siphon:** its agent takes no item slot |
 | PsExec Swarm | 3 4 4 | 4 | Beacon: roll the row when it arrives or comes back | 2–5 | 2 × 3 · **Overclock:** its agent’s Overclocked line applies |
 | Golden Ticket Ghost | 4 5 5 | 4 | Exfil: still up at round end, the crew discards an item | 2–4 | 2 × 2 · **Locked:** Exfil can’t take its agent |
 | Exfil Courier | 5 5 | 4 | Escalating: +2 Damage when it comes back | 2–5 | 2 × 2 · **Overclock:** its agent’s Overclocked line applies |
@@ -133,54 +133,56 @@ Conditions are cards kept in front of a player, one of each at most. **Rattled:*
 
 ## Where it stands
 
-Bot sims, `SYS=n6 N=600`, 2026-11-23, every default as shipped: the rules above, with the row one more step wider, HP raised to match, one setup item per player (2026-11-23), 4-player HP 2 lower, and solo with 2 setup items and one more draw after a fight where an alarm came back off the row (2026-11-24). Every game deals its own feed and draws its own boss. Crews are every combination of the four analysts: 4 solos, 6 pairs, 4 threes and, at 4 players, all four. The sim’s report includes 3 players since 2026-11-23. The win, skill gap, dice choice, rounds, comeback and early-loss columns come from `node game/sim.js`. The decision and scare columns come from the review probe on `play()` (same seeds; [history](#the-second-five-component-review-3-player-hp-the-round-in-adventure-view-2026-11-23)). “Any real decision” counts a round with a real dice choice or a reroll on offer.
+Bot sims, `SYS=n6 N=600`, 2026-11-24, every default as shipped: the rules above, with the row one more step wider, HP raised to match, one setup item per player (2026-11-23), 4-player HP 2 lower, solo with 2 setup items and one more draw after a fight where an alarm came back off the row, Full solo at 14 HP and Regen only after a round nothing hit it (2026-11-24). The decision and scare columns were last measured before the 2026-11-24 changes. Every game deals its own feed and draws its own boss. Crews are every combination of the four analysts: 4 solos, 6 pairs, 4 threes and, at 4 players, all four. The sim’s report includes 3 players since 2026-11-23. The win, skill gap, dice choice, rounds, comeback and early-loss columns come from `node game/sim.js`. The decision and scare columns come from the review probe on `play()` (same seeds; [history](#the-second-five-component-review-3-player-hp-the-round-in-adventure-view-2026-11-23)). “Any real decision” counts a round with a real dice choice or a reroll on offer.
 
 | Mode, crew | Win | Skill gap (smart − random) | Rounds with a real dice choice | Any real decision | Rounds | Comebacks | Losses before the boss | Wins with a scare (someone at 5 HP or less: one boss hit from 0) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Quick, 1p | 57% | 22 pts | 43% | 96% | 18.0 | 4.7 | 55% | 31% |
-| Quick, 2p | 53% | 23 pts | 50% | 96% | 12.4 | 2.3 | 51% | 59% |
-| Quick, 3p | 58% | 26 pts | 53% | 96% | 11.6 | 2.4 | 49% | 30% |
-| Quick, 4p | 57% | 23 pts | 45% | 95% | 11.4 | 1.8 | 46% | 29% |
-| Full, 1p | 63% | 22 pts | 43% | 96% | 20.2 | 6.6 | 52% | 14% |
-| Full, 2p | 56% | 25 pts | 50% | 97% | 13.8 | 3.4 | 43% | 30% |
-| Full, 3p | 57% | 25 pts | 51% | 96% | 13.9 | 3.1 | 51% | 22% |
-| Full, 4p | 58% | 22 pts | 46% | 95% | 14.2 | 2.7 | 51% | 15% |
+| Quick, 1p | 59% | 21 pts | 43% | 96% | 17.6 | 4.8 | 48% | 31% (before) |
+| Quick, 2p | 55% | 23 pts | 50% | 96% | 12.4 | 2.4 | 46% | 59% (before) |
+| Quick, 3p | 60% | 27 pts | 52% | 96% | 11.5 | 2.3 | 45% | 30% (before) |
+| Quick, 4p | 60% | 24 pts | 44% | 95% | 11.4 | 1.8 | 39% | 29% (before) |
+| Full, 1p | 59% | 23 pts | 43% | 96% | 18.4 | 6.3 | 46% | 14% (before) |
+| Full, 2p | 59% | 24 pts | 50% | 97% | 13.8 | 3.5 | 40% | 30% (before) |
+| Full, 3p | 58% | 23 pts | 51% | 96% | 13.8 | 3.2 | 49% | 22% (before) |
+| Full, 4p | 59% | 20 pts | 46% | 95% | 14.1 | 2.7 | 49% | 15% (before) |
 
-Solo by analyst: Quick Hunter 52%, Responder 62%, Engineer 54%, Soarcerer 65%; Full 58 / 68 / 57 / 70%. Pairs: Quick 50% (Hunter + Soarcerer) to 58% (Responder + Engineer); Full 50% (Hunter + Soarcerer) to 59% (Responder + Engineer). Baselines per shift: about 3.0–3.6 in Quick and 3.4–4.0 in Full.
+Solo by analyst: Quick Hunter 54%, Responder 66%, Engineer 56%, Soarcerer 69%; Full 51 / 65 / 52 / 63%. Pairs: Quick 53% (Hunter + Soarcerer) to 60% (Responder + Engineer); Full 55% (Hunter + Soarcerer) to 61% (Responder + Engineer). Baselines per shift: about 3.0–3.6 in Quick and 3.4–4.0 in Full.
 
 ### Targets
 
-What the sim should hold after any rule change, and what to turn when it misses. Every target is a starting value (posture B): set on 2026-11-01 from the then-current numbers, and checked against bot sims only. Move them when a table disagrees. Each mode is checked on its own. Now: Quick / Full, 1p / 2p / 3p / 4p, 600 games, 2026-11-23.
+What the sim should hold after any rule change, and what to turn when it misses. Every target is a starting value (posture B): set on 2026-11-01 from the then-current numbers, and checked against bot sims only. Move them when a table disagrees. Each mode is checked on its own. Now: Quick / Full, 1p / 2p / 3p / 4p, 600 games, 2026-11-24 (rows marked “not rerun” are older).
 
 | Measure | Target | Quick | Full | If it misses |
 | --- | --- | --- | --- | --- |
-| Win rate, every crew size | 50–60% | 57 / 53 / 58 / 57% | 63 / 56 / 57 / 58% (1p misses) | the mode's HP by crew size (Full solo at 14 HP: 58%, 1,200 games, 2026-11-24) |
-| Spread across crew sizes | 10 points or less | 5 | 7 | HP by crew size |
-| Solo spread across analysts | 10 points or less | 13 (misses) | 13 (misses) | items and agents (the owner’s call, 2026-11-05), not the analyst’s ability; the per-analyst solo items went with the one-per-player setup |
-| Pairs, lowest to highest | within 15 points | 50–58% (8) | 50–59% (9) | the strongest pair's abilities |
-| Skill gap (smart − random) | 20 points or more | 22 / 23 / 26 / 23 | 22 / 25 / 25 / 22 | more decisions per roll |
-| Rounds with a real decision | 60% or more | 96 / 96 / 96 / 95% | 96 / 97 / 96 / 95% | the reroll; its cost |
-| Rounds with a real dice choice | 40% or more | 43 / 50 / 53 / 45% | 43 / 50 / 51 / 46% | solo: more of your own dice to place |
-| Losses before the boss | 40–60% | 55 / 51 / 49 / 46% | 52 / 43 / 51 / 51% | the boss's Damage; the threat timing (`ESC`) |
-| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 31 / 59 / 30 / 29% (1p, 3–4p miss) | 14 / 30 / 22 / 15% (all miss) | no lever found: see Open |
-| Alarms coming back off the row per shift | solo 3–8; crews 1–4 (since 2026-11-23, the owner asked for more; was solo 3–6, crews 1–3) | 4.7 / 2.3 / 2.4 / 1.8 | 6.6 / 3.4 / 3.1 / 2.7 | the row ranges (`ROWSHIFT`, `ROWADD`); the feed size |
+| Win rate, every crew size | 50–60% | 59 / 55 / 60 / 60% (3–4p at the ceiling) | 59 / 59 / 58 / 59% | the mode's HP by crew size |
+| Spread across crew sizes | 10 points or less | 5 | 1 | HP by crew size |
+| Solo spread across analysts | 10 points or less | 15 (misses) | 14 (misses) | items and agents (the owner’s call, 2026-11-05), not the analyst’s ability; the per-analyst solo items went with the one-per-player setup |
+| Pairs, lowest to highest | within 15 points | 53–60% (7) | 55–61% (6) | the strongest pair's abilities |
+| Skill gap (smart − random) | 20 points or more | 21 / 23 / 27 / 24 | 23 / 24 / 23 / 20 | more decisions per roll |
+| Rounds with a real decision | 60% or more | 96 / 96 / 96 / 95% (not rerun) | 96 / 97 / 96 / 95% (not rerun) | the reroll; its cost |
+| Rounds with a real dice choice | 40% or more | 43 / 50 / 52 / 44% | 43 / 50 / 51 / 46% | solo: more of your own dice to place |
+| Losses before the boss | 40–60% | 48 / 46 / 45 / 39% (4p misses) | 46 / 40 / 49 / 49% | the boss's Damage; the threat timing (`ESC`) |
+| Wins with a scare (someone at 5 HP or less) | 40% or more (since 2026-11-04; was 3 HP or less, 30%) | 31 / 59 / 30 / 29% (not rerun; 1p, 3–4p miss) | 14 / 30 / 22 / 15% (not rerun; all miss) | no lever found: see Open |
+| Alarms coming back off the row per shift | solo 3–8; crews 1–4 (since 2026-11-23, the owner asked for more; was solo 3–6, crews 1–3) | 4.8 / 2.4 / 2.3 / 1.8 | 6.3 / 3.5 / 3.2 / 2.7 | the row ranges (`ROWSHIFT`, `ROWADD`); the feed size |
 | Baselining worth doing | always beats never | +18 / +15 / +35 / +42 | +28 / +27 / +43 / +44 | the Baseline dice and the traits |
 | Every situation choice is real | forced options within 4 points | not rerun since 2026-11-04 | not rerun since 2026-11-04 | the losing option's payoff |
-| The boss is a climax | beating it once there: 75% or less | 74 / 70 / 73 / 72% | 78 / 69 / 73 / 74% (1p misses) | its row marks (`BOSSSTEPS`) |
+| The boss is a climax | beating it once there: 75% or less | 74 / 70 / 73 / 72% (not rerun) | 78 / 69 / 73 / 74% (not rerun; 1p missed before Full solo HP 14) | its row marks (`BOSSSTEPS`) |
 
 “Baselining worth doing” is the bot’s win rate against a bot that never baselines (`BASE=0`), measured on 2026-11-23 with the wider row and the setup before one item per player.
 
 **Open:**
 
 - **Crews of 3–4 win without a scare** (Quick 30 / 29%, Full 22 / 15%, against 40%; lower since the HP raise of 2026-11-23, from 36 / 35% and 26 / 19%). On average the lowest anyone reaches on a won shift is 6–9 HP. Crews either die in a pile-up or cruise. Every boss at 6 or 7 Damage moved Full 4p scares only from 19% to 20% and 23% while wins fell to 49% and 47% (2026-11-23). Full Shift scares have missed at every crew size since 2026-11-05. Not tuned: a table decides whether crew wins feel flat before a rule moves, and the 5 HP line may be the wrong test at 13–17 HP.
-- **Full Shift solo wins 63%**, over the 60% ceiling, since solo starts with 2 items and draws one more after a fight where an alarm came back off the row (2026-11-24). Its boss is too easy once reached (78%) and only 14% of its wins have a scare. Quick solo is in range at 57%. Measured fix, not taken: Full solo HP 18 → 14 (58%; 16 HP gives 62%, 13 gives 56%; 1,200 games). Taking either rule alone also lands in range (below).
-- **4 players** win 57% Quick and 58% Full at 13 and 18 HP (2026-11-24; 66 / 64% at 15 / 20 HP with one item each at setup). Their boss is back under the climax target (72 / 74% once there).
+- **Full Shift solo** was at 63% until its HP went 18 → 14 (2026-11-24); now 59%.
+- **Quick 3 and 4 players sit at the 60% ceiling** since Regen only regrows after a round nothing hit it (2026-11-24; were 58 / 57%). Quick 4 players lose before the boss 39% of the time, just under the 40% floor. Not tuned: within the target.
+- **A first-shift rule that skips baselining can’t be fixed with HP for crews.** Quick with no baselining (`BASE=0`, 600 games, 2026-11-24) wins 44 / 43 / 25 / 18% at 1 / 2 / 3 / 4 players; 6 more HP for everyone gives 52 / 52 / 32 / 24%. Baselining is what carries 3–4 players. The rules-sheet box is on hold for the owner’s call.
+- **4 players** win 60% Quick and 59% Full at 13 and 18 HP (2026-11-24, with the new Regen; 57 / 58% before it; 66 / 64% at 15 / 20 HP with one item each at setup). Their boss is back under the climax target (72 / 74% once there).
 - **Baselining is close to automatic for crews, and that is mostly the bot.** A bot that baselines down to half HP (`BASEHP=0.5`) comes within 0–3 points of always baselining. Rule levers tried on 2026-11-23 did not make it a choice: 2 or 3 HP to baseline (`BASECOST`), one more Baseline die per player past 2 in Quick (`BASEPLUS=1`), and no baselining comebacks (`BASEBACK=0`, which changes nothing: the bot never baselines a comeback).
 - **Doubles are the hardest thing to teach.** Eight rules touch them (magic numbers, pairs, the second-colour die, the Triage die, two dice or a guard, the Responder’s heal, the Engineer’s guard, Rattled). The dice reference card is the longest card in the deck (84 words). Unchanged until a table shows which rule trips people up.
 - **Agents decide wins** (2026-11-23, no agents in the item deck): crews lose 22–36 points, solo 14–17. The owner wants this. Agent callouts show it on the page (2026-11-21).
 - **A deliberate player:** the Soarcerer on point every fight adds 1–4 points to crews. At 4 players it cuts rounds with a real dice choice to 36% Quick and 35% Full, under the 40% target.
 - **4-player deaths are pile-ups.** Of the deaths from 5+ HP in one round, 74–86% happened with 3–6 alarms in play (2026-11-04). A cap of 2 comebacks per row roll is the lever to try, if a table finds it unfair.
-- **Shift length:** solo 18 rounds in Quick and 20 in Full. “About 30 minutes” for Full needs a table to time it.
+- **Shift length:** solo 18 rounds in Quick and 18 in Full (2026-11-24). “About 30 minutes” for Full needs a table to time it.
 - **The other proposed cards** (2026-11-04 history) are simmed but not in the deck.
 - Paper tuck: one tucked alarm per agent. Untested at a table.
 - **The owner's own play (2026-11-23), the first table notes on these rules:** chose not to baseline in some early fights; felt the shift could be lost; doubles were fine; alarms coming back off the row felt like enough, and challenging. One player, so a direction rather than a measurement: it argues against tuning for the bot's low scare rate.
@@ -225,7 +227,7 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `SOANEW`, `SOAPERK`, `SOATUCK` | the Soarcerer: `SOANEW=basedie2` (default since 2026-11-05): on point, two more dice every round while baselining; `basedie` (one more), `both` (one more and the draw), `drawpoint` (each baseline on point draws an item, 2026-11-04), `twinown` (their agents count as two, earlier that day), `wilddbl` (any die a double for baselining, the rule before), `wildbase`, `up1` (a tuck under their agent also overclocks it) and `pair5` were tried; the old 2-die cost (`SOAPERK=auto`) and tuck draw (`SOATUCK=1`) are off |
 | `SOLOQ` | solo setup items by analyst (default since 2026-11-20 `HUN:3,RES:1,ENG:2,SOA:1`, the analyst cards; `SOLOQ=` gives everyone `QSOLO`) |
 | `BASEPLUS` | baselining adds one more die per player past 2 (default since 2026-11-20: `1` in Full Shift, `0` in Quick) |
-| `HPN` | extra starting HP by crew size on top of `HP` (default since 2026-11-24: Quick `1:3,2:1,3:3,4:3`, Full `1:5,2:1,3:3,4:5`; from 2026-11-23, with the wider row, Quick `1:3,2:1,3:3,4:5`, Full `1:5,2:1,3:3,4:7`; earlier on 2026-11-23 Quick `1:1,3:2,4:3`, Full `1:2,3:2,4:4`; on 2026-11-22 Quick `1:1,3:3,4:3`, Full `1:2,3:3,4:4`; from 2026-11-20 Quick `1:1`, Full `1:2,3:1,4:2`; `HPN=` turns it off) |
+| `HPN` | extra starting HP by crew size on top of `HP` (default since 2026-11-24: Quick `1:3,2:1,3:3,4:3`, Full `1:1,2:1,3:3,4:5`; earlier on 2026-11-24 Full `1:5,2:1,3:3,4:5`; from 2026-11-23, with the wider row, Quick `1:3,2:1,3:3,4:5`, Full `1:5,2:1,3:3,4:7`; earlier on 2026-11-23 Quick `1:1,3:2,4:3`, Full `1:2,3:2,4:4`; on 2026-11-22 Quick `1:1,3:3,4:3`, Full `1:2,3:3,4:4`; from 2026-11-20 Quick `1:1`, Full `1:2,3:1,4:2`; `HPN=` turns it off) |
 | `MAGIC` | each analyst doubles on two magic numbers, no 6, and the solo crew die and agent dice never double (`1`, default since 2026-11-20); `0` is the old signature doubles (your number plus a 6) |
 | `MAGICSET` | overrides the magic numbers, e.g. `HUN:4,5;RES:3,5` (set B, a shared 5, was simmed and not taken) |
 | `XROLL` | the crew’s extra threat dice (one per player past 2) are rolled each time an alarm enters play (`1`, default since 2026-11-20); `0` sets them to 6, the rule until then |
@@ -234,6 +236,7 @@ The main env knobs are below. Each history section lists the knobs its pass adde
 | `ROWADD` | at 3–4 players every row roll counts this much lower, so alarms come back on that many more numbers (default `1` since 2026-11-22, issue #8; `ROWADD=0` is the printed ranges at every crew size) |
 | `STARTPER` | setup is one item per player, split as the crew likes (default since 2026-11-23); `STARTPER=0` is the old setup (`QSOLO`, `SOLOAG`, `START34`, `SOLOQ` apply only then) |
 | `SOLOSTART` | solo setup items under `STARTPER` (default `2` since 2026-11-24; `1` before) |
+| `REGEN` | when a Regen alarm puts a die back: `untouched` (default since 2026-11-24) only after a round where nothing took its dice; `any` every round (the old rule) |
 | `SOLOBACK` | solo draws one more item after a won fight where an alarm came back off the row since the last fight ended (default on since 2026-11-24; `SOLOBACK=0` turns it off) |
 | `SOLOSLOTS` | solo item slots (default `6`; 7, 8, 10 and unlimited measured the same on 2026-11-24) |
 | `BASECOST` | proposal (2026-11-23), not taken: on point takes this much to baseline |
@@ -365,11 +368,25 @@ The analysts, alarms, bosses and items are animated pixel sprites (`art/sprites.
 - Heals go one HP at a time onto whoever is lowest.
 - The Isolation Script takes a repeated number first, else the highest.
 - A double counts as two dice showing its number, on one mob or two; its second take is optional.
-- Regen puts back the die lost most recently.
+- Regen puts back the die lost most recently, and only after a round where nothing (a die or an item) took one of its dice.
 - A Containment Agent's "biggest hitter" is whichever single alarm would deal its holder the most that round.
 - Each Enrichment Agent gives its holder one turn a round.
 
 ## History
+
+### Full solo HP 14, Regen only when untouched, a first-shift guide on the page (2026-11-24)
+
+From the eight-principle review. The owner approved three changes and parked a fourth.
+
+- **Full Shift solo starts at 14 HP** (was 18). Solo had gone to 63% with 2 setup items and the comeback draw. Sim `HPN` Full default `1:1,2:1,3:3,4:5`; `engine.js` `hpBy`; the rules sheet’s setup line; the spec.
+- **Regen puts a die back only at the end of a round where nothing took one of its dice** (was every round). The two Regen alarms, Rootkit Implant and LSASS Siphon, were in 50–58% of solo’s fights of 10+ rounds against 15–16% of all fights: a crew that hit them every round but missed the last die could never finish. Now hitting it at all holds it still. Sim `REGEN` (default `untouched`; `any` is the old rule); `engine.js` marks an alarm hit when any die or item takes its dice (undo restores it); the keyword line on both cards and the shift tracker’s Regen note. Measured first in a probe (1,200 solo games): solo shifts with a fight of 10+ rounds went 14 → 10% in Quick and 17 → 12% in Full.
+- **A first-shift guide on the page.** The first time each rule comes up (the deal, on point, threat dice, exact matching, doubles, the reroll, Baseline it, a multi-alarm fight, the row, a comeback, Exfil, the boss, and each alarm keyword), one short line marked *First shift* sits above the instruction line until the step moves on. Each shows once a shift. It is on until a shift has been played to the end, then off; the Menu has a switch for it. Presentation only.
+- **Parked: a “first shift” box on the rules sheet** (play Quick and skip baselining). No HP fixes it for crews: with no baselining, Quick wins 44 / 43 / 25 / 18% at 1–4 players at 10 HP, and 52 / 52 / 32 / 24% at 16 (600 games each). See Open.
+
+| 600 games, 2026-11-24 | Quick 1 / 2 / 3 / 4p | Full 1 / 2 / 3 / 4p |
+| --- | --- | --- |
+| Before (Full solo 18 HP, Regen every round) | 57 / 53 / 58 / 57% | 63 / 56 / 57 / 58% |
+| **Shipped** | **59 / 55 / 60 / 60%** | **59 / 59 / 58 / 59%** |
 
 ### Solo: 2 setup items, and one more draw when an alarm came back (2026-11-24)
 
@@ -1631,7 +1648,7 @@ So the symbols are gone. Every die is a plain pip d6 and reads as its number.
 - **Perks:** Hunter: against a comeback, your dice also match one higher or one lower; comebacks you finish are gone for good. Responder: the same against the highest-Damage mob, boss included. Engineer: every even number is a double. Soarcerer and Fixer unchanged.
 - **Rolling:** one die each, two on point. Solo: two own dice plus the crew die. Each running Triage Agent rolls an agent die.
 - **Agents:** Triage run rolls an agent die; burn: on point rolls 3 more crew dice. Enrichment run: once a round, turn one crew die to any number; burn: every die matches anything this round. Containment run: the highest-Damage mob deals 2 less (min 1); burn: one die off every mob (the boss keeps at least one). Recovery unchanged.
-- **Keywords:** Evasive: only a double can hit it. Regen: at the end of each round, put back one die it lost. Lockjaw: +2 Damage until it has lost two dice; agent dice can't hit it. Escalating, Piercing, Targeted and Beacon unchanged.
+- **Keywords:** Evasive: only a double can hit it. Regen: at round end, if no die took one of its dice, put back one it lost. Lockjaw: +2 Damage until it has lost two dice; agent dice can't hit it. Escalating, Piercing, Targeted and Beacon unchanged.
 - **Row:** the 2d6 amber pair, unchanged tiers.
 - **HP 30** each.
 

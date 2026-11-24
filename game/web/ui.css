@@ -128,6 +128,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 @keyframes lnin{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:none}}
 .status{font-size:1rem;line-height:1.45;color:var(--ink);max-width:70ch}.status b{color:var(--cy);font-weight:700}.status .err{color:#FF9478}.status .lethal{display:block;color:var(--fl);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .status.pad{padding:16px 14px}
+.status .st-tip{display:block;margin-bottom:8px;padding:6px 10px;border-left:3px solid var(--cy);background:rgba(0,0,0,.25);color:var(--ink);font-size:.92rem}.status .st-tip i{font-style:normal;font-weight:700;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cy);margin-right:6px}
 .status .st-li{display:block;margin-top:6px;padding-left:12px;position:relative}.status .st-li::before{content:"";position:absolute;left:0;top:.6em;width:5px;height:5px;background:var(--cy)}
 
 /* A lone mob: one centred pair, the card and beside it the banners and the round in plain words */

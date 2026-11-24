@@ -100,8 +100,8 @@ test('a crew of 3 or 4 rolls its extra threat dice each time an alarm enters pla
   const seen = new Set(); for (let seed = 1; seed <= 60; seed++) { const G = game({ team: ['HUN', 'RES', 'ENG'], seed }); G.deal = []; G.phase = 'flip'; while (G.feed[0] && G.feed[0].sit) G.feed.push(G.feed.shift()); E.flip(G); const m = G.play.find(x => !x.boss); seen.add(m.slots[m.printed]); }
   assert.deepEqual([...seen].sort(), [1, 2, 3, 4, 5, 6]);
 });
-test('starting HP by crew size (2026-11-24): Quick solo 13, 2p 11, 3p 13, 4p 13; Full solo 18, 2p 14, 3p 16, 4p 18', () => {
-  const want = { quick: [13, 11, 13, 13], full: [18, 14, 16, 18] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
+test('starting HP by crew size (2026-11-24): Quick solo 13, 2p 11, 3p 13, 4p 13; Full solo 14 (18 until 2026-11-24), 2p 14, 3p 16, 4p 18', () => {
+  const want = { quick: [13, 11, 13, 13], full: [14, 14, 16, 18] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
   for (const [mode, hps] of Object.entries(want)) hps.forEach((hp, i) => {
     assert.equal(E.startHp(mode, i + 1), hp, `${mode} ${i + 1}p`);
     const G = game({ team: team.slice(0, i + 1), seed: 1, mode, hp: undefined }); /* the helper pins E.HP; this one plays the real start */ assert.equal(G.max, hp); assert.ok(G.hp.every(h => h === hp));
@@ -280,7 +280,7 @@ test('Full Shift: after the 1st, 3rd and 5th fight won, the top story card is th
   const O = fight(['HUN', 'RES'], ['spray'], { dice: [[0, 1], [0, 1]], mode: 'full' }), ol = O.feed.length; win(O, 2); assert.equal(O.feed.length, ol, 'no story card after the 2nd');
   const Q = fight(['HUN', 'RES'], ['spray'], { dice: [[0, 1], [0, 1]] }), ql = Q.feed.length; win(Q, 1); assert.equal(Q.feed.length, ql, 'Quick Shift has no story deck');
 });
-test('Lockjaw +2 until it has lost two dice; Regen puts back the die it lost; Escalating +2 when it comes back (2026-11-19)', () => {
+test('Lockjaw +2 until it has lost two dice; Regen puts back the die it lost only after a round nothing took its dice (2026-11-24); Escalating +2 when it comes back', () => {
   const G = fight(['ENG', 'SOA'], ['boss'], {});
   const bd = CARDS.BOSS_DMG; assert.equal(bd, 5); // every boss hits for 5 since the squeeze (2026-11-03)
   assert.equal(E.dmgOf(G, G.boss), bd + 2); G.boss.off[0] = true; assert.equal(E.dmgOf(G, G.boss), bd + 2);
@@ -288,6 +288,8 @@ test('Lockjaw +2 until it has lost two dice; Regen puts back the die it lost; Es
   const H = fight(['ENG', 'SOA'], ['mimic', 'wyrmling'], { dice: [[1, 5], [1, 6]] }); // SOA 6 is a double
   const mi = setSlots(mob(H, 'mimic'), [5, 5, 6, 6]), p = slotOf(mi, 5);
   E.assign(H, 0, mi.uid, p); E.assign(H, 1, mi.uid, slotOf(mi, 6)); H.hp = [99, 99]; E.endRound(H);
+  assert.equal(offCount(mi), 2, 'dice took its dice this round: nothing goes back'); assert.ok(!H.log.some(l => /regenerates/.test(l.text)));
+  H.row = []; E.roll(H); H.hp = [99, 99]; E.endRound(H); /* a round where no die touches it */
   assert.equal(offCount(mi), 1); assert.equal(mi.off[p], true); assert.deepEqual(E.remaining(mi), [5, 6, 6]); // the 6 it lost last is back; the 5 stays taken
   assert.ok(H.log.some(l => /regenerates: its 6 goes back/.test(l.text)));
   const w = mob(H, 'wyrmling'); assert.equal(E.dmgOf(H, w), 4, 'no per-round climb'); w.back = 1; assert.equal(E.dmgOf(H, w), 6, 'a comeback hits for 2 more');
@@ -1220,4 +1222,16 @@ test('solo draws one more item after a fight where an alarm came back off the ro
   assert.equal(win(['ENG', 'RES'], 1).drawn.length, D.kitPerFight, 'crews are unchanged');
   // Only comebacks since the last fight ended count.
   const G = win(['ENG'], 1); assert.equal(G.backAt, 1);
+});
+test('page: the first-shift guide shows one line the first time a rule comes up, each once a shift; the Menu switch turns it off (2026-11-24)', { skip: !JSDOM && 'jsdom not installed' }, () => {
+  const w = load(3), d = w.document; d.querySelector('[data-a="start"]').click();
+  const tip = () => { const t = d.querySelector('.status .st-tip'); return t ? t.textContent : ''; };
+  assert.match(tip(), /^First shift/); assert.match(tip(), /Items:/); // the deal comes first
+  pageDeal(w); alarmFirst(w); const seen = new Set();
+  d.querySelector('[data-a="flip"]').click(); seen.add(tip()); d.querySelector('[data-a="roll"]').click(); seen.add(tip());
+  assert.ok([...seen].some(t => /exactly/.test(t)), 'the matching rule shows in the first match phase');
+  const UI = w.CDUI.UI; assert.equal(UI.tipSeen.size, new Set(UI.tipSeen).size);
+  const shown = [...UI.tipSeen]; w.CDUI.render(); assert.deepEqual([...UI.tipSeen], shown, 'a re-render shows the same line, not the next one');
+  d.querySelector('[data-a="menu"]').click(); d.querySelector('[data-a="tips"]').click(); d.querySelector('[data-a="menu"]').click();
+  assert.equal(UI.tips, false); assert.equal(tip(), '');
 });

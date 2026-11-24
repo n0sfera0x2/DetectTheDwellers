@@ -255,7 +255,10 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 // HPN: extra starting HP by crew size on top of the mode's HP, e.g. HPN='1:1,4:2' (solo +1, 4 players +2). Default since
 // 2026-11-20 (after two magic numbers each): Quick solo +1; Full solo +2, 3 players +1, 4 players +2. Since 2026-11-22
 // 3–4 players get more, with ROWADD=1: Quick 3–4 players +3; Full 3 players +3, 4 players +4. HPN='' turns it off.
-const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:5,2:1,3:3,4:5' : '1:3,2:1,3:3,4:3')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
+// REGEN (2026-11-24): a Regen alarm puts a die back only at the end of a round where no die took one of its dice.
+// REGEN=any plays the old rule (every round).
+const REGEN = process.env.REGEN || 'untouched';
+const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:1,2:1,3:3,4:5' : '1:3,2:1,3:3,4:3')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
 const XFROM = +(process.env.XFROM || 2);
 // XROLL (default since 2026-11-20): the crew's extra threat dice (one per player past XFROM) are rolled each time the alarm enters play, not set to 6. XROLL=0 is the old set-to-6 rule.
 // PAGERROLL (default since 2026-11-21): Pager Storm’s Mute adds a rolled threat die, not a 6. BASECAP (default 5 since 2026-11-21): Baseline dice show 7 − main, capped so they never land on 6.
@@ -548,7 +551,7 @@ function fight(G, mobs) {
   G.play = []; G.cbJoin = false; G.mimicAs = G.tray.map((x, i) => has(G, i, 'mimica') ? ['triage', 'contain', 'enrich', 'recover', 'honeypot', 'watchlist', 'correl'].find(t => G.tray.some((y, j) => j !== i && y === t)) || null : null); G.rrFight = null; G.engUsed = false; G.resUsed = false; G.patUsed = false; G.soaKeep = (SOAPERK === 'keep' || G.n === 1 && process.env.SOASOLOKEEP === '1') && on(G, 'SOA'); G.soaRoll = G.n === 1 && !SOAAUTO && (process.env.SOASOLOKEEP || 'roll') === 'roll' && on(G, 'SOA');
   G.ticket = TRAITS ? traitN(G, 'ticket') : 0; G.slipK = G.team.map((_, k) => G.tray.reduce((n, _, i) => n + (G.trayK[i] === k ? has(G, i, 'slip') : 0), 0)); G.resArr = false; G.hunEnded = false; G.fightN = mobs.length; mobs.forEach(m => enter(G, m)); let round = 0; // ticket and slip: once a fight
   while (!G.over && G.play.length) {
-    round++; G.round = round; G.stats.rounds++; if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rowRoll(G, true)) enter(G, b); if (G.over) return;
+    round++; G.round = round; G.stats.rounds++; G.play.forEach(m => { m.left0 = m.left; }); if (round > 200) { G.over = true; G.win = false; G.stats.stall = 1; return; } /* a fight nobody can end */ if (G.play.some(m => m.boss)) G.stats.bossR = (G.stats.bossR || 0) + 1; if (round > 1) for (const b of rowRoll(G, true)) enter(G, b); if (G.over) return;
     const boss = G.play.some(m => m.boss);
     const free = G.soaKeep;
     const used = NEWITEMS && process.env.ITEMBOT !== 'old', dl = G.play.reduce((a, m) => a + m.left, 0); // consumables have no other use: spend them
@@ -611,7 +614,7 @@ function fight(G, mobs) {
     // Exfil: each one still up at round end, the crew discards an item (the bot: a consumable first, then a bare agent).
     for (const m of G.play.slice()) if (m.kw === 'detonate' && m.left > 0 && m.up >= 1) { G.team.forEach((_, k) => hurt(G, k, 5 + heat(G))); G.play = G.play.filter(x => x !== m); G.row.push(m); G.stats.detonate = (G.stats.detonate || 0) + 1; if (G.over) return; } // Detonate: still up at the end of its 2nd round (m.up counts rounds ended)
     for (const m of G.play) if (m.kw === 'exfil' && m.left > 0 && G.tray.some((_, x) => !has(G, x, 'locked'))) { let j = G.tray.findIndex(x => !isAgent(x)); if (j < 0) j = G.tray.findIndex((_, x) => !traitsOf(G, x).length); if (j < 0) j = G.tray.findIndex((_, x) => !has(G, x, 'locked')); G.discard.push(dropItem(G, j)); G.stats.exfil = (G.stats.exfil || 0) + 1; }
-    for (const m of G.play) { m.up++; if (m.kw === 'regen' && m.left < m.hits) { m.left++; if (m.need) m.need.push(G.sys === 'n6' ? slotsFor(m, G.n)[m.need.length] : symbolsFor(m.domain, m.hits)[m.need.length]); } }
+    for (const m of G.play) { m.up++; if (m.kw === 'regen' && m.left < m.hits && (REGEN === 'any' || m.left >= (m.left0 ?? m.left))) { m.left++; if (m.need) m.need.push(G.sys === 'n6' ? slotsFor(m, G.n)[m.need.length] : symbolsFor(m.domain, m.hits)[m.need.length]); } }
   }
   // Rattled and Exposed last one fight. The CEO's +2 lasts one visit.
   G.cond.forEach(c => { c.rattled = false; c.exposed = false; }); [...G.row, ...mobs].forEach(m => { m.plus = 0; });

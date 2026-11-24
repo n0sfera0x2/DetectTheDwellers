@@ -243,6 +243,7 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 @keyframes lnin{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:none}}
 .status{font-size:1rem;line-height:1.45;color:var(--ink);max-width:70ch}.status b{color:var(--cy);font-weight:700}.status .err{color:#FF9478}.status .lethal{display:block;color:var(--fl);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .status.pad{padding:16px 14px}
+.status .st-tip{display:block;margin-bottom:8px;padding:6px 10px;border-left:3px solid var(--cy);background:rgba(0,0,0,.25);color:var(--ink);font-size:.92rem}.status .st-tip i{font-style:normal;font-weight:700;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cy);margin-right:6px}
 .status .st-li{display:block;margin-top:6px;padding-left:12px;position:relative}.status .st-li::before{content:"";position:absolute;left:0;top:.6em;width:5px;height:5px;background:var(--cy)}
 
 /* A lone mob: one centred pair, the card and beside it the banners and the round in plain words */
@@ -1006,7 +1007,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   // Exfil (2026-11-03) replaces Evasive on the Scavenger and the Golden Ticket Ghost (the data still says hardened).
   const KW_OVER = { druid: 'exfil', specter: 'exfil' }, abilityOf = m => KW_OVER[m.id] || m.ability;
   const kw = { exfil: 'Exfil', beacon: 'Beacon', noblock: 'Piercing', onpoint: 'Targeted', hardened: 'Evasive', regen: 'Regen', ramp: 'Escalating', lowest: 'Stalker', noagent: 'Fileless' };
-  const kwText = { exfil: 'Still up at round end: the crew discards an item.', beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it. A double of another number takes out one die.', regen: 'At the end of each round, put back one die it lost.', ramp: '+2 Damage when it comes back.', lowest: 'It only hits whoever has the lowest HP.', noagent: 'Containment Agents don’t cut its Damage.' };
+  const kwText = { exfil: 'Still up at round end: the crew discards an item.', beacon: 'Roll the row when it arrives or comes back.', noblock: 'Blocks don’t stop it.', onpoint: 'Only on point takes its damage, doubled.', hardened: 'Only a double can hit it. A double of another number takes out one die.', regen: 'At round end, if no die took one of its dice, put back one it lost.', ramp: '+2 Damage when it comes back.', lowest: 'It only hits whoever has the lowest HP.', noagent: 'Containment Agents don’t cut its Damage.' };
   // A die to roll, not to set: a blank face with a ? (the crew's extra threat dice since 2026-11-20).
   const rolled = px => `<svg class="pip rd" viewBox="0 0 16 16" width="${px}" height="${px}" style="display:inline-block;vertical-align:middle" role="img" aria-label="a rolled die"><rect x=".7" y=".7" width="14.6" height="14.6" rx="3.2" fill="#fff" stroke="${C.ink}" stroke-width="1.1" stroke-dasharray="2.2 1.4"/><text x="8" y="12" text-anchor="middle" font-family="'Chakra Petch',sans-serif" font-weight="700" font-size="11" fill="${C.ink}">?</text></svg>`;
   // The dice strip along the bottom edge: the dice to set under the card, then what a bigger crew adds, spelled out
@@ -1125,7 +1126,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Enrichment')}${box('Enrichment again')}</div>
   <div class="trow"><b>This fight</b>${box('Engineer')}${box('Hold the room: +1 item')}</div>
   <div class="trow"><b>Waiting</b>${box('Change Freeze: skip next row roll')}${box(`Mute: next alarm + ${rolled(12)}`)}${box('Fall back: next alarm to the row')}</div>
-  <div class="note"><b>Regen:</b> at round end it puts back the last die taken.</div></div>`;
+  <div class="note"><b>Regen:</b> at round end, if nothing took its dice that round, it puts back the last die taken.</div></div>`;
   // Situations (2026-10-30; shuffled into the feed with the alarms since 2026-11-02, the boss underneath). Who's on point is
   // picked. The real game's situations (names, scenes and story lines from the data) with rules rewritten for the
   // dice. Each offers a choice, except the event. Same rules as sim.js situation(). [label, rule] per option.
@@ -1271,10 +1272,10 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 3, 2: 1, 3: 3, 4: 3 }, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 5, 2: 1, 3: 3, 4: 5 }, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 3, 2: 1, 3: 3, 4: 3 }, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 1, 2: 1, 3: 3, 4: 5 }, bossRow: true } };
   // Starting HP by crew size (2026-11-20, after two magic numbers each; 3–4 players more since 2026-11-22, with the row's
-  // crew bonus): the mode's HP plus hpBy. Quick: solo 13, 2 players 11, 3 players 13, 4 players 13. Full: solo 18, 2 players 14,
-  // 3 players 16, 4 players 18 (raised 2026-11-23 with the row one step wider; 4 players 2 lower since one item per player). Same as sim.js HPN.
+  // crew bonus): the mode's HP plus hpBy. Quick: solo 13, 2 players 11, 3 players 13, 4 players 13. Full: solo 14, 2 players 14,
+  // 3 players 16, 4 players 18 (raised 2026-11-23 with the row one step wider; 4 players 2 lower since one item per player; solo 18 → 14 on 2026-11-24). Same as sim.js HPN.
   const startHp = (mode, n) => { const M = MODES[mode] || MODES.quick; return M.hp + ((M.hpBy || {})[n] || 0); }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
@@ -1613,7 +1614,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   // ---- A fight round -------------------------------------------------------------------------------------------
   function roll(G) {
     if (G.phase !== 'roll') fail('Not time to roll.');
-    G.round++; G.stats.rounds++;
+    G.round++; G.stats.rounds++; G.play.forEach(m => { m.hit = false; }); // Regen reads this at round end
     if (G.round > 1) { const back = rollRow(G, true, `round ${G.round}`); back.forEach(b => enter(G, b)); if (G.over) return G; }
     const dice = [];
     G.team.forEach((id, k) => {
@@ -1693,8 +1694,8 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   // After a double takes slot p on mob m: the other slots under m its second take may have (it may also go to
   // another mob; this is for taking both at once).
   const moreSlots = (G, d, m, p) => { const o = canHit(G, d, m); return o ? o.slots.filter(i => i !== p) : []; };
-  const snap = G => ({ dice: clone(G.dice), blocks: G.blocks.slice(), enrichLeft: G.enrichLeft, mobs: G.play.map(m => ({ uid: m.uid, off: m.off.slice(), offStack: m.offStack.slice() })) });
-  const take = (m, p) => { m.off[p] = true; m.offStack.push(p); };
+  const snap = G => ({ dice: clone(G.dice), blocks: G.blocks.slice(), enrichLeft: G.enrichLeft, mobs: G.play.map(m => ({ uid: m.uid, off: m.off.slice(), offStack: m.offStack.slice(), hit: !!m.hit })) });
+  const take = (m, p) => { m.off[p] = true; m.offStack.push(p); m.hit = true; };
 
   // A die takes slot p (a die showing its number, or ±1 with a perk, or anything when wild). A double counts as two
   // dice showing its number: call assign again (same mob or another) for its second take, or pass q to take a second
@@ -1814,7 +1815,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   function unassign(G) {
     if (G.phase !== 'assign' || !G.undo.length) fail('Nothing to undo.');
     const s = G.undo.pop(); G.dice = s.dice; G.blocks = s.blocks; G.enrichLeft = s.enrichLeft;
-    for (const x of s.mobs) { const m = findMob(G, x.uid); if (m) { m.off = x.off; m.offStack = x.offStack; } }
+    for (const x of s.mobs) { const m = findMob(G, x.uid); if (m) { m.off = x.off; m.offStack = x.offStack; m.hit = x.hit; } }
     say(G, 'Undid the last move.', 'undo');
     return G;
   }
@@ -1888,8 +1889,8 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
     G.exfil = Math.min(ex, items); if (G.exfil) say(G, `Exfil: ${G.play.filter(m => m.kw === 'exfil' && left(m)).map(m => m.name).join(' and ')} ${ex > 1 ? 'are' : 'is'} still up. The crew discards ${G.exfil === 1 ? 'an item' : G.exfil + ' items'}.`, 'mob');
     for (const m of G.play) {
       m.up++;
-      // Regen: put back the die it lost most recently.
-      if (m.kw === 'regen' && m.offStack.length) { const p = m.offStack.pop(); m.off[p] = false; say(G, `${m.name} regenerates: its ${m.slots[p]} goes back under the card.`, 'mob'); }
+      // Regen: put back the die it lost most recently, only after a round where no die took one of its dice (2026-11-24).
+      if (m.kw === 'regen' && m.offStack.length && !m.hit) { const p = m.offStack.pop(); m.off[p] = false; say(G, `${m.name} regenerates: its ${m.slots[p]} goes back under the card.`, 'mob'); }
     }
     if (G.play.length) { G.phase = G.exfil ? 'exfil' : 'roll'; return G; }
     return afterFight(G);
@@ -2014,7 +2015,11 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   // Adventure view (2026-11-20): the fight as a side-view battle scene. A setting, on for new players; turning it off is remembered.
   const ADV_LS = 'cd-adventure';
   const advOn = () => { try { return localStorage.getItem(ADV_LS) !== '0'; } catch (e) { return true; } };
-  const UI = { G: null, sel: null, more: null, guarding: null, dealTo: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false, keys: keysOn(), adv: advOn(), info: null, opener: null, overlay: null,
+  // First-shift guide (2026-11-24): the first time each rule comes up, one short line explains it. On until a shift
+  // has been played to the end, then off; the Menu switch overrides either way. Presentation only: no rule changes.
+  const TIPS_LS = 'cd-tips', SHIFTS_LS = 'cd-shifts';
+  const tipsOn = () => { try { const t = localStorage.getItem(TIPS_LS); return t != null ? t === '1' : !(+localStorage.getItem(SHIFTS_LS) > 0); } catch (e) { return true; } };
+  const UI = { tips: tipsOn(), tipSeen: new Set(), tip: null, G: null, sel: null, more: null, guarding: null, dealTo: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false, keys: keysOn(), adv: advOn(), info: null, opener: null, overlay: null,
     setup: { team: ['HUN', 'RES'], mode: 'quick' }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
   const nm = id => A.cls(id).name;
   const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -2158,7 +2163,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   // ---- Actions ------------------------------------------------------------------------------------------------
   function startGame() {
     const team = UI.setup.team.slice();
-    UI.G = E.newGame({ team, seed: UI.seed, mode: UI.setup.mode }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.dealTo = null; UI.msg = ''; UI.copied = null; UI.reveal = false; UI.guarding = null;
+    UI.G = E.newGame({ team, seed: UI.seed, mode: UI.setup.mode }); UI.tipSeen = new Set(); UI.tip = null; UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.dealTo = null; UI.msg = ''; UI.copied = null; UI.reveal = false; UI.guarding = null;
     render(); focusKey(UI.G.phase === 'deal' ? 'give0' : 'flip'); say(`Shift started at 22:00. Survive until 06:00. ${UI.G.phase === 'deal' ? `Deal the ${UI.G.deal.length} items, then pick who is on point and flip.` : team.length > 1 ? 'Pick who is on point, then flip.' : 'Flip the first alarm.'}`);
   }
   // After a die is used, select the next unused die that can still do something.
@@ -2211,7 +2216,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   function vMenu() {
     if (UI.drawer !== 'menu') return '';
     return `<aside class="logp menup" role="dialog" aria-modal="true" aria-label="Menu"><div class="lh"><h2 class="sech">Menu</h2><button class="btn s" data-a="menu" data-k="menux">Close <kbd>Esc</kbd></button></div>
-      <h3 class="msec">Settings</h3><ul class="msets">${sw('adv', UI.adv, 'Adventure view', 'Fights play out as a battle scene: your crew and their agents on one side, the alarms on the other.')}${sw('snd', Sound.on, 'Sound', 'Dice, hits and alarms.')}${sw('keys', UI.keys, 'Keyboard shortcuts', 'Single keys for the main actions (R to roll, E to end the round).')}</ul></aside>`;
+      <h3 class="msec">Settings</h3><ul class="msets">${sw('adv', UI.adv, 'Adventure view', 'Fights play out as a battle scene: your crew and their agents on one side, the alarms on the other.')}${sw('snd', Sound.on, 'Sound', 'Dice, hits and alarms.')}${sw('keys', UI.keys, 'Keyboard shortcuts', 'Single keys for the main actions (R to roll, E to end the round).')}${sw('tips', UI.tips, 'First-shift guide', 'One short line the first time each rule comes up. On until you finish a shift.')}</ul></aside>`;
   }
   const dbls = id => A.DOUBLES[id].map(n => PIP(n, 26)).join('');
   const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '9 cards, then the boss. A story card after your 1st, 3rd and 5th win. The boss pulls the row. About 30 minutes.' };
@@ -2389,7 +2394,7 @@ ${roundCtl}</div>`;
         : G.n === 1 ? `<b>Your item slots are full.</b> Discard one to take the ${esc(E.KIT_NAME[c.t])}, or keep it out.`
         : `<b>Deal the ${esc(E.KIT_NAME[c.t])}</b>${G.deal.length > 1 ? ` (${G.deal.length} to deal)` : ''}: it takes one of that player’s item slots. Tap <b>Give to …</b>${G.n <= 4 ? kh('keys 1–' + G.n) : ''}.`;
     }
-    return { hint: `${lethalLine(G)}${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}`, ctl, dice, dieCtl, roundCtl, lethal: lethalLine(G) };
+    return { hint: `${lethalLine(G)}${tipLine(G)}${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}`, ctl, dice, dieCtl, roundCtl, lethal: lethalLine(G) };
   }
   // Dice that can still do something this round: hit a threat die, guard or heal (2026-11-19 critique: End round went
   // through with matchable dice unplaced, so one stray tap could end a shift).
@@ -2465,6 +2470,37 @@ ${roundCtl}</div>`;
   const KWT = m => m.boss ? A.BOSS_TEXT[m.id][0] : A.kwText[A.abilityOf(dataMob(m.id))];
   const artOf = m => m.boss ? A.SCENE.boss(m.id) : A.SCENE.mob(m.id); // the sprite (2026-11-20), else the ink scene
   const fighting = G => G.play.length > 0;
+  // First-shift guide: [id, when it applies, the line]. The first unseen one that applies shows above the instruction
+  // line and stays until the phase, round or fight moves on. Each shows once a shift. Alarm keywords get one each.
+  const TIPS = [
+    ['point', G => G.phase === 'flip' && G.n > 1 && !G.fight, () => '<b>On point</b> rolls two dice in a fight; everyone else rolls one.'],
+    ['sit', G => G.phase === 'sit', () => '<b>A situation:</b> pick one option. No dice, no damage unless it says so.'],
+    ['boss', G => G.bossOut && G.phase === 'roll', () => '<b>The boss:</b> beat it and you survive the night. Agent dice can’t hit it.'],
+    ['fight', G => G.phase === 'roll' && G.round < 1, () => '<b>Threat dice</b> sit under each alarm. Take them all out to beat it; whatever’s left hits back at round end.'],
+    ['multi', G => fighting(G) && G.play.filter(m => E.left(m)).length > 1, () => '<b>Multi-alarm fight:</b> every alarm still up hits back. Beat the biggest hitter first.'],
+    ['base', G => G.phase === 'roll' && G.round < 1 && G.play.some(m => E.canBaseline(G, m)), () => '<b>Baseline</b> is optional and harder: beat the extra dice too and the alarm tucks under an agent for good.'],
+    ['assign', G => G.phase === 'assign', () => '<b>Each die</b> takes out one threat die showing <b>exactly</b> its number.'],
+    ['double', G => G.phase === 'assign' && G.dice.some(x => !x.used && x.dbl), () => '<b>A double</b> (the ×2 die) counts as two dice, or guards you from this round’s hits.'],
+    ['reroll', G => G.phase === 'assign' && G.dice.some(x => E.canReroll(G, x) && !E.targets(G, x.i).hits.length), () => '<b>Stuck die?</b> Once a round you may take 1 damage to reroll one.'],
+    ['row', G => G.phase === 'roll' && G.round >= 1 && G.row.length > 0, () => '<b>The persistence row:</b> beaten alarms wait there. Each new round it rolls, and an alarm whose number comes up comes back into the fight.'],
+    ['back', G => fighting(G) && G.play.some(m => m.back && E.left(m)), () => '<b>An alarm came back off the row.</b> It’s at full strength: beat it again to send it back.'],
+    ['deal', G => G.phase === 'deal', () => '<b>Items:</b> an <b>Agent</b> works for the whole crew every round; a <b>Once</b> item is used once, from your plate.'],
+    ['exfil', G => G.phase === 'exfil', () => '<b>Exfil</b> alarms cost the crew an item each round they’re still up. Beat them fast.'],
+  ];
+  function tipLine(G) {
+    if (!UI.tips || G.over) return '';
+    const key = `${G.fight}.${G.round}.${G.phase}`;
+    if (UI.tip && UI.tip.key === key) return UI.tip.html;
+    UI.tip = null;
+    let html = '';
+    const t = TIPS.find(([id, when]) => !UI.tipSeen.has(id) && when(G));
+    if (t) { UI.tipSeen.add(t[0]); html = t[2](G); }
+    else if (fighting(G)) { const m = G.play.find(x => E.left(x) && !x.boss && !UI.tipSeen.has('kw:' + KWN(x)));
+      if (m) { UI.tipSeen.add('kw:' + KWN(m)); html = `<b>${esc(KWN(m))}</b> (${esc(m.name)}): ${esc(KWT(m))}`; } }
+    if (!html) return '';
+    UI.tip = { key, html: `<span class="st-tip"><i>First shift</i> ${html}</span>` };
+    return UI.tip.html;
+  }
   // Chip names (the full name is on the card the chip opens, and in its label).
   const KSHORT = { triage: 'Triage', contain: 'Containment', enrich: 'Enrichment', recover: 'Recovery', watchlist: 'Watchlist', surge: 'Surge', intel: 'Intel Feed', isolate: 'Isolation', coffee: 'Coffee', freeze: 'Freeze', takedown: 'Takedown' };
   function vBar() {
@@ -2601,6 +2637,7 @@ ${roundCtl}</div>`;
     if (UI.G && UI.adv && fighting(UI.G)) app.innerHTML = vAdventure(h) + vReveal() + vLog() + vMenu() + vGallery() + vEnd(); else
     app.innerHTML = UI.G ? `<div class="tb ph-${UI.G.phase}${E.MODES[UI.G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${vStage()}<div class="tb-foot">${h.dice ? `<div class="tb-dice${UI.G.dice.length > 5 ? ' many' : ''}">${h.dice}</div>` : ''}${vPlates()}<div class="tb-act"><p class="status">${h.hint}</p>${h.ctl}</div></div></div>` + vReveal() + vLog() + vMenu() + vGallery() + vEnd() : vSetup() + vMenu() + vGallery();
     placePop(); showActs();
+    if (UI.G && UI.G.over && UI.shiftDone !== UI.G) { UI.shiftDone = UI.G; try { localStorage.setItem(SHIFTS_LS, String((+localStorage.getItem(SHIFTS_LS) || 0) + 1)); } catch (e) { /* this visit only */ } }
     document.body.classList.toggle('ingame', !!UI.G); document.body.classList.toggle('nokeys', !UI.keys);
     KEEP_SCROLL.forEach((sel, n) => app.querySelectorAll(sel).forEach((e, i) => { if (kept[n][i]) e.scrollTop = kept[n][i]; }));
     // Shortcut hints are visual only: kbd stays out of button names, the key goes in aria-keyshortcuts (while Keys is on).
@@ -2678,6 +2715,7 @@ ${roundCtl}</div>`;
     if (a === 'mode') { UI.setup.mode = b.dataset.m; return render(); }
     if (a === 'snd') { Sound.toggle(); return render(); }
     if (a === 'adv') { UI.adv = !UI.adv; try { localStorage.setItem(ADV_LS, UI.adv ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Adventure view ${UI.adv ? 'on' : 'off'}.`); return render(); }
+    if (a === 'tips') { UI.tips = !UI.tips; UI.tip = null; try { localStorage.setItem(TIPS_LS, UI.tips ? '1' : '0'); } catch (e) { /* this visit only */ } say(`First-shift guide ${UI.tips ? 'on' : 'off'}.`); return render(); }
     if (a === 'keys') { UI.keys = !UI.keys; try { localStorage.setItem(KEYS_LS, UI.keys ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Keyboard shortcuts ${UI.keys ? 'on' : 'off'}.`); return render(); }
     if (a === 'cards') { UI.cards = !UI.cards; return render(); }
     if (a === 'log') { UI.drawer = UI.drawer === 'log' ? null : 'log'; return render(); }

@@ -46,10 +46,10 @@
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 3, 2: 1, 3: 3, 4: 3 }, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 5, 2: 1, 3: 3, 4: 5 }, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 3, 2: 1, 3: 3, 4: 3 }, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 1, 2: 1, 3: 3, 4: 5 }, bossRow: true } };
   // Starting HP by crew size (2026-11-20, after two magic numbers each; 3–4 players more since 2026-11-22, with the row's
-  // crew bonus): the mode's HP plus hpBy. Quick: solo 13, 2 players 11, 3 players 13, 4 players 13. Full: solo 18, 2 players 14,
-  // 3 players 16, 4 players 18 (raised 2026-11-23 with the row one step wider; 4 players 2 lower since one item per player). Same as sim.js HPN.
+  // crew bonus): the mode's HP plus hpBy. Quick: solo 13, 2 players 11, 3 players 13, 4 players 13. Full: solo 14, 2 players 14,
+  // 3 players 16, 4 players 18 (raised 2026-11-23 with the row one step wider; 4 players 2 lower since one item per player; solo 18 → 14 on 2026-11-24). Same as sim.js HPN.
   const startHp = (mode, n) => { const M = MODES[mode] || MODES.quick; return M.hp + ((M.hpBy || {})[n] || 0); }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
@@ -388,7 +388,7 @@
   // ---- A fight round -------------------------------------------------------------------------------------------
   function roll(G) {
     if (G.phase !== 'roll') fail('Not time to roll.');
-    G.round++; G.stats.rounds++;
+    G.round++; G.stats.rounds++; G.play.forEach(m => { m.hit = false; }); // Regen reads this at round end
     if (G.round > 1) { const back = rollRow(G, true, `round ${G.round}`); back.forEach(b => enter(G, b)); if (G.over) return G; }
     const dice = [];
     G.team.forEach((id, k) => {
@@ -468,8 +468,8 @@
   // After a double takes slot p on mob m: the other slots under m its second take may have (it may also go to
   // another mob; this is for taking both at once).
   const moreSlots = (G, d, m, p) => { const o = canHit(G, d, m); return o ? o.slots.filter(i => i !== p) : []; };
-  const snap = G => ({ dice: clone(G.dice), blocks: G.blocks.slice(), enrichLeft: G.enrichLeft, mobs: G.play.map(m => ({ uid: m.uid, off: m.off.slice(), offStack: m.offStack.slice() })) });
-  const take = (m, p) => { m.off[p] = true; m.offStack.push(p); };
+  const snap = G => ({ dice: clone(G.dice), blocks: G.blocks.slice(), enrichLeft: G.enrichLeft, mobs: G.play.map(m => ({ uid: m.uid, off: m.off.slice(), offStack: m.offStack.slice(), hit: !!m.hit })) });
+  const take = (m, p) => { m.off[p] = true; m.offStack.push(p); m.hit = true; };
 
   // A die takes slot p (a die showing its number, or ±1 with a perk, or anything when wild). A double counts as two
   // dice showing its number: call assign again (same mob or another) for its second take, or pass q to take a second
@@ -589,7 +589,7 @@
   function unassign(G) {
     if (G.phase !== 'assign' || !G.undo.length) fail('Nothing to undo.');
     const s = G.undo.pop(); G.dice = s.dice; G.blocks = s.blocks; G.enrichLeft = s.enrichLeft;
-    for (const x of s.mobs) { const m = findMob(G, x.uid); if (m) { m.off = x.off; m.offStack = x.offStack; } }
+    for (const x of s.mobs) { const m = findMob(G, x.uid); if (m) { m.off = x.off; m.offStack = x.offStack; m.hit = x.hit; } }
     say(G, 'Undid the last move.', 'undo');
     return G;
   }
@@ -663,8 +663,8 @@
     G.exfil = Math.min(ex, items); if (G.exfil) say(G, `Exfil: ${G.play.filter(m => m.kw === 'exfil' && left(m)).map(m => m.name).join(' and ')} ${ex > 1 ? 'are' : 'is'} still up. The crew discards ${G.exfil === 1 ? 'an item' : G.exfil + ' items'}.`, 'mob');
     for (const m of G.play) {
       m.up++;
-      // Regen: put back the die it lost most recently.
-      if (m.kw === 'regen' && m.offStack.length) { const p = m.offStack.pop(); m.off[p] = false; say(G, `${m.name} regenerates: its ${m.slots[p]} goes back under the card.`, 'mob'); }
+      // Regen: put back the die it lost most recently, only after a round where no die took one of its dice (2026-11-24).
+      if (m.kw === 'regen' && m.offStack.length && !m.hit) { const p = m.offStack.pop(); m.off[p] = false; say(G, `${m.name} regenerates: its ${m.slots[p]} goes back under the card.`, 'mob'); }
     }
     if (G.play.length) { G.phase = G.exfil ? 'exfil' : 'roll'; return G; }
     return afterFight(G);

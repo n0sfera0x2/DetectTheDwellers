@@ -18,7 +18,11 @@
   // Adventure view (2026-11-20): the fight as a side-view battle scene. A setting, on for new players; turning it off is remembered.
   const ADV_LS = 'cd-adventure';
   const advOn = () => { try { return localStorage.getItem(ADV_LS) !== '0'; } catch (e) { return true; } };
-  const UI = { G: null, sel: null, more: null, guarding: null, dealTo: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false, keys: keysOn(), adv: advOn(), info: null, opener: null, overlay: null,
+  // First-shift guide (2026-11-24): the first time each rule comes up, one short line explains it. On until a shift
+  // has been played to the end, then off; the Menu switch overrides either way. Presentation only: no rule changes.
+  const TIPS_LS = 'cd-tips', SHIFTS_LS = 'cd-shifts';
+  const tipsOn = () => { try { const t = localStorage.getItem(TIPS_LS); return t != null ? t === '1' : !(+localStorage.getItem(SHIFTS_LS) > 0); } catch (e) { return true; } };
+  const UI = { tips: tipsOn(), tipSeen: new Set(), tip: null, G: null, sel: null, more: null, guarding: null, dealTo: null, drawer: null, cards: false, start: 0, end: 0, msg: '', err: false, copied: null, reveal: false, keys: keysOn(), adv: advOn(), info: null, opener: null, overlay: null,
     setup: { team: ['HUN', 'RES'], mode: 'quick' }, seed: qs.has('seed') ? +qs.get('seed') : (Date.now() % 1e9) };
   const nm = id => A.cls(id).name;
   const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -162,7 +166,7 @@
   // ---- Actions ------------------------------------------------------------------------------------------------
   function startGame() {
     const team = UI.setup.team.slice();
-    UI.G = E.newGame({ team, seed: UI.seed, mode: UI.setup.mode }); UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.dealTo = null; UI.msg = ''; UI.copied = null; UI.reveal = false; UI.guarding = null;
+    UI.G = E.newGame({ team, seed: UI.seed, mode: UI.setup.mode }); UI.tipSeen = new Set(); UI.tip = null; UI.start = Date.now(); UI.end = 0; UI.sel = null; UI.more = null; UI.dealTo = null; UI.msg = ''; UI.copied = null; UI.reveal = false; UI.guarding = null;
     render(); focusKey(UI.G.phase === 'deal' ? 'give0' : 'flip'); say(`Shift started at 22:00. Survive until 06:00. ${UI.G.phase === 'deal' ? `Deal the ${UI.G.deal.length} items, then pick who is on point and flip.` : team.length > 1 ? 'Pick who is on point, then flip.' : 'Flip the first alarm.'}`);
   }
   // After a die is used, select the next unused die that can still do something.
@@ -215,7 +219,7 @@
   function vMenu() {
     if (UI.drawer !== 'menu') return '';
     return `<aside class="logp menup" role="dialog" aria-modal="true" aria-label="Menu"><div class="lh"><h2 class="sech">Menu</h2><button class="btn s" data-a="menu" data-k="menux">Close <kbd>Esc</kbd></button></div>
-      <h3 class="msec">Settings</h3><ul class="msets">${sw('adv', UI.adv, 'Adventure view', 'Fights play out as a battle scene: your crew and their agents on one side, the alarms on the other.')}${sw('snd', Sound.on, 'Sound', 'Dice, hits and alarms.')}${sw('keys', UI.keys, 'Keyboard shortcuts', 'Single keys for the main actions (R to roll, E to end the round).')}</ul></aside>`;
+      <h3 class="msec">Settings</h3><ul class="msets">${sw('adv', UI.adv, 'Adventure view', 'Fights play out as a battle scene: your crew and their agents on one side, the alarms on the other.')}${sw('snd', Sound.on, 'Sound', 'Dice, hits and alarms.')}${sw('keys', UI.keys, 'Keyboard shortcuts', 'Single keys for the main actions (R to roll, E to end the round).')}${sw('tips', UI.tips, 'First-shift guide', 'One short line the first time each rule comes up. On until you finish a shift.')}</ul></aside>`;
   }
   const dbls = id => A.DOUBLES[id].map(n => PIP(n, 26)).join('');
   const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '9 cards, then the boss. A story card after your 1st, 3rd and 5th win. The boss pulls the row. About 30 minutes.' };
@@ -393,7 +397,7 @@ ${roundCtl}</div>`;
         : G.n === 1 ? `<b>Your item slots are full.</b> Discard one to take the ${esc(E.KIT_NAME[c.t])}, or keep it out.`
         : `<b>Deal the ${esc(E.KIT_NAME[c.t])}</b>${G.deal.length > 1 ? ` (${G.deal.length} to deal)` : ''}: it takes one of that player’s item slots. Tap <b>Give to …</b>${G.n <= 4 ? kh('keys 1–' + G.n) : ''}.`;
     }
-    return { hint: `${lethalLine(G)}${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}`, ctl, dice, dieCtl, roundCtl, lethal: lethalLine(G) };
+    return { hint: `${lethalLine(G)}${tipLine(G)}${UI.msg ? `<span class="${UI.err ? 'err' : ''}">${esc(UI.msg)}</span> ` : ''}${hint}`, ctl, dice, dieCtl, roundCtl, lethal: lethalLine(G) };
   }
   // Dice that can still do something this round: hit a threat die, guard or heal (2026-11-19 critique: End round went
   // through with matchable dice unplaced, so one stray tap could end a shift).
@@ -469,6 +473,37 @@ ${roundCtl}</div>`;
   const KWT = m => m.boss ? A.BOSS_TEXT[m.id][0] : A.kwText[A.abilityOf(dataMob(m.id))];
   const artOf = m => m.boss ? A.SCENE.boss(m.id) : A.SCENE.mob(m.id); // the sprite (2026-11-20), else the ink scene
   const fighting = G => G.play.length > 0;
+  // First-shift guide: [id, when it applies, the line]. The first unseen one that applies shows above the instruction
+  // line and stays until the phase, round or fight moves on. Each shows once a shift. Alarm keywords get one each.
+  const TIPS = [
+    ['point', G => G.phase === 'flip' && G.n > 1 && !G.fight, () => '<b>On point</b> rolls two dice in a fight; everyone else rolls one.'],
+    ['sit', G => G.phase === 'sit', () => '<b>A situation:</b> pick one option. No dice, no damage unless it says so.'],
+    ['boss', G => G.bossOut && G.phase === 'roll', () => '<b>The boss:</b> beat it and you survive the night. Agent dice can’t hit it.'],
+    ['fight', G => G.phase === 'roll' && G.round < 1, () => '<b>Threat dice</b> sit under each alarm. Take them all out to beat it; whatever’s left hits back at round end.'],
+    ['multi', G => fighting(G) && G.play.filter(m => E.left(m)).length > 1, () => '<b>Multi-alarm fight:</b> every alarm still up hits back. Beat the biggest hitter first.'],
+    ['base', G => G.phase === 'roll' && G.round < 1 && G.play.some(m => E.canBaseline(G, m)), () => '<b>Baseline</b> is optional and harder: beat the extra dice too and the alarm tucks under an agent for good.'],
+    ['assign', G => G.phase === 'assign', () => '<b>Each die</b> takes out one threat die showing <b>exactly</b> its number.'],
+    ['double', G => G.phase === 'assign' && G.dice.some(x => !x.used && x.dbl), () => '<b>A double</b> (the ×2 die) counts as two dice, or guards you from this round’s hits.'],
+    ['reroll', G => G.phase === 'assign' && G.dice.some(x => E.canReroll(G, x) && !E.targets(G, x.i).hits.length), () => '<b>Stuck die?</b> Once a round you may take 1 damage to reroll one.'],
+    ['row', G => G.phase === 'roll' && G.round >= 1 && G.row.length > 0, () => '<b>The persistence row:</b> beaten alarms wait there. Each new round it rolls, and an alarm whose number comes up comes back into the fight.'],
+    ['back', G => fighting(G) && G.play.some(m => m.back && E.left(m)), () => '<b>An alarm came back off the row.</b> It’s at full strength: beat it again to send it back.'],
+    ['deal', G => G.phase === 'deal', () => '<b>Items:</b> an <b>Agent</b> works for the whole crew every round; a <b>Once</b> item is used once, from your plate.'],
+    ['exfil', G => G.phase === 'exfil', () => '<b>Exfil</b> alarms cost the crew an item each round they’re still up. Beat them fast.'],
+  ];
+  function tipLine(G) {
+    if (!UI.tips || G.over) return '';
+    const key = `${G.fight}.${G.round}.${G.phase}`;
+    if (UI.tip && UI.tip.key === key) return UI.tip.html;
+    UI.tip = null;
+    let html = '';
+    const t = TIPS.find(([id, when]) => !UI.tipSeen.has(id) && when(G));
+    if (t) { UI.tipSeen.add(t[0]); html = t[2](G); }
+    else if (fighting(G)) { const m = G.play.find(x => E.left(x) && !x.boss && !UI.tipSeen.has('kw:' + KWN(x)));
+      if (m) { UI.tipSeen.add('kw:' + KWN(m)); html = `<b>${esc(KWN(m))}</b> (${esc(m.name)}): ${esc(KWT(m))}`; } }
+    if (!html) return '';
+    UI.tip = { key, html: `<span class="st-tip"><i>First shift</i> ${html}</span>` };
+    return UI.tip.html;
+  }
   // Chip names (the full name is on the card the chip opens, and in its label).
   const KSHORT = { triage: 'Triage', contain: 'Containment', enrich: 'Enrichment', recover: 'Recovery', watchlist: 'Watchlist', surge: 'Surge', intel: 'Intel Feed', isolate: 'Isolation', coffee: 'Coffee', freeze: 'Freeze', takedown: 'Takedown' };
   function vBar() {
@@ -605,6 +640,7 @@ ${roundCtl}</div>`;
     if (UI.G && UI.adv && fighting(UI.G)) app.innerHTML = vAdventure(h) + vReveal() + vLog() + vMenu() + vGallery() + vEnd(); else
     app.innerHTML = UI.G ? `<div class="tb ph-${UI.G.phase}${E.MODES[UI.G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${vStage()}<div class="tb-foot">${h.dice ? `<div class="tb-dice${UI.G.dice.length > 5 ? ' many' : ''}">${h.dice}</div>` : ''}${vPlates()}<div class="tb-act"><p class="status">${h.hint}</p>${h.ctl}</div></div></div>` + vReveal() + vLog() + vMenu() + vGallery() + vEnd() : vSetup() + vMenu() + vGallery();
     placePop(); showActs();
+    if (UI.G && UI.G.over && UI.shiftDone !== UI.G) { UI.shiftDone = UI.G; try { localStorage.setItem(SHIFTS_LS, String((+localStorage.getItem(SHIFTS_LS) || 0) + 1)); } catch (e) { /* this visit only */ } }
     document.body.classList.toggle('ingame', !!UI.G); document.body.classList.toggle('nokeys', !UI.keys);
     KEEP_SCROLL.forEach((sel, n) => app.querySelectorAll(sel).forEach((e, i) => { if (kept[n][i]) e.scrollTop = kept[n][i]; }));
     // Shortcut hints are visual only: kbd stays out of button names, the key goes in aria-keyshortcuts (while Keys is on).
@@ -682,6 +718,7 @@ ${roundCtl}</div>`;
     if (a === 'mode') { UI.setup.mode = b.dataset.m; return render(); }
     if (a === 'snd') { Sound.toggle(); return render(); }
     if (a === 'adv') { UI.adv = !UI.adv; try { localStorage.setItem(ADV_LS, UI.adv ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Adventure view ${UI.adv ? 'on' : 'off'}.`); return render(); }
+    if (a === 'tips') { UI.tips = !UI.tips; UI.tip = null; try { localStorage.setItem(TIPS_LS, UI.tips ? '1' : '0'); } catch (e) { /* this visit only */ } say(`First-shift guide ${UI.tips ? 'on' : 'off'}.`); return render(); }
     if (a === 'keys') { UI.keys = !UI.keys; try { localStorage.setItem(KEYS_LS, UI.keys ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Keyboard shortcuts ${UI.keys ? 'on' : 'off'}.`); return render(); }
     if (a === 'cards') { UI.cards = !UI.cards; return render(); }
     if (a === 'log') { UI.drawer = UI.drawer === 'log' ? null : 'log'; return render(); }

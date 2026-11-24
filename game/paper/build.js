@@ -18,14 +18,14 @@ const rules = `<section class="page rules">
 <div class="cols">
 <div>
 <h2>You need</h2>
-<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 2 in a second colour (the solo crew die, the Hunter’s extra die), 2 amber dice for the row, and about <b>16 threat dice</b> to set under the alarm cards. Coins for HP, comebacks and the shift tracker.</p>
+<p>This sheet’s cards. <b>Standard d6s in four colours:</b> crew dice (3 per player), 2 in a second colour (the solo crew die, the Hunter’s extra die), 2 amber dice for the row, and about <b>24 threat dice</b> to set under the alarm cards. A pencil and paper for HP and the shift tracker.</p>
 <h2>Setup</h2>
 <ol>
-<li>Pick the shift. Starting HP: <b>Quick</b> 10 (solo 13, 2 players 11, 3 players 13, 4 players 15). <b>Full</b> 13 (solo 18, 2 players 14, 3 players 16, 4 players 20), and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
+<li>Pick the shift. Starting HP: <b>Quick</b> 10 (solo 13, 2 players 11, 3 players 13, 4 players 13). <b>Full</b> 13 (solo 18, 2 players 14, 3 players 16, 4 players 18), and the bosses’ <b>Full Shift</b> lines play. Each player picks an analyst.</li>
 <li>Shuffle the <b>situation deck</b>, the 15 alarms and 9 situations. <b>Quick:</b> deal 8. <b>Full:</b> deal 9. That’s the <b>feed</b>. <b>Full</b> also shuffles the 9 <b>story</b> cards into their own deck.</li>
 <li>Shuffle the 3 bosses and put one face down under the feed. Set the 3 conditions aside.</li>
-<li>Shuffle the 18 items: the item deck. The crew draws 2 (3 or 4 players: 3). Solo: deal until an agent comes up, shuffle the rest back, then draw until you hold your card’s Solo number.</li>
-<li>Set out the shift tracker: coin a box for anything once a round or fight; clear it as that ends.</li>
+<li>Shuffle the 18 items: the item deck. Draw 1 per player (solo 2) and split them however you like.</li>
+<li>Set out the shift tracker: tick a box in pencil for anything once a round or fight; erase it as that ends.</li>
 </ol>
 <h2>Threat dice</h2>
 <p>When an alarm arrives, set threat dice <b>just below its card</b>, turned to the numbers printed along its bottom edge. <b>3 players</b> roll one more and set it as it lands, <b>4 players</b> two, each time it arrives.</p>
@@ -38,7 +38,7 @@ const rules = `<section class="page rules">
 <li>Fight. When the feed is empty, turn the boss up: it arrives with one last row roll. <b>Full Shift:</b> its card says when it pulls the row (comebacks join the fight).</li>
 </ol>
 <h2>The row</h2>
-<p>Roll the <b>2 amber dice</b> and add them. A row alarm comes back if the sum is <b>at most its number</b> (“back on 2–5” comes back on 5 or less; <b>3–4 players:</b> one more, 6 or less). The first time an alarm comes back, put a coin on it. It stays.</p>
+<p>Roll the <b>2 amber dice</b> and add them. A row alarm comes back if the sum is <b>at most its number</b> (“back on 2–5” comes back on 5 or less; <b>3–4 players:</b> one more, 6 or less). The first time an alarm comes back, note it on paper. It stays.</p>
 </div>
 <div>
 <h2>Baseline it</h2>
@@ -53,7 +53,7 @@ const rules = `<section class="page rules">
 <h2>Doubles</h2>
 <p>Your two <b>magic numbers</b> are doubles (a second-colour die never doubles alone, but it can pair). A double <b>counts as two dice showing its number</b>: a Hunter’s ${P(4)} takes two ${P(4)}s, under one alarm or two. <b>Or</b> it guards: you block this round. Never both. <b>Pairs:</b> two of your own dice showing the same number make a double too.</p>
 <h2>After a fight</h2>
-<p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Coin the next <b>fights won</b> box: from 3 won, alarms (not the boss) deal <b>+1</b>. <b>Full:</b> after the 1st, 3rd and 5th, the top story card goes on the feed: flip it next. Draw ${D.kitPerFight} items (${D.kitSolo} solo) and decide who takes each. <b>Agents</b> are passive and work for the whole crew. <b>Consumables</b> are used once. Both kinds take a slot: each player holds 4 items (solo 6). Full? Discard one to take another.</p>
+<p>Beaten alarms go back on the row, <b>every time</b>, unless they were baselined. Tick the next <b>fights won</b> box: from 3 won, alarms (not the boss) deal <b>+1</b>. <b>Full:</b> after the 1st, 3rd and 5th, flip the top story card next. Draw ${D.kitPerFight} items (solo ${D.kitSolo}; ${D.kitSolo + 1} if an alarm came back) and decide who takes each. <b>Agents</b> work for the whole crew. <b>Consumables</b> are used once. Both kinds take a slot: each player holds 4 items (solo 6). Full? Discard one to take another.</p>
 <h2>Situations and conditions</h2>
 <p>Most situations make you choose. On point rolls any grab with spare dice. Conditions are cards you keep in front of you. <b>Rattled</b> and <b>Exposed</b> wear off; <b>Focused</b> waits until you use it. Nobody holds two of the same.</p>
 <h2>Win or lose</h2>

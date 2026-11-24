@@ -141,12 +141,10 @@
     ENG: 'Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead.', // on point, and once a fight (was once a round), since 2026-11-05
     SOA: 'On point, while you baseline an alarm, roll two more dice.', // since 2026-11-05; 2026-11-04 (late): a baseline draws an item; earlier: your agents count as two
   };
-  // Solo setup items by analyst (2026-11-20): one is always an agent. Closes the solo spread with items, not abilities.
-  const SOLO_ITEMS = { HUN: 3, RES: 1, ENG: 2, SOA: 1 };
-  const soloLine = id => `Solo: start with ${SOLO_ITEMS[id]} item${SOLO_ITEMS[id] === 1 ? '' : 's'}.`;
+  // Solo setup items by analyst (2026-11-20 to 2026-11-23) are gone: setup is one item per player, so the card no longer prints a Solo line.
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'on shift')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your magic numbers: doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
-  <div class="note">A double counts as two dice showing its number, or guards you. <b>${soloLine(id)}</b></div><div class="perk">${PERK[id]}</div></div>`;
+  <div class="note">A double counts as two dice showing its number, or guards you.</div><div class="perk">${PERK[id]}</div></div>`;
   // Items (2026-10-31): the deck is items. Agents are passive: each player holds 2 (the Soarcerer 3; solo 4, or 5).
   // Since 2026-11-01 they work for the whole crew, and Triage rolls one more die of its holder's own. Consumables
   // don't take a slot: keep them in hand and use each once. [name, rule, art key].
@@ -179,10 +177,10 @@
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
   <div class="note">Row: 2 amber dice; back if the sum is at most its number (3–4 players: +1).</div></div>`;
 
-  // The shift tracker (2026-11-01): the table's memory for every once-a-round, once-a-fight and waiting effect. Coins
-  // go on its boxes when something is used; a row is cleared when its round or fight ends. Paper only: the web tracks it.
+  // The shift tracker (2026-11-01): the table's memory for every once-a-round, once-a-fight and waiting effect. A pencil
+  // ticks its boxes when something is used; a row is rubbed out when its round or fight ends (no coins since 2026-11-23). Paper only: the web tracks it.
   const box = t => `<span class="bx">${t}</span>`;
-  const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
+  const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'pencil')}<div class="nm">Shift tracker</div>
 
   <div class="trow"><b>Fights won</b>${box('1: story')}${box(2)}${box('3: story, alarms +1')}${box(4)}${box('5: story')}${box(6)}</div>
   <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Enrichment')}${box('Enrichment again')}</div>
@@ -282,6 +280,6 @@
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:17px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, SOA_BASE_DICE, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, SOLO_ITEMS, soloLine, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, SOA_BASE_DICE, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, sprite, artKeys, rolled };
 });

@@ -66,7 +66,6 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .pick .style{font-weight:700;font-size:0.8125rem;line-height:1.2;letter-spacing:.06em;text-transform:uppercase;color:var(--am)}
 .pick .dbl{display:flex;align-items:center;gap:4px}.pick .dbl .phud{color:var(--mut);margin-right:4px;font-size:0.6875rem}
 .pick .pk-perk{font-size:0.875rem;line-height:1.35;color:var(--mut)}
-.pick .pk-solo{display:block;margin-top:3px;font-size:0.8125rem;color:var(--mut);opacity:.85}
 .pick .st{font-weight:700;font-size:0.8125rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);display:inline-flex;gap:4px;align-items:center}
 .pick:hover:not(:disabled){border-color:var(--cy)}
 .pick[aria-pressed="true"]{border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy);background:#0E1A1F}.pick[aria-pressed="true"] .st{color:var(--cy)}

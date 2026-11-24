@@ -20,10 +20,10 @@
   else root.CDEngine = factory(root.CD_DATA, root.CDCards);
 })(typeof self !== 'undefined' ? self : this, function (D, CARDS) {
   const HP = 10; // starting HP (2026-11-01): crew-wide agents, Triage as a crew die, 3-die baselining; ~53% at 1p, 56% at 2p, 55% at 4p in the sim
-  const START_ITEMS = { solo: 2, crew: 2 }; // items drawn at setup: solo 2 (since 2026-11-01), a crew of 2–4 draws 2
-  // Quick Shift solo starts with 1 (2026-11-02: solo ran 12 points ahead of a crew in the short feed).
-  // A crew of 3 or 4 draws one more (2026-11-03: the Responder's doubles no longer guard, and 4p fell 9–15 points behind 2p).
-  const startItems = (n, mode = 'full', id) => n === 1 ? (id && CARDS.SOLO_ITEMS[id]) || (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 1 : 0); // a crew of 3–4 draws 3 (4 for part of 2026-11-04)
+  // One item per player since 2026-11-23 (the owner's call): the crew splits them as it likes. Until then solo drew its card's
+  // Solo number (one an agent) and a crew 2, or 3 with 3–4 players.
+  // Solo starts with 2 since 2026-11-24 (the owner's call; same as sim.js SOLOSTART).
+  const startItems = n => n === 1 ? 2 : n;
   // A rolled pip die. who: the analyst's id (their two magic numbers double), or 'CREW' / 'AGENT' (never a double, since 2026-11-20).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   // A crew die's double after it changes number: its owner's magic numbers (the solo crew die: never), none if rolled Rattled.
@@ -46,10 +46,10 @@
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 3, 2: 1, 3: 3, 4: 5 }, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 5, 2: 1, 3: 3, 4: 7 }, soloItems: 2, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 3, 2: 1, 3: 3, 4: 3 }, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 5, 2: 1, 3: 3, 4: 5 }, bossRow: true } };
   // Starting HP by crew size (2026-11-20, after two magic numbers each; 3–4 players more since 2026-11-22, with the row's
-  // crew bonus): the mode's HP plus hpBy. Quick: solo 13, 2 players 11, 3 players 13, 4 players 15. Full: solo 18, 2 players 14,
-  // 3 players 16, 4 players 20 (raised 2026-11-23 with the row one step wider). Same as sim.js HPN.
+  // crew bonus): the mode's HP plus hpBy. Quick: solo 13, 2 players 11, 3 players 13, 4 players 13. Full: solo 18, 2 players 14,
+  // 3 players 16, 4 players 18 (raised 2026-11-23 with the row one step wider; 4 players 2 lower since one item per player). Same as sim.js HPN.
   const startHp = (mode, n) => { const M = MODES[mode] || MODES.quick; return M.hp + ((M.hpBy || {})[n] || 0); }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
@@ -76,10 +76,8 @@
       point: 0, phase: 'flip', fight: 0, won: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
       over: false, win: false, log: [], rows: [], lastRow: null, drawn: [], beaten: [],
       stats: { rounds: 0, back: 0, flips: 0, guards: 0, used: {}, gone: 0, healed: 0, sits: 0, items: { triage: 0, contain: 0, recover: 0, enrich: 0, surge: 0, intel: 0, isolate: 0, coffee: 0, freeze: 0, twin: 0, ghost: 0, scramble: 0, repair: 0, spotlight: 0, slip: 0, ticket: 0, momentum: 0, persist: 0, siphon: 0, callback: 0 } } };
-    const si = startItems(n, mode, team[0]); // solo: the analyst card's count (2026-11-20)
+    const si = startItems(n); // one per player (2026-11-23); solo 2 (2026-11-24)
     say(G, `Shift starts: ${team.map(nameOf).join(' + ')} at ${hp} HP. ${n === 1 ? 'You draw' : 'The crew draws'} ${si === 1 ? 'an item' : si + ' items'}.`);
-    // Solo (2026-11-05): one of the starting items is an agent. Deal until an agent comes up; the rest go back.
-    if (n === 1) { const j = G.kit.map(c => isAgent(c.t)).lastIndexOf(true); if (j >= 0) G.kit.push(G.kit.splice(j, 1)[0]); }
     draw(G, si); toDeal(G, 'flip');
     return G;
   }
@@ -692,7 +690,11 @@
     G.cond.forEach((c, k) => { if (c.exposed) { c.exposed = false; say(G, `${nameOf(G.team[k])} discards Exposed.`, 'sit'); } });
     const rec = running(G, 'recover'), recUp = G.agents.flat().filter(c => c.t === 'recover' && upgraded(G, c.uid)).length * 2; if (rec) { const got = spread(G, rec * D.recoverHeal + recUp, 'Recovery Agent'); G.stats.items.recover += got; if (got) actAll(G, 'recover', `Recovery +${got} HP`); } // crew-wide since 2026-11-01
     G.agents.forEach((a, k) => a.forEach(c => { const n = traitsOn(G, c.uid, 'Repair') * 2, h = Math.min(n, G.max - G.hp[k]); if (!n) return; G.hp[k] += h; G.stats.healed += h; G.stats.items.repair += h; say(G, `Repair: the ${KIT_NAME[c.t]} heals ${nameOf(G.team[k])} ${h}.`, 'heal'); }));
-    draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + G.bonusDraw); G.bonusDraw = 0; // + Hold the room
+    // Solo draws one more after a fight where an alarm came back off the row since the last fight ended (2026-11-24, the
+    // owner's call; same as sim.js SOLOBACK).
+    const cameBack = G.stats.back > (G.backAt || 0); G.backAt = G.stats.back;
+    const soloBack = G.n === 1 && cameBack ? 1 : 0; if (soloBack) say(G, 'An alarm came back off the row this fight: you draw one more item.', 'kit');
+    draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + soloBack + G.bonusDraw); G.bonusDraw = 0; // + Hold the room
     // With no agent held, a baselined alarm waits for the next agent dealt.
     // Every held agent full (two tucked alarms each): the baselined alarm goes on the row instead, with no trait.
     if (G.tuck.length && heldAgents(G).length && heldAgents(G).every(h => tuckedOn(G, h.c.uid) >= CARDS.TUCK_CAP)) { G.tuck.forEach(a => { G.row.push(a.mob); say(G, `${a.name} is baselined, but every agent already holds two: it goes on the row.`, 'kit'); }); G.tuck = []; }
@@ -763,6 +765,6 @@
     return G;
   }
 
-  return { aug, enter, rollRow, backTop, crewRow, watch, baseline, canBaseline, tuck, HP, startHp, START_ITEMS, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
+  return { aug, enter, rollRow, backTop, crewRow, watch, baseline, canBaseline, tuck, HP, startHp, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
     give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canHeal, heal, threat, heldN, exfil, exfilable, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });

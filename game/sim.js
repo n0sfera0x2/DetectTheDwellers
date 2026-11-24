@@ -255,7 +255,7 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 // HPN: extra starting HP by crew size on top of the mode's HP, e.g. HPN='1:1,4:2' (solo +1, 4 players +2). Default since
 // 2026-11-20 (after two magic numbers each): Quick solo +1; Full solo +2, 3 players +1, 4 players +2. Since 2026-11-22
 // 3–4 players get more, with ROWADD=1: Quick 3–4 players +3; Full 3 players +3, 4 players +4. HPN='' turns it off.
-const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:5,2:1,3:3,4:7' : '1:3,2:1,3:3,4:5')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
+const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:5,2:1,3:3,4:5' : '1:3,2:1,3:3,4:3')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
 const XFROM = +(process.env.XFROM || 2);
 // XROLL (default since 2026-11-20): the crew's extra threat dice (one per player past XFROM) are rolled each time the alarm enters play, not set to 6. XROLL=0 is the old set-to-6 rule.
 // PAGERROLL (default since 2026-11-21): Pager Storm’s Mute adds a rolled threat die, not a 6. BASECAP (default 5 since 2026-11-21): Baseline dice show 7 − main, capped so they never land on 6.
@@ -625,6 +625,10 @@ function fight(G, mobs) {
   if (PERSONAL) G.team.forEach((_, k) => { G.hp[k] = Math.min(G.max, G.hp[k] + activeK(G, 'recover', k) * D.recoverHeal); });
   else spread(G, Math.floor(HEALX * ((aiUp(G) ? 0 : G.tray.filter((x, i) => x === 'recover' && upgraded(G, i)).length * 2) + active(G, 'recover') * (D.recoverHeal + (on(G, 'PAT') && (PATPERK !== 'nudge' || process.env.PATREC === '1') ? D.perks.PAT.recover : 0)))));
   // DRAWMULTI (proposal, 2026-11-23): a won fight draws 1, or 2 when it began against two or more alarms (one came back off the row). 'crew' = crews only, 'all' = solo too.
+  // SOLOBACK (default on since 2026-11-24, the owner's call): solo draws 2 after a won fight where an alarm came back off
+  // the row (since the last fight ended: at the flip, in a round's row roll or from a situation). SOLOBACK=0 turns it off.
+  const cameBack = G.stats.back > (G.backAt || 0); G.backAt = G.stats.back;
+  if (G.n === 1 && process.env.SOLOBACK !== '0' && cameBack) G.bonusDraw = (G.bonusDraw || 0) + 1;
   const multi = G.fightN > 1; if (multi) G.stats.multiWon = (G.stats.multiWon || 0) + 1;
   if (process.env.DRAWMULTI && (process.env.DRAWMULTI === 'all' || G.n > 1)) draw(G, (multi ? 2 : 1) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) : 0) + (G.bonusDraw || 0)); else
   draw(G, (process.env.DRAWS ? (G.n === 1 ? +process.env.DRAWS.split(',')[0] : +process.env.DRAWS.split(',')[1] * (process.env.DRAWPER === '1' ? G.n : 1)) : G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) + (G.n === 1 ? +(process.env.SOASOLODRAW || 0) : 0) : 0) + (G.bonusDraw || 0)); G.bonusDraw = 0;
@@ -707,11 +711,14 @@ function relay(G) {
 }
 function play(sys, team, opt) {
   const G = newGame(sys, team, opt);
-  if (G.n === 1 && NEWITEMS && SOLOAG) { const j = G.kit.map(isAgent).lastIndexOf(true); if (j >= 0) G.kit.push(G.kit.splice(j, 1)[0]); } // SOLOAG: deal until an agent comes up (the rest go back): the solo setup item is an agent
+  const STARTPER = process.env.STARTPER !== '0'; // one item per player at setup (default since 2026-11-23, the owner's call); STARTPER=0 is the old setup
+  if (G.n === 1 && NEWITEMS && SOLOAG && !STARTPER) { const j = G.kit.map(isAgent).lastIndexOf(true); if (j >= 0) G.kit.push(G.kit.splice(j, 1)[0]); } // SOLOAG: deal until an agent comes up (the rest go back): the solo setup item is an agent
+  // STARTPER: setup is one item per player, and the crew splits them as it likes. No Solo number, no 3–4p extra, no guaranteed solo agent.
+  if (STARTPER) draw(G, G.n === 1 ? +(process.env.SOLOSTART ?? 2) : G.n); else { // SOLOSTART: solo setup items (2 since 2026-11-24, the owner's call; 1 before)
   for (const q of G.team.map((_, i) => i).slice(0, G.n === 1 ? D.quickStartSolo : D.quickStartAgent)) draw(G, 1);
   if (G.n >= 3 && NEWITEMS) draw(G, +(process.env.START34 ?? 1)); // START34: extra setup items for a crew of 3 or 4 (1; 2 for part of 2026-11-04; 1 since 2026-11-03)
   const SOLOQ = Object.fromEntries((process.env.SOLOQ ?? 'HUN:3,RES:1,ENG:2,SOA:1').split(',').filter(Boolean).map(x => x.split(':'))); // SOLOQ (default since 2026-11-20): solo setup items by analyst, printed on the analyst card; SOLOQ= (empty) for QSOLO for everyone
-  if (G.n === 1 && NEWITEMS) draw(G, +(SOLOQ[G.team[0]] || process.env.QSOLO || 2) - 1); // QSOLO: items a solo player starts with (2 since 2026-11-05, one an agent; 1 on 2026-11-04)
+  if (G.n === 1 && NEWITEMS) draw(G, +(SOLOQ[G.team[0]] || process.env.QSOLO || 2) - 1); } // QSOLO: items a solo player starts with (2 since 2026-11-05, one an agent; 1 on 2026-11-04)
   const sits = SIT && G.sys === 'n6';
   for (let f = 0; !G.over; f++) {
     G.point = POINT === 'soa' && G.team.includes('SOA') ? G.team.indexOf('SOA') : G.hp.indexOf(Math.max(...G.hp)); // POINT=soa: the Soarcerer always takes point (a deliberate player, 2026-11-19); default: whoever has the most HP
@@ -726,7 +733,7 @@ function play(sys, team, opt) {
     if (!boss && G.badgeSkip) { G.badgeSkip = false; G.stats.ran++; G.row.push(m); continue; } // fell back: on the row, unfought
     relay(G);
     if (BASE && m && !boss && (!m.back || BASEBACK) && BASES.includes(m.id) && (BASEPICK === 'always' || BASEPICK === 'bot' && BASECHEAP && dmgOf(G, m) <= 1 && Math.min(...G.hp) > 3 || BASEPICK === 'bot' && Math.min(...G.hp) >= G.max * +(process.env.BASEHP || 0.8))) {
-      const v = Math.min(BASECAP, 7 - numbersFor(m.id, 1)[0]), nb = (SOAAUTO && on(G, 'SOA') ? 2 : BASEDICE) + (m.back ? 1 : 0) + ((process.env.BASEPLUS ?? (MODE === 'full' ? '1' : '0')) !== '1' ? 0 : Math.max(0, G.n - XFROM)) /* BASEPLUS (Full Shift default since 2026-11-20): baselining adds one more die per player past 2 */; m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; }
+      const v = Math.min(BASECAP, 7 - numbersFor(m.id, 1)[0]), nb = (SOAAUTO && on(G, 'SOA') ? 2 : BASEDICE) + (m.back ? 1 : 0) + ((process.env.BASEPLUS ?? (MODE === 'full' ? '1' : '0')) !== '1' ? 0 : Math.max(0, G.n - XFROM)) /* BASEPLUS (Full Shift default since 2026-11-20): baselining adds one more die per player past 2 */; m.need.push(...Array(nb).fill(v)); m.left += nb; m.baselining = true; G.stats.baselines = (G.stats.baselines || 0) + 1; if (+process.env.BASECOST) { hurt(G, G.point, +process.env.BASECOST); if (G.over) break; } } // BASECOST=n (proposal, 2026-11-23): on point takes n to baseline
     if (m.fewer && m.left > 1) { m.need.pop(); m.left--; m.fewer = 0; } // Forensics read it first: one fewer die
     if (G.addSix) { m.need.push(...Array.from({ length: G.addSix }, () => PAGERROLL ? 1 + d6(G) : 6)); m.left += G.addSix; G.addSix = 0; } // Pager Storm muted: PAGERROLL (default since 2026-11-21) rolls the die, PAGERROLL=0 sets it to 6
     if (G.addMain) { const v = numbersFor(m.id, 1)[0]; m.need.push(...Array(G.addMain).fill(v)); m.left += G.addMain; G.addMain = 0; } // Ghost in the Change Window

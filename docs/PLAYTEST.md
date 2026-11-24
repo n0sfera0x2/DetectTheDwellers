@@ -9,7 +9,7 @@ Every balance number so far comes from a bot. This kit is for the first real tab
 ## What to bring
 
 - The printed deck, from `npm run export:pdf` or a print-shop proof: 72 cards plus the marker sheet.
-- 6 crew d20s in one colour, 3 agent d20s in a second colour, 1 amber row d20, and about 30 coins.
+- 6 crew d20s in one colour, 3 agent d20s in a second colour, 1 amber row d20, and a pencil and paper for HP.
 - One printed copy of the **Core rules** section of `docs/RULES.md`. Only the core rules: no Advanced modules and no Reference.
 - A phone, or a laptop running the web game's **Copy result**, to time the shift.
 - One observer sheet per table (below) and a pen.
@@ -65,7 +65,7 @@ Ask each of these to the whole table and write down what they say, in their word
 2. When did you feel smart? When did you feel the dice decided for you?
 3. Did you ever guard? Why, or why not?
 4. Which agent did you burn, and was it worth it?
-5. Was anything fiddly on the table: coins, markers, the row, the tray?
+5. Was anything fiddly on the table: HP on paper, the shift tracker, the row, the tray?
 6. Would you play again right now? Would you buy it?
 
 ## What to record

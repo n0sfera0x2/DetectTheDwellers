@@ -65,20 +65,12 @@ test('mob dice come from the sim’s numbersFor, two fewer than the d20 hits (th
   const G = E.newGame({ team: ['HUN', 'RES'], seed: 3 });
   assert.equal(G.hp[0], E.MODES.quick.hp + E.MODES.quick.hpBy[2]); assert.equal(E.newGame({ team: ['HUN', 'RES'], seed: 3, mode: 'full' }).hp[0], E.MODES.full.hp + E.MODES.full.hpBy[2]);
   assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, 2); assert.equal(G.kit.length, CARDS.ITEM_DECK.length - 2);
-  // Solo starts with 2 items in both modes, one of them an agent (since 2026-11-05; 1 on 2026-11-04), and deals itself.
+  // Setup is one item per player since 2026-11-23 (the owner's call): the crew splits them as it likes; solo deals itself,
+  // and starts with 2 since 2026-11-24.
+  for (const n of [1, 2, 3, 4]) { const want = n === 1 ? 2 : n; assert.equal(E.startItems(n), want); for (const mode of ['quick', 'full']) { const g = E.newGame({ team: ['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), seed: 3, mode }); assert.equal(g.kit.length, CARDS.ITEM_DECK.length - want, n + 'p ' + mode + ' draws ' + want); } }
   const S = E.newGame({ team: ['ENG'], seed: 3, mode: 'full' }); assert.equal(S.phase, 'flip'); assert.equal(S.agents[0].length + S.hand[0].length, 2);
-  for (let seed = 1; seed <= 40; seed++) for (const mode of ['quick', 'full']) assert.ok(E.newGame({ team: ['HUN'], seed, mode }).agents[0].length >= 1, `solo starts with an agent (seed ${seed}, ${mode})`);
-  assert.equal(S.kit.length, CARDS.ITEM_DECK.length - 2); assert.equal(E.startItems(1, 'quick'), 2); assert.deepEqual(E.START_ITEMS, { solo: 2, crew: 2 });
-  assert.equal(E.startItems(1), 2); assert.equal(E.startItems(1, 'quick'), 2, 'Quick Shift solo starts with 2'); assert.equal(E.startItems(3, 'quick'), 3, 'a crew of 3–4 draws 3'); assert.equal(E.startItems(4), 3);
-  const Q = E.newGame({ team: ['ENG'], seed: 3 }); assert.equal(Q.agents[0].length + Q.hand[0].length, 2); for (const n of [2, 3, 4]) assert.equal(E.startItems(n), n >= 3 ? 3 : 2);
-  for (const team of [['HUN', 'RES', 'ENG'], ['HUN', 'RES', 'ENG', 'SOA']]) assert.equal(E.newGame({ team, seed: 3 }).deal.length, 3, team.length + 'p draws 3');
+  for (const id of ['HUN', 'RES', 'ENG', 'SOA']) assert.doesNotMatch(CARDS.analystCard(id), /Solo: start with/, id + ' card has no Solo line');
   assert.deepEqual([E.MODES.quick.hp, E.MODES.full.hp], [10, 13]);
-  // Solo setup items by analyst (2026-11-20), the count printed on the analyst card: Hunter 3, Engineer 2, Responder and Soarcerer 1.
-  for (const [id, k] of Object.entries({ HUN: 3, ENG: 2, RES: 1, SOA: 1 })) for (const mode of ['quick', 'full']) {
-    assert.equal(E.startItems(1, mode, id), k, id + ' solo starts with ' + k);
-    const g = E.newGame({ team: [id], seed: 5, mode }); assert.equal(g.agents[0].length + g.hand[0].length, k, id + ' solo holds ' + k); assert.ok(g.agents[0].length >= 1, id + ' solo starts with an agent');
-    assert.match(CARDS.analystCard(id), new RegExp('Solo: start with ' + k + ' item'));
-  }
   // Full Shift, 3–4 players (2026-11-20): baselining costs one more die per player past 2; Quick never does.
   for (const [mode, n, k] of [['full', 2, 0], ['full', 3, 1], ['full', 4, 2], ['quick', 4, 0]]) {
     const g = E.newGame({ team: ['HUN', 'RES', 'ENG', 'SOA'].slice(0, n), seed: 3, mode }); assert.equal(E.baseCost(g, { back: 0 }), CARDS.BASE_N + k, mode + ' ' + n + 'p'); assert.equal(E.baseCost(g, { back: 1 }), CARDS.BASE_N + 1 + k);
@@ -108,8 +100,8 @@ test('a crew of 3 or 4 rolls its extra threat dice each time an alarm enters pla
   const seen = new Set(); for (let seed = 1; seed <= 60; seed++) { const G = game({ team: ['HUN', 'RES', 'ENG'], seed }); G.deal = []; G.phase = 'flip'; while (G.feed[0] && G.feed[0].sit) G.feed.push(G.feed.shift()); E.flip(G); const m = G.play.find(x => !x.boss); seen.add(m.slots[m.printed]); }
   assert.deepEqual([...seen].sort(), [1, 2, 3, 4, 5, 6]);
 });
-test('starting HP by crew size (raised 2026-11-23 with the wider row): Quick solo 13, 2p 11, 3p 13, 4p 15; Full solo 18, 2p 14, 3p 16, 4p 20', () => {
-  const want = { quick: [13, 11, 13, 15], full: [18, 14, 16, 20] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
+test('starting HP by crew size (2026-11-24): Quick solo 13, 2p 11, 3p 13, 4p 13; Full solo 18, 2p 14, 3p 16, 4p 18', () => {
+  const want = { quick: [13, 11, 13, 13], full: [18, 14, 16, 18] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
   for (const [mode, hps] of Object.entries(want)) hps.forEach((hp, i) => {
     assert.equal(E.startHp(mode, i + 1), hp, `${mode} ${i + 1}p`);
     const G = game({ team: team.slice(0, i + 1), seed: 1, mode, hp: undefined }); /* the helper pins E.HP; this one plays the real start */ assert.equal(G.max, hp); assert.ok(G.hp.every(h => h === hp));
@@ -1219,4 +1211,13 @@ test('page: two matching dice show a Pair control in the tray and the hint; pair
   assert.ok(!d.querySelector('[data-a="pair"]')); assert.ok(d.querySelector('[data-a="guard"]'), 'a pair can guard');
   click('[data-a="undo"]'); assert.equal(G.dice[own[0]].dbl, false); assert.equal(G.dice[own[1]].used, null); assert.ok(d.querySelector('[data-a="pair"]'));
   d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'p', bubbles: true })); assert.equal(G.dice[own[0]].dbl, true, 'P pairs');
+});
+
+test('solo draws one more item after a fight where an alarm came back off the row (2026-11-24); crews never do', () => {
+  const win = (team, back) => { const G = fight(team, ['imp'], {}); const m = mob(G, 'imp'); m.off = m.off.map(() => true); G.backAt = 0; G.stats.back = back; G.dice = []; E.endRound(G); return G; };
+  assert.equal(win(['ENG'], 0).drawn.length, D.kitSolo, 'no comeback: solo draws its usual');
+  assert.equal(win(['ENG'], 1).drawn.length, D.kitSolo + 1, 'a comeback: one more');
+  assert.equal(win(['ENG', 'RES'], 1).drawn.length, D.kitPerFight, 'crews are unchanged');
+  // Only comebacks since the last fight ended count.
+  const G = win(['ENG'], 1); assert.equal(G.backAt, 1);
 });

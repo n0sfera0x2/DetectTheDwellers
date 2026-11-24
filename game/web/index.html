@@ -181,7 +181,6 @@ kbd{font-family:var(--mono);font-weight:600;font-size:0.6875rem;line-height:1;pa
 .pick .style{font-weight:700;font-size:0.8125rem;line-height:1.2;letter-spacing:.06em;text-transform:uppercase;color:var(--am)}
 .pick .dbl{display:flex;align-items:center;gap:4px}.pick .dbl .phud{color:var(--mut);margin-right:4px;font-size:0.6875rem}
 .pick .pk-perk{font-size:0.875rem;line-height:1.35;color:var(--mut)}
-.pick .pk-solo{display:block;margin-top:3px;font-size:0.8125rem;color:var(--mut);opacity:.85}
 .pick .st{font-weight:700;font-size:0.8125rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);display:inline-flex;gap:4px;align-items:center}
 .pick:hover:not(:disabled){border-color:var(--cy)}
 .pick[aria-pressed="true"]{border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy);background:#0E1A1F}.pick[aria-pressed="true"] .st{color:var(--cy)}
@@ -1081,12 +1080,10 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
     ENG: 'Once a fight, turn one of your dice to its opposite side (1↔6, 2↔5, 3↔4). It counts as one die. On point, a double of yours can guard another analyst instead.', // on point, and once a fight (was once a round), since 2026-11-05
     SOA: 'On point, while you baseline an alarm, roll two more dice.', // since 2026-11-05; 2026-11-04 (late): a baseline draws an item; earlier: your agents count as two
   };
-  // Solo setup items by analyst (2026-11-20): one is always an agent. Closes the solo spread with items, not abilities.
-  const SOLO_ITEMS = { HUN: 3, RES: 1, ENG: 2, SOA: 1 };
-  const soloLine = id => `Solo: start with ${SOLO_ITEMS[id]} item${SOLO_ITEMS[id] === 1 ? '' : 's'}.`;
+  // Solo setup items by analyst (2026-11-20 to 2026-11-23) are gone: setup is one item per player, so the card no longer prints a Solo line.
   const analystCard = id => `<div class="card analyst cy">${tab}${art(SCENE.analyst(id))}${hd('Analyst', 'on shift')}<div class="nm">${cls(id).name}</div>
   <div class="small">Your magic numbers: doubles</div><div class="dbls">${DOUBLES[id].map(n => `<div class="dface">${pip(n, 26)}</div>`).join('')}</div>
-  <div class="note">A double counts as two dice showing its number, or guards you. <b>${soloLine(id)}</b></div><div class="perk">${PERK[id]}</div></div>`;
+  <div class="note">A double counts as two dice showing its number, or guards you.</div><div class="perk">${PERK[id]}</div></div>`;
   // Items (2026-10-31): the deck is items. Agents are passive: each player holds 2 (the Soarcerer 3; solo 4, or 5).
   // Since 2026-11-01 they work for the whole crew, and Triage rolls one more die of its holder's own. Consumables
   // don't take a slot: keep them in hand and use each once. [name, rule, art key].
@@ -1119,10 +1116,10 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   <div class="note"><b>Hits back:</b> Damage − Containment (min 1). Targeted: ×2 to on point. Exposed: +1.</div>
   <div class="note">Row: 2 amber dice; back if the sum is at most its number (3–4 players: +1).</div></div>`;
 
-  // The shift tracker (2026-11-01): the table's memory for every once-a-round, once-a-fight and waiting effect. Coins
-  // go on its boxes when something is used; a row is cleared when its round or fight ends. Paper only: the web tracks it.
+  // The shift tracker (2026-11-01): the table's memory for every once-a-round, once-a-fight and waiting effect. A pencil
+  // ticks its boxes when something is used; a row is rubbed out when its round or fight ends (no coins since 2026-11-23). Paper only: the web tracks it.
   const box = t => `<span class="bx">${t}</span>`;
-  const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'coins')}<div class="nm">Shift tracker</div>
+  const tracker = `<div class="card ref trk am">${tab}${hd('Reference', 'pencil')}<div class="nm">Shift tracker</div>
 
   <div class="trow"><b>Fights won</b>${box('1: story')}${box(2)}${box('3: story, alarms +1')}${box(4)}${box('5: story')}${box(6)}</div>
   <div class="trow"><b>This round: reroll (take 1)</b>${[1, 2, 3, 4].map(n => box('Player ' + n)).join('')}${box('Enrichment')}${box('Enrichment again')}</div>
@@ -1222,7 +1219,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
 .card.cond{justify-content:flex-start;gap:10px;padding-top:20px}.card.cond .nm{font-size:22px}.card.cond.cy .nm{color:${C.cy}}.card:not(.cy).cond .nm{color:${C.ex}}.ctext{font-size:14px;line-height:1.35;font-weight:600}
 .mode{font-size:12px;line-height:1.35;border-top:1px solid ${C.rule};padding-top:4px}.mode.up{margin-top:auto;margin-bottom:17px;font-size:10.5px;color:${C.mut};border-top:1px dashed ${C.cy}}.mode.up b{color:${C.cy}}.mode b{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${C.cy}}.mode:last-child b{color:${C.am}}.small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}`;
 
-  return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, SOA_BASE_DICE, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, SOLO_ITEMS, soloLine, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
+  return { abilityOf, KW_OVER, BOSS_DMG, THREAT_AFTER, THREAT_MAX, PUSH_COST, RES_HEAL, SOA_BASE_DICE, numbersFor, TUCK_CAP, EXTRA_CLASSES, ANALYST_ART, BASE, BASE_N, BOSS_STEPS, BOSS_TEXT, BOSS_IDS, SIT_CORE, SIT_STORY, baseDie, traitName, SIT_IDS, SIT, sitCard, COND_IDS, COND, condCard, C, PAST, DOUBLES, isDouble, rowTop, pip, cls, diceFor, slotsFor, kw, kwText, strip, mobCard, bossCard, PERK, analystCard, AGENT, CONS, ITEM, isAgent, ITEM_DECK, CONS_IDS, agentCard, legend, tracker,
     MOB_IDS, BOSS_ID, ANALYST_IDS, AGENT_IDS, mobs, boss, CARD_CSS, SCENE, sprite, artKeys, rolled };
 });
 </script>
@@ -1248,10 +1245,10 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   else root.CDEngine = factory(root.CD_DATA, root.CDCards);
 })(typeof self !== 'undefined' ? self : this, function (D, CARDS) {
   const HP = 10; // starting HP (2026-11-01): crew-wide agents, Triage as a crew die, 3-die baselining; ~53% at 1p, 56% at 2p, 55% at 4p in the sim
-  const START_ITEMS = { solo: 2, crew: 2 }; // items drawn at setup: solo 2 (since 2026-11-01), a crew of 2–4 draws 2
-  // Quick Shift solo starts with 1 (2026-11-02: solo ran 12 points ahead of a crew in the short feed).
-  // A crew of 3 or 4 draws one more (2026-11-03: the Responder's doubles no longer guard, and 4p fell 9–15 points behind 2p).
-  const startItems = (n, mode = 'full', id) => n === 1 ? (id && CARDS.SOLO_ITEMS[id]) || (MODES[mode] && MODES[mode].soloItems) || START_ITEMS.solo : START_ITEMS.crew + (n >= 3 ? 1 : 0); // a crew of 3–4 draws 3 (4 for part of 2026-11-04)
+  // One item per player since 2026-11-23 (the owner's call): the crew splits them as it likes. Until then solo drew its card's
+  // Solo number (one an agent) and a crew 2, or 3 with 3–4 players.
+  // Solo starts with 2 since 2026-11-24 (the owner's call; same as sim.js SOLOSTART).
+  const startItems = n => n === 1 ? 2 : n;
   // A rolled pip die. who: the analyst's id (their two magic numbers double), or 'CREW' / 'AGENT' (never a double, since 2026-11-20).
   const pipDie = (n, who) => ({ n, dbl: CARDS.isDouble(who, n) });
   // A crew die's double after it changes number: its owner's magic numbers (the solo crew die: never), none if rolled Rattled.
@@ -1274,10 +1271,10 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 3, 2: 1, 3: 3, 4: 5 }, soloItems: 2, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 5, 2: 1, 3: 3, 4: 7 }, soloItems: 2, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 3, 2: 1, 3: 3, 4: 3 }, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 5, 2: 1, 3: 3, 4: 5 }, bossRow: true } };
   // Starting HP by crew size (2026-11-20, after two magic numbers each; 3–4 players more since 2026-11-22, with the row's
-  // crew bonus): the mode's HP plus hpBy. Quick: solo 13, 2 players 11, 3 players 13, 4 players 15. Full: solo 18, 2 players 14,
-  // 3 players 16, 4 players 20 (raised 2026-11-23 with the row one step wider). Same as sim.js HPN.
+  // crew bonus): the mode's HP plus hpBy. Quick: solo 13, 2 players 11, 3 players 13, 4 players 13. Full: solo 18, 2 players 14,
+  // 3 players 16, 4 players 18 (raised 2026-11-23 with the row one step wider; 4 players 2 lower since one item per player). Same as sim.js HPN.
   const startHp = (mode, n) => { const M = MODES[mode] || MODES.quick; return M.hp + ((M.hpBy || {})[n] || 0); }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
@@ -1304,10 +1301,8 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
       point: 0, phase: 'flip', fight: 0, won: 0, round: 0, dice: [], blocks: team.map(() => false), enrichLeft: 0, wildAll: false, roundDmg: {}, undo: [],
       over: false, win: false, log: [], rows: [], lastRow: null, drawn: [], beaten: [],
       stats: { rounds: 0, back: 0, flips: 0, guards: 0, used: {}, gone: 0, healed: 0, sits: 0, items: { triage: 0, contain: 0, recover: 0, enrich: 0, surge: 0, intel: 0, isolate: 0, coffee: 0, freeze: 0, twin: 0, ghost: 0, scramble: 0, repair: 0, spotlight: 0, slip: 0, ticket: 0, momentum: 0, persist: 0, siphon: 0, callback: 0 } } };
-    const si = startItems(n, mode, team[0]); // solo: the analyst card's count (2026-11-20)
+    const si = startItems(n); // one per player (2026-11-23); solo 2 (2026-11-24)
     say(G, `Shift starts: ${team.map(nameOf).join(' + ')} at ${hp} HP. ${n === 1 ? 'You draw' : 'The crew draws'} ${si === 1 ? 'an item' : si + ' items'}.`);
-    // Solo (2026-11-05): one of the starting items is an agent. Deal until an agent comes up; the rest go back.
-    if (n === 1) { const j = G.kit.map(c => isAgent(c.t)).lastIndexOf(true); if (j >= 0) G.kit.push(G.kit.splice(j, 1)[0]); }
     draw(G, si); toDeal(G, 'flip');
     return G;
   }
@@ -1920,7 +1915,11 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
     G.cond.forEach((c, k) => { if (c.exposed) { c.exposed = false; say(G, `${nameOf(G.team[k])} discards Exposed.`, 'sit'); } });
     const rec = running(G, 'recover'), recUp = G.agents.flat().filter(c => c.t === 'recover' && upgraded(G, c.uid)).length * 2; if (rec) { const got = spread(G, rec * D.recoverHeal + recUp, 'Recovery Agent'); G.stats.items.recover += got; if (got) actAll(G, 'recover', `Recovery +${got} HP`); } // crew-wide since 2026-11-01
     G.agents.forEach((a, k) => a.forEach(c => { const n = traitsOn(G, c.uid, 'Repair') * 2, h = Math.min(n, G.max - G.hp[k]); if (!n) return; G.hp[k] += h; G.stats.healed += h; G.stats.items.repair += h; say(G, `Repair: the ${KIT_NAME[c.t]} heals ${nameOf(G.team[k])} ${h}.`, 'heal'); }));
-    draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + G.bonusDraw); G.bonusDraw = 0; // + Hold the room
+    // Solo draws one more after a fight where an alarm came back off the row since the last fight ended (2026-11-24, the
+    // owner's call; same as sim.js SOLOBACK).
+    const cameBack = G.stats.back > (G.backAt || 0); G.backAt = G.stats.back;
+    const soloBack = G.n === 1 && cameBack ? 1 : 0; if (soloBack) say(G, 'An alarm came back off the row this fight: you draw one more item.', 'kit');
+    draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + soloBack + G.bonusDraw); G.bonusDraw = 0; // + Hold the room
     // With no agent held, a baselined alarm waits for the next agent dealt.
     // Every held agent full (two tucked alarms each): the baselined alarm goes on the row instead, with no trait.
     if (G.tuck.length && heldAgents(G).length && heldAgents(G).every(h => tuckedOn(G, h.c.uid) >= CARDS.TUCK_CAP)) { G.tuck.forEach(a => { G.row.push(a.mob); say(G, `${a.name} is baselined, but every agent already holds two: it goes on the row.`, 'kit'); }); G.tuck = []; }
@@ -1991,7 +1990,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
     return G;
   }
 
-  return { aug, enter, rollRow, backTop, crewRow, watch, baseline, canBaseline, tuck, HP, startHp, START_ITEMS, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
+  return { aug, enter, rollRow, backTop, crewRow, watch, baseline, canBaseline, tuck, HP, startHp, startItems, pair, pairs, canPair, guardable, engGuard, soloKeep, KIT_NAME, SIT_OPTS, MODES, aiUp, traitCount, traitHolders, upgraded, tuckedOn, baseCost, pipDie, rng, shuffle, newGame, setPoint, flip, sitDue, alarmsLeft, weight, resolveSit, focus, engTurn, canFocus, canEng, roll, assign, guard, enrichTurn, unassign, endRound,
     give, dealFull, slotsOf, heldAgents, use, canUse, USE_PHASES, targets, canHit, canGuard, canReroll, reroll, canHeal, heal, threat, heldN, exfil, exfilable, takesLeft, moreSlots, containPick, incoming, dmgOf, left, remaining, running, nameOf, faceText, dieOwner, rollRow };
 });
 </script>
@@ -2220,7 +2219,7 @@ window.CD_SPRITES = ["ENG","HUN","RES","SOA","ai","apt","back","banshee","bat","
     const team = UI.setup.team, n = team.length;
     const picks = A.ANALYST_IDS.map(id => { const on = team.includes(id);
       return `<button type="button" class="pick" data-a="pick" data-id="${id}" data-k="pick${id}" aria-pressed="${on}" ${!on && n >= 4 ? 'disabled' : ''}><span class="art">${A.sprite(id) || crop(ART[id], THUMB[id])}</span>
-        <span class="pk-t"><span class="pk-h"><span class="nm">${esc(nm(id))}</span><span class="style">${esc(STYLE[id])}</span></span><span class="dbl"><span class="phud">Magic numbers</span>${dbls(id)}</span><span class="pk-perk">${esc(A.PERK[id])} <span class="pk-solo">${esc(A.soloLine(id))}</span></span></span>
+        <span class="pk-t"><span class="pk-h"><span class="nm">${esc(nm(id))}</span><span class="style">${esc(STYLE[id])}</span></span><span class="dbl"><span class="phud">Magic numbers</span>${dbls(id)}</span><span class="pk-perk">${esc(A.PERK[id])}</span></span>
         <span class="st">${on ? ICON.check + 'In' : 'Add'}</span></button>`; }).join('');
     return `<div class="wrap"><div class="setup-top">${menuBtn()}</div><div class="intro-grid">
       <section class="hero"><span class="art">${A.sprite('hero') || slice(ART.hero)}</span><p class="bd-cap">A <b>Binary Defense</b> Adventure</p><h1 class="logo">Detect the Dwellers</h1><p class="meta c">Co-op · 1–4 players · one night in the SOC</p>

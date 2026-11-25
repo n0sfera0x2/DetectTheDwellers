@@ -1,5 +1,5 @@
 # Publishes the d6 chapter dice playtest to GitHub Pages: the playable page (one self-contained file) and the
-# print-and-play PDF. Both are built locally and committed; this only copies them into the site.
+# print-and-play PDF, plus the music the page loads (audio/music/, 2026-11-25; the sound effects are inlined). Page and PDF are built locally and committed; this only copies them into the site.
 name: Playtest site
 on:
   push:
@@ -7,6 +7,7 @@ on:
     paths:
       - game/web/index.html
       - game/paper/chapter-dice-paper.pdf
+      - game/audio/music/**
       - .github/workflows/pages.yml
   workflow_dispatch:
 permissions:
@@ -29,6 +30,8 @@ jobs:
           mkdir -p _site
           cp game/web/index.html _site/index.html
           cp game/paper/chapter-dice-paper.pdf _site/detect-the-dwellers-print-and-play.pdf
+          mkdir -p _site/audio/music
+          cp game/audio/music/*.mp3 _site/audio/music/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1235,3 +1235,25 @@ test('page: the first-shift guide shows one line the first time a rule comes up,
   d.querySelector('[data-a="menu"]').click(); d.querySelector('[data-a="tips"]').click(); d.querySelector('[data-a="menu"]').click();
   assert.equal(UI.tips, false); assert.equal(tip(), '');
 });
+
+// ---- Audio (2026-11-25): every sound effect that exists is inlined; every music file is named for the page ----------
+test('the page carries every generated sound effect and names every music track', () => {
+  const AP = require('../audio/prompts.json'), AUD = path.join(__dirname, '../audio'), page = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  const grab = k => JSON.parse(page.match(new RegExp('window\\.' + k + ' = (\\{.*\\});'))[1]);
+  const sfx = grab('CD_SFX'), music = grab('CD_MUSIC');
+  for (const id of Object.keys(AP.sfx)) if (fs.existsSync(path.join(AUD, 'sfx', id + '.mp3'))) assert.match(sfx[id] || '', /^data:audio\/mpeg;base64,/, 'inlined: ' + id);
+  for (const id of Object.keys(AP.music)) assert.equal(music.ids.includes(id), fs.existsSync(path.join(AUD, 'music', id + '.mp3')), 'music listed: ' + id);
+  assert.equal(music.loop.shift_won, false); assert.equal(music.loop.fight, true);
+});
+
+test('the menu has its own Music switch, separate from sound effects', () => {
+  if (!JSDOM) return;
+  const w = load(5), d = w.document;
+  d.querySelector('[data-a="menu"]').click();
+  const mus = () => d.querySelector('[data-a="mus"]'), snd = () => d.querySelector('.msets [data-a="snd"]');
+  assert.ok(mus() && snd(), 'both switches in Settings');
+  assert.equal(mus().getAttribute('aria-checked'), 'true'); mus().click();
+  assert.equal(mus().getAttribute('aria-checked'), 'false', 'music off');
+  assert.equal(snd().getAttribute('aria-checked'), 'true', 'sound effects untouched');
+  assert.equal(w.CDUI.render(), undefined); assert.equal(mus().getAttribute('aria-checked'), 'false', 'still off after a render');
+});

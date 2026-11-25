@@ -40,6 +40,11 @@ Object.entries(art).forEach(([k, v]) => { if (!v) throw new Error('missing art: 
 for (const k of Object.keys(art)) { const id = k.startsWith('boss_') ? k.slice(5) : k; if (SPR.IDS.includes(id) || /^(kit_|cons_)/.test(k) || k === 'win') delete art[k]; }
 // numbersFor, lifted from the sim so the page's mob dice are the sim's and the paper's.
 const sim = read('../sim.js'), nf = sim.match(/^function numbersFor\([\s\S]*?\n}\n/m)[0];
+// The audio (2026-11-25, ElevenLabs, game/audio): every sound effect inlined as an MP3 data URL; the music stays in
+// files (audio/music/<id>.mp3 next to the published page, ../audio/music/ in the repo) and the page loads it by name.
+const AUD = path.join(__dirname, '../audio'), AP = require('../audio/prompts.json');
+const sfx = {}; for (const id of Object.keys(AP.sfx)) { const f = path.join(AUD, 'sfx', id + '.mp3'); if (fs.existsSync(f)) sfx[id] = 'data:audio/mpeg;base64,' + fs.readFileSync(f).toString('base64'); }
+const music = { ids: Object.keys(AP.music).filter(id => fs.existsSync(path.join(AUD, 'music', id + '.mp3'))), loop: Object.fromEntries(Object.entries(AP.music).map(([id, m]) => [id, !!m.loop])) };
 const safe = s => s.replace(/<\/script/gi, '<\\/script');
 
 const html = `<!doctype html>
@@ -62,7 +67,9 @@ ${ADV_BG}</style>
 <script>window.CD_DATA = ${safe(JSON.stringify(data))};
 ${nf}window.CD_NUMBERS = numbersFor;
 window.CD_ART = ${safe(JSON.stringify(art))};
-window.CD_SPRITES = ${JSON.stringify(SPR.IDS)};</script>
+window.CD_SPRITES = ${JSON.stringify(SPR.IDS)};
+window.CD_SFX = ${JSON.stringify(sfx)};
+window.CD_MUSIC = ${JSON.stringify(music)};</script>
 <script>${safe(read('../art/die.js'))}</script>
 <script>${safe(read('../cards.js'))}</script>
 <script>${safe(read('engine.js'))}</script>

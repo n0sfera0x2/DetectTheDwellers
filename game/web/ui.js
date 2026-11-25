@@ -53,10 +53,13 @@
   }
   const clockNow = () => UI.G.bossOut ? BOSS_TIME : clockAt(flipped(UI.G), UI.G.feedTotal);
 
-  // ---- Sound (as ui/ui.js): synthesised Web Audio stings, no files. Nothing starts before a gesture; no-op in jsdom ----
-  const SND_LS = 'dwellers-chapter-sound-v1';
+  // ---- Sound: the ElevenLabs clips (2026-11-25, game/audio) with the synthesised Web Audio stings as the fallback. ----
+  // Sound effects are inlined (window.CD_SFX, id -> MP3 data URL); music is loaded from MP3 files next to the page
+  // (window.CD_MUSIC). Nothing starts before a gesture; no-op in jsdom.
+  const SND_LS = 'dwellers-chapter-sound-v1', MUS_LS = 'dwellers-chapter-music-v1';
   const Sound = (() => {
     let on = true; try { on = localStorage.getItem(SND_LS) !== '0'; } catch (e) { /* private mode: on for this visit */ }
+    let mon = true; try { mon = localStorage.getItem(MUS_LS) !== '0'; } catch (e) { /* private mode: on for this visit */ } // the Music switch (2026-11-25)
     let ctx = null, master = null, sfx = null;
     const AC = () => { try { return window.AudioContext || window.webkitAudioContext || null; } catch (e) { return null; } };
     function ensure() {
@@ -84,10 +87,64 @@
       win: t => { [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * .16, 1.6 - i * .2, { g: .22, a: .04 })); tone(261.6, t, 2.2, { type: 'triangle', g: .14, a: .5 }); },
       loss: t => { [392, 311.1, 261.6].forEach((f, i) => tone(f, t + i * .32, .6, { type: 'triangle', g: .26 })); tone(880, t + 1.1, 1.2, { g: .07, a: .02 }); },
     };
-    function play(name, delay = 0) { if (!on || !ensure() || !STING[name]) return; try { if (ctx.state === 'suspended') ctx.resume(); STING[name](ctx.currentTime + .01 + delay / 1000); } catch (e) { /* audio is best-effort */ } }
-    function unlock() { if (!on || !ensure()) return; try { if (ctx.state === 'suspended') ctx.resume(); } catch (e) { /* best-effort */ } }
-    function toggle() { on = !on; try { localStorage.setItem(SND_LS, on ? '1' : '0'); } catch (e) { /* this visit only */ } if (on) unlock(); if (ctx) try { master.gain.setTargetAtTime(on ? 1 : 0, ctx.currentTime, .05); } catch (e) { /* best-effort */ } return on; }
-    return { play, unlock, toggle, get on() { return on; } };
+    // A sting's clip: the synth name maps to its prompts.json id; any other name is a clip id (mailer_arrive, wyrm_down).
+    const CLIP = { roll: 'dice_roll', hit: 'damage', double: 'die_double', guard: 'guard', down: 'knockout', comeback: 'comeback', boss: 'boss_reveal', win: 'shift_won', loss: 'shift_lost' };
+    const SFX = window.CD_SFX || {}, bufs = {};
+    let clipGain = null;
+    function decode(id) {
+      if (!bufs[id]) bufs[id] = new Promise((ok, no) => { try { const b = atob(SFX[id].slice(SFX[id].indexOf(',') + 1)), u = new Uint8Array(b.length);
+        for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); ctx.decodeAudioData(u.buffer, ok, no); } catch (e) { no(e); } });
+      return bufs[id];
+    }
+    function clip(id, delay) {
+      if (!clipGain) { clipGain = ctx.createGain(); clipGain.gain.value = .7; clipGain.connect(master); }
+      const at = ctx.currentTime + delay / 1000;
+      decode(id).then(b => { const s = ctx.createBufferSource(); s.buffer = b; s.connect(clipGain); s.start(Math.max(at, ctx.currentTime)); }).catch(() => { /* a bad clip stays silent */ });
+    }
+    function play(name, delay = 0) {
+      const id = CLIP[name] || name; if (!on || !ensure() || !(SFX[id] || STING[name])) return;
+      try { if (ctx.state === 'suspended') ctx.resume(); if (SFX[id]) clip(id, delay); else STING[name](ctx.currentTime + .01 + delay / 1000); } catch (e) { /* audio is best-effort */ }
+    }
+    // Music: one track per scene (title, deal, feed, situation, story, fight, fight_multi, boss_<id>, shift_won/lost).
+    // A track is tried next to the page (audio/music/, the published site) and then at ../audio/music/ (the repo).
+    const MUS = window.CD_MUSIC || { ids: [], loop: {} }, MUS_VOL = .35, tracks = {};
+    const canMusic = () => typeof Audio !== 'undefined' && !/jsdom/i.test((navigator && navigator.userAgent) || '');
+    let scene = null, cur = null, heard = false;
+    function track(id) {
+      if (tracks[id]) return tracks[id];
+      const a = new Audio(), bases = ['audio/music/', '../audio/music/']; let n = 0;
+      a.preload = 'auto'; a.loop = !!MUS.loop[id]; a.volume = 0;
+      a.addEventListener('error', () => { if (++n < bases.length) { a.src = bases[n] + id + '.mp3'; if (cur === a && mon && heard) a.play().catch(() => {}); } });
+      a.src = bases[0] + id + '.mp3';
+      return (tracks[id] = a);
+    }
+    function fade(a, to, ms, done) {
+      clearInterval(a._fade); const from = a.volume, t0 = Date.now();
+      a._fade = setInterval(() => { const k = Math.min(1, (Date.now() - t0) / ms); a.volume = from + (to - from) * k; if (k >= 1) { clearInterval(a._fade); if (done) done(); } }, 50);
+    }
+    function music(id) {
+      if (!canMusic() || !MUS.ids.includes(id)) id = null;
+      if (id === scene) return; scene = id;
+      const old = cur; cur = id ? track(id) : null;
+      if (old && old !== cur) fade(old, 0, 900, () => { if (old !== cur) old.pause(); });
+      if (cur && mon && heard) { if (!MUS.loop[id]) cur.currentTime = 0; cur.play().catch(() => {}); fade(cur, MUS_VOL, 900); }
+    }
+    function unlock() {
+      if (!heard && cur && mon) { cur.play().catch(() => {}); fade(cur, MUS_VOL, 900); } heard = true;
+      if (!on || !ensure()) return; try { if (ctx.state === 'suspended') ctx.resume(); } catch (e) { /* best-effort */ }
+      Object.keys(SFX).forEach(decode);
+    }
+    function toggle() {
+      on = !on; try { localStorage.setItem(SND_LS, on ? '1' : '0'); } catch (e) { /* this visit only */ } if (on) unlock();
+      if (ctx) try { master.gain.setTargetAtTime(on ? 1 : 0, ctx.currentTime, .05); } catch (e) { /* best-effort */ }
+      return on;
+    }
+    function toggleMusic() {
+      mon = !mon; try { localStorage.setItem(MUS_LS, mon ? '1' : '0'); } catch (e) { /* this visit only */ }
+      if (cur) { if (mon) { cur.play().catch(() => {}); fade(cur, MUS_VOL, 400); } else { const a = cur; fade(a, 0, 300, () => { if (!mon) a.pause(); }); } }
+      return mon;
+    }
+    return { play, music, unlock, toggle, toggleMusic, get on() { return on; }, get musicOn() { return mon; } };
   })();
   ['pointerdown', 'keydown'].forEach(t => document.addEventListener(t, () => Sound.unlock(), { capture: true }));
   const say = t => { if (!live || !t) return; live.textContent = ''; setTimeout(() => { live.textContent = t; }, 30); };
@@ -97,23 +154,32 @@
   let FX = null;
   const offKeys = G => new Set([...G.play, ...G.row].flatMap(m => m.off.map((o, p) => o ? m.uid + '-' + p : null)).filter(Boolean));
   function snap(G) { return G ? { hp: G.hp.slice(), inPlay: new Set(G.play.map(m => m.uid + ':' + m.back)), down: new Set(G.play.filter(m => !E.left(m)).map(m => m.uid)),
-    off: offKeys(G), rows: G.rows.length, phase: G.phase, round: G.round, fight: G.fight, dice: G.dice.length, bossOut: G.bossOut, over: G.over, guards: G.dice.filter(d => d.used === 'guard').length } : null; }
+    off: offKeys(G), rows: G.rows.length, phase: G.phase, round: G.round, fight: G.fight, dice: G.dice.length, bossOut: G.bossOut, over: G.over, guards: G.dice.filter(d => d.used === 'guard').length, rowN: G.row.length, tuck: (G.tuck || []).length, log: G.log.length, acts: G.actSeq || 0 } : null; }
   function diff(b, G) {
-    const fx = { enter: new Set(), ko: new Set(), struck: new Set(), hurt: new Set(), row: null, roll: false, boss: false, over: false, guard: false, hpBefore: b ? b.hp : [] };
+    const fx = { enter: new Set(), ko: new Set(), struck: new Set(), hurt: new Set(), heal: false, row: null, rowAdd: false, roll: false, boss: false, over: false, guard: false, flip: false, sit: false, base: false, strike: null, logs: [], acts: [], hpBefore: b ? b.hp : [] };
     if (!b || !G) return fx;
     G.play.forEach(m => { if (!b.inPlay.has(m.uid + ':' + m.back)) fx.enter.add(m.uid); if (!E.left(m) && !b.down.has(m.uid)) fx.ko.add(m.uid); });
     offKeys(G).forEach(k => { if (!b.off.has(k)) fx.struck.add(k); });
-    G.hp.forEach((h, k) => { if (h < b.hp[k]) fx.hurt.add(k); });
+    G.hp.forEach((h, k) => { if (h < b.hp[k]) fx.hurt.add(k); else if (h > b.hp[k]) fx.heal = true; });
+    // Sound cues (2026-11-25): a new card, a situation, the row growing, a Baseline, and who hits back at round end.
+    fx.logs = G.log.slice(b.log).map(l => l.text); fx.acts = (G.acts || []).filter(x => x.seq > b.acts).map(x => x.t);
+    fx.flip = G.fight > b.fight; fx.sit = G.phase === 'sit' && b.phase !== 'sit'; fx.rowAdd = G.row.length > b.rowN; fx.base = (G.tuck || []).length > b.tuck;
+    if (fx.hurt.size && b.phase === 'assign' && G.phase !== 'assign') { const m = G.play.find(x => E.left(x)); if (m) fx.strike = m.id; }
     if (G.rows.length > b.rows) fx.row = G.rows[G.rows.length - 1];
     fx.roll = G.phase === 'assign' && (b.phase !== 'assign' || G.dice.length > b.dice);
     fx.boss = G.bossOut && !b.bossOut; fx.over = G.over && !b.over;
     fx.guard = G.dice.filter(d => d.used === 'guard').length > b.guards;
     return fx;
   }
+  const UI_CLICK = ['pick', 'mode', 'start', 'adv', 'snd', 'mus', 'tips', 'keys', 'cards', 'log', 'menu', 'point', 'die', 'guardx', 'unreveal', 'give', 'drop', 'keepout'];
+  const ACT_CUE = { reroll: 'die_reroll', tuck: 'tuck', eng: 'ability_ENG', heal: 'ability_RES' };
+  // A used item's clip: item_<type> (surge, intel, isolate, coffee, freeze, takedown).
+  function itemCue(G, u) { const c = [...G.hand.flat(), ...G.agents.flat()].find(c => c.uid === u); return 'item_' + (c ? c.t : u); }
   function act(fn, okMsg) {
     const before = snap(UI.G);
     try { fn(); UI.msg = okMsg || ''; UI.err = false; }
     catch (e) { if (!e.rule) throw e; UI.msg = e.message; UI.err = true; }
+    if (UI.cue && !UI.err) Sound.play(UI.cue); UI.cue = null;
     const G = UI.G;
     if (G && G.over && !UI.end) UI.end = Date.now();
     const fx = FX = diff(before, G);
@@ -140,7 +206,7 @@
     fx.hurt.forEach(k => { const el = app.querySelector(`[data-hp="${k}"]`); if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } });
     let wait = 0;
     if (fx.row) {
-      Sound.play('roll');
+      Sound.play('row_roll');
       const amb = [...app.querySelectorAll('.t-rowroll.new .t-amb')], bn = app.querySelector('.t-rowroll.new');
       if (motion && amb.length) { if (bn) bn.classList.add('rolling'); wait = tumble(amb, ROW_MS - ROLL_STAGGER, n => PIP(n, 34)); setTimeout(() => { if (bn && bn.isConnected) bn.classList.remove('rolling'); }, wait); }
       if (fx.row.back.length) Sound.play('comeback', motion ? ROW_MS : 0);
@@ -148,11 +214,36 @@
     if (fx.roll) {
       const dice = [...app.querySelectorAll('.t-die:not(.used)')];
       if (motion && dice.length) { setTimeout(() => tumble(dice.filter(d => d.isConnected), ROLL_MS, n => PIP(n, 46)), wait); }
-      Sound.play('roll', wait); if (G.dice.some(d => d.dbl)) Sound.play('double', wait + (motion ? ROLL_MS : 0));
+      Sound.play('roll', wait); Sound.play('dice_land', wait + (motion ? ROLL_MS : 300)); if (G.dice.some(d => d.dbl)) Sound.play('double', wait + (motion ? ROLL_MS : 0));
     }
-    if (fx.ko.size) Sound.play('down'); else if (fx.struck.size) Sound.play('hit'); else if (fx.guard) Sound.play('guard');
-    if (fx.boss) Sound.play('boss');
-    if (fx.over) Sound.play(G.win ? 'win' : 'loss', 300);
+    if (fx.roll) {
+      // The analysts' rolls: the Hunter's extra die in a fight's first round, the Sorcerer's dice for a baselined alarm.
+      const pt = G.team[G.point];
+      if (pt === 'HUN' && G.round === 1) Sound.play('ability_HUN', wait);
+      if (pt === 'SOA' && G.play.some(m => m.based)) Sound.play('ability_SOA', wait);
+      if (G.dice.some(d => !d.used && !d.dbl && !E.targets(G, d.i).hits.length && !E.pairs(G).some(p => p.includes(d.i)))) Sound.play('die_miss', wait + (motion ? ROLL_MS : 300) + 250);
+    }
+    // Agents at work (G.acts: Triage, Enrichment) and the log lines of the ones that act at round or fight end.
+    fx.acts.forEach((t, n) => Sound.play('agent_' + t, (fx.roll ? wait : 0) + n * 200));
+    const said = re => fx.logs.some(t => re.test(t));
+    if (said(/^Containment Agent/)) Sound.play('agent_contain', 100);
+    if (said(/^Watchlist Agent/)) Sound.play('agent_watchlist', 100);
+    if (said(/Recovery Agent/)) Sound.play('agent_recover', 300);
+    if (said(/^Drew /)) Sound.play('item_draw', 600);
+    if (said(/ regenerates: /)) Sound.play('kw_regen', 200);
+    if (G.play.some(m => fx.enter.has(m.uid) && m.kw === 'ramp' && m.back > 0)) Sound.play('kw_escalate', (motion ? ROW_MS : 0) + 300);
+    if (fx.flip && !fx.boss) Sound.play('card_flip');
+    if (fx.sit) Sound.play('situation', 200);
+    G.play.filter(m => fx.enter.has(m.uid) && !m.boss).forEach((m, n) => Sound.play(m.id + '_arrive', (fx.flip ? 250 : wait + (fx.row ? ROW_MS : 0)) + n * 400));
+    if (fx.rowAdd) Sound.play('row_add', 150);
+    // An alarm beaten: the fight's last one gets the win sting; a threat die taken off gets the match blip.
+    if (fx.ko.size && !fx.over) Sound.play(G.play.some(m => E.left(m)) ? 'die_match' : 'fight_won'); else if (fx.struck.size) Sound.play('die_match'); else if (fx.guard) Sound.play('guard');
+    if (fx.base) Sound.play('baseline', 200);
+    if (fx.over && !G.win) { Sound.play('down'); Sound.play('loss', 900); }
+    else if (fx.hurt.size) { if (fx.strike) Sound.play(fx.strike + '_strike'); Sound.play('hit', fx.strike ? 250 : 0); }
+    if (fx.heal && !said(/Recovery Agent/)) Sound.play('heal', 150);
+    if (fx.boss) { Sound.play('boss'); Sound.play(G.boss.id + '_arrive', 1800); }
+    if (fx.over && G.win) { Sound.play(G.boss.id + '_down'); Sound.play('win', 1800); }
     const lines = [];
     if (fx.row) lines.push(`Row roll ${fx.row.pair[0]} plus ${fx.row.pair[1]}, ${fx.row.roll}: ${fx.row.back.length ? fx.row.back.join(', ') + ' came back' : 'nothing came back'}.`);
     if (fx.roll) lines.push(`You rolled ${G.dice.map(d => `${d.n}${d.dbl ? ' (double)' : ''}${G.n > 1 ? ' for ' + E.dieOwner(G, d) : ''}`).join(', ')}.`);
@@ -219,7 +310,7 @@
   function vMenu() {
     if (UI.drawer !== 'menu') return '';
     return `<aside class="logp menup" role="dialog" aria-modal="true" aria-label="Menu"><div class="lh"><h2 class="sech">Menu</h2><button class="btn s" data-a="menu" data-k="menux">Close <kbd>Esc</kbd></button></div>
-      <h3 class="msec">Settings</h3><ul class="msets">${sw('adv', UI.adv, 'Adventure view', 'Fights play out as a battle scene: your crew and their agents on one side, the alarms on the other.')}${sw('snd', Sound.on, 'Sound', 'Dice, hits and alarms.')}${sw('keys', UI.keys, 'Keyboard shortcuts', 'Single keys for the main actions (R to roll, E to end the round).')}${sw('tips', UI.tips, 'First-shift guide', 'One short line the first time each rule comes up. On until you finish a shift.')}</ul></aside>`;
+      <h3 class="msec">Settings</h3><ul class="msets">${sw('adv', UI.adv, 'Adventure view', 'Fights play out as a battle scene: your crew and their agents on one side, the alarms on the other.')}${sw('snd', Sound.on, 'Sound effects', 'Dice, hits, alarms and items.')}${sw('mus', Sound.musicOn, 'Music', 'A track for each part of the shift.')}${sw('keys', UI.keys, 'Keyboard shortcuts', 'Single keys for the main actions (R to roll, E to end the round).')}${sw('tips', UI.tips, 'First-shift guide', 'One short line the first time each rule comes up. On until you finish a shift.')}</ul></aside>`;
   }
   const dbls = id => A.DOUBLES[id].map(n => PIP(n, 26)).join('');
   const MODE_SUB = { quick: '8 cards from the deck, then the boss. About 20 minutes.', full: '9 cards, then the boss. A story card after your 1st, 3rd and 5th win. The boss pulls the row. About 30 minutes.' };
@@ -633,13 +724,20 @@ ${roundCtl}</div>`;
   const KEEP_SCROLL = ['.tb-stage', '.log', '.t-gallery .in', '.t-end', '.tb-rcs', '.tb-its'];
   // The open overlay, topmost first: the card gallery, the log, the boss reveal, the end screen.
   const overlayOf = () => UI.cards ? '.t-gallery' : UI.drawer === 'log' ? '.logp' : UI.drawer === 'menu' ? '.menup' : UI.G && UI.reveal && !UI.G.over ? '.reveal' : UI.G && UI.G.over ? '.t-end' : null;
+  // The music for what's on screen (game/audio/prompts.json music). A fight with two or more alarms is a multi-alarm fight.
+  function sceneOf(G) {
+    if (!G) return 'title'; if (G.over) return G.win ? 'shift_won' : 'shift_lost'; if (G.bossOut) return 'boss_' + G.boss.id;
+    if (G.phase === 'deal') return 'deal'; if (G.phase === 'sit') return G.sit && A.SIT_STORY.includes(G.sit.id) ? 'story' : 'situation';
+    if (G.phase === 'roll' || G.phase === 'assign' || G.phase === 'exfil') return G.play.length > 1 ? 'fight_multi' : 'fight';
+    return 'feed';
+  }
   function render() {
     const k = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
     const kept = KEEP_SCROLL.map(sel => [...app.querySelectorAll(sel)].map(e => e.scrollTop));
     let h = null; if (UI.G) h = vHand();
     if (UI.G && UI.adv && fighting(UI.G)) app.innerHTML = vAdventure(h) + vReveal() + vLog() + vMenu() + vGallery() + vEnd(); else
     app.innerHTML = UI.G ? `<div class="tb ph-${UI.G.phase}${E.MODES[UI.G.mode].bossRow ? '' : ' quick'}">${vBar()}${vRowStrip()}${vStage()}<div class="tb-foot">${h.dice ? `<div class="tb-dice${UI.G.dice.length > 5 ? ' many' : ''}">${h.dice}</div>` : ''}${vPlates()}<div class="tb-act"><p class="status">${h.hint}</p>${h.ctl}</div></div></div>` + vReveal() + vLog() + vMenu() + vGallery() + vEnd() : vSetup() + vMenu() + vGallery();
-    placePop(); showActs();
+    placePop(); showActs(); Sound.music(sceneOf(UI.G));
     if (UI.G && UI.G.over && UI.shiftDone !== UI.G) { UI.shiftDone = UI.G; try { localStorage.setItem(SHIFTS_LS, String((+localStorage.getItem(SHIFTS_LS) || 0) + 1)); } catch (e) { /* this visit only */ } }
     document.body.classList.toggle('ingame', !!UI.G); document.body.classList.toggle('nokeys', !UI.keys);
     KEEP_SCROLL.forEach((sel, n) => app.querySelectorAll(sel).forEach((e, i) => { if (kept[n][i]) e.scrollTop = kept[n][i]; }));
@@ -713,10 +811,14 @@ ${roundCtl}</div>`;
     if (!b && G && G.phase === 'assign' && UI.sel != null && !e.target.closest('.adv-pop, .tb-i, .menup, kbd')) { UI.sel = null; UI.more = null; UI.guarding = null; UI.msg = ''; return render(); }
     if (!b || b.disabled) return;
     const a = b.dataset.a;
+    // Sound cues for an action (2026-11-25): a menu or setup click ticks; an action's clip plays once the engine takes it (act).
+    if (UI_CLICK.includes(a)) Sound.play('ui_click');
+    UI.cue = ACT_CUE[a] || (a === 'use' && G ? itemCue(G, b.dataset.u) : null);
     if (a === 'pick') { const s = UI.setup.team, id = b.dataset.id, j = s.indexOf(id); if (j >= 0) { if (s.length > 1) s.splice(j, 1); } else if (s.length < 4) s.push(id); return render(); }
     if (a === 'start') return startGame();
     if (a === 'mode') { UI.setup.mode = b.dataset.m; return render(); }
     if (a === 'snd') { Sound.toggle(); return render(); }
+    if (a === 'mus') { Sound.toggleMusic(); say(`Music ${Sound.musicOn ? 'on' : 'off'}.`); return render(); }
     if (a === 'adv') { UI.adv = !UI.adv; try { localStorage.setItem(ADV_LS, UI.adv ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Adventure view ${UI.adv ? 'on' : 'off'}.`); return render(); }
     if (a === 'tips') { UI.tips = !UI.tips; UI.tip = null; try { localStorage.setItem(TIPS_LS, UI.tips ? '1' : '0'); } catch (e) { /* this visit only */ } say(`First-shift guide ${UI.tips ? 'on' : 'off'}.`); return render(); }
     if (a === 'keys') { UI.keys = !UI.keys; try { localStorage.setItem(KEYS_LS, UI.keys ? '1' : '0'); } catch (e) { /* this visit only */ } say(`Keyboard shortcuts ${UI.keys ? 'on' : 'off'}.`); return render(); }
@@ -780,6 +882,6 @@ ${roundCtl}</div>`;
       if (key === 'e') return click('end');
     }
   });
-  window.CDUI = { UI, render, resultLine, clockAt };
+  window.CDUI = { UI, render, resultLine, clockAt, Sound };
   render();
 })();

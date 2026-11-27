@@ -91,24 +91,25 @@
   const BOSS_STEPS = [6, 4, 2];
   // Since 2026-11-03: one tucked alarm per agent, and each trait changes its agent for good, nothing once-a-round
   // (sim.js TRAIT v4). Since 2026-11-04 every trait changes the agent itself, never its holder or the row (TRAIT v5).
-  // Since 2026-11-19 nothing is checked each round (TRAIT v6): twelve bands Overclock their agent, three do their own thing.
+  // Since 2026-11-19 nothing is checked each round (TRAIT v6). Since 2026-11-26: nine bands are Draw (baseline it, draw an
+  // item, it leaves the game), three Overclock their agent, and three do their own thing (sim.js DRAWTRAIT).
   const BASE = {
     imp: 'Overclock: its agent’s Overclocked line applies.',
     druid: 'Hardened: its agent keeps working against the Rogue AI.',
     specter: 'Locked: Exfil can’t take its agent.',
-    wyrmling: 'Overclock: its agent’s Overclocked line applies.',
-    mimic: 'Overclock: its agent’s Overclocked line applies.',
+    wyrmling: 'Draw: it doesn’t tuck. Draw an item; it leaves the game.',
+    mimic: 'Draw: it doesn’t tuck. Draw an item; it leaves the game.',
     leech: 'Siphon: its agent takes no item slot.',
     bat: 'Overclock: its agent’s Overclocked line applies.',
     wraith: 'Overclock: its agent’s Overclocked line applies.',
     // Since 2026-11-04 every alarm has a line (sim.js MORE).
-    mailer: 'Overclock: its agent’s Overclocked line applies.',
-    hydra: 'Overclock: its agent’s Overclocked line applies.',
-    vibe: 'Overclock: its agent’s Overclocked line applies.',
-    banshee: 'Overclock: its agent’s Overclocked line applies.',
-    macro: 'Overclock: its agent’s Overclocked line applies.',
-    spray: 'Overclock: its agent’s Overclocked line applies.',
-    ogre: 'Overclock: its agent’s Overclocked line applies.',
+    mailer: 'Draw: it doesn’t tuck. Draw an item; it leaves the game.',
+    hydra: 'Draw: it doesn’t tuck. Draw an item; it leaves the game.',
+    vibe: 'Draw: it doesn’t tuck. Draw an item; it leaves the game.',
+    banshee: 'Draw: it doesn’t tuck. Draw an item; it leaves the game.',
+    macro: 'Draw: it doesn’t tuck. Draw an item; it leaves the game.',
+    spray: 'Draw: it doesn’t tuck. Draw an item; it leaves the game.',
+    ogre: 'Draw: it doesn’t tuck. Draw an item; it leaves the game.',
   };
   const traitName = id => BASE[id] ? BASE[id].split(':')[0] : '';
   // One tucked alarm per agent (2026-11-03; it was two, and two upgraded the agent: that is Overclock now).

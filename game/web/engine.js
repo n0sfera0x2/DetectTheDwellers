@@ -46,10 +46,10 @@
   // The squeeze (2026-11-03): bosses hit for 5, alarms hit 1 harder from the fourth fight, and the push. Four analysts
   // with one passive line each (same day): Then (same day) guards cover only their owner, HP rose to 12 (Quick) and 16 (Full); a reroll costs 1 HP (once a
   // round); 4 item slots a player (solo 6), consumables included; solo starts with 2 items; a crew of 3–4 with 3.
-  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: 3, 2: 1, 3: 3, 4: 3 }, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: 1, 2: 1, 3: 3, 4: 5 }, bossRow: true } };
+  const MODES = { quick: { label: 'Quick Shift', deal: 8, story: 0, hp: 10, hpBy: { 1: -2, 2: 2, 3: 4, 4: 4 }, bossRow: false }, full: { label: 'Full Shift', deal: 9, storyAt: [1, 3, 5], hp: 13, hpBy: { 1: -4, 2: 2, 3: 4, 4: 6 }, bossRow: true } };
   // Starting HP by crew size (2026-11-20, after two magic numbers each; 3–4 players more since 2026-11-22, with the row's
-  // crew bonus): the mode's HP plus hpBy. Quick: solo 13, 2 players 11, 3 players 13, 4 players 13. Full: solo 14, 2 players 14,
-  // 3 players 16, 4 players 18 (raised 2026-11-23 with the row one step wider; 4 players 2 lower since one item per player; solo 18 → 14 on 2026-11-24). Same as sim.js HPN.
+  // crew bonus): the mode's HP plus hpBy. Quick: solo 8, 2 players 12, 3 players 14, 4 players 14. Full: solo 9, 2 players 15,
+  // 3 players 17, 4 players 19 (2026-11-26, with Draw bands and draw 1 a fight: solo −5, crews +1). Same as sim.js HPN.
   const startHp = (mode, n) => { const M = MODES[mode] || MODES.quick; return M.hp + ((M.hpBy || {})[n] || 0); }; // solo 2 items, one an agent, since 2026-11-05; // HP 10 / 13 and solo 1 item since 2026-11-04 (all 15 alarms baseline)
   function newGame(opt = {}) {
     const team = opt.team || ['HUN', 'RES'], n = team.length;
@@ -150,7 +150,7 @@
   }
   // Draw n items from the item deck into G.deal: each waits there until the crew gives it to someone (phase 'deal').
   function draw(G, n, quiet) {
-    const got = [];
+    const got = []; G.drawWhy = ''; // afterFight sets why a won fight drew what it did, for the deal screen
     for (let i = 0; i < n; i++) {
       if (!G.kit.length && G.discard.length) { G.kit = shuffle(G.discard, G.r); G.discard = []; say(G, 'Item deck empty: shuffled the discards into a new item deck.'); }
       const c = G.kit.pop(); if (!c) break; G.deal.push(c); got.push(c);
@@ -255,10 +255,10 @@
       if (G.badgeSkip) { G.badgeSkip = false; G.pending = pend; G.row.push(m); G.stats.skipped = (G.stats.skipped || 0) + 1; G.phase = 'flip'; say(G, `Flip ${G.fight}: ${m.name}. You fell back: it goes straight on the row, unfought (back on 2–${m.top}).`, 'flip'); return G; }
       muteOn(G, m); G.flipped = m.uid; say(G, `Flip ${G.fight}: ${m.name}. ${nameOf(G.team[G.point])} is on point.`, 'flip');
       const back = rollRow(G, true, 'the flip'); if (G.over) return G;
-      enter(G, m); [...pend, ...back].forEach(b => enter(G, b));
+      enter(G, m); [...pend, ...back].forEach(b => enter(G, b)); G.fightN = G.play.length;
     } else {
       muteOn(G, G.boss); G.flipped = null; G.bossOut = true; say(G, `05:59. ${G.boss.name} arrives. ${nameOf(G.team[G.point])} is on point.`, 'flip');
-      const back = rollRow(G, false, 'the boss arrives'); enter(G, G.boss); [...pend, ...back].forEach(b => enter(G, b));
+      const back = rollRow(G, false, 'the boss arrives'); enter(G, G.boss); [...pend, ...back].forEach(b => enter(G, b)); G.fightN = G.play.length;
     }
     if (!G.over) G.phase = 'roll';
     return G;
@@ -286,7 +286,7 @@
     if (!canBaseline(G, m)) fail(G.round > 0 || G.phase !== 'roll' ? 'Baseline it before the first roll.' : m.based ? 'It is already being baselined.' : 'Only the alarm just flipped can be baselined.');
     const v = CARDS.baseDie(m.id), k = baseCost(G, m);
     for (let i = 0; i < k; i++) { m.slots.push(v); m.off.push(false); } m.hits += k; m.based = k; G.stats.baselines = (G.stats.baselines || 0) + 1;
-    say(G, `${nameOf(G.team[G.point])} baselines ${m.name}: ${k} more dice, all ${v}s. Beat it with them and the agents learn it.`, 'mob');
+    say(G, `${nameOf(G.team[G.point])} baselines ${m.name}: ${k} more dice, all ${v}s. ${CARDS.traitName(m.id) === 'Draw' ? 'Beat it with them and the crew draws an item.' : 'Beat it with them and the agents learn it.'}`, 'mob');
     return G;
   }
   // After a won fight, each baselined alarm tucks under an agent someone holds, the crew's choice (phase 'tuck').
@@ -639,6 +639,8 @@
       // The Hunter in the crew ends persistence: a beaten comeback leaves the game.
       // Every beaten mob goes back on the row, however often it has come back.
       // Baselined: the card tucks under an agent instead of going on the row (it can't be in two places).
+      // Draw bands (2026-11-26): a baselined Draw alarm doesn't tuck. The crew draws an item after the fight; the card leaves the game.
+      if (m.based && CARDS.traitName(m.id) === 'Draw') { unmute(m); G.gone.push(m); G.drawBand = (G.drawBand || 0) + 1; G.stats.drawBand = (G.stats.drawBand || 0) + 1; say(G, `${m.name} is beaten with its Baseline dice. Draw: the crew draws an item after this fight, and it leaves the game.`, 'win'); continue; }
       if (m.based && !G.tuck.some(a => a.uid === m.uid)) { G.tuck.push({ id: m.id, name: m.name, uid: m.uid, mob: m }); unmute(m); say(G, `${m.name} is beaten with its Baseline dice. It tucks under an agent, off the row.`, 'win');
         continue; }
       unmute(m); G.row.push(m); say(G, `${m.name} is beaten and goes on the persistence row (back on 2–${m.top}).`, 'beat');
@@ -694,7 +696,12 @@
     // owner's call; same as sim.js SOLOBACK).
     const cameBack = G.stats.back > (G.backAt || 0); G.backAt = G.stats.back;
     const soloBack = G.n === 1 && cameBack ? 1 : 0; if (soloBack) say(G, 'An alarm came back off the row this fight: you draw one more item.', 'kit');
-    draw(G, (G.n === 1 ? D.kitSolo : D.kitPerFight) + soloBack + G.bonusDraw); G.bonusDraw = 0; // + Hold the room
+    // Crews (2026-11-26): a won fight draws 1, or 2 when it began against two or more alarms (sim.js DRAWMULTI=crew).
+    const multi = G.n > 1 && (G.fightN || 0) >= 2; if (multi) say(G, 'A multi-alarm fight won: the crew draws 2.', 'kit');
+    const band = G.drawBand || 0; G.drawBand = 0;
+    const base = G.n === 1 ? D.kitSolo : multi ? D.kitMulti : D.kitCrew, hold = G.bonusDraw || 0, extra = soloBack + band + hold;
+    draw(G, base + extra); G.bonusDraw = 0; // + Draw bands, + Hold the room
+    G.drawWhy = `${multi ? 'Multi-alarm fight won' : 'Fight won'}: ${base === 1 ? 'draw 1' : `draw ${base}`}${band ? `, +${band} Draw band${band > 1 ? 's' : ''}` : ''}${soloBack ? ', +1 an alarm came back' : ''}${hold ? ', +1 Hold the room' : ''}.`;
     // With no agent held, a baselined alarm waits for the next agent dealt.
     // Every held agent full (two tucked alarms each): the baselined alarm goes on the row instead, with no trait.
     if (G.tuck.length && heldAgents(G).length && heldAgents(G).every(h => tuckedOn(G, h.c.uid) >= CARDS.TUCK_CAP)) { G.tuck.forEach(a => { G.row.push(a.mob); say(G, `${a.name} is baselined, but every agent already holds two: it goes on the row.`, 'kit'); }); G.tuck = []; }

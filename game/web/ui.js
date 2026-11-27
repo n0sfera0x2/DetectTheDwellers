@@ -323,7 +323,7 @@
     return `<div class="wrap"><div class="setup-top">${menuBtn()}</div><div class="intro-grid">
       <section class="hero"><span class="art">${A.sprite('hero') || slice(ART.hero)}</span><p class="bd-cap">A <b>Binary Defense</b> Adventure</p><h1 class="logo">Detect the Dwellers</h1><p class="meta c">Co-op · 1–4 players · one night in the SOC</p>
         <p class="lede"><b>22:00.</b> The SOC is yours until dawn, and the alarms are already going off. Something is moving 40 GB out the door. Something else is trying every password in the building. Knock one down and it comes back. Hold the line until <b>06:00</b>, because at 05:59 the real attack lands.</p>
-        <p class="lede2"><b>Roll. Match. Survive.</b> Every alarm sets dice under its card. Knock them out with dice showing the same number before it hits back. Beat one the hard way and your agents learn its trick. Every shift deals a new night, and a different boss waits at the bottom.</p>
+        <p class="lede2"><b>Roll. Match. Survive.</b> Every alarm sets dice under its card. Knock them out with dice showing the same number before it hits back. Beat one the hard way for an item, or teach your agents its trick. Every shift deals a new night, and a different boss waits at the bottom.</p>
         <p class="t-note"><b>Tuned for 1–4 players,</b> co-op. A Quick Shift takes about 20 minutes.</p>
         <p class="bd-line">Think fast. Fight smart. <b>Stay human.</b></p>
         <p class="meta">Same cards as the print-and-play deck. <button class="lnk" type="button" data-a="cards" data-k="cards">See all ${A.mobs().length + A.BOSS_IDS.length + 2 + A.ANALYST_IDS.length + A.AGENT_IDS.length + A.CONS_IDS.length + A.SIT_IDS.length + A.COND_IDS.length} card designs</button></p></section>
@@ -410,7 +410,7 @@
       return `<button class="btn${UI.dealTo === k ? ' on' : k === G.point ? ' p' : ''}" type="button" data-a="give" data-n="${k}" data-k="give${k}" aria-pressed="${UI.dealTo === k}">Give to ${esc(nm(id))} <span class="num">${E.heldN(G, k)}/${E.slotsOf(G, k)}</span>${full ? ' · full' : ''}</button>`; }).join('');
     const why = (agent ? 'An agent works for the whole crew, every round.' : 'A consumable is used once.') + ` It takes one of ${G.n === 1 ? 'your' : 'that player’s'} ${E.slotsOf(G, 0)} item slots.`;
     const ask = asking ? `<p class="status"><b>${esc(nm(G.team[UI.dealTo]))}’s slots are full.</b> Discard one of their items below (an agent takes what’s tucked under it along), or keep the new one out.</p><div class="sit-acts"><button class="btn warn" type="button" data-a="keepout" data-k="keepout">Keep it out</button></div>` : '';
-    const sit = G.sitDone && G.sit && G.sit.text ? `<p class="meta">${esc(G.sit.text)}</p>` : '';
+    const sit = G.sitDone && G.sit && G.sit.text ? `<p class="meta">${esc(G.sit.text)}</p>` : G.drawWhy ? `<p class="meta">${esc(G.drawWhy)}</p>` : '';
     return `<div class="t-dealp"><div class="t-dslot" data-card="agent:${c.t}">${A.agentCard(c.t)}</div>${rest.length ? `<div class="t-dnext"><span class="phud">Next</span>${rest.map(x => `<div class="t-hslot" data-card="agent:${x.t}">${A.agentCard(x.t)}<b class="hn">${esc(E.KIT_NAME[x.t])}</b></div>`).join('')}</div>` : ''}
       <div class="sb"><h2 class="sech">Deal · ${G.deal.length === 1 ? 'the last new item' : `${G.deal.length} new items`}</h2>${sit}<p class="status"><b>${esc(E.KIT_NAME[c.t])}.</b> ${why}</p>
       ${solo ? '' : `<div class="sit-acts">${gives}</div>`}${ask}</div></div>`;
@@ -446,7 +446,7 @@
       if (G.freeze && G.row.length) hint += ' Change Freeze: the next row roll is skipped.';
       /* options before the roll: one line each, not one long paragraph */
       if (usable) hint += '<span class="st-li"><b>Use</b> a consumable on your plate first, if you want.</span>';
-      if (G.round < 1 && G.play.some(m => E.canBaseline(G, m))) hint += '<span class="st-li"><b>Baseline it</b> for a lasting reward: it adds dice to the alarm, and once you beat them all, one of your agents keeps its bonus.</span>';
+      if (G.round < 1 && G.play.some(m => E.canBaseline(G, m))) hint += `<span class="st-li"><b>Baseline it</b> for a reward: it adds dice to the alarm, and once you beat them all, ${G.play.filter(m => E.canBaseline(G, m)).every(m => A.traitName(m.id) === 'Draw') ? 'the crew draws an item and it leaves the game' : G.play.some(m => E.canBaseline(G, m) && A.traitName(m.id) === 'Draw') ? 'its band pays out: Draw gives an item, any other band tucks under an agent' : 'one of your agents keeps its bonus'}.</span>`;
       ctl = `<div class="acts"><span class="inc grow">${incText()}</span><button class="btn p big" data-a="roll" data-k="roll">${G.round >= 1 && G.row.length ? 'Roll the row, then the dice' : 'Roll the dice'} <kbd>R</kbd></button></div>`;
     } else if (G.phase === 'assign') {
       const d = UI.sel != null ? G.dice[UI.sel] : null, t = d ? E.targets(G, d.i) : null, prs = E.pairs(G);
@@ -572,7 +572,7 @@ ${roundCtl}</div>`;
     ['boss', G => G.bossOut && G.phase === 'roll', () => '<b>The boss:</b> beat it and you survive the night. Agent dice can’t hit it.'],
     ['fight', G => G.phase === 'roll' && G.round < 1, () => '<b>Threat dice</b> sit under each alarm. Take them all out to beat it; whatever’s left hits back at round end.'],
     ['multi', G => fighting(G) && G.play.filter(m => E.left(m)).length > 1, () => '<b>Multi-alarm fight:</b> every alarm still up hits back. Beat the biggest hitter first.'],
-    ['base', G => G.phase === 'roll' && G.round < 1 && G.play.some(m => E.canBaseline(G, m)), () => '<b>Baseline</b> is optional and harder: beat the extra dice too and the alarm tucks under an agent for good.'],
+    ['base', G => G.phase === 'roll' && G.round < 1 && G.play.some(m => E.canBaseline(G, m)), () => '<b>Baseline</b> is optional and harder: beat the extra dice too for a reward. Most alarms draw you an item and leave the game; the rest tuck under an agent for good.'],
     ['assign', G => G.phase === 'assign', () => '<b>Each die</b> takes out one threat die showing <b>exactly</b> its number.'],
     ['double', G => G.phase === 'assign' && G.dice.some(x => !x.used && x.dbl), () => '<b>A double</b> (the ×2 die) counts as two dice, or guards you from this round’s hits.'],
     ['reroll', G => G.phase === 'assign' && G.dice.some(x => E.canReroll(G, x) && !E.targets(G, x.i).hits.length), () => '<b>Stuck die?</b> Once a round you may take 1 damage to reroll one.'],
@@ -622,7 +622,7 @@ ${roundCtl}</div>`;
   function infoRows(m) {
     const G = UI.G, inc = (G.phase === 'assign' || G.phase === 'roll') ? E.incoming(G).by.find(x => x.uid === m.uid) : null;
     const hits = !E.left(m) ? 'Beaten: it deals nothing.' : inc ? (inc.to.length ? `Still up at round end, it hits ${inc.to.map(k => esc(nm(G.team[k]))).join(' and ')} for <b class="num">${inc.dmg}</b>.` : 'Blocked: it hits nobody.') : `It hits for <b class="num">${E.dmgOf(G, m)}</b>.`;
-    const beaten = m.boss ? 'Beat it and the shift is survived.' : m.based ? 'Beat it with the extra dice and it slides under an agent, which keeps its bonus. It can’t come back.' : `Beaten, it goes on the persistence row: ${backPct(E.backTop(G, m))}% to come back on each row roll.`;
+    const beaten = m.boss ? 'Beat it and the shift is survived.' : m.based ? (A.traitName(m.id) === 'Draw' ? 'Beat it with the extra dice: the crew draws an item and it leaves the game.' : 'Beat it with the extra dice and it slides under an agent, which keeps its bonus. It can’t come back.') : `Beaten, it goes on the persistence row: ${backPct(E.backTop(G, m))}% to come back on each row roll.`;
     return `<li><span class="phud f">This alarm</span><span>${hits}${G.cond.some(c => c.exposed) ? ' Exposed: anyone hit takes 1 more.' : ''}</span></li>
       <li><span class="phud f">Keyword</span><span><b>${esc(KWN(m))}.</b> ${esc(KWT(m))}</span></li><li><span class="phud a">Beaten</span><span>${beaten}</span></li>
       <li><span class="phud c">To hit</span><span>A die takes one die under it showing <b>exactly</b> its number. A double takes two, or guards you. Once a round you may take 1 to reroll one of your dice.</span></li>`;

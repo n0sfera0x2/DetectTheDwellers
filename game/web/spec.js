@@ -27,7 +27,7 @@ function fight(team, ids, { seed = 1, dice = [], point = 0, boss, mode } = {}) {
   G.kit.unshift(...G.deal, ...G.agents.flat(), ...G.hand.flat()); G.deal = []; G.agents = team.map(() => []); G.hand = team.map(() => []);
   G.point = point; G.fight = 1; G.round = 1; G.phase = 'assign';
   G.play = ids.map(id => { if (id === 'boss') return G.boss; const m = G.feed.find(x => x.id === id); G.feed = G.feed.filter(x => x !== m); return m; });
-  setDice(G, dice);
+  setDice(G, dice); G.fightN = G.play.length; /* as flip() records it: the alarms the fight began with */
   return G;
 }
 // dice: [k, 3] rolls a 3 on analyst k's own die (their doubles apply); ['agent', 6] is an agent die showing 6 (on point's).
@@ -100,8 +100,8 @@ test('a crew of 3 or 4 rolls its extra threat dice each time an alarm enters pla
   const seen = new Set(); for (let seed = 1; seed <= 60; seed++) { const G = game({ team: ['HUN', 'RES', 'ENG'], seed }); G.deal = []; G.phase = 'flip'; while (G.feed[0] && G.feed[0].sit) G.feed.push(G.feed.shift()); E.flip(G); const m = G.play.find(x => !x.boss); seen.add(m.slots[m.printed]); }
   assert.deepEqual([...seen].sort(), [1, 2, 3, 4, 5, 6]);
 });
-test('starting HP by crew size (2026-11-24): Quick solo 13, 2p 11, 3p 13, 4p 13; Full solo 14 (18 until 2026-11-24), 2p 14, 3p 16, 4p 18', () => {
-  const want = { quick: [13, 11, 13, 13], full: [14, 14, 16, 18] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
+test('starting HP by crew size (2026-11-26): Quick solo 8, 2p 12, 3p 14, 4p 14; Full solo 9, 2p 15, 3p 17, 4p 19', () => {
+  const want = { quick: [8, 12, 14, 14], full: [9, 15, 17, 19] }, team = ['HUN', 'RES', 'ENG', 'SOA'];
   for (const [mode, hps] of Object.entries(want)) hps.forEach((hp, i) => {
     assert.equal(E.startHp(mode, i + 1), hp, `${mode} ${i + 1}p`);
     const G = game({ team: team.slice(0, i + 1), seed: 1, mode, hp: undefined }); /* the helper pins E.HP; this one plays the real start */ assert.equal(G.max, hp); assert.ok(G.hp.every(h => h === hp));
@@ -234,7 +234,7 @@ test('after a fight: every beaten alarm goes back to the row, comebacks too, wit
   E.assign(G, 0, s.uid, slotOf(s, 1)); E.assign(G, 0, s.uid, slotOf(s, 1));
   E.endRound(G);
   assert.ok(G.row.includes(s)); assert.ok(G.row.includes(i)); assert.equal(G.gone.length, 0); assert.equal(G.play.length, 0);
-  assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, D.kitPerFight);
+  assert.equal(G.phase, 'deal'); assert.equal(G.deal.length, D.kitMulti, 'two alarms: a multi-alarm fight draws 2');
   // Since 2026-11-03 the Hunter no longer ends a comeback: it goes back on the row like any other.
   const H = fight(['HUN', 'ENG'], ['imp'], {}); const hi = mob(H, 'imp'); hi.back = 1; hi.off = hi.off.map(() => true); H.dice = []; E.endRound(H);
   assert.ok(H.row.includes(hi)); assert.equal(H.gone.length, 0); assert.equal(CARDS.PERK.HUN, 'On point, you roll one more die in a fight’s first round: a second-colour die. It can pair, but never doubles alone.');
@@ -521,7 +521,7 @@ test('an empty item deck reshuffles the discards', () => {
   const G = newG({ team: ['ENG', 'HUN'], seed: 1 });
   G.discard = [...G.kit.splice(0), ...G.agents.flat(), ...G.hand.flat()]; G.agents = [[], []]; G.hand = [[], []];
   G.phase = 'assign'; G.play = []; G.fight = 1; G.round = 1; G.dice = []; E.endRound(G);
-  assert.equal(G.deal.length, D.kitPerFight); assert.equal(G.kit.length + G.discard.length + G.deal.length, 18);
+  assert.equal(G.deal.length, D.kitCrew); assert.equal(G.kit.length + G.discard.length + G.deal.length, 18);
   assert.ok(G.log.some(l => /shuffled the discards/.test(l.text)));
 });
 test('deterministic given a seed, and a scripted game reaches an end', () => {
@@ -576,7 +576,7 @@ test('The Badge That Wasn’t: hold the room (Exposed, an extra item for the nex
   E.flip(G); assert.equal(G.play[0], top);
   // Win the fight: the usual draw plus one, and Exposed is discarded.
   G.phase = 'assign'; G.dice = []; G.play.forEach(m => { m.off = m.off.map(() => true); }); E.endRound(G);
-  assert.equal(kits(G), D.kitPerFight + 1); assert.equal(G.bonusDraw, 0); assert.equal(G.cond[1].exposed, false);
+  assert.equal(kits(G), (G.fightN >= 2 ? D.kitMulti : D.kitCrew) + 1); assert.equal(G.bonusDraw, 0); assert.equal(G.cond[1].exposed, false);
   // Fall back with another situation before the next alarm: that alarm goes on the row unfought when it flips; the one after is fought.
   const R = atSit(['ENG', 'SOA'], 'insider'); R.feed.unshift(sitCard('patch')); const t2 = R.feed[1], t3 = R.feed[2], hp = R.hp.slice();
   const n0 = kits(R); E.resolveSit(R, 'run'); assert.ok(R.badgeSkip); assert.match(R.sit.text, /straight on the row, unfought/); assert.equal(kits(R), n0 + 2, 'and draw 2 items'); dealAll(R);
@@ -776,18 +776,20 @@ test('Exfil (in place of Evasive): still up at round end, the crew discards an i
   const N = fight(['HUN', 'ENG'], ['druid'], {}); N.hp = [20, 20]; N.max = 20; E.endRound(N); assert.equal(N.phase, 'roll');
 });
 // A fresh game whose first flipped alarm has a Baseline line (all 15 do since 2026-11-04).
-function flipBaselinable(team) {
-  for (let seed = 1; ; seed++) { const G = newG({ team, seed }); E.flip(G); const m = G.play.find(x => x.uid === G.flipped); if (CARDS.BASE[m.id]) return { G, m, seed }; }
+function flipBaselinable(team, draw = false) { // draw: a Draw band (it doesn't tuck); else a band that tucks
+  for (let seed = 1; ; seed++) { const G = newG({ team, seed }); E.flip(G); const m = G.play.find(x => x.uid === G.flipped); if (CARDS.BASE[m.id] && (draw ? CARDS.traitName(m.id) === 'Draw' : CARDS.traitName(m.id) !== 'Draw')) return { G, m, seed }; }
 }
-test('baseline it: all 15 alarms carry a tuck band (since 2026-11-04), one trait each, 4 traits in all (2026-11-19)', () => {
+test('baseline it: all 15 alarms carry a band (since 2026-11-04), one each, 5 in all: nine Draw, three Overclock (2026-11-26)', () => {
   assert.deepEqual(Object.keys(CARDS.BASE).sort(), CARDS.mobs().map(m => m.id).sort()); assert.equal(CARDS.BASE_N, 2);
   for (const id of ['mailer', 'spray', 'macro', 'banshee', 'vibe', 'ogre', 'hydra']) assert.match(CARDS.mobCard(D.mobs.find(x => x.id === id)), /Baseline it/);
   for (let seed = 1; seed < 20; seed++) { const G = newG({ team: ['HUN', 'RES'], seed }); E.flip(G); const m = G.play.find(x => x.uid === G.flipped); assert.ok(E.canBaseline(G, m), m.id); }
-  assert.deepEqual([CARDS.traitName('mailer'), CARDS.traitName('hydra'), CARDS.traitName('vibe'), CARDS.traitName('banshee'), CARDS.traitName('macro'), CARDS.traitName('spray'), CARDS.traitName('ogre')], Array(7).fill('Overclock'));
+  assert.deepEqual(['mailer', 'macro', 'spray', 'banshee', 'vibe', 'mimic', 'ogre', 'hydra', 'wyrmling'].map(CARDS.traitName), Array(9).fill('Draw'));
+  assert.deepEqual(['imp', 'wraith', 'bat'].map(CARDS.traitName), Array(3).fill('Overclock'));
+  assert.deepEqual([...new Set(Object.keys(CARDS.BASE).map(CARDS.traitName))].sort(), ['Draw', 'Hardened', 'Locked', 'Overclock', 'Siphon']);
 });
 test('nothing to check each round (2026-11-19): an Overclocked agent works the same on point or off, in round 1 or 3, alone or in a multi-alarm fight', () => {
   const G = fight(['HUN', 'RES'], ['spray'], { point: 0 }); setAgents(G, 0, ['triage']); setAgents(G, 1, ['contain']);
-  G.aug = [{ id: 'macro', name: 'macro', host: 'a0-0' }, { id: 'spray', name: 'spray', host: 'a1-0' }];
+  G.aug = [{ id: 'imp', name: 'imp', host: 'a0-0' }, { id: 'bat', name: 'bat', host: 'a1-0' }];
   const w = () => [E.weight(G, 'a0-0'), E.weight(G, 'a1-0')];
   assert.deepEqual(w(), [2, 1], 'Overclocked Triage rolls two more; Containment cuts 1 more instead');
   G.point = 1; G.round = 3; G.hp = [1, 1]; G.play.push(mob(fight(['HUN', 'RES'], ['imp']), 'imp')); assert.deepEqual(w(), [2, 1]);
@@ -818,19 +820,19 @@ test('baseline it: two more dice before the first roll, on a fresh flip only; be
   assert.equal(Object.keys(CARDS.BASE).length, 15); assert.ok(CARDS.mobs().every(x => CARDS.mobCard(x).includes('Baseline it') === !!CARDS.BASE[x.id]));
 });
 test('baselined with no agent held: it waits, and tucks under the next agent dealt', () => {
-  const G = fight(['HUN', 'RES'], ['mailer'], {}); const m = mob(G, 'mailer'); m.based = 0; m.off = m.off.map(() => true);
-  G.tuck = [{ id: 'mailer', name: m.name, uid: m.uid }]; G.dice = [];
+  const G = fight(['HUN', 'RES'], ['imp'], {}); const m = mob(G, 'imp'); m.based = 0; m.off = m.off.map(() => true);
+  G.tuck = [{ id: 'imp', name: m.name, uid: m.uid }]; G.dice = []; G.bonusDraw = 1; /* two items: the coffee, then the triage */
   G.kit.push({ uid: 'q2', t: 'triage' }, { uid: 'q1', t: 'coffee' }); E.endRound(G); // draws the coffee, then the triage
-  assert.equal(G.phase, 'deal'); assert.deepEqual(G.aug.map(a => [a.id, a.host]), [['mailer', null]]); assert.ok(!E.aug(G, 'mailer'));
+  assert.equal(G.phase, 'deal'); assert.deepEqual(G.aug.map(a => [a.id, a.host]), [['imp', null]]); assert.ok(!E.aug(G, 'imp'));
   E.give(G, 0); assert.equal(G.aug[0].host, null, 'a consumable isn’t an agent');
-  E.give(G, 1); assert.equal(G.aug[0].host, 'q2'); assert.ok(E.aug(G, 'mailer'));
+  E.give(G, 1); assert.equal(G.aug[0].host, 'q2'); assert.ok(E.aug(G, 'imp'));
 });
-test('agent traits (one tuck each, for good, each changing the agent): Overclock, Locked, Hardened, Siphon', () => {
+test('agent traits (one tuck each, for good, each changing the agent): Overclock, Locked, Hardened, Siphon; Draw doesn’t tuck', () => {
   const held = (G, id, host = 'a1-0') => { G.aug = [{ id, name: id, host }]; };
   // Overclock: the agent's Overclocked line (Triage rolls one more).
   const O = fight(['HUN', 'ENG'], ['spray'], {}); setAgents(O, 1, ['triage']); held(O, 'imp'); assert.ok(E.upgraded(O, 'a1-0')); O.phase = 'roll'; O.round = 0; E.roll(O); assert.equal(O.dice.filter(d => d.src === 'triage').length, 2);
   // Overclocked Containment cuts one more; the old Twin, Golden, Rooted and Beacon alarms Overclock now.
-  for (const id of ['wraith', 'specter', 'mimic', 'bat', 'wyrmling']) assert.equal(CARDS.traitName(id), id === 'specter' ? 'Locked' : 'Overclock', id);
+  for (const id of ['wraith', 'specter', 'mimic', 'bat', 'wyrmling']) assert.equal(CARDS.traitName(id), id === 'specter' ? 'Locked' : ['mimic', 'wyrmling'].includes(id) ? 'Draw' : 'Overclock', id);
   // Siphon: its agent takes no item slot.
   const P = fight(['HUN', 'ENG'], ['spray'], {}); setAgents(P, 1, ['contain', 'triage']); assert.equal(E.heldN(P, 1), 2); held(P, 'leech'); assert.equal(E.heldN(P, 1), 1);
   // Hardened: keeps working against the Rogue AI.
@@ -838,7 +840,7 @@ test('agent traits (one tuck each, for good, each changing the agent): Overclock
   // One tuck per agent.
   const C = fight(['HUN', 'RES'], ['spray'], {}); setAgents(C, 1, ['triage']); held(C, 'imp'); C.phase = 'tuck'; C.tuck = [{ id: 'bat', name: 'b', uid: 'x', mob: {} }];
   throwsRule(() => E.tuck(C, 'a1-0'), /already holds 1/); assert.equal(CARDS.TUCK_CAP, 1); assert.match(CARDS.agentCard('contain'), /Overclocked/);
-  assert.deepEqual([...new Set(Object.keys(CARDS.BASE).map(CARDS.traitName))].sort(), ['Hardened', 'Locked', 'Overclock', 'Siphon']);
+  assert.deepEqual([...new Set(Object.keys(CARDS.BASE).map(CARDS.traitName))].sort(), ['Draw', 'Hardened', 'Locked', 'Overclock', 'Siphon'], 'Draw (2026-11-26) is the one band that doesn’t tuck');
 });
 // ---- Guard anyone, pairs, the solo Soarcerer's keep roll, baselining at every crew size (sim.js GUARDANY, PAIRADD, SOASOLOKEEP) ----
 test('a guard covers only the player who rolled it (2026-11-03); never twice', () => {
@@ -988,7 +990,7 @@ test('page: every card in the gallery matches the shared paper card markup', { s
 });
 
 test('page: a 2-player game clicked through to the end screen, items dealt and used, cards in parity throughout', { skip: !JSDOM && 'jsdom not installed' }, () => {
-  const w = load(9), d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
+  const w = load(13) /* seed 13 since 2026-11-26 (Draw bands): it baselines and tucks */, d = w.document, click = s => { const e = d.querySelector(s); assert.ok(e, 'missing ' + s); e.click(); };
   assert.match(d.body.textContent, /Tuned for 1–4 players/);
   click('[data-a="start"]');
   let n = 0, slotHits = 0, twos = 0, guards = 0, pickers = 0, sits = 0, bases = 0, tucks = 0, deals = 0, uses = 0, checked = new Set(), sawRow = false;
@@ -1219,9 +1221,24 @@ test('solo draws one more item after a fight where an alarm came back off the ro
   const win = (team, back) => { const G = fight(team, ['imp'], {}); const m = mob(G, 'imp'); m.off = m.off.map(() => true); G.backAt = 0; G.stats.back = back; G.dice = []; E.endRound(G); return G; };
   assert.equal(win(['ENG'], 0).drawn.length, D.kitSolo, 'no comeback: solo draws its usual');
   assert.equal(win(['ENG'], 1).drawn.length, D.kitSolo + 1, 'a comeback: one more');
-  assert.equal(win(['ENG', 'RES'], 1).drawn.length, D.kitPerFight, 'crews are unchanged');
+  assert.equal(win(['ENG', 'RES'], 1).drawn.length, D.kitCrew, 'crews draw their usual 1');
   // Only comebacks since the last fight ended count.
   const G = win(['ENG'], 1); assert.equal(G.backAt, 1);
+});
+test('crews draw 1 item a fight won, 2 when it began against two or more alarms (2026-11-26); solo is unchanged', () => {
+  const win = (team, ids) => { const G = fight(team, ids, {}); G.play.forEach(m => { m.off = m.off.map(() => true); }); G.backAt = G.stats.back; G.dice = []; E.endRound(G); return G; };
+  assert.equal(D.kitCrew, 1); assert.equal(D.kitMulti, 2);
+  assert.equal(win(['ENG', 'RES'], ['imp']).drawn.length, 1); assert.match(win(['ENG', 'RES'], ['imp']).drawWhy, /^Fight won: draw 1/);
+  const M = win(['ENG', 'RES'], ['imp', 'bat']); assert.equal(M.drawn.length, 2); assert.match(M.drawWhy, /^Multi-alarm fight won: draw 2/);
+  assert.equal(win(['ENG'], ['imp', 'bat']).drawn.length, D.kitSolo, 'solo keeps its own draw');
+});
+test('Draw band (2026-11-26): beaten with its Baseline dice, it doesn’t tuck; the crew draws one more item and it leaves the game', () => {
+  const { G, m } = flipBaselinable(['HUN', 'RES'], true); E.baseline(G, m.uid); assert.match(G.log.at(-1).text, /the crew draws an item/);
+  G.phase = 'assign'; G.round = 1; G.dice = []; G.undo = []; G.play = [m]; G.fightN = 1; m.off = m.off.map(() => true);
+  G.agents = [[], []]; setAgents(G, 0, ['triage']); E.endRound(G);
+  assert.equal(G.phase, 'deal', 'no tuck step'); assert.ok(G.gone.includes(m)); assert.ok(!G.row.includes(m)); assert.equal(G.aug.length, 0);
+  assert.equal(G.drawn.length, D.kitCrew + 1); assert.match(G.drawWhy, /\+1 Draw band/);
+  assert.match(CARDS.mobCard(m), /Draw:/);
 });
 test('page: the first-shift guide shows one line the first time a rule comes up, each once a shift; the Menu switch turns it off (2026-11-24)', { skip: !JSDOM && 'jsdom not installed' }, () => {
   const w = load(3), d = w.document; d.querySelector('[data-a="start"]').click();

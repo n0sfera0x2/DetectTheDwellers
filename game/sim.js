@@ -188,6 +188,12 @@ const TRAIT = process.env.TRAITSET === 'agent' ? { imp: 'twin', druid: 'stealth'
   // their agent; the Scavenger keeps Hardened, the LSASS Siphon keeps Siphon (Stealth here), and the Golden Ticket
   // Ghost is Locked (Exfil can't take its agent).
   : { imp: 'overclock', wraith: 'overclock', specter: 'locked', wyrmling: 'overclock', mimic: 'overclock', leech: 'stealth', bat: 'overclock', druid: 'hardened', locker: 'locked', zeroday: 'dayone', deepfake: 'mimica', ...(MORE ? { mailer: 'overclock', hydra: 'overclock', vibe: 'overclock', banshee: 'overclock', macro: 'overclock', spray: 'overclock', ogre: 'overclock' } : {}) };
+// DRAWTRAIT (default split since 2026-11-26): these alarms' band says Draw instead of their trait. split (default) = the
+// 1-Damage five and the 4-Damage four; DRAWTRAIT='' = none (all twelve Overclock, as shipped before). cheap = the five 1-Damage alarms,
+// over = every Overclock band, or a comma list of ids. DRAWMODE=once (default): baseline it, draw an item, burn the card
+// (no tuck). DRAWMODE=fight: it tucks, and each fight won draws one more item per Draw band held.
+const DRAWIDS = (process.env.DRAWTRAIT ?? 'split') === 'split' ? ['mailer', 'macro', 'spray', 'banshee', 'vibe', 'mimic', 'ogre', 'hydra', 'wyrmling'] : process.env.DRAWTRAIT === 'cheap' ? ['mailer', 'macro', 'spray', 'banshee', 'vibe'] : process.env.DRAWTRAIT === 'over' ? Object.keys(TRAIT).filter(k => TRAIT[k] === 'overclock') : (process.env.DRAWTRAIT || '').split(',').filter(Boolean), DRAWMODE = process.env.DRAWMODE || 'once';
+for (const k of DRAWIDS) TRAIT[k] = 'draw';
 const V4 = !['agent', 'hybrid', 'v3'].includes(process.env.TRAITSET); // v4, v5 and v6: one tuck, permanent traits
 // KWOVER (2026-11-03): Evasive is gone; the Scavenger and the Golden Ticket Ghost are Exfil (still up at round end:
 // the crew discards an item).
@@ -255,10 +261,11 @@ function rowRoll(G, strike) { if (G.tray.includes('freeze') && G.row.length >= +
 // HPN: extra starting HP by crew size on top of the mode's HP, e.g. HPN='1:1,4:2' (solo +1, 4 players +2). Default since
 // 2026-11-20 (after two magic numbers each): Quick solo +1; Full solo +2, 3 players +1, 4 players +2. Since 2026-11-22
 // 3–4 players get more, with ROWADD=1: Quick 3–4 players +3; Full 3 players +3, 4 players +4. HPN='' turns it off.
+// Since 2026-11-26 (draw 1 a fight, Draw bands): Quick '1:-2,2:2,3:4,4:4' (solo 8, crews 12/14/14); Full '1:-4,2:2,3:4,4:6' (9, 15/17/19).
 // REGEN (2026-11-24): a Regen alarm puts a die back only at the end of a round where no die took one of its dice.
 // REGEN=any plays the old rule (every round).
 const REGEN = process.env.REGEN || 'untouched';
-const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:1,2:1,3:3,4:5' : '1:3,2:1,3:3,4:3')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
+const HPN = Object.fromEntries((process.env.HPN ?? (MODE === 'full' ? '1:-4,2:2,3:4,4:6' : '1:-2,2:2,3:4,4:4')).split(',').filter(Boolean).map(x => x.split(':').map(Number)));
 const XFROM = +(process.env.XFROM || 2);
 // XROLL (default since 2026-11-20): the crew's extra threat dice (one per player past XFROM) are rolled each time the alarm enters play, not set to 6. XROLL=0 is the old set-to-6 rule.
 // PAGERROLL (default since 2026-11-21): Pager Storm’s Mute adds a rolled threat die, not a 6. BASECAP (default 5 since 2026-11-21): Baseline dice show 7 − main, capped so they never land on 6.
@@ -581,6 +588,7 @@ function fight(G, mobs) {
     for (const m of beaten) {
       if (m.boss) { if (m.kw === 'apt' && !m.rose) { m.rose = true; m.left = 2; m.need = G.sys === 'd6' ? ['D', 'C'] : G.sys === 'n6' ? numbersFor(m.id, 2) : null; alive.push(m); if (G.sys === 'n6' && BOSSROW !== 'none') rowRoll(G, true).forEach(b => alive.push(b)); continue; } G.over = true; G.win = true; return; }
       if (m.baselining) { m.baselining = false; G.stats.baselined = (G.stats.baselined || 0) + 1;
+        if (TRAITS && TRAIT[m.id] === 'draw' && DRAWMODE === 'once') { G.bonusDraw = (G.bonusDraw || 0) + 1; G.stats.drawBand = (G.stats.drawBand || 0) + 1; continue; } // drawn with the fight's items
         if (TRAITS) { const tr0 = TRAIT[m.id] === 'signature' ? 'sig' + numbersFor(m.id, 1)[0] : TRAIT[m.id], t = tuckTrait(G, tr0); if ((SOANEW === 'drawpoint' || SOANEW === 'both') && G.team[G.point] === 'SOA') draw(G, 1); /* the Soarcerer on point: a baseline draws an item */ if (t === 'full') { G.row.push(m); continue; } if (!t) G.pendT.push(tr0); if (SOATUCK && on(G, 'SOA')) draw(G, 1); } else { const host = G.tray.filter(isAgent).pop(); G.aug.push({ id: m.id, host: host || null, pend: !host }); }
         if (process.env.BASEROW === 'out' || TUCKOUT) continue; } // TUCKOUT: tucked under its agent, so not on the row
       if (G.sys === 'n6' && HUNEND !== '0' && on(G, 'HUN') && m.back > 0 && (HUNEND !== 'point' || G.team[G.point] === 'HUN') && (HUNEND !== 'once' || !G.hunEnded)) { G.hunEnded = true; G.stats.ended = (G.stats.ended || 0) + 1; continue; } // the Hunter ends persistence
@@ -627,13 +635,14 @@ function fight(G, mobs) {
   G.tray.forEach((_, i) => { const k = G.trayK[i], h = has(G, i, 'repair') * 2; if (h) G.hp[k] = Math.min(G.max, G.hp[k] + h); }); // Repair
   if (PERSONAL) G.team.forEach((_, k) => { G.hp[k] = Math.min(G.max, G.hp[k] + activeK(G, 'recover', k) * D.recoverHeal); });
   else spread(G, Math.floor(HEALX * ((aiUp(G) ? 0 : G.tray.filter((x, i) => x === 'recover' && upgraded(G, i)).length * 2) + active(G, 'recover') * (D.recoverHeal + (on(G, 'PAT') && (PATPERK !== 'nudge' || process.env.PATREC === '1') ? D.perks.PAT.recover : 0)))));
-  // DRAWMULTI (proposal, 2026-11-23): a won fight draws 1, or 2 when it began against two or more alarms (one came back off the row). 'crew' = crews only, 'all' = solo too.
+  // DRAWMULTI (default crew since 2026-11-26, proposed 2026-11-23): a won fight draws 1, or 2 when it began against two or more alarms (one came back off the row). 'crew' = crews only, 'all' = solo too.
   // SOLOBACK (default on since 2026-11-24, the owner's call): solo draws 2 after a won fight where an alarm came back off
   // the row (since the last fight ended: at the flip, in a round's row roll or from a situation). SOLOBACK=0 turns it off.
   const cameBack = G.stats.back > (G.backAt || 0); G.backAt = G.stats.back;
   if (G.n === 1 && process.env.SOLOBACK !== '0' && cameBack) G.bonusDraw = (G.bonusDraw || 0) + 1;
   const multi = G.fightN > 1; if (multi) G.stats.multiWon = (G.stats.multiWon || 0) + 1;
-  if (process.env.DRAWMULTI && (process.env.DRAWMULTI === 'all' || G.n > 1)) draw(G, (multi ? 2 : 1) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) : 0) + (G.bonusDraw || 0)); else
+  const DM = process.env.DRAWMULTI ?? 'crew'; // default crew since 2026-11-26; DRAWMULTI='' = crews draw kitPerFight (2)
+  if (DM && (DM === 'all' || G.n > 1)) draw(G, (multi ? D.kitMulti : D.kitCrew) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) : 0) + (G.bonusDraw || 0) + (DRAWMODE === 'fight' ? traitN(G, 'draw') : 0)); else
   draw(G, (process.env.DRAWS ? (G.n === 1 ? +process.env.DRAWS.split(',')[0] : +process.env.DRAWS.split(',')[1] * (process.env.DRAWPER === '1' ? G.n : 1)) : G.n === 1 ? D.kitSolo : D.kitPerFight) + (on(G, 'SOA') ? +(process.env.SOADRAW ?? (SOAPERK === 'keep' || NEWITEMS ? 0 : D.perks.SOA.draw)) + (G.n === 1 ? +(process.env.SOASOLODRAW || 0) : 0) : 0) + (G.bonusDraw || 0)); G.bonusDraw = 0;
 }
 function spread(G, n) { for (let i = 0; i < n; i++) { const k = G.hp.indexOf(Math.min(...G.hp)); if (G.hp[k] >= G.max) return; G.hp[k]++; } }

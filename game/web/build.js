@@ -20,7 +20,7 @@ const { CARD_CSS, MOB_IDS, BOSS_ID, BOSS_IDS, SIT_IDS, ANALYST_IDS, ANALYST_ART,
 
 const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8');
 // Only what the game uses from the shared data.
-const keys = ['mobAdd', 'bossAdd', 'kitPerFight', 'kitSolo', 'containCut', 'recoverHeal', 'recoverBurn', 'soloDice'];
+const keys = ['mobAdd', 'bossAdd', 'kitPerFight', 'kitSolo', 'kitCrew', 'kitMulti', 'containCut', 'recoverHeal', 'recoverBurn', 'soloDice'];
 // The four analysts only (the Fixer is gone).
 const data = { classes: D.classes.filter(c => ANALYST_IDS.includes(c.id)).map(c => ({ id: c.id, name: c.name })), mobs: D.mobs.filter(m => MOB_IDS.includes(m.id)), bosses: D.bosses.filter(b => BOSS_IDS.includes(b.id)),
   situations: D.situations.filter(s => SIT_IDS.includes(s.id)).map(({ id, name, text }) => ({ id, name, text })) }; // name and story line for the situation cards

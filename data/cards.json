@@ -862,6 +862,8 @@
  "sharedKit": 5,
  "kitPerFight": 2,
  "kitSolo": 1,
+ "kitCrew": 1,
+ "kitMulti": 2,
  "triageBonus": 4,
  "enrichBonus": 3,
  "containCut": 2,
